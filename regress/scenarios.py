@@ -234,13 +234,17 @@ def scenario3():
         'random_message_1': base64.b32encode(os.urandom(20)).decode(),
     }
     # send another message in different thread to get one in blocked `receive` call, now customer-2 listen for new messages
-    t = threading.Timer(1.0, kw.message_send_v1, [
-        'customer-1',
-        'master$customer-2@id-a_8084',
-        random_message_1,
-        30,
-        True,
-    ])
+    t = threading.Timer(
+        1.0,
+        kw.message_send_v1,
+        [
+            'customer-1',
+            'master$customer-2@id-a_8084',
+            random_message_1,
+            30,
+            True,
+        ],
+    )
     t.start()
     kw.message_receive_v1('customer-2', expected_data=random_message_1, timeout=16, polling_timeout=15)
 
@@ -413,17 +417,20 @@ def scenario4():
     assert len(customer_2_cat_own) == 100
     assert len(customer_2_cat_shared) == 200
 
-    return ({
-        'share_id': customer_1_share_id_cat,
-        'local_filepath': customer_1_local_filepath_cat,
-        'remote_path': customer_1_remote_path_cat,
-        'download_filepath': customer_1_download_filepath_cat,
-    }, {
-        'share_id': customer_2_share_id_cat,
-        'local_filepath': customer_2_local_filepath_cat,
-        'remote_path': customer_2_remote_path_cat,
-        'download_filepath': customer_2_download_filepath_cat,
-    })
+    return (
+        {
+            'share_id': customer_1_share_id_cat,
+            'local_filepath': customer_1_local_filepath_cat,
+            'remote_path': customer_1_remote_path_cat,
+            'download_filepath': customer_1_download_filepath_cat,
+        },
+        {
+            'share_id': customer_2_share_id_cat,
+            'local_filepath': customer_2_local_filepath_cat,
+            'remote_path': customer_2_remote_path_cat,
+            'download_filepath': customer_2_download_filepath_cat,
+        },
+    )
     msg('\n[SCENARIO 4] : PASS\n\n')
 
 
@@ -855,9 +862,13 @@ def scenario9(target_nodes):
 
     if 'supplier-rotated' in target_nodes:
         # make sure event "identity-url-changed" is not yet triggered
-        kw.wait_event([
-            'customer-1',
-        ], 'identity-url-changed', expected_count=0)
+        kw.wait_event(
+            [
+                'customer-1',
+            ],
+            'identity-url-changed',
+            expected_count=0,
+        )
 
     # preparation before switching of the ID server
     if 'proxy-rotated' in target_nodes:
@@ -972,29 +983,53 @@ def scenario9(target_nodes):
 
     # make sure event "identity-url-changed" is triggered on "affected" nodes
     if 'supplier-rotated' in target_nodes:
-        kw.wait_specific_event([
-            'customer-1',
-        ], 'identity-url-changed', '^.*?%s.*?$' % new_supplier_idurl)
+        kw.wait_specific_event(
+            [
+                'customer-1',
+            ],
+            'identity-url-changed',
+            '^.*?%s.*?$' % new_supplier_idurl,
+        )
     if 'customer-rotated' in target_nodes:
-        kw.wait_specific_event([
-            'customer-1',
-        ], 'identity-url-changed', '^.*?%s.*?$' % new_customer_idurl)
+        kw.wait_specific_event(
+            [
+                'customer-1',
+            ],
+            'identity-url-changed',
+            '^.*?%s.*?$' % new_customer_idurl,
+        )
     if 'broker-rotated' in target_nodes:
-        kw.wait_specific_event([
-            'customer-1',
-        ], 'identity-url-changed', '^.*?%s.*?$' % new_broker_idurl)
-        kw.wait_specific_event([
-            'customer-2',
-        ], 'identity-url-changed', '^.*?%s.*?$' % new_broker_idurl)
-        kw.wait_specific_event([
-            'broker-3',
-            'broker-4',
-            'broker-rotated',
-        ], 'identity-url-changed', '^.*?%s.*?$' % new_broker_idurl)
+        kw.wait_specific_event(
+            [
+                'customer-1',
+            ],
+            'identity-url-changed',
+            '^.*?%s.*?$' % new_broker_idurl,
+        )
+        kw.wait_specific_event(
+            [
+                'customer-2',
+            ],
+            'identity-url-changed',
+            '^.*?%s.*?$' % new_broker_idurl,
+        )
+        kw.wait_specific_event(
+            [
+                'broker-3',
+                'broker-4',
+                'broker-rotated',
+            ],
+            'identity-url-changed',
+            '^.*?%s.*?$' % new_broker_idurl,
+        )
     if 'customer-rotated' in target_nodes:
-        kw.wait_specific_event([
-            'supplier-2',
-        ], 'identity-url-changed', '^.*?%s.*?$' % new_customer_idurl)
+        kw.wait_specific_event(
+            [
+                'supplier-2',
+            ],
+            'identity-url-changed',
+            '^.*?%s.*?$' % new_customer_idurl,
+        )
 
     # kw.wait_specific_event(['proxy-1', ], 'identity-url-changed', '^.*?%s.*?$' % new_supplier_idurl)
     # kw.wait_specific_event(['proxy-1', ], 'identity-url-changed', '^.*?%s.*?$' % new_customer_idurl)
@@ -1127,12 +1162,20 @@ def scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, ol
 
     # verify files on suppliers were moved to correct sub folder
     # TODO:
-    old_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{old_customer_global_id}/master/', verbose=ssh_cmd_verbose)[0].strip()
-    new_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{new_customer_global_id}/master/', verbose=ssh_cmd_verbose)[0].strip()
+    old_folder_first_supplier = run_ssh_command_and_wait(
+        first_supplier, f'ls -la ~/.bitdust/customers/{old_customer_global_id}/master/', verbose=ssh_cmd_verbose
+    )[0].strip()
+    new_folder_first_supplier = run_ssh_command_and_wait(
+        first_supplier, f'ls -la ~/.bitdust/customers/{new_customer_global_id}/master/', verbose=ssh_cmd_verbose
+    )[0].strip()
     # assert old_folder_first_supplier == ''
     # assert new_folder_first_supplier != ''
-    old_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{old_customer_global_id}/master/', verbose=ssh_cmd_verbose)[0].strip()
-    new_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{new_customer_global_id}/master/', verbose=ssh_cmd_verbose)[0].strip()
+    old_folder_second_supplier = run_ssh_command_and_wait(
+        second_supplier, f'ls -la ~/.bitdust/customers/{old_customer_global_id}/master/', verbose=ssh_cmd_verbose
+    )[0].strip()
+    new_folder_second_supplier = run_ssh_command_and_wait(
+        second_supplier, f'ls -la ~/.bitdust/customers/{new_customer_global_id}/master/', verbose=ssh_cmd_verbose
+    )[0].strip()
     # assert old_folder_second_supplier == ''
     # assert new_folder_second_supplier != ''
     msg('\n[SCENARIO 10 end] : PASS\n\n')
@@ -1161,11 +1204,15 @@ def scenario11_begin():
     random_message = {
         'random_message': random_string,
     }
-    t = threading.Timer(1.0, kw.message_send_v1, [
-        'customer-1',
-        'master$customer-rotated@id-dead_8084',
-        random_message,
-    ])
+    t = threading.Timer(
+        1.0,
+        kw.message_send_v1,
+        [
+            'customer-1',
+            'master$customer-rotated@id-dead_8084',
+            random_message,
+        ],
+    )
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
 
@@ -1198,12 +1245,16 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     random_message = {
         'random_message': random_string,
     }
-    t = threading.Timer(1.0, kw.message_send_v1, [
-        'customer-1',
-        'master$%s' % new_customer_rotated_info['global_id'],
-        random_message,
-        15,
-    ])
+    t = threading.Timer(
+        1.0,
+        kw.message_send_v1,
+        [
+            'customer-1',
+            'master$%s' % new_customer_rotated_info['global_id'],
+            random_message,
+            15,
+        ],
+    )
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=16, polling_timeout=15)
     kw.wait_packets_finished([
@@ -1251,9 +1302,11 @@ def scenario12_begin():
 
     kw.group_join_v1('customer-1', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS + [
-        'broker-rotated',
-    ])
+    kw.wait_packets_finished(
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
+            'broker-rotated',
+        ],
+    )
 
     customer_1_group_info_active = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_active['state'] == 'IN_SYNC!'
@@ -1293,9 +1346,11 @@ def scenario12_begin():
 
     # customer-2 joins the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
-    kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS + [
-        'broker-rotated',
-    ])
+    kw.wait_packets_finished(
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
+            'broker-rotated',
+        ],
+    )
 
     assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['last_sequence_id'] == -1
 
@@ -1345,9 +1400,11 @@ def scenario12_begin():
     kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS)
 
     kw.group_join_v1('customer-1', customer_1_group2_key_id)
-    kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS + [
-        'broker-rotated',
-    ])
+    kw.wait_packets_finished(
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
+            'broker-rotated',
+        ],
+    )
 
     # share second group key from customer-1 to customer-2
     kw.group_share_v1('customer-1', customer_1_group2_key_id, 'customer-2@id-b_8084')
@@ -1358,9 +1415,11 @@ def scenario12_begin():
 
     # customer-2 also joins the second group
     kw.group_join_v1('customer-2', customer_1_group2_key_id)
-    kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS + [
-        'broker-rotated',
-    ])
+    kw.wait_packets_finished(
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
+            'broker-rotated',
+        ],
+    )
 
     # sending few messages to the second group from customer-2
     for i in range(3):
@@ -1692,9 +1751,11 @@ def scenario13_end(old_customer_1_info):
         destination_path=old_customer_1_info['download_filepath'],
         verify_from_local_path=old_customer_1_info['local_filepath'],
     )
-    kw.wait_packets_finished(CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12 + [
-        'supplier-rotated',
-    ])
+    kw.wait_packets_finished(
+        CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12 + [
+            'supplier-rotated',
+        ],
+    )
 
     # disable supplier-rotated so it will not affect other scenarios
     request_get('supplier-rotated', 'process/stop/v1', verbose=True, raise_error=False)
@@ -1822,10 +1883,12 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
     new_supplier_idurl = list(possible_suppliers)[0]
 
     response = request_put(
-        'customer-1', 'supplier/switch/v1', json={
+        'customer-1',
+        'supplier/switch/v1',
+        json={
             'position': '1',
             'new_idurl': new_supplier_idurl,
-        }
+        },
     )
     assert response.status_code == 200
 
@@ -2400,18 +2463,29 @@ def scenario19():
     assert new_broker_idurl != old_broker_info['idurl']
 
     # make sure event "my-identity-rotate-complete" is triggered on rotated nodes
-    kw.wait_event([
-        'broker-rotated',
-    ], 'my-identity-rotate-complete')
+    kw.wait_event(
+        [
+            'broker-rotated',
+        ],
+        'my-identity-rotate-complete',
+    )
 
-    kw.wait_specific_event([
-        'customer-1',
-    ], 'identity-url-changed', '^.*?%s.*?$' % 'broker-rotated')
-    kw.wait_specific_event([
-        'broker-3',
-        'broker-4',
-        'broker-rotated',
-    ], 'identity-url-changed', '^.*?%s.*?$' % 'broker-rotated')
+    kw.wait_specific_event(
+        [
+            'customer-1',
+        ],
+        'identity-url-changed',
+        '^.*?%s.*?$' % 'broker-rotated',
+    )
+    kw.wait_specific_event(
+        [
+            'broker-3',
+            'broker-4',
+            'broker-rotated',
+        ],
+        'identity-url-changed',
+        '^.*?%s.*?$' % 'broker-rotated',
+    )
 
     new_broker_info = {
         'idurl': new_broker_idurl,
@@ -2490,12 +2564,20 @@ def scenario20():
     start_daemon('customer-3', skip_initialize=True, verbose=True)
     health_check('customer-3', verbose=True)
 
-    kw.wait_service_state([
-        'customer-3',
-    ], 'service_shared_data', 'ON')
-    kw.wait_service_state([
-        'customer-3',
-    ], 'service_private_groups', 'ON')
+    kw.wait_service_state(
+        [
+            'customer-3',
+        ],
+        'service_shared_data',
+        'ON',
+    )
+    kw.wait_service_state(
+        [
+            'customer-3',
+        ],
+        'service_private_groups',
+        'ON',
+    )
 
     customer_2_groupA_info_after = kw.group_info_v1('customer-3', customer_2_groupA_key_id, wait_state='IN_SYNC!')['result']
     assert customer_2_groupA_info_after['state'] == 'IN_SYNC!'
@@ -2528,9 +2610,13 @@ def scenario21():
     health_check('broker-1', verbose=True)
 
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
-    kw.wait_service_state([
-        'broker-1',
-    ], 'service_message_broker', 'ON')
+    kw.wait_service_state(
+        [
+            'broker-1',
+        ],
+        'service_message_broker',
+        'ON',
+    )
 
     counter = 0
     while True:
@@ -2625,9 +2711,13 @@ def scenario22():
     health_check(active_broker_name, verbose=True)
 
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
-    kw.wait_service_state([
-        active_broker_name,
-    ], 'service_message_broker', 'ON')
+    kw.wait_service_state(
+        [
+            active_broker_name,
+        ],
+        'service_message_broker',
+        'ON',
+    )
 
     counter = 0
     while True:
@@ -2709,9 +2799,13 @@ def scenario23(customer_1_file_info, customer_1_shared_file_info):
     health_check(first_supplier_name, verbose=True)
 
     kw.wait_packets_finished(CUSTOMERS_IDS_12 + SUPPLIERS_IDS)
-    kw.wait_service_state([
-        first_supplier_name,
-    ], 'service_supplier', 'ON')
+    kw.wait_service_state(
+        [
+            first_supplier_name,
+        ],
+        'service_supplier',
+        'ON',
+    )
 
     kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 

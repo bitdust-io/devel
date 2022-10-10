@@ -273,7 +273,7 @@ def lookup_in_dht(layer_id=0):
     Generates
     """
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.lookup_in_dht layer_id=%d' % (layer_id,))
+        lg.out(_DebugLevel, 'lookup.lookup_in_dht layer_id=%d' % (layer_id, ))
     d = dht_service.find_node(dht_service.random_key(), layer_id=layer_id)
     if _Debug:
         d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='lookup_in_dht')
@@ -342,7 +342,6 @@ def process_idurl(idurl, node):
 
 
 class DiscoveryTask(object):
-
     def __init__(
         self,
         count,

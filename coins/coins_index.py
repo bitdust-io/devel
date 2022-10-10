@@ -162,7 +162,6 @@ class BaseHashIndex(HashIndex):
 
 
 class BaseMD5Index(BaseHashIndex):
-
     def transform_key(self, key):
         return md5(key).digest()
 

@@ -161,10 +161,7 @@ def init():
                     if one_source not in _KnownSources[one_pub_key]:
                         _KnownSources[one_pub_key].append(one_source)
                         if _Debug:
-                            lg.out(_DebugLevel, '    new source %r added for %r' % (
-                                one_source,
-                                one_pub_key[-10:],
-                            ))
+                            lg.out(_DebugLevel, '    new source %r added for %r' % (one_source, one_pub_key[-10:]))
     for one_ident_path in for_cleanup:
         if os.path.isfile(one_ident_path):
             lg.warn('about to erase broken historical identity file: %r' % one_ident_path)
@@ -355,34 +352,30 @@ def identity_cached(new_id_obj):
         if new_revision > latest_revision:
             lg.info('found rotated identity after caching %r -> %r' % (latest_id_obj.getSources(as_originals=True)[0], new_sources[0]))
             from main import events
-            events.send(
-                'identity-rotated', data=dict(
-                    old_idurls=latest_id_obj.getSources(as_originals=True),
-                    new_idurls=new_id_obj.getSources(as_originals=True),
+            events.send('identity-rotated', data=dict(
+                old_idurls=latest_id_obj.getSources(as_originals=True),
+                new_idurls=new_id_obj.getSources(as_originals=True),
+                old_revision=latest_id_obj.getRevisionValue(),
+                new_revision=new_revision,
+            ))
+            if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
+                events.send('identity-url-changed', data=dict(
+                    old_idurl=latest_id_obj.getIDURL(as_original=True),
+                    new_idurl=new_id_obj.getIDURL(as_original=True),
                     old_revision=latest_id_obj.getRevisionValue(),
                     new_revision=new_revision,
-                )
-            )
-            if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
-                events.send(
-                    'identity-url-changed', data=dict(
-                        old_idurl=latest_id_obj.getIDURL(as_original=True),
-                        new_idurl=new_id_obj.getIDURL(as_original=True),
-                        old_revision=latest_id_obj.getRevisionValue(),
-                        new_revision=new_revision,
-                    )
-                )
+                ))
             from userid import my_id
             if my_id.isLocalIdentityReady():
                 if my_id.getIDURL() == new_id_obj.getIDURL():
-                    events.send(
-                        'my-identity-rotated', data=dict(
-                            old_idurls=latest_id_obj.getSources(as_originals=True),
-                            new_idurls=new_id_obj.getSources(as_originals=True),
-                            old_revision=latest_id_obj.getRevisionValue(),
-                            new_revision=new_revision,
-                        )
-                    )
+                    # yapf: disable
+                    events.send('my-identity-rotated', data=dict(
+                        old_idurls=latest_id_obj.getSources(as_originals=True),
+                        new_idurls=new_id_obj.getSources(as_originals=True),
+                        old_revision=latest_id_obj.getRevisionValue(),
+                        new_revision=new_revision,
+                    ))
+                    # yapf: enable
                     if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
                         events.send(
                             'my-identity-url-changed', data=dict(
@@ -735,61 +728,29 @@ def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
     idurl_bin = to_bin(idurl)
     if not idurl_bin:
         if _Debug:
-            lg.args(
-                _DebugLevel, idurl=idurl, ret=[
-                    idurl_bin,
-                ]
-            )
+            lg.args(_DebugLevel, idurl=idurl, ret=idurl_bin)
         if include_revisions:
-            return [
-                (
-                    idurl_bin,
-                    -1,
-                ),
-            ]
-        return [
-            idurl_bin,
-        ]
+            return [(idurl_bin, -1)]
+        return [idurl_bin]
     if idurl_bin not in _KnownIDURLs:
         if _Debug:
-            lg.args(
-                _DebugLevel, idurl=idurl, ret=[
-                    idurl_bin,
-                ]
-            )
+            lg.args(_DebugLevel, idurl=idurl, ret=idurl_bin)
         if include_revisions:
-            return [
-                (
-                    idurl_bin,
-                    -1,
-                ),
-            ]
-        return [
-            idurl_bin,
-        ]
+            return [(idurl_bin, -1)]
+        return [idurl_bin]
     pub_key = _KnownIDURLs[idurl_bin]
     if pub_key not in _MergedIDURLs:
         lg.warn('idurl %r does not have any known revisions' % idurl_bin)
         if include_revisions:
-            return [
-                (
-                    idurl_bin,
-                    -1,
-                ),
-            ]
-        return [
-            idurl_bin,
-        ]
+            return [(idurl_bin, -1)]
+        return [idurl_bin]
     known_revisions = sorted(_MergedIDURLs[pub_key].keys(), reverse=True)
     results = []
     for rev in known_revisions:
         another_idurl = _MergedIDURLs[pub_key][rev]
         if include_revisions:
             if another_idurl not in [i[0] for i in results]:
-                results.append((
-                    another_idurl,
-                    rev,
-                ))
+                results.append((another_idurl, rev))
         else:
             if another_idurl not in results:
                 results.append(another_idurl)
@@ -821,7 +782,6 @@ def idurl_to_id(idurl_text):
 
 
 class ID_URL_FIELD(object):
-
     def __init__(self, idurl):
         self.current = b''
         self.current_as_string = ''
@@ -853,12 +813,12 @@ class ID_URL_FIELD(object):
         self.latest_as_string = strng.to_text(self.latest)
         self.latest_id = idurl_to_id(self.latest)
         if _Debug:
-            lg.out(_DebugLevel * 2, 'NEW ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
+            lg.out(_DebugLevel*2, 'NEW ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
 
     def __del__(self):
         try:
             if _Debug:
-                lg.out(_DebugLevel * 2, 'DELETED ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
+                lg.out(_DebugLevel*2, 'DELETED ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
         except:
             lg.exc()
 
@@ -917,7 +877,7 @@ class ID_URL_FIELD(object):
         # now compare based on public key
         result = (other_pub_key == my_pub_key)
         if _Debug:
-            lg.args(_DebugLevel * 2, idurl=idurl, current=self.current, latest=self.latest, result=result)
+            lg.args(_DebugLevel*2, idurl=idurl, current=self.current, latest=self.latest, result=result)
         return result
 
     def __ne__(self, idurl):
@@ -975,7 +935,7 @@ class ID_URL_FIELD(object):
         # now compare based on public key
         result = (other_pub_key != my_pub_key)
         if _Debug:
-            lg.args(_DebugLevel * 2, idurl=idurl, current=self.current, latest=self.latest, result=result)
+            lg.args(_DebugLevel*2, idurl=idurl, current=self.current, latest=self.latest, result=result)
         return result
 
     def __hash__(self):
@@ -986,32 +946,32 @@ class ID_URL_FIELD(object):
         pub_key = self.to_public_key()
         hsh = pub_key.__hash__()
         if _Debug:
-            lg.args(_DebugLevel * 2, current=self.current, latest=self.latest, hash=hsh)
+            lg.args(_DebugLevel*2, current=self.current, latest=self.latest, hash=hsh)
         return hsh
 
     def __repr__(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest_as_string=self.latest_as_string)
+            lg.args(_DebugLevel*2, latest_as_string=self.latest_as_string)
         return self.latest_as_string
 
     def __str__(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest_as_string=self.latest_as_string)
+            lg.args(_DebugLevel*2, latest_as_string=self.latest_as_string)
         return self.latest_as_string
 
     def __bytes__(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest)
+            lg.args(_DebugLevel*2, latest=self.latest)
         return self.latest
 
     def __bool__(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest)
+            lg.args(_DebugLevel*2, latest=self.latest)
         return bool(self.latest)
 
     def __len__(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest)
+            lg.args(_DebugLevel*2, latest=self.latest)
         return len(self.latest)
 
     def refresh(self, replace_original=True):
@@ -1037,48 +997,48 @@ class ID_URL_FIELD(object):
 
     def strip(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest_as_string)
+            lg.args(_DebugLevel*2, latest=self.latest_as_string)
         return self.latest
 
     def original(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, current=self.current, latest=self.latest)
+            lg.args(_DebugLevel*2, current=self.current, latest=self.latest)
         return self.current
 
     def original_id(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, current=self.current_id, latest=self.latest_id)
+            lg.args(_DebugLevel*2, current=self.current_id, latest=self.latest_id)
         return self.current_id
 
     def is_latest(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, current=self.current, latest=self.latest)
+            lg.args(_DebugLevel*2, current=self.current, latest=self.latest)
         return self.latest and self.current == self.latest
 
     def to_id(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest_id=self.latest_id)
+            lg.args(_DebugLevel*2, latest_id=self.latest_id)
         return self.latest_id
 
     def to_text(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest_as_string)
+            lg.args(_DebugLevel*2, latest=self.latest_as_string)
         return self.latest_as_string
 
     def to_bin(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest)
+            lg.args(_DebugLevel*2, latest=self.latest)
         return self.latest
 
     def to_original(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, current=self.current, latest=self.latest)
+            lg.args(_DebugLevel*2, current=self.current, latest=self.latest)
         return self.current
 
     def to_public_key(self, raise_error=True):
         global _KnownIDURLs
         if _Debug:
-            lg.args(_DebugLevel * 2, latest=self.latest, current=self.current)
+            lg.args(_DebugLevel*2, latest=self.latest, current=self.current)
         if not self.current:
             return b''
         if self.current not in _KnownIDURLs:

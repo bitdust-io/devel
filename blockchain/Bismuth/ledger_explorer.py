@@ -259,9 +259,13 @@ def make_app():
 
     return tornado.web.Application([
         (r'/', MainHandler),
-        (r'/static/(.*)', tornado.web.StaticFileHandler, {
-            'path': 'static'
-        }),
+        (
+            r'/static/(.*)',
+            tornado.web.StaticFileHandler,
+            {
+                'path': 'static',
+            },
+        ),
     ])
 
 

@@ -351,7 +351,7 @@ class Installer(automat.Automat):
         src = args[0]['keysrc']
         lg.out(2, 'installer.doReadKey length=%s' % len(src))
         # src = bpio.ReadBinaryFile(keyfn)
-        if len(src) > 1024 * 10:
+        if len(src) > 1024*10:
             self.doPrint(('file is too big for private key', 'red'))
             return
         try:

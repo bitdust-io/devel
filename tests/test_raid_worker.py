@@ -63,7 +63,9 @@ class TestRaidWorker(TestCase):
                 if read_success:
                     reactor.callLater(0.1, test_result.errback, Exception('reconstructed data is not the same as source data'))  # @UndefinedVariable
                 else:
-                    reactor.callLater(0.1, test_result.errback, Exception('reconstructed data is the same as source data, but expect to fail the raid read'))  # @UndefinedVariable
+                    reactor.callLater(
+                        0.1, test_result.errback, Exception('reconstructed data is the same as source data, but expect to fail the raid read')
+                    )  # @UndefinedVariable
             return True
 
         def _rebuild_done(cmd, taskdata, result):
@@ -88,9 +90,13 @@ class TestRaidWorker(TestCase):
                 raid_worker.add_task,
                 'read',
                 (  # @UndefinedVariable
-                    '/tmp/destination.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0'
+                    '/tmp/destination.txt',
+                    target_ecc_map,
+                    'F12345678',
+                    '5',
+                    '/tmp/raidtest/master$alice@somehost.com/0',
                 ),
-                _read_done
+                _read_done,
             )
             return True
 
@@ -136,9 +142,13 @@ class TestRaidWorker(TestCase):
                     raid_worker.add_task,
                     'read',
                     (  # @UndefinedVariable
-                        '/tmp/destination.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0'
+                        '/tmp/destination.txt',
+                        target_ecc_map,
+                        'F12345678',
+                        '5',
+                        '/tmp/raidtest/master$alice@somehost.com/0',
                     ),
-                    _read_done
+                    _read_done,
                 )
             else:
                 reactor.callLater(
@@ -146,11 +156,17 @@ class TestRaidWorker(TestCase):
                     raid_worker.add_task,
                     'rebuild',
                     (  # @UndefinedVariable
-                        'master$alice@somehost.com:0/F12345678', '5', target_ecc_map, [
+                        'master$alice@somehost.com:0/F12345678',
+                        '5',
+                        target_ecc_map,
+                        [
                             1,
-                        ] * num_suppliers, remote_fragments, local_fragments, '/tmp/raidtest'
+                        ] * num_suppliers,
+                        remote_fragments,
+                        local_fragments,
+                        '/tmp/raidtest',
                     ),
-                    _rebuild_done
+                    _rebuild_done,
                 )
             return True
 
@@ -165,9 +181,13 @@ class TestRaidWorker(TestCase):
             raid_worker.add_task,
             'make',
             (  # @UndefinedVariable
-                '/tmp/source.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0/F12345678'
+                '/tmp/source.txt',
+                target_ecc_map,
+                'F12345678',
+                '5',
+                '/tmp/raidtest/master$alice@somehost.com/0/F12345678',
             ),
-            _make_done
+            _make_done,
         )
         return test_result
 
@@ -349,9 +369,13 @@ class TestRaidWorker(TestCase):
             raid_worker.add_task,
             'make',
             (  # @UndefinedVariable
-                '/tmp/source1.txt', 'ecc/64x64', 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0/F12345678'
+                '/tmp/source1.txt',
+                'ecc/64x64',
+                'F12345678',
+                '5',
+                '/tmp/raidtest/master$alice@somehost.com/0/F12345678',
             ),
-            _task_failed
+            _task_failed,
         )
         reactor.callLater(0.55, raid_worker.cancel_task, 'make', '/tmp/source1.txt')  # @UndefinedVariable
 

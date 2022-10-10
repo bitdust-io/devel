@@ -64,7 +64,6 @@ from crypt import number
 
 
 class RSAKey(object):
-
     def __init__(self):
         self.keyObject = None
         self.local_key_id = None

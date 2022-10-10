@@ -64,7 +64,7 @@ class PluginManager:
                     plugins[possible] = {
                         'name': possible,
                         'info': info,
-                        'autoload': True  # Todo
+                        'autoload': True,  # Todo
                     }
         except Exception as e:
             self.app_log.info("Can't list plugins from '{}'.".format(self.plugin_folder))

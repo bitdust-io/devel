@@ -331,7 +331,7 @@ class BackupMonitor(automat.Automat):
         if not contactsdb.num_suppliers():
             bytesUsed = 0
         else:
-            bytesUsed = backup_fs.sizebackups() / contactsdb.num_suppliers()
+            bytesUsed = backup_fs.sizebackups()/contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         customerGlobID = my_id.getGlobalID()
         if _Debug:
@@ -406,7 +406,7 @@ class BackupMonitor(automat.Automat):
                     lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp   restart after 1 min, found offline suppliers')
                 self.automat('restart')
                 return
-        if time.time() - self.last_execution_time > 60 * 10:
+        if time.time() - self.last_execution_time > 60*10:
             # also re-sync every 10 min.
             if _Debug:
                 lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp   periodic 10 min. restart')

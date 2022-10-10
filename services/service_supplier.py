@@ -76,14 +76,14 @@ class SupplierService(LocalService):
         space_dict, _ = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
             known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-            events.send(
-                'existing-customer-accepted', data=dict(
-                    idurl=customer_idurl,
-                    allocated_bytes=space_dict.get(customer_idurl.to_bin()),
-                    ecc_map=known_customer_meta_info.get('ecc_map'),
-                    position=known_customer_meta_info.get('position'),
-                )
-            )
+            # yapf: disable
+            events.send('existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=space_dict.get(customer_idurl.to_bin()),
+                ecc_map=known_customer_meta_info.get('ecc_map'),
+                position=known_customer_meta_info.get('position'),
+            ))
+            # yapf: enable
         if driver.is_on('service_entangled_dht'):
             self._do_connect_suppliers_dht_layer()
         else:
@@ -236,11 +236,14 @@ class SupplierService(LocalService):
         free_bytes = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
         space_dict[customer_idurl.to_bin()] = bytes_for_customer
-        contactsdb.add_customer_meta_info(customer_idurl, {
-            'ecc_map': ecc_map,
-            'position': family_position,
-            'family_snapshot': family_snapshot,
-        })
+        contactsdb.add_customer_meta_info(
+            customer_idurl,
+            {
+                'ecc_map': ecc_map,
+                'position': family_position,
+                'family_snapshot': family_snapshot,
+            },
+        )
         accounting.write_customers_quotas(space_dict, free_bytes)
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
@@ -248,28 +251,24 @@ class SupplierService(LocalService):
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
             lg.info('NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
-            events.send(
-                'new-customer-accepted', data=dict(
-                    idurl=customer_idurl,
-                    allocated_bytes=bytes_for_customer,
-                    ecc_map=ecc_map,
-                    position=family_position,
-                    family_snapshot=family_snapshot,
-                    key_id=customer_public_key_id,
-                )
-            )
+            events.send('new-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                family_snapshot=family_snapshot,
+                key_id=customer_public_key_id,
+            ))
         else:
             lg.info('OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
-            events.send(
-                'existing-customer-accepted', data=dict(
-                    idurl=customer_idurl,
-                    allocated_bytes=bytes_for_customer,
-                    ecc_map=ecc_map,
-                    position=family_position,
-                    key_id=customer_public_key_id,
-                    family_snapshot=family_snapshot,
-                )
-            )
+            events.send('existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                key_id=customer_public_key_id,
+                family_snapshot=family_snapshot,
+            ))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):

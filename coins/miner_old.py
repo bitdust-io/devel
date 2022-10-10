@@ -171,7 +171,6 @@ def finish_contract(typ, partner, **kwargs):
 
 
 class Contract(object):
-
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -181,7 +180,6 @@ class Contract(object):
 
 
 class CoinsMinerNode(object):
-
     def inbox_packet(self, newpacket, info):
         return False
 

@@ -340,11 +340,11 @@ def SendingSpeedLimit():
     If sending below this speed - we count this supplier as failed.
     If we sending too slow to all nodes - it's our problems, not suppliers.
     """
-    return 30 * 1024
+    return 30*1024
 
 
 def ReceivingSpeedLimit():
-    return 30 * 1024
+    return 30*1024
 
 
 def DefaultBandwidthInLimit():
@@ -352,7 +352,7 @@ def DefaultBandwidthInLimit():
     Incoming bandwidth limit in bytes per second, 0 - unlimited.
     """
     # 1 Mbps = 125000 B/s ~ 122 KB/s
-    return 100 * 1250000
+    return 100*1250000
 
 
 def DefaultBandwidthOutLimit():
@@ -360,7 +360,7 @@ def DefaultBandwidthOutLimit():
     Outgoing bandwidth limit in bytes per second, 0 - unlimited.
     """
     # 1 Mbps = 125000 B/s ~ 122 KB/s
-    return 100 * 125000
+    return 100*125000
 
 
 def SendTimeOut():
@@ -397,14 +397,14 @@ def DefaultAlivePacketTimeOut():
     """
     Lets send alive packets to our contacts every hour.
     """
-    return 60 * 60
+    return 60*60
 
 
 def DefaultBandwidthReportTimeOut():
     """
     Send ``BandwidthReport`` packets every 24 hours.
     """
-    return 60 * 60 * 24
+    return 60*60*24
 
 
 def DefaultNeedSuppliersPacketTimeOut():
@@ -450,21 +450,21 @@ def DefaultLocaltesterValidateTimeout():
     """
     A period in seconds to call ``Validate`` action of the local tester.
     """
-    return 120 * 60
+    return 120*60
 
 
 def DefaultLocaltesterUpdateCustomersTimeout():
     """
     A period in seconds to call ``UpdateCustomers`` action of the local tester.
     """
-    return 5 * 60
+    return 5*60
 
 
 def DefaultLocaltesterSpaceTimeTimeout():
     """
     A period in seconds to call ``SpaceTime`` action of the local tester.
     """
-    return 5 * 60
+    return 5*60
 
 
 def MinimumUsernameLength():
@@ -485,25 +485,25 @@ def DefaultDonatedBytes():
     """
     Default donated space value. User can set this at any moment in the settings.
     """
-    return 8 * 1024 * 1024 * 1024  # 8 GB
+    return 8*1024*1024*1024  # 8 GB
 
 
 def DefaultNeededBytes():
     """
     Default needed space value. User can set this at any moment in the settings.
     """
-    return 256 * 1024 * 1024  # 256 MB
+    return 256*1024*1024  # 256 MB
 
 
 def MinimumDonatedBytes():
     """
     Minimum donated space amount in Megabytes - need to donate at least 2 Mb right now.
     """
-    return 64 * 1024 * 1024  # 64 MB
+    return 64*1024*1024  # 64 MB
 
 
 def MinimumNeededBytes():
-    return 32 * 1024 * 1024  # 32 MB - minimum 1 MB will be taken from every supplier
+    return 32*1024*1024  # 32 MB - minimum 1 MB will be taken from every supplier
 
 
 def DefaultBackupBlockSize():
@@ -513,14 +513,14 @@ def DefaultBackupBlockSize():
 
     perform RAID operation on every block - one by one.
     """
-    return 4 * 1024 * 1024  # 4 MB
+    return 4*1024*1024  # 4 MB
 
 
 def DefaultBackupMaxBlockSize():
     """
     The maximum default block size, user can set this in the settings.
     """
-    return 16 * 1024 * 1024  # 16 MB is fine
+    return 16*1024*1024  # 16 MB is fine
 
 
 def MinimumBandwidthInLimitKBSec():
@@ -541,14 +541,14 @@ def FireHireMinimumDelay():
     """
     Really do not want to fire suppliers too often, so use 15 minutes interval.
     """
-    return 60 * 15
+    return 60*15
 
 
 def BackupDBSynchronizeDelay():
     """
     Save backup index database no more than one time per every 5 min.
     """
-    return 60 * 5
+    return 60*5
 
 
 def MaxDeletedBackupIDsToKeep():
@@ -969,10 +969,7 @@ def BackupIndexFilePath(customer_idurl=None, key_alias='master'):
     customer_idurl = id_url.field(customer_idurl)
     customer_id = customer_idurl.to_id()
     index_dir_path = os.path.join(ServiceDir('service_backups'), 'index')
-    index_file_path = os.path.join(index_dir_path, '%s$%s' % (
-        key_alias,
-        customer_id,
-    ))
+    index_file_path = os.path.join(index_dir_path, '%s$%s' % (key_alias, customer_id))
     return index_file_path
 
 
@@ -1412,7 +1409,7 @@ def update_proxy_settings():
             lg.out(_DebugLevel, '    HOST:      ' + net_misc.get_proxy_host())
             lg.out(_DebugLevel, '    PORT:      ' + str(net_misc.get_proxy_port()))
             lg.out(_DebugLevel, '    USERNAME:  ' + net_misc.get_proxy_username())
-            lg.out(_DebugLevel, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
+            lg.out(_DebugLevel, '    PASSWORD:  ' + ('*'*len(net_misc.get_proxy_password())))
             lg.out(_DebugLevel, '    SSL:       ' + net_misc.get_proxy_ssl())
 
 

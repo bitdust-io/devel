@@ -75,7 +75,6 @@ class WebSocket(object):
     enable_multithread: if set to True, lock send method.
     skip_utf8_validation: skip utf8 validation.
     """
-
     def __init__(self, get_mask_key=None, sockopt=None, sslopt=None, fire_cont_frame=False, enable_multithread=False, skip_utf8_validation=False, **_):
         """
         Initialize WebSocket object.

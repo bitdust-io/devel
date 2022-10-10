@@ -168,13 +168,11 @@ def known_brokers(customer_id=None, erase_brokers=False):
     if customer_id not in _KnownBrokers:
         _KnownBrokers[customer_id] = [
             None,
-        ] * REQUIRED_BROKERS_COUNT
+        ]*REQUIRED_BROKERS_COUNT
     if len(_KnownBrokers[customer_id]) < REQUIRED_BROKERS_COUNT:
         _KnownBrokers[customer_id] += [
             None,
-        ] * (
-            REQUIRED_BROKERS_COUNT - len(_KnownBrokers[customer_id])
-        )
+        ]*(REQUIRED_BROKERS_COUNT - len(_KnownBrokers[customer_id]))
     return _KnownBrokers[customer_id]
 
 
@@ -267,11 +265,14 @@ def create_new_group(label, creator_id=None, key_size=2048, group_alias=None, wi
     if remote_path is None:
         return None
     if with_group_info:
-        set_group_info(group_key_id, {
-            'last_sequence_id': -1,
-            'active': False,
-            'archive_folder_path': remote_path,
-        })
+        set_group_info(
+            group_key_id,
+            {
+                'last_sequence_id': -1,
+                'active': False,
+                'archive_folder_path': remote_path,
+            },
+        )
         save_group_info(group_key_id)
     return group_key_id
 
@@ -311,10 +312,7 @@ def load_groups():
         latest_group_key_id = my_keys.latest_key_id(group_key_id)
         latest_group_path = os.path.join(groups_dir, latest_group_key_id)
         if latest_group_key_id != group_key_id:
-            lg.info('going to rename rotated group key: %r -> %r' % (
-                group_key_id,
-                latest_group_key_id,
-            ))
+            lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id))
             old_group_path = os.path.join(groups_dir, group_key_id)
             try:
                 os.rename(old_group_path, latest_group_path)
@@ -331,10 +329,7 @@ def load_groups():
         latest_customer_id = global_id.latest_glob_id(customer_id)
         latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
         if latest_customer_id != customer_id:
-            lg.info('going to rename rotated customer id: %r -> %r' % (
-                customer_id,
-                latest_customer_id,
-            ))
+            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id))
             old_customer_dir = os.path.join(brokers_dir, customer_id)
             try:
                 bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
@@ -348,10 +343,7 @@ def load_groups():
             latest_broker_id = global_id.latest_glob_id(broker_id)
             latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
             if latest_broker_id != broker_id:
-                lg.info('going to rename rotated broker id: %r -> %r' % (
-                    broker_id,
-                    latest_broker_id,
-                ))
+                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id))
                 old_broker_path = os.path.join(latest_customer_dir, broker_id)
                 try:
                     os.rename(old_broker_path, latest_broker_path)
@@ -369,7 +361,7 @@ def load_groups():
                         latest_customer_id,
                         int(latest_broker_info['position']),
                         latest_broker_path,
-                    ))
+                    ), )
                     try:
                         os.remove(latest_broker_path)
                     except:

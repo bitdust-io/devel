@@ -116,7 +116,7 @@ class P2PHookupsService(LocalService):
         from services import driver
         from p2p import p2p_service
         from transport import packet_out
-        if len(newpacket.Payload) > 1024 * 10:
+        if len(newpacket.Payload) > 1024*10:
             lg.warn('too long payload')
             p2p_service.SendFail(newpacket, 'too long payload')
             return True
@@ -162,7 +162,7 @@ class P2PHookupsService(LocalService):
         from services import driver
         from p2p import p2p_service
         from transport import packet_out
-        if len(newpacket.Payload) > 1024 * 10:
+        if len(newpacket.Payload) > 1024*10:
             p2p_service.SendFail(newpacket, 'too long payload')
             return True
         try:

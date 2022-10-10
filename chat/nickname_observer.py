@@ -114,7 +114,6 @@ class NicknameObserver(automat.Automat):
     This class implements all the functionality of the ``nickname_observer()``
     state machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the

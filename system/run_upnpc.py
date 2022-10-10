@@ -183,7 +183,7 @@ def run(args_list, base_dir=None, callback=None):
 
 
 def info():
-    cmd_out = run(('-l',))
+    cmd_out = run(('-l', ))
     if cmd_out is None:
         return None, None, None
     regexp1 = '^\s*(\d+)\s*(\w+)\s*(\d+)->(\d+\.\d+\.\d+\.\d+):(\d+)\s+(.+)$'
@@ -214,7 +214,7 @@ def info():
 
 
 def lst():
-    cmd_out = run(('-l',))
+    cmd_out = run(('-l', ))
     if cmd_out is None:
         return None
     regexp1 = '^\s*(\d+)\s*(\w+)\s*(\d+)->(\d+\.\d+\.\d+\.\d+):(\d+)\s+(.+)$'

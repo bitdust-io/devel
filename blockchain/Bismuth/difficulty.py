@@ -27,7 +27,10 @@ def difficulty(node, db_handler):
         # Failsafe for regtest starting at block 1}
         timestamp_before_last = timestamp_last if previous is None else Decimal(previous[1])
 
-        db_handler.execute_param(db_handler.c, ('SELECT timestamp FROM transactions WHERE block_height > ? AND reward != 0 ORDER BY block_height ASC LIMIT 2'), (block_height - 1441,))
+        db_handler.execute_param(
+            db_handler.c, ('SELECT timestamp FROM transactions WHERE block_height > ? AND reward != 0 ORDER BY block_height ASC LIMIT 2'),
+            (block_height - 1441,)
+        )
         timestamp_1441 = Decimal(db_handler.c.fetchone()[0])
         block_time_prev = (timestamp_before_last - timestamp_1441) / 1440
         temp = db_handler.c.fetchone()
@@ -40,7 +43,10 @@ def difficulty(node, db_handler):
         time_to_generate = timestamp_last - timestamp_before_last
 
         if node.is_regnet:
-            return (float('%.10f' % regnet.REGNET_DIFF), float('%.10f' % (regnet.REGNET_DIFF - 8)), float(time_to_generate), float(regnet.REGNET_DIFF), float(block_time), float(0), float(0), block_height)
+            return (
+                float('%.10f' % regnet.REGNET_DIFF), float('%.10f' % (regnet.REGNET_DIFF - 8)), float(time_to_generate), float(regnet.REGNET_DIFF),
+                float(block_time), float(0), float(0), block_height
+            )
 
         hashrate = pow(2, diff_block_previous / Decimal(2.0)) / (block_time * math.ceil(28 - diff_block_previous / Decimal(16.0)))
         # Calculate new difficulty for desired blocktime of 60 seconds
@@ -87,7 +93,14 @@ def difficulty(node, db_handler):
         diff_dropped = 10
 
         return (
-            float('%.10f' % difficulty), float('%.10f' % diff_dropped), float(time_to_generate), float(diff_block_previous), float(block_time), float(hashrate), float(diff_adjustment), block_height
+            float('%.10f' % difficulty),
+            float('%.10f' % diff_dropped),
+            float(time_to_generate),
+            float(diff_block_previous),
+            float(block_time),
+            float(hashrate),
+            float(diff_adjustment),
+            block_height,
         )  # need to keep float here for database inserts support
     except Exception as e:  #new chain or regnet
         print('Failed to calculate difficulty (default difficulty will be used):', e)

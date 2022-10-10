@@ -213,11 +213,9 @@ class ListFilesOrator(automat.Automat):
         if newstate == 'SAW_FILES':
             lt_saw_files = self.last_time_saw_files.get(self.target_customer_idurl, -1)
             if lt_saw_files <= 0 or time.time() - lt_saw_files < 20:
-                events.send(
-                    'my-list-files-refreshed', data={
-                        'customer_idurl': self.target_customer_idurl,
-                    }
-                )
+                events.send('my-list-files-refreshed', data={
+                    'customer_idurl': self.target_customer_idurl,
+                })
             self.last_time_saw_files[self.target_customer_idurl] = time.time()
         if newstate == 'NO_FILES':
             self.last_time_saw_files[self.target_customer_idurl] = -1
@@ -331,7 +329,7 @@ class ListFilesOrator(automat.Automat):
             self.critical_suppliers_number = eccmap.GetCorrectableErrors(len(known_suppliers))
         except:
             lg.warn('number of known suppliers for customer %r is not standard' % self.target_customer_idurl)
-            self.critical_suppliers_number = int(float(len(known_suppliers)) * 0.75)
+            self.critical_suppliers_number = int(float(len(known_suppliers))*0.75)
         for idurl in known_suppliers:
             if idurl:
                 if online_status.isOnline(idurl):

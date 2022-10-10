@@ -27,8 +27,30 @@ class Peers:
     """The peers manager. A thread safe peers manager"""
 
     __slots__ = (
-        'app_log', 'config', 'logstats', 'node', 'peersync_lock', 'startup_time', 'reset_time', 'warning_list', 'stats', 'connection_pool', 'peer_opinion_dict', 'consensus_percentage', 'consensus', 'tried', 'peer_dict', 'peerfile',
-        'suggested_peerfile', 'banlist', 'whitelist', 'ban_threshold', 'ip_to_mainnet', 'peers', 'accept_peers', 'peerlist_updated'
+        'app_log',
+        'config',
+        'logstats',
+        'node',
+        'peersync_lock',
+        'startup_time',
+        'reset_time',
+        'warning_list',
+        'stats',
+        'connection_pool',
+        'peer_opinion_dict',
+        'consensus_percentage',
+        'consensus',
+        'tried',
+        'peer_dict',
+        'peerfile',
+        'suggested_peerfile',
+        'banlist',
+        'whitelist',
+        'ban_threshold',
+        'ip_to_mainnet',
+        'peers',
+        'accept_peers',
+        'peerlist_updated',
     )
 
     def __init__(self, app_log, config=None, logstats=True, node=None):
@@ -144,8 +166,10 @@ class Peers:
                                 if versiongot == '*':
                                     raise ValueError('peer busy')
                                 if versiongot not in self.config.version_allow:
-                                    raise ValueError(f'cannot save {ip}, incompatible protocol version {versiongot} '
-                                                     f'not in {self.config.version_allow}')
+                                    raise ValueError(
+                                        f'cannot save {ip}, incompatible protocol version {versiongot} '
+                                        f'not in {self.config.version_allow}',
+                                    )
                                 self.app_log.info(f'Inbound: Distant peer {ip}:{port} responding: {versiongot}')
                             else:
                                 s.connect((ip, int(port)))
@@ -209,8 +233,10 @@ class Peers:
             # TODO: use a dict instead of several occurrences in a list
             for x in range(count):
                 self.warning_list.append(ip)
-            self.app_log.warning(f'Added {count} warning(s) to {ip}: {reason} '
-                                 f'({self.warning_list.count(ip)} / {self.ban_threshold})')
+            self.app_log.warning(
+                f'Added {count} warning(s) to {ip}: {reason} '
+                f'({self.warning_list.count(ip)} / {self.ban_threshold})',
+            )
             if self.warning_list.count(ip) >= self.ban_threshold:
                 self.banlist.append(ip)
                 self.app_log.warning(f'{ip} is banned: {reason}')
@@ -503,8 +529,10 @@ class Peers:
                 del self.warning_list[:]
 
             if len(self.connection_pool) < 10:
-                self.app_log.warning(f'Only {len(self.connection_pool)} connections active, '
-                                     f'resetting the connection history')
+                self.app_log.warning(
+                    f'Only {len(self.connection_pool)} connections active, '
+                    f'resetting the connection history',
+                )
                 # TODO: only reset large timeouts, or we end up trying the sames over and over if we never get to 10.
                 # self.
                 self.reset_tried()
@@ -512,8 +540,10 @@ class Peers:
             if self.config.nodes_ban_reset <= len(self.banlist) and len(self.connection_pool) <= len(self.banlist) \
                     and (time() - self.reset_time) > 60 * 10:
                 # do not reset too often. 10 minutes here
-                self.app_log.warning(f'Less active connections ({len(self.connection_pool)}) '
-                                     f'than banlist ({len(self.banlist)}), resetting banlist and tried list')
+                self.app_log.warning(
+                    f'Less active connections ({len(self.connection_pool)}) '
+                    f'than banlist ({len(self.banlist)}), resetting banlist and tried list',
+                )
                 del self.banlist[:]
                 self.banlist.extend(self.config.banlist)  # reset to config version
                 del self.warning_list[:]

@@ -551,7 +551,7 @@ def RunOfflineChecks():
             # if no checks done yet but he is offline: ping user
             o_status.automat('offline-check')
             continue
-        if utime.get_sec1970() - o_status.latest_check_time > 10 * 60:
+        if utime.get_sec1970() - o_status.latest_check_time > 10*60:
             # user is offline and latest check was sent a while ago: lets try to ping user again
             o_status.automat('offline-check')
             continue
@@ -640,25 +640,21 @@ class OnlineStatus(automat.Automat):
             lg.out(_DebugLevel, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'CONNECTED':
             lg.info('remote node connected : %s' % self.idurl)
-            events.send(
-                'node-connected', data=dict(
-                    global_id=self.idurl.to_id(),
-                    idurl=self.idurl,
-                    old_state=oldstate,
-                    new_state=newstate,
-                )
-            )
+            events.send('node-connected', data=dict(
+                global_id=self.idurl.to_id(),
+                idurl=self.idurl,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
             listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             lg.info('remote node disconnected : %s' % self.idurl)
-            events.send(
-                'node-disconnected', data=dict(
-                    global_id=self.idurl.to_id(),
-                    idurl=self.idurl,
-                    old_state=oldstate,
-                    new_state=newstate,
-                )
-            )
+            events.send('node-disconnected', data=dict(
+                global_id=self.idurl.to_id(),
+                idurl=self.idurl,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
             listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
         if newstate == 'PING?' and oldstate != 'AT_STARTUP':
             listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
@@ -808,7 +804,7 @@ class OnlineStatus(automat.Automat):
         """
         to_be_remembered = True
         if self.latest_inbox_time:
-            if utime.get_sec1970() - self.latest_inbox_time < 5 * 60:
+            if utime.get_sec1970() - self.latest_inbox_time < 5*60:
                 to_be_remembered = False
         if to_be_remembered:
             ratings.remember_connected_time(self.idurl.to_bin())

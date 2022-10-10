@@ -211,7 +211,8 @@ def process_sessions(sessions_to_process=None):
             )
         # attenuation
         _ProcessSessionsTask = reactor.callLater(  # @UndefinedVariable
-            _ProcessSessionsDelay, process_sessions
+            _ProcessSessionsDelay,
+            process_sessions,
         )
 
 

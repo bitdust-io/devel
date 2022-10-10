@@ -81,20 +81,30 @@ def test_idrotate():
 def prepare():
     set_active_scenario('PREPARE')
     kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_1, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12 + [
-        'supplier-rotated',
-    ], 'service_supplier', 'ON')
+    kw.wait_service_state(
+        scenarios.SUPPLIERS_IDS_12 + [
+            'supplier-rotated',
+        ],
+        'service_supplier',
+        'ON',
+    )
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_customer', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_message_history', 'ON')
-    kw.wait_service_state(scenarios.BROKERS_IDS + [
-        'broker-rotated',
-    ], 'service_message_broker', 'ON')
+    kw.wait_service_state(
+        scenarios.BROKERS_IDS + [
+            'broker-rotated',
+        ],
+        'service_message_broker',
+        'ON',
+    )
     kw.config_set_v1('customer-1', 'services/employer/candidates', '')
-    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_1 + scenarios.BROKERS_IDS + [
-        'broker-rotated',
-    ] + scenarios.SUPPLIERS_IDS_12 + [
-        'supplier-rotated',
-    ])
+    kw.wait_packets_finished(
+        scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_1 + scenarios.BROKERS_IDS + [
+            'broker-rotated',
+        ] + scenarios.SUPPLIERS_IDS_12 + [
+            'supplier-rotated',
+        ],
+    )

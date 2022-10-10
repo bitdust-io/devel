@@ -20,7 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
@@ -51,33 +50,34 @@ import raid.eccmap
 
 #------------------------------------------------------------------------------
 
+
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix, localBackupsDir, threshold_control=None):
     try:
         if _Debug:
             with open('/tmp/raid.log', 'a') as logfile:
-                logfile.write(u'rebuild backupID=%r blockNum=%r eccMap=%r\n' % (backupID, blockNum, eccMap, ))
+                logfile.write(u'rebuild backupID=%r blockNum=%r eccMap=%r\n' % (
+                    backupID,
+                    blockNum,
+                    eccMap,
+                ))
 
         customer, _, localPath = backupID.rpartition(':')
         if '$' not in customer:
             customer = 'master$' + customer
         myeccmap = raid.eccmap.eccmap(eccMap)
         supplierCount = len(availableSuppliers)
-        missingData = [0] * supplierCount
-        missingParity = [0] * supplierCount
-        reconstructedData = [0] * supplierCount
-        reconstructedParity = [0] * supplierCount
+        missingData = [0]*supplierCount
+        missingParity = [0]*supplierCount
+        reconstructedData = [0]*supplierCount
+        reconstructedParity = [0]*supplierCount
         remoteData = list(remoteMatrix['D'])
         remoteParity = list(remoteMatrix['P'])
         localData = list(localMatrix['D'])
         localParity = list(localMatrix['P'])
-    
+
         def _build_raid_file_name(supplierNumber, dataOrParity):
-            return os.path.join(
-                localBackupsDir,
-                customer,
-                localPath,
-                str(blockNum) + '-' + str(supplierNumber) + '-' + dataOrParity)
-    
+            return os.path.join(localBackupsDir, customer, localPath, str(blockNum) + '-' + str(supplierNumber) + '-' + dataOrParity)
+
         # This builds a list of missing pieces.
         # The file is missing if value in the corresponding cell
         # in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0
@@ -174,7 +174,13 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
             with open('/tmp/raid.log', 'a') as logfile:
                 logfile.write(u'newData=%r\n' % newData)
 
-        return (newData, localData, localParity, reconstructedData, reconstructedParity, )
+        return (
+            newData,
+            localData,
+            localParity,
+            reconstructedData,
+            reconstructedParity,
+        )
 
     except:
         logs.lg.exc()

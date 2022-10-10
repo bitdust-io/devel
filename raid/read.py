@@ -98,8 +98,8 @@ def ReadBinaryFile(filename):
 
 def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
     readsize = 1  # vary from 1 byte to 4 bytes
-    raidfiles = [''] * listlen  # just need a list of this size
-    raidreads = [''] * listlen
+    raidfiles = ['']*listlen  # just need a list of this size
+    raidreads = ['']*listlen
     for filenum in range(listlen):
         try:
             raidfiles[filenum] = open(inlist[filenum], 'rb')
@@ -173,9 +173,7 @@ def raidread(
         myeccmap = raid.eccmap.eccmap(eccmapname)
         GoodFiles = [
             '',
-        ] * (
-            myeccmap.datasegments + myeccmap.paritysegments
-        )
+        ]*(myeccmap.datasegments + myeccmap.paritysegments)
         MakingProgress = 1
         while MakingProgress == 1:
             MakingProgress = 0

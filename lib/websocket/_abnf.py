@@ -263,7 +263,7 @@ class ABNF(object):
             _mask_key = mask_key[3] << 24 | mask_key[2] << 16 | mask_key[1] << 8 | mask_key[0]
 
             # We need data to be a multiple of four...
-            data += bytes(' ' * (4 - (len(data) % 4)), 'us-ascii')
+            data += bytes(' '*(4 - (len(data) % 4)), 'us-ascii')
             a = numpy.frombuffer(data, dtype='uint32')
             masked = numpy.bitwise_xor(a, [_mask_key]).astype('uint32')
             if len(data) > origlen:
@@ -399,7 +399,6 @@ class frame_buffer(object):
 
 
 class continuous_frame(object):
-
     def __init__(self, fire_cont_frame, skip_utf8_validation):
         self.fire_cont_frame = fire_cont_frame
         self.skip_utf8_validation = skip_utf8_validation

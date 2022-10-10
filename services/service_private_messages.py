@@ -113,24 +113,20 @@ class PrivateMessagesService(LocalService):
         from main import events
         from contacts import contactsdb
         if contactsdb.is_correspondent(evt.data['idurl']):
-            events.send(
-                'friend-connected', data=dict(
-                    idurl=evt.data['idurl'],
-                    global_id=evt.data['global_id'],
-                    old_state=evt.data['old_state'],
-                    new_state=evt.data['new_state'],
-                )
-            )
+            events.send('friend-connected', data=dict(
+                idurl=evt.data['idurl'],
+                global_id=evt.data['global_id'],
+                old_state=evt.data['old_state'],
+                new_state=evt.data['new_state'],
+            ))
 
     def _on_user_disconnected(self, evt):
         from main import events
         from contacts import contactsdb
         if contactsdb.is_correspondent(evt.data['idurl']):
-            events.send(
-                'friend-disconnected', data=dict(
-                    idurl=evt.data['idurl'],
-                    global_id=evt.data['global_id'],
-                    old_state=evt.data['old_state'],
-                    new_state=evt.data['new_state'],
-                )
-            )
+            events.send('friend-disconnected', data=dict(
+                idurl=evt.data['idurl'],
+                global_id=evt.data['global_id'],
+                old_state=evt.data['old_state'],
+                new_state=evt.data['new_state'],
+            ))

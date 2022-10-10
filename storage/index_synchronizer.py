@@ -489,10 +489,15 @@ class IndexSynchronizer(automat.Automat):
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
-            reactor.callLater(0, self.automat, 'index-file-received', (
-                newpacket,
-                supplier_revision,
-            ))  # @UndefinedVariable
+            reactor.callLater(
+                0,
+                self.automat,
+                'index-file-received',
+                (
+                    newpacket,
+                    supplier_revision,
+                ),
+            )  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d' % (newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
@@ -537,10 +542,15 @@ class IndexSynchronizer(automat.Automat):
             if online_status.isOffline(supplier_idurl):
                 continue
             pkt_out = p2p_service.SendRetreive(
-                ownerID=localID, creatorID=localID, packetID=packetID, remoteID=supplier_idurl, response_timeout=60 * 2, callbacks={
+                ownerID=localID,
+                creatorID=localID,
+                packetID=packetID,
+                remoteID=supplier_idurl,
+                response_timeout=60*2,
+                callbacks={
                     commands.Data(): self._on_supplier_response,
                     commands.Fail(): self._on_supplier_fail,
-                }
+                },
             )
             if pkt_out:
                 self.requesting_suppliers.add(supplier_idurl)

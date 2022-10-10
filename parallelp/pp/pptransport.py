@@ -57,12 +57,16 @@ except ImportError:
 class Transport(object):
 
     def send(self, msg):
-        raise NotImplemented("abstact function 'send' must be implemented "
-                             'in a subclass')
+        raise NotImplemented(
+            "abstact function 'send' must be implemented "
+            'in a subclass',
+        )
 
     def receive(self, preprocess=None):
-        raise NotImplemented("abstact function 'receive' must be implemented "
-                             'in a subclass')
+        raise NotImplemented(
+            "abstact function 'receive' must be implemented "
+            'in a subclass',
+        )
 
     def authenticate(self, secret):
         remote_version = self.receive()
@@ -123,8 +127,10 @@ class PipeTransport(Transport):
             self.r = r
             self.w = w
         else:
-            raise TypeError('Both arguments of PipeTransport constructor '
-                            'must be file objects')
+            raise TypeError(
+                'Both arguments of PipeTransport constructor '
+                'must be file objects',
+            )
 
     def send(self, msg):
         if not isinstance(msg, six.binary_type):

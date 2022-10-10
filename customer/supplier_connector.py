@@ -239,7 +239,7 @@ class SupplierConnector(automat.Automat):
             st = bpio.ReadTextFile(settings.SupplierServiceFilename(
                 idurl=self.supplier_idurl,
                 customer_idurl=self.customer_idurl,
-            )).strip()
+            ), ).strip()
         except:
             st = 'DISCONNECTED'
         automat.Automat.__init__(
@@ -290,14 +290,12 @@ class SupplierConnector(automat.Automat):
         if newstate == 'CONNECTED':
             if not self._supplier_connected_event_sent:
                 self._supplier_connected_event_sent = True
-                events.send(
-                    'supplier-connected', data=dict(
-                        supplier_idurl=self.supplier_idurl,
-                        customer_idurl=self.customer_idurl,
-                        needed_bytes=self.needed_bytes,
-                        key_id=self.key_id,
-                    )
-                )
+                events.send('supplier-connected', data=dict(
+                    supplier_idurl=self.supplier_idurl,
+                    customer_idurl=self.customer_idurl,
+                    needed_bytes=self.needed_bytes,
+                    key_id=self.key_id,
+                ))
         if newstate in [
             'DISCONNECTED',
             'NO_SERVICE',
@@ -339,7 +337,7 @@ class SupplierConnector(automat.Automat):
                 if known_ecc_map:
                     num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
             if num_suppliers > 0:
-                self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
+                self.needed_bytes = int(math.ceil(2.0*total_bytes_needed/float(num_suppliers)))
             else:
                 raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
                 # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))

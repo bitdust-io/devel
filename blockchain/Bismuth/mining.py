@@ -13,7 +13,9 @@ def bin_convert(string):
     return ''.join(format(ord(x), '8b').replace(' ', '0') for x in string)
 
 
-def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None):
+def check_block(
+    block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None
+):
     """
     Checks that the given block matches the mining algo.
 

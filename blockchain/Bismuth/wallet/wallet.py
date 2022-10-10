@@ -126,9 +126,13 @@ class Application(tornado.web.Application):
                 tornado.web.StaticFileHandler,
                 dict(path=static_path),
             ),
-            (r'/common/(.*)', tornado.web.StaticFileHandler, {
-                'path': common_path
-            }),
+            (
+                r'/common/(.*)',
+                tornado.web.StaticFileHandler,
+                {
+                    'path': common_path,
+                },
+            ),
         ]
         # Parse crystals dir, import and plug handlers.
         self.crystals_manager = CrystalManager(init=options.crystals)
@@ -237,7 +241,7 @@ class TransactionsHandler(BaseHandler):
             type = 'warning'  # Do not translate
             title = _('Please confirm this transaction')
             message = _(
-                'Check this is what you intended to do and hit the "confirm" button'
+                'Check this is what you intended to do and hit the "confirm" button',
             )
 
             if self.get_argument('data', '') == '' and self.bismuth.reject_empty_message_for(self.get_argument('recipient')):
@@ -289,7 +293,7 @@ class TransactionsHandler(BaseHandler):
             type = 'warning'  # Do not translate
             title = _('Please confirm this transaction')
             message = _(
-                'Check this is what you intended to do and hit the "confirm" button'
+                'Check this is what you intended to do and hit the "confirm" button',
             )
             # self.bismuth_vars['recipient'] operation data amount
             decoded = BismuthUtil.read_url(self.get_argument('url'))
@@ -332,7 +336,7 @@ class TransactionsHandler(BaseHandler):
             type = 'warning'  # Do not translate
             title = _('Please confirm this transaction')
             message = _(
-                'Check this is what you intended to do and hit the "confirm" button'
+                'Check this is what you intended to do and hit the "confirm" button',
             )
 
             self.bismuth_vars['params']['recipient'] = self.get_argument('recipient')
@@ -417,7 +421,7 @@ class TransactionsHandler(BaseHandler):
 
         else:
             message = _(
-                'There was an error submitting to the mempool, transaction was not sent.'
+                'There was an error submitting to the mempool, transaction was not sent.',
             )
             message += '<br />'
             message += ','.join(reply)
@@ -478,7 +482,7 @@ class TransactionsHandler(BaseHandler):
             self.message(
                 _('Error:'),
                 _(
-                    'There was an error submitting to the mempool, transaction was not sent.'
+                    'There was an error submitting to the mempool, transaction was not sent.',
                 ),
                 'warning',
             )
@@ -1029,11 +1033,13 @@ class CrystalsHandler(BaseHandler):
         available_crystals = self.application.crystals_manager.get_available_crystals()
         # crystal_names = [name.split('_')[1] for name in available_crystals.keys()]
         # crystals = {name.split('_')[1]: name in loaded_crystals for name in available_crystals}
-        crystals = {name.split('_')[1]: {
-            'active': name in loaded_crystals,
-            'fullname': name,
-            'about': available_crystals[name]['about'],
-        } for name in available_crystals}
+        crystals = {
+            name.split('_')[1]: {
+                'active': name in loaded_crystals,
+                'fullname': name,
+                'about': available_crystals[name]['about'],
+            } for name in available_crystals
+        }
         if post:
             new_actives = {data['fullname']: bool(self.get_argument('active_' + data['fullname'], False)) for data in crystals.values()}
             # print("New actives", new_actives)
@@ -1047,11 +1053,13 @@ class CrystalsHandler(BaseHandler):
                     self.application.add_handlers(r'.*', handler)  # match any host
             loaded_crystals = self.application.crystals_manager.get_loaded_crystals()
             self.update_crystals()
-            crystals = {name.split('_')[1]: {
-                'active': name in loaded_crystals,
-                'fullname': name,
-                'about': available_crystals[name]['about'],
-            } for name in available_crystals}
+            crystals = {
+                name.split('_')[1]: {
+                    'active': name in loaded_crystals,
+                    'fullname': name,
+                    'about': available_crystals[name]['about'],
+                } for name in available_crystals
+            }
 
         self.render('crystals_list.html', bismuth=self.bismuth_vars, crystals=crystals)
 

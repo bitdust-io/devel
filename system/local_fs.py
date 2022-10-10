@@ -215,7 +215,7 @@ def RoundupFile(filename, stepsize):
     if mod > 0:
         increase = stepsize - mod
         fil = open(filename, 'a')
-        fil.write(u' ' * increase)
+        fil.write(u' '*increase)
         fil.flush()
         os.fsync(fil)
         fil.close()

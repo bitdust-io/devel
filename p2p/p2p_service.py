@@ -191,12 +191,7 @@ def inbox(newpacket, info, status, error_message):
 
 def outbox(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.outbox [%s:%s] to %s with route %r' % (
-            outpacket.Command,
-            outpacket.PacketID,
-            nameurl.GetName(outpacket.RemoteID),
-            route,
-        ))
+        lg.out(_DebugLevel, 'p2p_service.outbox [%s:%s] to %s with route %r' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(outpacket.RemoteID), route))
     return None
 
 
@@ -359,11 +354,7 @@ def Identity(newpacket, info):
 def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
     packet_id = 'identity:%s' % packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendIdentity to %s wide=%s packet_id=%r' % (
-            nameurl.GetName(remote_idurl),
-            wide,
-            packet_id,
-        ))
+        lg.out(_DebugLevel, 'p2p_service.SendIdentity to %s wide=%s packet_id=%r' % (nameurl.GetName(remote_idurl), wide, packet_id))
     result = signed.Packet(
         Command=commands.Identity(),
         OwnerID=my_id.getIDURL(),
@@ -399,13 +390,7 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
     if packet_id is None:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %d bytes pid:%s timeout:%r' % (
-            service_name,
-            remote_idurl,
-            len(service_info_raw),
-            packet_id,
-            timeout,
-        ))
+        lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %d bytes pid:%s timeout:%r' % (service_name, remote_idurl, len(service_info_raw), packet_id, timeout))
     result = signed.Packet(
         Command=commands.RequestService(),
         OwnerID=my_id.getIDURL(),
@@ -425,11 +410,7 @@ def CancelService(request, info):
         except:
             lg.exc()
             service_info = {}
-        lg.out(_DebugLevel, 'p2p_service.CancelService %s with "%s" in %d bytes' % (
-            request.PacketID,
-            service_info.get('name', 'unknown service name'),
-            len(request.Payload),
-        ))
+        lg.out(_DebugLevel, 'p2p_service.CancelService %s with "%s" in %d bytes' % (request.PacketID, service_info.get('name', 'unknown service name'), len(request.Payload)))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (request.RemoteID, request.OwnerID, request.CreatorID))
 
 
@@ -509,12 +490,7 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
         'items': query_items,
     })
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendListFiles %r to %r of customer %r with query : %r' % (
-            PacketID,
-            nameurl.GetName(RemoteID),
-            nameurl.GetName(customer_idurl),
-            query_items,
-        ))
+        lg.out(_DebugLevel, 'p2p_service.SendListFiles %r to %r of customer %r with query : %r' % (PacketID, nameurl.GetName(RemoteID), nameurl.GetName(customer_idurl), query_items))
     result = signed.Packet(
         Command=commands.ListFiles(),
         OwnerID=MyID,
@@ -535,13 +511,7 @@ def Files(request, info):
     A directory list came in from some supplier or another customer.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s] from %s by %s|%s' % (
-            len(request.Payload),
-            request.PacketID,
-            nameurl.GetName(request.RemoteID),
-            nameurl.GetName(request.OwnerID),
-            nameurl.GetName(request.CreatorID),
-        ))
+        lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s] from %s by %s|%s' % (len(request.Payload), request.PacketID, nameurl.GetName(request.RemoteID), nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID)))
 
 
 def SendFiles(
@@ -814,10 +784,7 @@ def Coin(request, info):
         except:
             lg.exc()
             input_coins = []
-        lg.out(_DebugLevel, 'p2p_service.Coin from %s with %d coins' % (
-            nameurl.GetName(info.sender_idurl),
-            len(input_coins),
-        ))
+        lg.out(_DebugLevel, 'p2p_service.Coin from %s with %d coins' % (nameurl.GetName(info.sender_idurl), len(input_coins)))
 
 
 def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
@@ -863,12 +830,7 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
 def Key(request, info):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Key %d bytes in [%s]' % (len(request.Payload), request.PacketID))
-        lg.out(_DebugLevel, '  from senderID=%s to remoteID=%s  ownerID=%s  creatorID=%s  ' % (
-            info.sender_idurl,
-            request.RemoteID,
-            request.OwnerID,
-            request.CreatorID,
-        ))
+        lg.out(_DebugLevel, '  from senderID=%s to remoteID=%s  ownerID=%s  creatorID=%s  ' % (info.sender_idurl, request.RemoteID, request.OwnerID, request.CreatorID))
 
 
 def SendKey(
@@ -930,11 +892,7 @@ def Event(request, info):
         except:
             lg.exc()
             return
-        lg.out(_DebugLevel, 'p2p_service.Event %s from %s with %d bytes in json' % (
-            e_json['event_id'],
-            info.sender_idurl,
-            len(request.Payload),
-        ))
+        lg.out(_DebugLevel, 'p2p_service.Event %s from %s with %d bytes in json' % (e_json['event_id'], info.sender_idurl, len(request.Payload)))
 
 
 def SendEvent(remote_idurl, event_id, payload=None, producer_id=None, consumer_id=None, queue_id=None, message_id=None, created=None, packet_id=None, wide=False, callbacks={}, response_timeout=5):
@@ -982,10 +940,7 @@ def SendMessage(remote_idurl, packet_id=None, payload=None, wide=True, callbacks
     if packet_id is None:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendMessage to %s with packet_id=%s' % (
-            nameurl.GetName(remote_idurl),
-            packet_id,
-        ))
+        lg.out(_DebugLevel, 'p2p_service.SendMessage to %s with packet_id=%s' % (nameurl.GetName(remote_idurl), packet_id))
     outpacket = signed.Packet(
         Command=commands.Message(),
         OwnerID=my_id.getIDURL(),

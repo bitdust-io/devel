@@ -457,9 +457,7 @@ def _unpack_list(src):
     if len(res) < length:
         res += [
             u'',
-        ] * (
-            length - len(res)
-        )
+        ]*(length - len(res))
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
@@ -1279,8 +1277,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
     q = [
         'bitdustnode.exe',
         'BitDustNode.exe',
-        'BitDustConsole.exe',
-        # 'bitdust.py',
+        'BitDustConsole.exe',  # 'bitdust.py',
     ]
     if os.environ.get('BITDUST_IN_DOCKER') == '1':
         q.extend([

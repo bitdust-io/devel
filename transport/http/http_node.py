@@ -212,7 +212,6 @@ class TransportHTTPClientFactory(HTTPClientFactory):
 
 
 class TransportHTTPProxyClientFactory(HTTPClientFactory):
-
     def setURL(self, url):
         HTTPClientFactory.setURL(self, url)
         self.path = url
@@ -222,7 +221,6 @@ class TransportHTTPProxyClientFactory(HTTPClientFactory):
 
 
 class Receiver(object):
-
     def loop(self):
         global _ReceivingLoop
         global _Contacts
@@ -288,18 +286,22 @@ class Receiver(object):
 
         if net_misc.proxy_is_on():
             f = TransportHTTPProxyClientFactory(
-                url, method='POST', headers={
+                url,
+                method='POST',
+                headers={
                     'User-Agent': 'BitDust transport_http',
                     'idurl': my_id.getIDURL(),
-                }
+                },
             )
             conn = reactor.connectTCP(net_misc.get_proxy_host(), int(net_misc.get_proxy_port()), f)
         else:
             f = TransportHTTPClientFactory(
-                url, method='POST', headers={
+                url,
+                method='POST',
+                headers={
                     'User-Agent': 'BitDust transport_http',
                     'idurl': my_id.getIDURL(),
-                }
+                },
             )
             conn = reactor.connectTCP(host, int(port), f)
 
@@ -324,7 +326,7 @@ def increase_receiving_delay(idurl):
     if idurl not in _PingDelayDict:
         _PingDelayDict[idurl] = _CurrentDelay
     d = _PingDelayDict[idurl]
-    if d < settings.DefaultSendTimeOutHTTP() / 2:
+    if d < settings.DefaultSendTimeOutHTTP()/2:
         lg.out(14, 'http_node.increase_receiving_delay   %s for %s' % (str(d), idurl))
         _PingDelayDict[idurl] *= 2
 
@@ -370,7 +372,7 @@ def push_contact(idurl):
     http_contact = ident.getProtoContact('http')
     if http_contact is None:
         if _Debug:
-            lg.out(_DebugLevel * 2, 'http_node.add_contact SKIP "%s" : no http contacts found in identity' % idurl)
+            lg.out(_DebugLevel*2, 'http_node.add_contact SKIP "%s" : no http contacts found in identity' % idurl)
         return None
     _, host, port, _ = nameurl.UrlParse(http_contact)
     new_item = False

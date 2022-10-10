@@ -98,7 +98,6 @@ class FileDown(automat.Automat):
     """
     This class implements all the functionality of ``file_down()`` state machine.
     """
-
     def __init__(self, parent, callOnReceived, creatorID, packetID, ownerID, remoteID, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `file_down()` state machine.
@@ -119,17 +118,12 @@ class FileDown(automat.Automat):
         self.remoteID = remoteID
         self.requestTime = None
         self.fileReceivedTime = None
-        self.requestTimeout = max(30, 2 * int(settings.getBackupBlockSize() / settings.SendingSpeedLimit()))
+        self.requestTimeout = max(30, 2*int(settings.getBackupBlockSize()/settings.SendingSpeedLimit()))
         self.result = ''
         self.created = utime.get_sec1970()
         super(FileDown, self).__init__(
-            name='file_down_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
+            name='file_down_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions,
+            publish_events=publish_events, **kwargs
         )
 
     def A(self, event, *args, **kwargs):
@@ -252,10 +246,8 @@ class FileDown(automat.Automat):
             self.remoteID,
             callbacks={
                 commands.Data(): self.parent.OnDataReceived,
-                commands.Fail(): self.parent.OnDataReceived,
-                # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
-            },
-            # response_timeout=10,
+                commands.Fail(): self.parent.OnDataReceived,  # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
+            },  # response_timeout=10,
         )
         self.requestTime = time.time()
 

@@ -256,13 +256,8 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         backup_matrix.SaveLatestRawListFiles(supplier_idurl, list_files_raw)
     if _Debug:
         lg.args(
-            _DebugLevel,
-            supplier=nameurl.GetName(supplier_idurl),
-            customer=nameurl.GetName(customer_idurl),
-            backups2remove=len(backups2remove),
-            paths2remove=len(paths2remove),
-            files_changed=remote_files_changed,
-            missed_backups=len(missed_backups),
+            _DebugLevel, supplier=nameurl.GetName(supplier_idurl), customer=nameurl.GetName(customer_idurl), backups2remove=len(backups2remove), paths2remove=len(paths2remove), files_changed=remote_files_changed,
+            missed_backups=len(missed_backups)
         )
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
@@ -489,7 +484,6 @@ class Task():
     As soon as task get executed it fires the result call back and removed from the list.
     When task executes a new backup job gets created.
     """
-
     def __init__(self, pathID, localPath=None, keyID=None):
         self.number = NewTaskNumber()  # index number for the task
         self.created = time.time()
@@ -510,20 +504,19 @@ class Task():
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)
-        events.send(
-            'backup-task-created',
-            data=dict(
-                number=self.number,
-                created=self.created,
-                backup_id=self.backupID,
-                key_id=self.keyID,
-                path_id=self.pathID,
-                customer_id=self.customerGlobID,
-                path=self.remotePath,
-                local_path=self.localPath,
-                remote_path=self.fullGlobPath,
-            )
-        )
+        # yapf: disable
+        events.send('backup-task-created', data=dict(
+            number=self.number,
+            created=self.created,
+            backup_id=self.backupID,
+            key_id=self.keyID,
+            path_id=self.pathID,
+            customer_id=self.customerGlobID,
+            path=self.remotePath,
+            local_path=self.localPath,
+            remote_path=self.fullGlobPath,
+        ))
+        # yapf: enable
 
     def destroy(self, message=None):
         if _Debug:
@@ -531,21 +524,20 @@ class Task():
         if self.result_defer and not self.result_defer.called:
             self.result_defer.cancel()
             self.result_defer = None
-        events.send(
-            'backup-task-finished',
-            data=dict(
-                number=self.number,
-                created=self.created,
-                backup_id=self.backupID,
-                key_id=self.keyID,
-                path_id=self.pathID,
-                customer_id=self.customerGlobID,
-                path=self.remotePath,
-                local_path=self.localPath,
-                remote_path=self.fullGlobPath,
-                message=message,
-            )
-        )
+        # yapf: disable
+        events.send('backup-task-finished', data=dict(
+            number=self.number,
+            created=self.created,
+            backup_id=self.backupID,
+            key_id=self.keyID,
+            path_id=self.pathID,
+            customer_id=self.customerGlobID,
+            path=self.remotePath,
+            local_path=self.localPath,
+            remote_path=self.fullGlobPath,
+            message=message,
+        ))
+        # yapf: enable
 
     def set_path_id(self, pathID):
         parts = global_id.NormalizeGlobalID(pathID)
@@ -719,12 +711,10 @@ def RunTask():
     T = tasks().pop(0)
     message = T.run()
     if message:
-        events.send(
-            'backup-task-failed', data=dict(
-                path_id=T.pathID,
-                message=message,
-            )
-        )
+        events.send('backup-task-failed', data=dict(
+            path_id=T.pathID,
+            message=message,
+        ))
         T.result_defer.errback((T.pathID, message))
     else:
         #     events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))

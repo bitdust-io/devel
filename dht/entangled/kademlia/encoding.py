@@ -189,10 +189,12 @@ class Bencode(Encoding):
         try:
             ret = _e()
             if _Debug:
-                print('[DHT ENCODING]         encode  %r  into  %d bytes' % (
-                    type(data),
-                    len(ret),
-                ))
+                print(
+                    '[DHT ENCODING]         encode  %r  into  %d bytes' % (
+                        type(data),
+                        len(ret),
+                    )
+                )
             return ret
         except Exception as exc:
             if _Debug:
@@ -214,10 +216,12 @@ class Bencode(Encoding):
         try:
             ret, endPos = self._decodeRecursive(data, encoding=encoding)
             if _Debug:
-                print('[DHT ENCODING]         decode %r  endPos=%d' % (
-                    type(ret),
-                    endPos,
-                ))
+                print(
+                    '[DHT ENCODING]         decode %r  endPos=%d' % (
+                        type(ret),
+                        endPos,
+                    )
+                )
             return ret
         except Exception as exc:
             if _Debug:

@@ -95,7 +95,6 @@ def conf():
 
 
 class BaseConfig(object):
-
     def __init__(self, configDir):
         self.configDir = configDir
 
@@ -341,7 +340,6 @@ class DefaultsConfig(BaseConfig):
 
 
 class NotifiableConfig(DefaultsConfig):
-
     def __init__(self, configDir):
         super(NotifiableConfig, self).__init__(configDir)
         self.callbacks = {}
@@ -384,7 +382,6 @@ class NotifiableConfig(DefaultsConfig):
 
 
 class FixedTypesConfig(NotifiableConfig):
-
     def __init__(self, configDir):
         super(FixedTypesConfig, self).__init__(configDir)
         try:

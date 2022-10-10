@@ -98,7 +98,7 @@ def run():
     #interval = 5
     reactor.callLater(interval, start)  # @UndefinedVariable
     if _Debug:
-        lg.out(_DebugLevel, 'ratings.run will start after %s minutes' % str(interval / 60.0))
+        lg.out(_DebugLevel, 'ratings.run will start after %s minutes' % str(interval/60.0))
 
 
 def start():
@@ -106,7 +106,7 @@ def start():
     _LoopCountRatingsTask = task.LoopingCall(rate_all_users)
     _LoopCountRatingsTask.start(settings.DefaultAlivePacketTimeOut())
     if _Debug:
-        lg.out(_DebugLevel, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut() / 60.0))
+        lg.out(_DebugLevel, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut()/60.0))
 
 
 def stop():
@@ -221,8 +221,8 @@ def rate_all_users():
             continue
         isalive = online_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
-        month_percent = 100.0 * float(malive) / float(mall)
-        total_percent = 100.0 * float(talive) / float(tall)
+        month_percent = 100.0*float(malive)/float(mall)
+        total_percent = 100.0*float(talive)/float(tall)
         if _Debug:
             lg.out(_DebugLevel, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
                 month_percent,
@@ -302,7 +302,7 @@ def total(idurl):
 def month_percent(idurl):
     try:
         r = month(idurl)
-        return round(100.0 * float(r['alive']) / float(r['all']), 2)
+        return round(100.0*float(r['alive'])/float(r['all']), 2)
     except:
         return 0.0
 
@@ -310,7 +310,7 @@ def month_percent(idurl):
 def total_percent(idurl):
     try:
         r = total(idurl)
-        return round(100.0 * float(r['alive']) / float(r['all']), 2)
+        return round(100.0*float(r['alive'])/float(r['all']), 2)
     except:
         return 0.0
 

@@ -198,7 +198,9 @@ def worker(host, port, node):
                         if int(received_block_height) == node.hdd_block:
                             node.logger.app_log.info(f'Outbound: We have the same block as {peer_ip} ({received_block_height}), hash will be verified')
                         else:
-                            node.logger.app_log.warning(f'Outbound: We have a lower block ({node.hdd_block}) than {peer_ip} ({received_block_height}), hash will be verified')
+                            node.logger.app_log.warning(
+                                f'Outbound: We have a lower block ({node.hdd_block}) than {peer_ip} ({received_block_height}), hash will be verified'
+                            )
 
                         node.logger.app_log.info(f'Outbound: block_hash to send: {node.hdd_hash}')
                         send(s, node.hdd_hash)
@@ -277,7 +279,9 @@ def worker(host, port, node):
                             # receive theirs
                     else:
                         send(s, 'blocksrj')
-                        node.logger.app_log.warning(f'Inbound: Distant peer {peer_ip} is at {received_block_height}, should be at least {max(block_req,node.last_block+1)}')
+                        node.logger.app_log.warning(
+                            f'Inbound: Distant peer {peer_ip} is at {received_block_height}, should be at least {max(block_req,node.last_block+1)}'
+                        )
 
                 sendsync(s, peer_ip, 'Block found', node)
 

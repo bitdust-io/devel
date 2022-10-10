@@ -107,7 +107,6 @@ class IdServer(automat.Automat):
     This class implements all the functionality of the ``id_server()`` state
     machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -307,7 +306,6 @@ class IdServer(automat.Automat):
 
 
 class IdServerProtocol(basic.Int32StringReceiver):
-
     def __init__(self):
         self.fpath = None  # string with path/filename
         self.fin = None  # integer file descriptor like os.open() returns
@@ -378,7 +376,6 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
 
 class IdServerFactory(ServerFactory):
-
     def buildProtocol(self, addr):
         p = IdServerProtocol()
         p.factory = self
@@ -389,7 +386,6 @@ class IdServerFactory(ServerFactory):
 
 
 class WebMainPage(resource.Resource):
-
     def render_POST(self, request):
         inp = BytesIO(request.content.read())
         fin, fpath = tmpfile.make('idsrv', extension='.xml')
@@ -416,7 +412,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 <div id="content">
 <h1 align=center>Identities on %(hostname)s</h1>
 ''' % {
-            'hostname': strng.to_text(A().hostname)
+            'hostname': strng.to_text(A().hostname),
         }
         src += '<table cellspacing=0 width=100% border=0><tr valign=top>\n'
         src += '<td width=152px nowrap>\n'
@@ -462,7 +458,6 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 
 
 class WebRoot(resource.Resource):
-
     def getChild(self, path, request):
         if not path:
             return self
@@ -502,7 +497,7 @@ def main():
         'before',
         'shutdown',  # @UndefinedVariable
         A().automat,
-        'shutdown'
+        'shutdown',
     )
     reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
     reactor.callLater(0, A, 'start')  # @UndefinedVariable

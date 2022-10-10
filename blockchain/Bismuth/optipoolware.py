@@ -252,11 +252,14 @@ def payout(payout_threshold, myfee, othfee):
             print('Encoded Signature: {}'.format(signature_enc.decode('utf-8')))
 
             verifier = PKCS1_v1_5.new(key)
-            if verifier.verify(h, signature) == True:
+            if verifier.verify(h, signature) ==True:
                 print('The signature is valid, proceeding to send transaction')
                 txid = signature_enc[:56]
                 mytxid = txid.decode('utf-8')
-                tx_submit = (str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), str(keep), str(openfield))  #float kept for compatibility
+                tx_submit = (
+                    str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode('utf-8')),
+                    str(public_key_hashed.decode('utf-8')), str(keep), str(openfield)
+                )  #float kept for compatibility
 
                 t = socks.socksocket()
                 t.connect((node_ip_conf, int(port)))  # connect to local node
@@ -583,13 +586,18 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         app_log.warning('prepare empty block and clear data')
 
                         for dbdata in result:
-                            transaction = (str(dbdata[0]), str(dbdata[1][:56]), str(dbdata[2][:56]), '%.8f' % float(dbdata[3]), str(dbdata[4]), str(dbdata[5]), str(dbdata[6]), str(dbdata[7]))  # create tuple
+                            transaction = (
+                                str(dbdata[0]), str(dbdata[1][:56]), str(dbdata[2][:56]), '%.8f' % float(dbdata[3]), str(dbdata[4]), str(dbdata[5]),
+                                str(dbdata[6]), str(dbdata[7])
+                            )  # create tuple
                             block_send.append(transaction)  # append tuple to list for each run
                             removal_signature.append(str(dbdata[4]))  # for removal after successful mining
 
                         # claim reward
                         transaction_reward = tuple
-                        transaction_reward = (str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce))  # only this part is signed!
+                        transaction_reward = (
+                            str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce)
+                        )  # only this part is signed!
                         print('transaction_reward', transaction_reward)
 
                         h = SHA.new(str(transaction_reward).encode('utf-8'))
@@ -597,10 +605,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         signature = signer.sign(h)
                         signature_enc = base64.b64encode(signature)
 
-                        if signer.verify(h, signature) == True:
+                        if signer.verify(h, signature) ==True:
                             app_log.warning('Signature valid')
 
-                            block_send.append((str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), '0', str(nonce)))  # mining reward tx
+                            block_send.append((
+                                str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')),
+                                str(public_key_hashed.decode('utf-8')), '0', str(nonce)
+                            ))  # mining reward tx
                             app_log.warning('Block to send: {}'.format(block_send))
 
                             if not any(isinstance(el, list) for el in block_send):  # if it's not a list of lists (only the mining tx and no others)
@@ -671,7 +682,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
                             timestamp = '%.2f' % time.time()
 
-                            s.execute('INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)', (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname))
+                            s.execute(
+                                'INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)',
+                                (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname)
+                            )
                             shares.commit()
 
                         else:

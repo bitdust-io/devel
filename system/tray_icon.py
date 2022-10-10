@@ -133,7 +133,6 @@ def init(icons_path, icons_files=None):
         return item
 
     class MyTaskBarIcon(wx.TaskBarIcon):
-
         def __init__(self, icons_path, current_icon_name=None):
             super(MyTaskBarIcon, self).__init__()
             self.icons_path = icons_path
@@ -196,7 +195,6 @@ def init(icons_path, icons_files=None):
             self.RemoveIcon()
 
     class MyApp(wx.App):
-
         def __init__(self, icons_path):
             self.icons_path = icons_path
             wx.App.__init__(self, False)

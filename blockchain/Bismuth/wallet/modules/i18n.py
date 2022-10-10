@@ -76,11 +76,11 @@ def get_dt_language(_):
     DT_LANGUAGE += 'search: "{}",\n'.format(_('DT:Search&nbsp;...'))
     DT_LANGUAGE += 'lengthMenu: "{}",\n'.format(_('DT:Display _MENU_ elements'))
     DT_LANGUAGE += 'info: "{}",\n'.format(
-        _('DT:Display element _START_ to _END_ from _TOTAL_ elements')
+        _('DT:Display element _START_ to _END_ from _TOTAL_ elements'),
     )
     DT_LANGUAGE += 'infoEmpty: "{}",\n'.format(_('DT:Nothing to display'))
     DT_LANGUAGE += 'infoFiltered: "{}",\n'.format(
-        _('DT:filtered from _MAX_ total elements')
+        _('DT:filtered from _MAX_ total elements'),
     )
     DT_LANGUAGE += 'infoPostFix: "{}",\n'.format('')
     DT_LANGUAGE += 'loadingRecords: "{}",\n'.format(_('DT:Loading...'))

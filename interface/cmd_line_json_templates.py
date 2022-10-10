@@ -64,10 +64,14 @@ TPL_BACKUPS_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{global_id}
 TPL_BACKUPS_LIST_IDS = tpl_4_items.format(tpl_status, tpl_execution, ls('{backup_id} {size} {path}\n'), tpl_errors)
 
 TPL_BACKUPS_RUNNING_LIST = tpl_5_items.format(
-    tpl_status, tpl_execution, '{.section result}\n%s\n\n%s{.end}' % (
+    tpl_status,
+    tpl_execution,
+    '{.section result}\n%s\n\n%s{.end}' % (
         ls('{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n', tag='running'),
         ls('{id}: {path_id} from {local_path} created at {created}\n', tag='pending'),
-    ), tpl_message, tpl_errors
+    ),
+    tpl_message,
+    tpl_errors,
 )
 
 TPL_BACKUPS_TASKS_LIST = tpl_5_items.format(tpl_status, tpl_execution, ls('{id}: {path_id} from {local_path} created at {created}\n'), tpl_message, tpl_errors)
@@ -97,7 +101,8 @@ TPL_CUSTOMERS = tpl_4_items.format(tpl_status, tpl_execution, ls('{position}: {i
 #------------------------------------------------------------------------------
 
 TPL_STORAGE = tpl_4_items.format(
-    tpl_status, tpl_execution,
+    tpl_status,
+    tpl_execution,
     ls(
         """{.section consumed}consumed:
     suppliers: {suppliers_num}
@@ -119,8 +124,9 @@ TPL_STORAGE = tpl_4_items.format(
       buffered files: {backups} ({backups_str})
       temporary files: {temp} ({temp_str})
       customers files: {customers} ({customers_str})
-{.end}"""
-    ), tpl_errors
+{.end}""",
+    ),
+    tpl_errors,
 )
 
 #------------------------------------------------------------------------------
@@ -132,13 +138,16 @@ TPL_AUTOMATS = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {id}({
 TPL_SERVICES = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {name}({state}) {enabled_label}, {num_depends} depends\n'), tpl_errors)
 
 TPL_SERVICE_INFO = tpl_4_items.format(
-    tpl_status, tpl_execution, ls("""ID: {index}
+    tpl_status,
+    tpl_execution,
+    ls("""ID: {index}
 name: {name}
 state: {state}
 enabled: {enabled}
 dependent on: {.section depends}{.repeated section @}{@}{.alternates with}, {.end}{.end}
 config path: {config_path}
-"""), tpl_errors
+"""),
+    tpl_errors,
 )
 
 #------------------------------------------------------------------------------

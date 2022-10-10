@@ -56,5 +56,5 @@ write_setup_py(
         'Topic :: System :: Filesystems',
         'Topic :: System :: System Shells',
         'Topic :: Utilities',
-    ]
+    ],
 )

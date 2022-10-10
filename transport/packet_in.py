@@ -262,13 +262,7 @@ def handle(newpacket, info):
         #     info.proto, info.host, newpacket.Serialize()))
     if not is_signature_valid:
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                PacketID=newpacket.PacketID,
-                OwnerID=newpacket.OwnerID,
-                CreatorID=newpacket.CreatorID,
-                RemoteID=newpacket.RemoteID,
-            )
+            lg.args(_DebugLevel, PacketID=newpacket.PacketID, OwnerID=newpacket.OwnerID, CreatorID=newpacket.CreatorID, RemoteID=newpacket.RemoteID)
         lg.warn('signature is not valid for %r from %r|%r to %r' % (newpacket, newpacket.OwnerID, newpacket.CreatorID, newpacket.RemoteID))
         return None
     try:
@@ -296,7 +290,7 @@ def handle(newpacket, info):
                 '                \033[1;49;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
                 (newpacket.Command, newpacket.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID), info.transfer_id),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
     else:
         if _PacketLogFileEnabled:
@@ -305,19 +299,21 @@ def handle(newpacket, info):
                 '                \033[0;49;93mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
                 (newpacket.Command, newpacket.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID), info.transfer_id),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
     if _Debug and False:
-        history().append({
-            'time': newpacket.Date,
-            'command': newpacket.Command,
-            'packet_id': newpacket.PacketID,
-            'creator_id': newpacket.CreatorID,
-            'owner_id': newpacket.OwnerID,
-            'remote_id': newpacket.RemoteID,
-            'payload': len(newpacket.Payload),
-            'address': '%s://%s' % (info.proto, info.host),
-        })
+        history().append(
+            {
+                'time': newpacket.Date,
+                'command': newpacket.Command,
+                'packet_id': newpacket.PacketID,
+                'creator_id': newpacket.CreatorID,
+                'owner_id': newpacket.OwnerID,
+                'remote_id': newpacket.RemoteID,
+                'payload': len(newpacket.Payload),
+                'address': '%s://%s' % (info.proto, info.host),
+            }
+        )
         if len(history()) > 100:
             history().pop(0)
     return handled
@@ -331,7 +327,6 @@ class PacketIn(automat.Automat):
     This class implements all the functionality of the ``packet_in()`` state
     machine.
     """
-
     def __init__(self, transfer_id):
         self.transfer_id = transfer_id
         self.time = None
@@ -452,10 +447,10 @@ class PacketIn(automat.Automat):
         self.proto, self.host, self.sender_idurl, self.filename, self.size = args[0]
         self.time = time.time()
         # 300  # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
-        if self.size < 1024 * 10:
+        if self.size < 1024*10:
             self.timeout = 10
-        elif self.size > 1024 * 1024:
-            self.timeout = int(self.size / float(settings.SendingSpeedLimit()))
+        elif self.size > 1024*1024:
+            self.timeout = int(self.size/float(settings.SendingSpeedLimit()))
         else:
             self.timeout = 300
         if not self.sender_idurl:

@@ -109,7 +109,8 @@ def process_streams():
     )
     # attenuation
     _ProcessStreamsTask = reactor.callLater(  # @UndefinedVariable
-        _ProcessStreamsDelay, process_streams
+        _ProcessStreamsDelay,
+        process_streams,
     )
 
 
@@ -164,7 +165,7 @@ def find_stream(file_id=None, transfer_id=None):
 def make_stream_id():
     global _StreamCounter
     _StreamCounter += 1
-    return random.randint(10, 99) * 1000000 + random.randint(10, 99) * 10000 + _StreamCounter % 10000
+    return random.randint(10, 99)*1000000 + random.randint(10, 99)*10000 + _StreamCounter % 10000
 
 
 def make_file_id():
@@ -172,7 +173,7 @@ def make_file_id():
     Generate a unique file ID for OutboxFile.
     """
     global _LastFileID
-    newid = int(str(int(time.time() * 100.0))[4:])
+    newid = int(str(int(time.time()*100.0))[4:])
     if _LastFileID is None:
         _LastFileID = newid
     elif _LastFileID >= newid:
@@ -186,7 +187,6 @@ def make_file_id():
 
 
 class TCPFileStream():
-
     def __init__(self, connection):
         self.stream_id = make_stream_id()  # not used at the moment, use file_id instead
         self.connection = connection
@@ -233,7 +233,7 @@ class TCPFileStream():
         inp_data = inp.read()
         inp.close()
         if file_id not in self.inboxFiles:
-            if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
+            if len(self.inboxFiles) >= 2*MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop
                 # that session!
                 lg.warn('too many incoming files, close connection %s' % str(self.connection))
@@ -259,7 +259,7 @@ class TCPFileStream():
             return
         self.outboxFiles[file_id].ok_received = True
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id)
+            lg.args(_DebugLevel*2, file_id)
         if not self.outboxFiles[file_id].registration:
             self.outbox_file_done(file_id, 'finished')
 
@@ -360,7 +360,7 @@ class TCPFileStream():
 
     def inbox_file_done(self, file_id, status, error_message=None):
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, status, error_message)
+            lg.args(_DebugLevel*2, file_id, status, error_message)
         if file_id not in self.inboxFiles:
             lg.warn('file_id=%r not exist' % file_id)
             return
@@ -376,7 +376,7 @@ class TCPFileStream():
 
     def outbox_file_done(self, file_id, status, error_message=None):
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, status, error_message)
+            lg.args(_DebugLevel*2, file_id, status, error_message)
         if file_id not in self.outboxFiles:
             lg.warn('file_id=%r not exist' % file_id)
             return
@@ -398,7 +398,6 @@ class TCPFileStream():
 
 
 class InboxFile():
-
     def __init__(self, stream, file_id, file_size):
         self.typ = 'tcp-in'
         self.transfer_id = None
@@ -410,7 +409,7 @@ class InboxFile():
         self.bytes_received = 0
         self.started = time.time()
         self.last_block_time = time.time()
-        self.timeout = max(int(self.size / settings.SendingSpeedLimit()), 3)
+        self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 3)
         if _Debug:
             lg.out(_DebugLevel, '<<<TCP-IN %s with %d bytes write to %s' % (self.file_id, self.size, self.filename))
 
@@ -442,7 +441,6 @@ class InboxFile():
 
 
 class OutboxFile():
-
     def __init__(self, stream, filename, file_id, filesize, description='', result_defer=None, keep_alive=True):
         self.typ = 'tcp-out'
         self.transfer_id = None
@@ -458,7 +456,7 @@ class OutboxFile():
         self.bytes_sent = 0
         self.bytes_out = 0
         self.started = time.time()
-        self.timeout = max(int(self.size / settings.SendingSpeedLimit()), 6)
+        self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 6)
         self.fout = open(self.filename, 'rb')
         if _Debug:
             lg.out(_DebugLevel, '>>>TCP-OUT %s with %d bytes reading from %s' % (self.file_id, self.size, self.filename))
@@ -501,7 +499,7 @@ class OutboxFile():
             self.stream.outbox_file_done(self.file_id, 'finished')
         else:
             if _Debug:
-                lg.args(_DebugLevel * 2, self.file_id)
+                lg.args(_DebugLevel*2, self.file_id)
 
     def transfer_failed(self, err):
         try:
@@ -557,7 +555,7 @@ class MultipleFilesSender:
         deferred = defer.Deferred()
         self.active_files[file_id] = (deferred, file_object, writer, transform)
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, file_object, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, file_id, file_object, [fid for fid in self.active_files.keys()])
         if not self.consumer.producerPaused:
             self.resumeProducing()
         return deferred
@@ -572,13 +570,13 @@ class MultipleFilesSender:
             None,
         ))
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, file_id, [fid for fid in self.active_files.keys()])
         if deferred:
             deferred.errback(Exception(reason))
 
     def resumeProducing(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, [fid for fid in self.active_files.keys()])
         files_to_be_removed = []
         for file_id in self.active_files.keys():
             deferred, file_object, writer, transform = self.active_files.get(file_id, (
@@ -615,8 +613,8 @@ class MultipleFilesSender:
 
     def pauseProducing(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, [fid for fid in self.active_files.keys()])
 
     def stopProducing(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, [fid for fid in self.active_files.keys()])

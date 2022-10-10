@@ -388,12 +388,10 @@ class StunClient(automat.Automat):
         if self.my_address:
             current_external_ip = misc.readExternalIP()
             if current_external_ip != self.my_address[0]:
-                events.send(
-                    'my-external-ip-changed', data=dict(
-                        old=current_external_ip,
-                        new=self.my_address[0],
-                    )
-                )
+                events.send('my-external-ip-changed', data=dict(
+                    old=current_external_ip,
+                    new=self.my_address[0],
+                ))
             bpio.WriteTextFile(settings.ExternalIPFilename(), self.my_address[0])
             bpio.WriteTextFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
         for cb in self.callbacks:
@@ -578,7 +576,7 @@ def http_stun(result_defer=None):
             'result': 'stun-failed',
             'type': None,
             'ip': None,
-            'details': ['unknown client host from response',],
+            'details': ['unknown client host from response'],
         }
         mo = re.search(b'\<\!\-\-CLIENT_HOST\=([\d\.]+):(\d+)\-\-\>', html_response)
         if not mo:
@@ -606,7 +604,7 @@ def http_stun(result_defer=None):
             'result': 'stun-failed',
             'type': None,
             'ip': None,
-            'details': [err.getErrorMessage(),],
+            'details': [err.getErrorMessage()],
         }
         if result_defer:
             result_defer.callback(ret)

@@ -432,7 +432,7 @@ class KeysSynchronizer(automat.Automat):
             err_msg = err.getErrorMessage()
         else:
             err_msg = str(err)
-        events.send('my-keys-synchronize-failed', data=dict(error=err_msg,))
+        events.send('my-keys-synchronize-failed', data=dict(error=err_msg))
         self.result_callbacks = []
 
     def doDestroyMe(self, *args, **kwargs):

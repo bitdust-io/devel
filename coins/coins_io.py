@@ -187,7 +187,7 @@ def get_coin_base(coin_json):
 #     return bcoin
 
 
-def bought_storage(partner,):
+def bought_storage(partner):
     pass
 
 

@@ -40,14 +40,13 @@ __all__ = ['WebSocketApp']
 
 
 class Dispatcher:
-
     def __init__(self, app, ping_timeout):
         self.app = app
         self.ping_timeout = ping_timeout
 
     def read(self, sock, read_callback, check_callback):
         while self.app.keep_running:
-            r, w, e = select.select((self.app.sock.sock,), (), (), self.ping_timeout)
+            r, w, e = select.select((self.app.sock.sock, ), (), (), self.ping_timeout)
             if r:
                 if not read_callback():
                     break
@@ -55,7 +54,6 @@ class Dispatcher:
 
 
 class SSLDispatcher:
-
     def __init__(self, app, ping_timeout):
         self.app = app
         self.ping_timeout = ping_timeout
@@ -75,7 +73,7 @@ class SSLDispatcher:
                 sock,
             ]
 
-        r, w, e = select.select((sock,), (), (), self.ping_timeout)
+        r, w, e = select.select((sock, ), (), (), self.ping_timeout)
         return r
 
 
@@ -84,7 +82,6 @@ class WebSocketApp(object):
     Higher level of APIs are provided.
     The interface is like JavaScript WebSocket object.
     """
-
     def __init__(self, url, header=None, on_open=None, on_message=None, on_error=None, on_close=None, on_ping=None, on_pong=None, on_cont_message=None, keep_running=True, get_mask_key=None, cookie=None, subprotocols=None, on_data=None):
         """
         url: websocket url.
@@ -185,7 +182,7 @@ class WebSocketApp(object):
         origin=None,
         dispatcher=None,
         suppress_origin=False,
-        proxy_type=None
+        proxy_type=None,
     ):
         """
         run event loop for WebSocket framework.
@@ -259,7 +256,7 @@ class WebSocketApp(object):
                 host=host,
                 origin=origin,
                 suppress_origin=suppress_origin,
-                proxy_type=proxy_type
+                proxy_type=proxy_type,
             )
             if not dispatcher:
                 dispatcher = self.create_dispatcher(ping_timeout)
@@ -334,7 +331,7 @@ class WebSocketApp(object):
                 return []
 
         if data and len(data) >= 2:
-            code = 256 * six.byte2int(data[0:1]) + six.byte2int(data[1:2])
+            code = 256*six.byte2int(data[0:1]) + six.byte2int(data[1:2])
             reason = data[2:].decode('utf-8')
             return [code, reason]
 

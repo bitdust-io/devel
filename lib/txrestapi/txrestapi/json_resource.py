@@ -73,7 +73,6 @@ class _DelayedJsonResource(_JsonResource):
     If your API method returned `Deferred` object instead of final result
     we can wait for the result and then return it in API response.
     """
-
     def __init__(self, result, executed, result_defer, *args, **kwargs):
         _JsonResource.__init__(self, result, executed, *args, **kwargs)
         self._result_defer = result_defer
@@ -98,9 +97,13 @@ class _DelayedJsonResource(_JsonResource):
         self._setHeaders(request)
         execution = '%3.6f' % (time.time() - self._executed)
         err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
-        raw = _to_json(dict(status='ERROR', execution=execution, errors=[
-            err_msg,
-        ]))
+        raw = _to_json(dict(
+            status='ERROR',
+            execution=execution,
+            errors=[
+                err_msg,
+            ],
+        ))
         if not request.channel:
             if _Debug:
                 twlog.err('REST API connection channel already closed')
@@ -116,7 +119,6 @@ class _DelayedJsonResource(_JsonResource):
 
 
 def maybeResource(f):
-
     @wraps(f)
     def inner(*args, **kwargs):
         _executed = time.time()
@@ -125,9 +127,12 @@ def maybeResource(f):
 
         except Exception as exc:
             return _JsonResource(
-                result=dict(status='ERROR', errors=[
-                    str(exc),
-                ]),
+                result=dict(
+                    status='ERROR',
+                    errors=[
+                        str(exc),
+                    ],
+                ),
                 executed=_executed,
             )
 
@@ -207,9 +212,15 @@ class JsonAPIResource(Resource):
             callback, args = self._get_callback(request)
             self.log_request(request, callback, args)
             if callback is None:
-                return _JsonResource(dict(status='ERROR', errors=[
-                    'path %r not found' % name,
-                ]), time.time())
+                return _JsonResource(
+                    dict(
+                        status='ERROR',
+                        errors=[
+                            'path %r not found' % name,
+                        ],
+                    ),
+                    time.time(),
+                )
             else:
                 return maybeResource(callback)(request, **args)
         else:

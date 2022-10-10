@@ -66,7 +66,7 @@ class BaseHandler(RequestHandler):
         self.ro_mode = self.settings['ro_mode']
         if self.bismuth_vars['address'] is None:
             self.bismuth_vars['address'] = _(
-                'No Bismuth address, please create or load a wallet first.'
+                'No Bismuth address, please create or load a wallet first.',
             )
         self.update_crystals()
         # self.bismuth_vars['dtlanguage'] = get_dt_language(_)

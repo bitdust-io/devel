@@ -2,7 +2,6 @@ from six import PY2, b
 
 
 def method_factory_factory(method):
-
     def factory_py2(regex):
         from zope.interface.advice import addClassAdvisor
         _f = {}
@@ -12,9 +11,7 @@ def method_factory_factory(method):
             return f
 
         def advisor(cls):
-
             def wrapped(f):
-
                 def __init__(self, *args, **kwargs):
                     f(self, *args, **kwargs)
                     func = None
@@ -34,7 +31,6 @@ def method_factory_factory(method):
         return decorator
 
     def factory_py3(regex):
-
         def decorator(f):
             current_methods = getattr(f, '__txrestapi__', [])
             current_methods.append((

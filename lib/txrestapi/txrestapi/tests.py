@@ -245,9 +245,12 @@ class JSONAPIResourceTest(APIResourceTest):
         r.register(b('GET'), b('^/(?P<a>[^/]*)/a/(?P<b>[^/]*)$'), None)
         req = getRequest(b('GET'), b('/definitely/not/a/match'))
         result = r.getChild(b('regex'), req)
-        self.assertEqual(json.loads(result.render(req))['errors'], [
-            "path 'regex' not found",
-        ])
+        self.assertEqual(
+            json.loads(result.render(req))['errors'],
+            [
+                "path 'regex' not found",
+            ],
+        )
 
 
 class TestResource(Resource):
@@ -258,7 +261,6 @@ class TestResource(Resource):
 
 
 class TestAPI(APIResource):
-
     @GET(b('^/(?P<a>test[^/]*)/?'))
     def _on_test_get(self, request, a):
         return b('GET %s') % a
@@ -273,7 +275,6 @@ class TestAPI(APIResource):
 
 
 class DecoratorsTest(unittest.TestCase):
-
     def _listen(self, site):
         return reactor.listenTCP(0, site, interface='127.0.0.1')  # @UndefinedVariable
 

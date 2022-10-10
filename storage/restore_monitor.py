@@ -118,12 +118,10 @@ def extract_done(retcode, backupID, source_filename, output_location, callback_m
             callback_method(backupID, 'restore done')
         except:
             lg.exc()
-    events.send(
-        'restore-done', data=dict(
-            backup_id=backupID,
-            output_location=output_location,
-        )
-    )
+    events.send('restore-done', data=dict(
+        backup_id=backupID,
+        output_location=output_location,
+    ))
     return retcode
 
 
@@ -140,14 +138,12 @@ def extract_failed(err, backupID, source_filename, output_location, callback_met
             callback_method(backupID, 'extract failed')
         except:
             lg.exc()
-    events.send(
-        'restore-failed', data=dict(
-            backup_id=backupID,
-            output_location=output_location,
-            reason='extracting file failed',
-            error=str(err),
-        )
-    )
+    events.send('restore-failed', data=dict(
+        backup_id=backupID,
+        output_location=output_location,
+        reason='extracting file failed',
+        error=str(err),
+    ))
     return err
 
 
@@ -290,7 +286,7 @@ def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None
             currentBlock = max(0, restoreObj.block_number)
             percent = 0.0
             if maxBlockNum > 0:
-                percent = 100.0 * currentBlock / maxBlockNum
+                percent = 100.0*currentBlock/maxBlockNum
             ret['state'] = 'downloading'
             ret['progress'] = misc.percent2string(percent)
             return ret

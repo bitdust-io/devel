@@ -106,7 +106,7 @@ _QueueKeepers = {}
 
 #------------------------------------------------------------------------------
 
-DHT_RECORD_REFRESH_INTERVAL = 10 * 60
+DHT_RECORD_REFRESH_INTERVAL = 10*60
 
 #------------------------------------------------------------------------------
 
@@ -304,7 +304,6 @@ class QueueKeeper(automat.Automat):
     """
     This class implements all the functionality of ``queue_keeper()`` state machine.
     """
-
     def __init__(self, customer_idurl, broker_idurl=None, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `queue_keeper()` state machine.
@@ -478,13 +477,15 @@ class QueueKeeper(automat.Automat):
         """
         # store queue keeper info locally here to be able to start up again after application restart
         write_state(
-            customer_id=self.customer_id, broker_id=self.broker_id, json_value={
+            customer_id=self.customer_id,
+            broker_id=self.broker_id,
+            json_value={
                 'state': self.state,
                 'position': self.known_position,
                 'cooperated_brokers': self.cooperated_brokers,
                 'streams': self.known_streams,
                 'time': utime.get_sec1970(),
-            }
+            },
         )
 
     def doBuildConnectRequest(self, *args, **kwargs):

@@ -95,7 +95,6 @@ class Packet(object):
     messages. This is outside work, here is most important things to
     make all network working.
     """
-
     def __init__(
         self,
         Command,
@@ -360,7 +359,6 @@ class PacketZeroSigned(Packet):
     """
     I was playing with hacking packets and do some debug also.
     """
-
     def GenerateSignature(self):
         return '0'
 

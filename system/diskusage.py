@@ -69,7 +69,7 @@ def GetWinDriveSpace(drive):
         totalNumClusters = int(totalNumClusters)
     except:
         return None, None
-    return float(numFreeClusters * sectorsPerCluster * bytesPerSector), float(totalNumClusters * sectorsPerCluster * bytesPerSector)
+    return float(numFreeClusters*sectorsPerCluster*bytesPerSector), float(totalNumClusters*sectorsPerCluster*bytesPerSector)
 
 
 def GetLinuxDriveSpace(path):
@@ -84,7 +84,7 @@ def GetLinuxDriveSpace(path):
         # free, total = s.f_bsize*(s.f_blocks-s.f_bavail), s.f_bsize * s.f_bavail
         # free, total = float(s.f_bsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
         # free, total = float(s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
-        free, total = float(s.f_frsize * s.f_bavail), float(s.f_frsize * s.f_blocks)
+        free, total = float(s.f_frsize*s.f_bavail), float(s.f_frsize*s.f_blocks)
         return free, total
     except:
         return None, None
@@ -126,9 +126,12 @@ def SumFileSizes(fileList):
     return fileSizeTotal
 
 
-def GetOurTempFileSizeTotal(tempDirectory, masks=[
-    '*',
-]):
+def GetOurTempFileSizeTotal(
+    tempDirectory,
+    masks=[
+        '*',
+    ],
+):
     """
     Not used right now.
 
@@ -151,13 +154,13 @@ def OkToShareSpace(desiredSharedSpaceMB):
         return False
     try:
         # TODO: say if less than 10% free storage left of your HDD do not share
-        testFree = (dataDriveFreeSpace / dataDriveTotalSpace) > 0.1
+        testFree = (dataDriveFreeSpace/dataDriveTotalSpace) > 0.1
     except:
         testFree = False
     if not testFree:
         return False
     currentlySharedSpace = GetDirectorySize(dataDir)
-    if (currentlySharedSpace + dataDriveFreeSpace / (1024 * 1024)) < desiredSharedSpaceMB:
+    if (currentlySharedSpace + dataDriveFreeSpace/(1024*1024)) < desiredSharedSpaceMB:
         return False
     return True
 
@@ -166,7 +169,7 @@ def GetDirectorySize(directoryPath):
     """
     Calculates the folder size in megabytes using ``bpio.getDirectorySize``.
     """
-    return bpio.getDirectorySize(directoryPath) / (1024 * 1024)
+    return bpio.getDirectorySize(directoryPath)/(1024*1024)
 
 
 #------------------------------------------------------------------------------
@@ -190,11 +193,11 @@ def main():
 
     print('data dir =', dataDir)
     print('tep dir =', tempDir)
-    print('data dir: ' + str(dataDriveFreeSpace / (1024 * 1024)) + 'MB free/' + str(dataDriveTotalSpace / (1024 * 1024)) + 'MB total')
-    print('temp dir: ' + str(tempDriveFreeSpace / (1024 * 1024)) + 'MB free/' + str(tempDriveTotalSpace / (1024 * 1024)) + 'MB total')
+    print('data dir: ' + str(dataDriveFreeSpace/(1024*1024)) + 'MB free/' + str(dataDriveTotalSpace/(1024*1024)) + 'MB total')
+    print('temp dir: ' + str(tempDriveFreeSpace/(1024*1024)) + 'MB free/' + str(tempDriveTotalSpace/(1024*1024)) + 'MB total')
 
     print(time.time())
-    print('our temp files: ' + str(GetOurTempFileSizeTotal(tempDir) / (1024 * 1024)) + 'MB')
+    print('our temp files: ' + str(GetOurTempFileSizeTotal(tempDir)/(1024*1024)) + 'MB')
     print(time.time())
 
     GetDirectorySize(dataDir)

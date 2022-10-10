@@ -43,15 +43,16 @@ class ConnectionManager(threading.Thread):
                 # last block
                 if self.node.last_block_ago:
                     self.node.last_block_ago = time.time() - int(self.node.last_block_timestamp)
-                    self.node.logger.app_log.warning(f'Status: Last block {self.node.last_block} was generated '
-                                                     f"{'%.2f' % (self.node.last_block_ago / 60) } minutes ago")
+                    self.node.logger.app_log.warning(
+                        f'Status: Last block {self.node.last_block} was generated '
+                        f"{'%.2f' % (self.node.last_block_ago / 60) } minutes ago",
+                    )
                 # status Hook
                 uptime = int(time.time() - self.node.startup_time)
                 status = {
                     'protocolversion': self.node.version,
                     'walletversion': self.node.app_version,
-                    'testnet': self.node.is_testnet,
-                    # config data
+                    'testnet': self.node.is_testnet,  # config data
                     'blocks': self.node.last_block,
                     'timeoffset': 0,
                     'connections': self.node.peers.consensus_size,
@@ -60,7 +61,7 @@ class ConnectionManager(threading.Thread):
                     'uptime': uptime,
                     'consensus': self.node.peers.consensus,
                     'consensus_percent': self.node.peers.consensus_percentage,
-                    'last_block_ago': self.node.last_block_ago
+                    'last_block_ago': self.node.last_block_ago,
                 }  # extra data
                 if self.node.is_regnet:
                     status['regnet'] = True

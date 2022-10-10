@@ -218,7 +218,7 @@ def GetActiveArray(customer_idurl=None):
     from p2p import online_status
     activeArray = [
         0,
-    ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    ]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for i in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
@@ -513,10 +513,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 )
                 if my_keys.is_key_registered(authorized_key_id):
                     if _Debug:
-                        lg.out(_DebugLevel, '        AUTO CREATE VERSION "%s" at "%s" in the index' % (
-                            versionName,
-                            remotePath,
-                        ))
+                        lg.out(_DebugLevel, '        AUTO CREATE VERSION "%s" at "%s" in the index' % (versionName, remotePath))
                     item.add_version(versionName)
                     modified = True
                 else:
@@ -560,8 +557,8 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     for blockNum in range(maxBlockNum + 1):
         if blockNum not in remote_files()[backupID]:
             remote_files()[backupID][blockNum] = {
-                'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-                'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+                'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+                'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
             }
         for dataORparity in [
             'Data',
@@ -570,7 +567,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
             bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
             remote_files()[backupID][blockNum][dataORparity[0]][supplier_num] = bit
-            newfiles += int((bit + 1) / 2)  # this should switch -1 or 1 to 0 or 1
+            newfiles += int((bit + 1)/2)  # this should switch -1 or 1 to 0 or 1
     # save max block number for this backup
     if backupID not in remote_max_block_numbers():
         remote_max_block_numbers()[backupID] = -1
@@ -831,10 +828,7 @@ def ReadLocalFiles():
                 try:
                     bpio.move_dir_recursive(old_path, new_path)
                     if _Debug:
-                        lg.dbg(_DebugLevel, 'copied %r into %r' % (
-                            old_path,
-                            new_path,
-                        ))
+                        lg.dbg(_DebugLevel, 'copied %r into %r' % (old_path, new_path))
                     if os.path.exists(old_path):
                         bpio._dir_remove(old_path)
                         if _Debug:
@@ -878,8 +872,8 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, item
         lg.info('new remote entry for %s created in memory' % backupID)
     if blockNum not in remote_files()[backupID]:
         remote_files()[backupID][blockNum] = {
-            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
         }
     # save backed up block info into remote info structure, synchronize on hand info
     flag = 1 if result else 0
@@ -898,9 +892,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, item
     full_remote_path_id = global_id.MakeGlobalID(path=itemInfo['path_id'], key_id=itemInfo['key_id'])
     _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
     listeners.push_snapshot(
-        'remote_version',
-        snap_id=backupID,
-        data=dict(
+        'remote_version', snap_id=backupID, data=dict(
             backup_id=backupID,
             max_block=maxBlockNum,
             remote_path=full_remote_path,
@@ -958,8 +950,8 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         local_files()[backupID] = {}
     if blockNum not in local_files()[backupID]:
         local_files()[backupID][blockNum] = {
-            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
         }
     if not os.path.isfile(localDest):
         local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
@@ -1017,10 +1009,10 @@ def LocalBlockReport(backupID, blockNumber, result):
                 local_files()[backupID][blockNum] = {
                     'D': [
                         0,
-                    ] * num_suppliers,
+                    ]*num_suppliers,
                     'P': [
                         0,
-                    ] * num_suppliers
+                    ]*num_suppliers,
                 }
                 # repaint_flag = True
             if not os.path.isfile(local_file):
@@ -1359,11 +1351,11 @@ def GetBackupStats(backupID):
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in remote_files():
-        return 0, 0, [(0, 0)] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
-    percentPerSupplier = 100.0 / contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return 0, 0, [(0, 0)]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    percentPerSupplier = 100.0/contactsdb.num_suppliers(customer_idurl=customer_idurl)
     # ??? maxBlockNum = remote_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
-    fileNumbers = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    fileNumbers = [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     totalNumberOfFiles = 0
     for blockNum in remote_files()[backupID].keys():
         for supplierNum in range(len(fileNumbers)):
@@ -1384,7 +1376,7 @@ def GetBackupStats(backupID):
     for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
-            percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / (maxBlockNum + 1)
+            percent = percentPerSupplier*0.5*fileNumbers[supplierNum]/(maxBlockNum + 1)
         else:
             percent = 0.0
         statsArray.append((percent, fileNumbers[supplierNum]))
@@ -1403,10 +1395,10 @@ def GetBackupLocalStats(backupID):
     customer_idurl = packetid.CustomerIDURL(backupID)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     if backupID not in local_files():
-        return 0, 0, 0, maxBlockNum, [(0, 0)] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
-    percentPerSupplier = 100.0 / contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return 0, 0, 0, maxBlockNum, [(0, 0)]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    percentPerSupplier = 100.0/contactsdb.num_suppliers(customer_idurl=customer_idurl)
     totalNumberOfFiles = 0
-    fileNumbers = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    fileNumbers = [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for blockNum in range(maxBlockNum + 1):
         if blockNum not in list(local_files()[backupID].keys()):
             continue
@@ -1425,12 +1417,12 @@ def GetBackupLocalStats(backupID):
     for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
-            percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / (maxBlockNum + 1)
+            percent = percentPerSupplier*0.5*fileNumbers[supplierNum]/(maxBlockNum + 1)
         else:
             percent = 0.0
         statsArray.append((percent, fileNumbers[supplierNum]))
     del fileNumbers
-    totalPercent = 100.0 * 0.5 * totalNumberOfFiles / ((maxBlockNum + 1) * contactsdb.num_suppliers(customer_idurl=customer_idurl))
+    totalPercent = 100.0*0.5*totalNumberOfFiles/((maxBlockNum + 1)*contactsdb.num_suppliers(customer_idurl=customer_idurl))
     return totalPercent, totalNumberOfFiles, local_backup_size().get(backupID, 0), maxBlockNum, statsArray
 
 
@@ -1455,7 +1447,7 @@ def GetBackupBlocksAndPercent(backupID):
             if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
                 fileCounter += 1
     # +1 since zero based and *0.5 because Data and Parity
-    return maxBlockNum + 1, 100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * contactsdb.num_suppliers(customer_idurl=customer_idurl))
+    return maxBlockNum + 1, 100.0*0.5*fileCounter/((maxBlockNum + 1)*contactsdb.num_suppliers(customer_idurl=customer_idurl))
 
 
 def GetBackupRemoteStats(backupID, only_available_files=True):
@@ -1513,9 +1505,9 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
     # +1 since zero based and *0.5 because Data and Parity
     return (
         maxBlockNum + 1,
-        100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * supplierCount),
+        100.0*0.5*fileCounter/((maxBlockNum + 1)*supplierCount),
         weakBlockNum,
-        100.0 * float(lessSuppliers) / float(supplierCount),
+        100.0*float(lessSuppliers)/float(supplierCount),
     )
 
 
@@ -1570,13 +1562,13 @@ def GetLocalMatrix(backupID, blockNum):
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in local_files():
         return {
-            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
         }
     if blockNum not in local_files()[backupID]:
         return {
-            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
         }
     return local_files()[backupID][blockNum]
 
@@ -1590,11 +1582,11 @@ def GetLocalDataArray(backupID, blockNum):
     if backupID not in local_files():
         return [
             0,
-        ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        ]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     if blockNum not in local_files()[backupID]:
         return [
             0,
-        ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        ]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     return local_files()[backupID][blockNum]['D']
 
 
@@ -1605,9 +1597,9 @@ def GetLocalParityArray(backupID, blockNum):
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in local_files():
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     if blockNum not in local_files()[backupID]:
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     return local_files()[backupID][blockNum]['P']
 
 
@@ -1615,13 +1607,13 @@ def GetRemoteMatrix(backupID, blockNum):
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in remote_files():
         return {
-            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
         }
     if blockNum not in remote_files()[backupID]:
         return {
-            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
         }
     return remote_files()[backupID][blockNum]
 
@@ -1633,9 +1625,9 @@ def GetRemoteDataArray(backupID, blockNum):
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in remote_files():
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     if blockNum not in remote_files()[backupID]:
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     return remote_files()[backupID][blockNum]['D']
 
 
@@ -1646,9 +1638,9 @@ def GetRemoteParityArray(backupID, blockNum):
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in remote_files():
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     if blockNum not in remote_files()[backupID]:
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     return remote_files()[backupID][blockNum]['P']
 
 
@@ -1795,9 +1787,7 @@ def populate_remote_versions():
             full_remote_path_id = global_id.MakeGlobalID(path=itemInfo.path_id, key_id=itemInfo.key_id)
             _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
             listeners.push_snapshot(
-                'remote_version',
-                snap_id=backupID,
-                data=dict(
+                'remote_version', snap_id=backupID, data=dict(
                     backup_id=backupID,
                     max_block=remote_max_block_numbers().get(backupID, -1),
                     remote_path=full_remote_path,

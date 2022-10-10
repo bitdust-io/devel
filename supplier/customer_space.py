@@ -265,16 +265,14 @@ def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_id
                 current_task.cancel()
             _SupplierFileModifiedNotifyTasks.pop(task_id)
         _SupplierFileModifiedLatest[task_id] = time.time()
-        events.send(
-            'supplier-file-modified', data=dict(
-                action=action,
-                remote_path=remote_path,
-                key_alias=key_alias,
-                authorized_idurl=authorized_idurl,
-                customer_idurl=customer_idurl,
-                supplier_idurl=my_id.getIDURL(),
-            )
-        )
+        events.send('supplier-file-modified', data=dict(
+            action=action,
+            remote_path=remote_path,
+            key_alias=key_alias,
+            authorized_idurl=authorized_idurl,
+            customer_idurl=customer_idurl,
+            supplier_idurl=my_id.getIDURL(),
+        ))
         return
     new_delay = latest_event_time + 60 + 1 - time.time()
     if _Debug:
@@ -284,7 +282,13 @@ def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_id
             current_task.cancel()
         _SupplierFileModifiedNotifyTasks.pop(task_id)
     _SupplierFileModifiedNotifyTasks[task_id] = reactor.callLater(  # @UndefinedVariable
-        new_delay, do_notify_supplier_file_modified, key_alias, remote_path, action, customer_idurl, authorized_idurl
+        new_delay,
+        do_notify_supplier_file_modified,
+        key_alias,
+        remote_path,
+        action,
+        customer_idurl,
+        authorized_idurl,
     )
 
 
@@ -506,7 +510,7 @@ def on_list_files(newpacket):
     except:
         if strng.to_text(newpacket.Payload) == settings.ListFilesFormat():
             json_query = {
-                'items': ['*',],
+                'items': ['*'],
             }
     if json_query is None:
         lg.exc('unrecognized ListFiles() query received')

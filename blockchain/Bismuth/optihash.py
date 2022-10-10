@@ -89,7 +89,10 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
                 prefix = pool_address + seed
                 # This is where the actual hashing takes place
                 # possibles = [nonce for nonce in try_arr if mining_condition in (sha224((prefix + nonce + db_block_hash).encode("utf-8")).hexdigest())]
-                possibles = [nonce for nonce in try_arr if mining_condition in (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + db_block_hash).encode('utf-8')).digest(), 'big')))]
+                possibles = [
+                    nonce for nonce in try_arr if mining_condition in
+                    (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + db_block_hash).encode('utf-8')).digest(), 'big')))
+                ]
                 # hash rate calculation
                 try:
                     t2 = time.time()

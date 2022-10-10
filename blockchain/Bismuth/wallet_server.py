@@ -94,7 +94,9 @@ class WalletServer(TCPServer):
         try:
             header = await tornado.gen.with_timeout(datetime.timedelta(seconds=35), stream.read_bytes(10), quiet_exceptions=tornado.iostream.StreamClosedError)
             data_len = int(header)
-            data = await tornado.gen.with_timeout(datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError)
+            data = await tornado.gen.with_timeout(
+                datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError
+            )
             data = json.loads(data.decode('utf-8'))
             return data
         except Exception as e:
@@ -305,8 +307,10 @@ if __name__ == '__main__':
     app_log.warning('Testnet: {}'.format(is_testnet))
     # fail safe
     if is_testnet and int(CONFIG.node_port) != 2829:
-        app_log.warning('Testnet is active, but node_port set to {} instead of 2829. '
-                        'Make sure!'.format(CONFIG.node_port))
+        app_log.warning(
+            'Testnet is active, but node_port set to {} instead of 2829. '
+            'Make sure!'.format(CONFIG.node_port),
+        )
         time.sleep(2)
 
     if os.name == 'posix':

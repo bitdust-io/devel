@@ -249,8 +249,8 @@ class RestoreWorker(automat.Automat):
                 self.doRequestPackets(*args, **kwargs)
             elif event == 'data-received':
                 self.doSavePacket(*args, **kwargs)
-            elif (event == 'abort' or ((event == 'request-failed' or event == 'data-receiving-stopped') and not self.isStillCorrectable(*args, **kwargs))) or ((event == 'instant' or event == 'request-finished') and
-                                                                                                                                                               not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs)):
+            elif (event == 'abort' or ((event == 'request-failed' or event == 'data-receiving-stopped') and
+                                       not self.isStillCorrectable(*args, **kwargs))) or ((event == 'instant' or event == 'request-finished') and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs)):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(*args, **kwargs)
                 self.doRemoveTempFile(*args, **kwargs)
@@ -405,10 +405,10 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doStartNewBlock ' + str(self.block_number))
         self.OnHandData = [
             False,
-        ] * self.EccMap.datasegments
+        ]*self.EccMap.datasegments
         self.OnHandParity = [
             False,
-        ] * self.EccMap.paritysegments
+        ]*self.EccMap.paritysegments
         self.RequestFails = []
         self.block_requests = {}
         self.AlreadyRequestedCounts = {}
@@ -609,14 +609,12 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doReportFailed : %s' % reason)
         self.done_flag = True
         self.MyDeferred.callback(reason)
-        events.send(
-            'restore-failed', data=dict(
-                backup_id=self.backup_id,
-                block_number=self.block_number,
-                args=args,
-                reason=reason,
-            )
-        )
+        events.send('restore-failed', data=dict(
+            backup_id=self.backup_id,
+            block_number=self.block_number,
+            args=args,
+            reason=reason,
+        ))
 
     def doDestroyMe(self, *args, **kwargs):
         """

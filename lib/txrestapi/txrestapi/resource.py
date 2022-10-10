@@ -20,7 +20,6 @@ class _FakeResource(Resource):
 
 
 def maybeResource(f):
-
     @wraps(f)
     def inner(*args, **kwargs):
         result = f(*args, **kwargs)

@@ -12,7 +12,6 @@ class Sum(amp.Command):
 
 
 class Protocol(amp.AMP):
-
     @Sum.responder
     def sum(self, a, b):
         return {'total': a + b}

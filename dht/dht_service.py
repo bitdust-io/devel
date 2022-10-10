@@ -87,13 +87,13 @@ from dht.entangled.kademlia.contact import Contact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-KEY_EXPIRE_MIN_SECONDS = 60 * 2
+KEY_EXPIRE_MIN_SECONDS = 60*2
 KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
 RECEIVING_FREQUENCY_SEC = 0.01
 SENDING_FREQUENCY_SEC = 0.02  # must be always slower than receiving frequency!
 RECEIVING_QUEUE_LENGTH_CRITICAL = 100
 SENDING_QUEUE_LENGTH_CRITICAL = 50
-DEFAULT_CACHE_TTL = 60 * 60 * 3
+DEFAULT_CACHE_TTL = 60*60*3
 
 #------------------------------------------------------------------------------
 
@@ -247,13 +247,13 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect  SKIP : no seed nodes provided')
         reactor.callLater(0, result.callback, True)  # @UndefinedVariable
-        events.send('dht-layer-connected', data=dict(layer_id=layer_id,))
+        events.send('dht-layer-connected', data=dict(layer_id=layer_id))
         return result
 
     def _on_connected(ok):
         if _Debug:
             lg.args(_DebugLevel, ok=ok, layer_id=layer_id)
-        events.send('dht-layer-connected', data=dict(layer_id=layer_id,))
+        events.send('dht-layer-connected', data=dict(layer_id=layer_id))
         return ok
 
     result.addCallback(_on_connected)
@@ -293,7 +293,7 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         d.addErrback(_on_join_failed)
         if not node().expire_task.running:
             # reactor.callLater(random.randint(0, 60), node().expire_task.start, int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)  # @UndefinedVariable
-            node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)  # @UndefinedVariable
+            node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS/2), now=True)  # @UndefinedVariable
         return resolved_seed_nodes
 
     def _on_hosts_resolve_failed(x):
@@ -1308,7 +1308,6 @@ def get_cached_json_value(key, layer_id=0, cache_ttl=DEFAULT_CACHE_TTL):
 
 
 class DHTNode(MultiLayerNode):
-
     def __init__(self, udpPort=4000, dataStores=None, routingTables=None, networkProtocol=None, nodeID=None):
         super(DHTNode, self).__init__(
             udpPort=udpPort,
@@ -1469,7 +1468,6 @@ class DHTNode(MultiLayerNode):
 
 
 class DHTProtocol(KademliaMultiLayerProtocol):
-
     def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.MultiLayerFormat()):
         KademliaMultiLayerProtocol.__init__(self, node, msgEncoder=msgEncoder, msgTranslator=msgTranslator)
         self._counter = count

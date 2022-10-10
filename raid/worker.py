@@ -54,7 +54,6 @@ _WorkerLock = Lock()
 
 
 class my_decorator_class(object):
-
     def __init__(self, target):
         self.target = target
 
@@ -96,9 +95,9 @@ def func_thread(tasks, pool):
             if _Debug:
                 lg.out(_DebugLevel, 'raid.worker.func_thread is going to apply task %s' % task_id)
             if six.PY3:
-                pool.apply_async(func=func, args=params + (task_id,), callback=callback, error_callback=error_callback)
+                pool.apply_async(func=func, args=params + (task_id, ), callback=callback, error_callback=error_callback)
             else:
-                pool.apply_async(func=func, args=params + (task_id,), callback=callback)
+                pool.apply_async(func=func, args=params + (task_id, ), callback=callback)
         else:
             try:
                 _WorkerQueue.put(1)
@@ -112,7 +111,6 @@ def func_thread(tasks, pool):
 
 
 class Task(object):
-
     def __init__(self, task_id):
         self.task_id = task_id
         if _Debug:
@@ -124,7 +122,6 @@ class Task(object):
 
 
 class Manager(object):
-
     def __init__(self, ncpus):
         self._ncpus = ncpus
 

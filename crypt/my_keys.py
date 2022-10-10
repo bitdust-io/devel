@@ -409,13 +409,11 @@ def load_key(key_id, keys_folder=None):
                 ))
         else:
             lg.warn('for key %r local_key_id was not set' % key_id)
-    events.send(
-        'key-loaded', data=dict(
-            key_id=key_id,
-            label=key_object.label,
-            key_size=key_object.size(),
-        )
-    )
+    events.send('key-loaded', data=dict(
+        key_id=key_id,
+        label=key_object.label,
+        key_size=key_object.size(),
+    ))
     listeners.push_snapshot(
         'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
@@ -516,13 +514,11 @@ def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None)
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     save_key(key_id, keys_folder=keys_folder)
-    events.send(
-        'key-generated', data=dict(
-            key_id=key_id,
-            label=label,
-            key_size=key_size,
-        )
-    )
+    events.send('key-generated', data=dict(
+        key_id=key_id,
+        label=label,
+        key_size=key_size,
+    ))
     listeners.push_snapshot(
         'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
@@ -584,13 +580,11 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
     if _Debug:
         lg.out(_DebugLevel, '    key %r registered' % key_id)
     save_key(key_id, keys_folder=keys_folder)
-    events.send(
-        'key-registered', data=dict(
-            key_id=key_id,
-            label=label,
-            key_size=key_object.size(),
-        )
-    )
+    events.send('key-registered', data=dict(
+        key_id=key_id,
+        label=label,
+        key_size=key_object.size(),
+    ))
     listeners.push_snapshot(
         'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
@@ -730,13 +724,11 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
     known_keys()[key_id] = key_object
     if save:
         save_key(key_id, keys_folder=keys_folder)
-    events.send(
-        'key-signed', data=dict(
-            key_id=key_id,
-            label=key_object.label,
-            key_size=key_object.size(),
-        )
-    )
+    events.send('key-signed', data=dict(
+        key_id=key_id,
+        label=key_object.label,
+        key_size=key_object.size(),
+    ))
     listeners.push_snapshot(
         'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
@@ -968,8 +960,7 @@ def make_master_key_info(include_private=False):
         'label': my_id.getGlobalID(key_alias='master'),
         'active': True,
         'creator': my_id.getIDURL(),
-        'is_public': key.MyPrivateKeyObject().isPublic(),
-        # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
+        'is_public': key.MyPrivateKeyObject().isPublic(),  # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
         # 'type': str(key.MyPrivateKeyObject().type()),
         # 'ssh_type': str(key.MyPrivateKeyObject().sshType()),
         'public': strng.to_text(key.MyPrivateKeyObject().toPublicString()),
@@ -1157,18 +1148,16 @@ def check_rename_my_keys(prefix=None):
 
 def populate_keys():
     for key_id, key_object in known_keys().items():
-        listeners.push_snapshot(
-            'key', snap_id=key_id, data=make_key_info(
-                key_object=key_object,
-                key_id=key_id,
-                event=None,
-                include_private=False,
-                include_local_id=True,
-                include_signature=True,
-                include_label=True,
-                include_state=True,
-            )
-        )
+        listeners.push_snapshot('key', snap_id=key_id, data=make_key_info(
+            key_object=key_object,
+            key_id=key_id,
+            event=None,
+            include_private=False,
+            include_local_id=True,
+            include_signature=True,
+            include_label=True,
+            include_state=True,
+        ))
 
 
 #------------------------------------------------------------------------------

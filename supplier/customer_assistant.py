@@ -181,10 +181,12 @@ class CustomerAssistant(automat.Automat):
         Action method.
         """
         p2p_service.SendIdentity(
-            self.customer_idurl, wide=True, callbacks={
+            self.customer_idurl,
+            wide=True,
+            callbacks={
                 commands.Ack(): self._customer_acked,
                 commands.Fail(): self._customer_failed,
-            }
+            },
         )
 
     def doSendHisFiles(self, *args, **kwargs):

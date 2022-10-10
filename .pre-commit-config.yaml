@@ -2,17 +2,28 @@ exclude: |
   (?x)(
       ^CodernityDB/|
       ^CodernityDB3/|
-      .git |
-      .__pycache__|
-      .hg|
-      .mypy_cache|
-      .tox|
-      .venv|
-      venv|
-      _build|
-      buck-out|
-      build|
-      dist
+      ^blockchain/Bismuth/|
+      ^devops/|
+      ^dht/entangled/kademlia/|
+      ^icons/|
+      ^parallelp/|
+      ^regress/|
+      ^release/|
+      ^scripts/|
+      ^tests/|
+      ^.git/|
+      ^.circleci/|
+      ^.github/|
+      ^.__pycache__/|
+      ^.hg/|
+      ^.mypy_cache/|
+      ^.tox/|
+      ^.venv/|
+      ^venv/|
+      ^_build/|
+      ^buck-out/|
+      ^build/|
+      ^dist/
   )
 
 repos:

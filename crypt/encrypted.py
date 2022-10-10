@@ -102,7 +102,6 @@ class Block(object):
     Other                  could be be for professional timestamp company or other future features
     Signature              digital signature by Creator - verifiable by public key in creator identity
     """
-
     def __init__(
         self,
         CreatorID=None,

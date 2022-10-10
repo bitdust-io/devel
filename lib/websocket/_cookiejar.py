@@ -5,7 +5,6 @@ except:
 
 
 class SimpleCookieJar(object):
-
     def __init__(self):
         self.jar = dict()
 

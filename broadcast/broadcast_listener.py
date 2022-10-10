@@ -92,7 +92,6 @@ class BroadcastListener(automat.Automat):
     This class implements all the functionality of the ``broadcast_listener()``
     state machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
@@ -162,10 +161,14 @@ class BroadcastListener(automat.Automat):
         scope = args[0]
         if not scope:
             scope = []
-        broadcasters_finder.A('start', (self.automat, {
-            'action': 'listen',
-            'scopes': json.dumps(scope),
-        }, []))
+        broadcasters_finder.A('start', (
+            self.automat,
+            {
+                'action': 'listen',
+                'scopes': json.dumps(scope),
+            },
+            [],
+        ))
 
     def doSetBroadcaster(self, *args, **kwargs):
         """

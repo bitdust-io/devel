@@ -93,7 +93,9 @@ def diffme_heavy3(pool_address, nonce, db_block_hash):
     return diff_result
 
 
-def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None):
+def check_block(
+    block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None
+):
     """
     Checks that the given block matches the mining algo.
 
@@ -139,11 +141,17 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
                 diff_dropped = 10
             if real_diff >= int(diff_dropped):
                 if app_log:
-                    app_log.info('Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})'.format(block_height_new, peer_ip, real_diff, int(diff_dropped), factor))
+                    app_log.info(
+                        'Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})'.format(
+                            block_height_new, peer_ip, real_diff, int(diff_dropped), factor
+                        )
+                    )
                 diff_save = diff0
                 # lie about what diff was matched not to mess up the diff algo
             else:
-                raise ValueError('Readjusted difficulty too low for block {} from {}, {} should be at least {}'.format(block_height_new, peer_ip, real_diff, diff_dropped))
+                raise ValueError(
+                    'Readjusted difficulty too low for block {} from {}, {} should be at least {}'.format(block_height_new, peer_ip, real_diff, diff_dropped)
+                )
         else:
             raise ValueError('Difficulty {} too low for block {} from {}, should be at least {}'.format(real_diff, block_height_new, peer_ip, diff0))
         return diff_save
@@ -161,7 +169,9 @@ def create_heavy3a(file_name='heavy3a.bin'):
         print('Regnet, no heavy file')
         return
     print('Creating Junction Noise file, this usually takes a few minutes...')
-    gen = DRBG(b'Bismuth is a chemical element with symbol Bi and atomic number 83. It is a pentavalent post-transition metal and one of the pnictogens with chemical properties resembling its lighter homologs arsenic and antimony.')
+    gen = DRBG(
+        b'Bismuth is a chemical element with symbol Bi and atomic number 83. It is a pentavalent post-transition metal and one of the pnictogens with chemical properties resembling its lighter homologs arsenic and antimony.'
+    )
     # Size in Gb - No more than 4Gb from a single seed
     GB = 1
     # Do not change chunk size, it would change the file content.

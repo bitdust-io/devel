@@ -255,7 +255,9 @@ class NetworkConnector(automat.Automat):
         elif self.state == 'TRANSPORTS?':
             if event == 'reconnect' or event == 'check-reconnect':
                 self.Reset = True
-            elif not self.Reset and ((event == 'all-network-transports-ready' or event == 'network-transports-verified' or event == 'network-transport-state-changed') and (self.isAllReady(*args, **kwargs) and self.isAllListening(*args, **kwargs))):
+            elif not self.Reset and (
+                (event == 'all-network-transports-ready' or event == 'network-transports-verified' or event == 'network-transport-state-changed') and (self.isAllReady(*args, **kwargs) and self.isAllListening(*args, **kwargs))
+            ):
                 self.state = 'CONNECTED'
             elif self.Reset and ((event == 'all-network-transports-ready' or event == 'network-transports-verified' or event == 'network-transport-state-changed') and self.isAllReady(*args, **kwargs)):
                 self.state = 'DOWN'
@@ -292,7 +294,7 @@ class NetworkConnector(automat.Automat):
             except:
                 lg.exc()
                 return False
-        return time.time() - self.last_upnp_time > 60 * 60
+        return time.time() - self.last_upnp_time > 60*60
 
     def isConnectionAlive(self, *args, **kwargs):
         # miss = 0

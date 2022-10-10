@@ -52,7 +52,6 @@ from system import nonblocking
 
 
 class ChildProcessProtocol(protocol.ProcessProtocol):
-
     def __init__(self, name):
         self.name = name
 
@@ -192,8 +191,7 @@ def detach(cmdargs):
                 # stdout=subprocess.PIPE,
                 # stderr=subprocess.PIPE,
                 universal_newlines=False,
-                creationflags=win32process.CREATE_NO_WINDOW
-                | win32process.DETACHED_PROCESS,
+                creationflags=win32process.CREATE_NO_WINDOW | win32process.DETACHED_PROCESS,
                 close_fds=True,
             )
         else:

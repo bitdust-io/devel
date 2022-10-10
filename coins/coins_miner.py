@@ -134,7 +134,7 @@ class CoinsMiner(automat.Automat):
         self.max_accountants_connected = 5  # TODO: read from settings
         self.input_data = []
         self.max_mining_counts = 10**8  # TODO: read from settings
-        self.max_mining_seconds = 60 * 3  # TODO: read from settings
+        self.max_mining_seconds = 60*3  # TODO: read from settings
         self.simplification = 2
         self.starter_length = 10
         self.starter_limit = 9999
@@ -432,7 +432,7 @@ class CoinsMiner(automat.Automat):
         while True:
             ok = False
             for simpl in range(simplification):
-                if hexdigest.startswith(str(simpl) * difficulty):
+                if hexdigest.startswith(str(simpl)*difficulty):
                     ok = True
                     break
             if ok:

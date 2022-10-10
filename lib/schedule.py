@@ -183,7 +183,7 @@ class Schedule:
         lasttime = self.lasttime
         if lasttime == '':
             # let it be one year ago (we can schedule 1 month maximum) and one day
-            lasttime = str(time.time() - 366 * 24 * 60 * 60)
+            lasttime = str(time.time() - 366*24*60*60)
 
         try:
             # turned off - return -1
@@ -407,7 +407,7 @@ def empty():
 def from_compact_string(s):
     try:
         parts = s.split('.')
-        parts += [''] * (4 - len(parts))
+        parts += ['']*(4 - len(parts))
         (sh_type, sh_interval, sh_time, sh_details) = parts[0:4]
         sh_type = sh_type.lower()
         try:
@@ -434,8 +434,8 @@ def from_compact_string(s):
         lg.warn('incorrect schedule type: ' + s)
         return None
     sh_details_new = ''
-    for i in range(len(sh_details) / 3):
-        label = sh_details[i * 3:i * 3 + 3]
+    for i in range(len(sh_details)/3):
+        label = sh_details[i*3:i*3 + 3]
         if sh_type == 'weekly' and not label in calendar.day_abbr:
             lg.warn('incorrect schedule details: ' + s)
             return None

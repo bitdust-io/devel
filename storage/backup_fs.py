@@ -363,7 +363,6 @@ class FSItemInfo():
     """
     A class to represent a remote file or folder.
     """
-
     def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None):
         self.unicodename = strng.to_text(name)
         self.path_id = path_id
@@ -530,7 +529,7 @@ class FSItemInfo():
                     'n': v,
                     'b': self.versions[v][0],
                     's': self.versions[v][1],
-                } for v in self.list_versions(sorted=True)]
+                } for v in self.list_versions(sorted=True)],
             }
         e = strng.to_text(self.unicodename, encoding=encoding)
         return '%s %d %d %s\n%s\n' % (
@@ -552,7 +551,8 @@ class FSItemInfo():
                 self.versions = {strng.to_text(v['n']): [
                     v['b'],
                     v['s'],
-                ] for v in src['v']}
+                ]
+                                 for v in src['v']}
             except:
                 lg.exc()
                 raise KeyError('Incorrect item format:\n%s' % src)
@@ -610,7 +610,7 @@ def MakeID(itr, randomized=True):
             while new_id in current_ids and attempts <= 2:
                 new_id = int(''.join([v() for v in [
                     lambda: random.choice('0123456789'),
-                ] * digits]))
+                ]*digits]))
                 attempts += 1
             if new_id not in current_ids:
                 return new_id
@@ -749,7 +749,6 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
     Operates like ``AddDir()`` but also recursively reads the entire folder and
     put all items in the index. Parameter ``localpath`` can be a file or folder path.
     """
-
     def recursive_read_dir(local_path, path_id, iter, iterID):
         c = 0
         lastID = -1
@@ -2072,15 +2071,13 @@ def populate_private_files():
         if itm['path'] == 'index':
             continue
         listeners.push_snapshot(
-            'private_file',
-            snap_id=itm['global_id'],
-            data=dict(
+            'private_file', snap_id=itm['global_id'], data=dict(
                 global_id=itm['global_id'],
                 remote_path=itm['remote_path'],
                 size=itm['size'],
                 type=itm['type'],
                 customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id'],) for v in itm['versions']],
+                versions=[dict(backup_id=v['backup_id']) for v in itm['versions']],
             )
         )
 
@@ -2105,15 +2102,13 @@ def populate_shared_files(key_id=None):
         if itm['path'] == 'index':
             continue
         listeners.push_snapshot(
-            'shared_file',
-            snap_id=itm['global_id'],
-            data=dict(
+            'shared_file', snap_id=itm['global_id'], data=dict(
                 global_id=itm['global_id'],
                 remote_path=itm['remote_path'],
                 size=itm['size'],
                 type=itm['type'],
                 customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id'],) for v in itm['versions']],
+                versions=[dict(backup_id=v['backup_id']) for v in itm['versions']],
             )
         )
 

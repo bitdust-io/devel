@@ -82,7 +82,6 @@ class DataReceiver(automat.Automat):
     """
     This class implements all the functionality of ``data_receiver()`` state machine.
     """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.

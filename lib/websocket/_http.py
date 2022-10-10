@@ -52,7 +52,6 @@ except:
 
 
 class proxy_info(object):
-
     def __init__(self, **options):
         self.type = options.get('proxy_type') or 'http'
         if not (self.type in ['http', 'socks4', 'socks5', 'socks5h']):
@@ -83,15 +82,17 @@ def _open_proxied_socket(url, options, proxy):
     if proxy.type[-1] == 'h':
         rdns = True
 
-    sock = socks.create_connection((hostname, port),
-                                   proxy_type=ptype,
-                                   proxy_addr=proxy.host,
-                                   proxy_port=proxy.port,
-                                   proxy_rdns=rdns,
-                                   proxy_username=proxy.auth[0] if proxy.auth else None,
-                                   proxy_password=proxy.auth[1] if proxy.auth else None,
-                                   timeout=options.timeout,
-                                   socket_options=DEFAULT_SOCKET_OPTION + options.sockopt)
+    sock = socks.create_connection(
+        (hostname, port),
+        proxy_type=ptype,
+        proxy_addr=proxy.host,
+        proxy_port=proxy.port,
+        proxy_rdns=rdns,
+        proxy_username=proxy.auth[0] if proxy.auth else None,
+        proxy_password=proxy.auth[1] if proxy.auth else None,
+        timeout=options.timeout,
+        socket_options=DEFAULT_SOCKET_OPTION + options.sockopt,
+    )
 
     if is_secure:
         if HAVE_SSL:
@@ -180,7 +181,7 @@ def _open_socket(addrinfo_list, sockopt, timeout):
                 try:
                     eConnRefused = (errno.ECONNREFUSED, errno.WSAECONNREFUSED)
                 except:
-                    eConnRefused = (errno.ECONNREFUSED,)
+                    eConnRefused = (errno.ECONNREFUSED, )
                 if error.errno == errno.EINTR:
                     continue
                 elif error.errno in eConnRefused:

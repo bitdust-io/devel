@@ -47,7 +47,6 @@ sslContext = ssl.DefaultOpenSSLContextFactory(
 
 @implementer(IRealm)
 class SimpleRealm(object):
-
     def __init__(self, path):
         self.path = path
 

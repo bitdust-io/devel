@@ -175,11 +175,7 @@ def IsAllHired():
     if contactsdb.num_suppliers() != settings.getSuppliersNumberDesired():
         # I must have exactly that amount of suppliers already
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                desiried_suppliers=settings.getSuppliersNumberDesired(),
-                current_suppliers=contactsdb.num_suppliers(),
-            )
+            lg.args(_DebugLevel, desiried_suppliers=settings.getSuppliersNumberDesired(), current_suppliers=contactsdb.num_suppliers())
         return False
     if id_url.is_some_empty(contactsdb.suppliers()):
         # I must know all of my suppliers
@@ -615,9 +611,12 @@ class FireHire(automat.Automat):
         # only replace suppliers one by one at the moment
         result = list(potentialy_fired)
         lg.info('will replace supplier %s' % result[0])
-        self.automat('made-decision', [
-            result[0],
-        ])
+        self.automat(
+            'made-decision',
+            [
+                result[0],
+            ],
+        )
 
     def doRememberSuppliers(self, *args, **kwargs):
         """
@@ -712,38 +711,38 @@ class FireHire(automat.Automat):
         # control.on_suppliers_changed(current_suppliers)
         if family_position < 0:
             lg.info('added new supplier, family position unknown: %s desired_suppliers=%d current_suppliers=%d' % (new_idurl, desired_suppliers, len(contactsdb.suppliers())))
-            events.send(
-                'supplier-modified', data=dict(
+            # yapf: disable
+            events.send('supplier-modified', data=dict(
+                new_idurl=new_idurl,
+                old_idurl=None,
+                position=family_position,
+                ecc_map=eccmap.Current().name,
+                family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
+            ))
+            # yapf: enable
+        else:
+            if old_idurl:
+                lg.info('hired new supplier and substitute existing supplier on position %d : %s->%s desired_suppliers=%d current_suppliers=%d' % (family_position, old_idurl, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
+                # yapf: disable
+                events.send('supplier-modified', data=dict(
+                    new_idurl=new_idurl,
+                    old_idurl=old_idurl,
+                    position=family_position,
+                    ecc_map=eccmap.Current().name,
+                    family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
+                ))
+                # yapf: enable
+            else:
+                lg.info('hired new supplier on empty position %d : %s desired_suppliers=%d current_suppliers=%d' % (family_position, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
+                # yapf: disable
+                events.send('supplier-modified', data=dict(
                     new_idurl=new_idurl,
                     old_idurl=None,
                     position=family_position,
                     ecc_map=eccmap.Current().name,
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
-                )
-            )
-        else:
-            if old_idurl:
-                lg.info('hired new supplier and substitute existing supplier on position %d : %s->%s desired_suppliers=%d current_suppliers=%d' % (family_position, old_idurl, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
-                events.send(
-                    'supplier-modified', data=dict(
-                        new_idurl=new_idurl,
-                        old_idurl=old_idurl,
-                        position=family_position,
-                        ecc_map=eccmap.Current().name,
-                        family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
-                    )
-                )
-            else:
-                lg.info('hired new supplier on empty position %d : %s desired_suppliers=%d current_suppliers=%d' % (family_position, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
-                events.send(
-                    'supplier-modified', data=dict(
-                        new_idurl=new_idurl,
-                        old_idurl=None,
-                        position=family_position,
-                        ecc_map=eccmap.Current().name,
-                        family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
-                    )
-                )
+                ))
+                # yapf: enable
         self.restart_interval = 1.0
         if _Debug:
             lg.out(_DebugLevel, '    my current suppliers: %r' % contactsdb.suppliers())
@@ -779,13 +778,11 @@ class FireHire(automat.Automat):
         # from main import control
         # control.on_suppliers_changed(current_suppliers)
         for position, supplier_idurl in removed_suppliers:
-            events.send(
-                'supplier-modified', data=dict(
-                    new_idurl=None,
-                    old_idurl=supplier_idurl,
-                    position=position,
-                )
-            )
+            events.send('supplier-modified', data=dict(
+                new_idurl=None,
+                old_idurl=supplier_idurl,
+                position=position,
+            ))
         lg.info('removed some suppliers : %d  desired_suppliers=%d current_suppliers=%d' % (len(self.dismiss_list), desired_suppliers, len(contactsdb.suppliers())))
         if _Debug:
             lg.out(_DebugLevel, '    my current suppliers: %r' % contactsdb.suppliers())
@@ -854,13 +851,14 @@ class FireHire(automat.Automat):
         self.hire_list = []
         if not self.restart_task:
             self.restart_task = reactor.callLater(  # @UndefinedVariable
-                self.restart_interval, self._scheduled_restart
+                self.restart_interval,
+                self._scheduled_restart,
             )
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             from p2p import network_connector
             if network_connector.A().state != 'CONNECTED':
-                self.restart_interval = 60 * 5
+                self.restart_interval = 60*5
             else:
                 self.restart_interval *= 1.1
         else:

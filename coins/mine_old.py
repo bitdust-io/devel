@@ -87,7 +87,7 @@ def get_hash_difficulty(hexdigest, simplification=2):
     while True:
         ok = False
         for simpl in range(simplification):
-            if hexdigest.startswith(str(simpl) * difficulty):
+            if hexdigest.startswith(str(simpl)*difficulty):
                 ok = True
                 break
         if ok:
@@ -150,7 +150,6 @@ def work_from_known_hash(coin_json, prev_hash, simplification=2, starter_length=
 
 
 class MininigCounter(object):
-
     def __init__(self, max_counts, max_seconds):
         self.max_counts = max_counts
         self.max_seconds = max_seconds

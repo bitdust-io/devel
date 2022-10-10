@@ -286,7 +286,7 @@ def build_order():
     while progress and not fail:
         progress = False
         counter += 1
-        if counter > len(enabled_services()) * len(enabled_services()):
+        if counter > len(enabled_services())*len(enabled_services()):
             lg.warn('dependency recursion')
             fail = True
             break
@@ -459,9 +459,7 @@ def restart(service_name, wait_timeout=None):
     def _do_start(stop_result=None, dependencies_results=None):
         if _Debug:
             lg.out(_DebugLevel, 'driver.restart._do_start : %s' % service_name)
-        start_defer = start(services_list=[
-            service_name,
-        ])
+        start_defer = start(services_list=[service_name])
         start_defer.addCallback(_on_started, stop_result, dependencies_results)
         start_defer.addErrback(_on_failed)
         return start_defer
@@ -475,9 +473,7 @@ def restart(service_name, wait_timeout=None):
     def _do_stop(dependencies_results=None):
         if _Debug:
             lg.out(_DebugLevel, 'driver.restart._do_stop : %s' % service_name)
-        stop_defer = stop(services_list=[
-            service_name,
-        ])
+        stop_defer = stop(services_list=[service_name])
         stop_defer.addCallback(_on_stopped, dependencies_results)
         stop_defer.addErrback(_on_failed)
         return stop_defer

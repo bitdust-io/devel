@@ -112,6 +112,8 @@ class Discover(object):
                     logging.debug('Replying to host %s' % (hostid,))
                     self.bsocket.sendto('S', self.broadcast_addr)
             except:
-                logging.error('An error has occured during execution of '
-                              'Discover.listen')
+                logging.error(
+                    'An error has occured during execution of '
+                    'Discover.listen',
+                )
                 sys.excepthook(*sys.exc_info())

@@ -145,7 +145,6 @@ class ProxyRouter(automat.Automat):
     This class implements all the functionality of the ``proxy_router()`` state
     machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
@@ -479,11 +478,7 @@ class ProxyRouter(automat.Automat):
                         lg.err('not found session state machine by index %s' % user_connection_info['index'])
                 else:
                     if _Debug:
-                        lg.dbg(_DebugLevel, 'active connection with user %s at %s:%s not yet exist' % (
-                            user_idurl.original(),
-                            info.proto,
-                            info.host,
-                        ))
+                        lg.dbg(_DebugLevel, 'active connection with user %s at %s:%s not yet exist' % (user_idurl.original(), info.proto, info.host))
                         lg.dbg(_DebugLevel, 'current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
                 out_ack = p2p_service.SendAck(request, 'accepted', wide=True)
                 self.acks[out_ack.PacketID] = out_ack.RemoteID
@@ -606,7 +601,7 @@ class ProxyRouter(automat.Automat):
             receiver_idurl=receiver_idurl,
             receiver_proto=receiver_proto,
             receiver_host=receiver_host,
-            failed_callback=lambda pkt_out, msg: self._on_routed_in_packet_failed(pkt_out, msg, newpacket, info, receiver_idurl)
+            failed_callback=lambda pkt_out, msg: self._on_routed_in_packet_failed(pkt_out, msg, newpacket, info, receiver_idurl),
         )
         if _Debug:
             lg.out(_DebugLevel, '<<<Route-IN %s %s:%s' % (
@@ -854,7 +849,7 @@ class ProxyRouter(automat.Automat):
                     global_id.UrlToGlobalID(receiver_idurl),
                 ),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
         del routed_data
         del route
@@ -874,16 +869,18 @@ class ProxyRouter(automat.Automat):
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayFail(),
             inbox_packet=newpacket,
-            data=serialization.DictToBytes({
-                'command': newpacket.Command,
-                'packet_id': newpacket.PacketID,
-                'from': sender_idurl,
-                'to': receiver_idurl,
-                'error': error,
-                'wide': wide,
-                'response_timeout': response_timeout,
-                'keep_alive': keep_alive,
-            }),
+            data=serialization.DictToBytes(
+                {
+                    'command': newpacket.Command,
+                    'packet_id': newpacket.PacketID,
+                    'from': sender_idurl,
+                    'to': receiver_idurl,
+                    'error': error,
+                    'wide': wide,
+                    'response_timeout': response_timeout,
+                    'keep_alive': keep_alive,
+                }
+            ),
             publickey=publickey,
             receiver_idurl=sender_idurl,
             receiver_proto=receiver_proto,
@@ -891,15 +888,17 @@ class ProxyRouter(automat.Automat):
             error=error,
         )
         if _Debug:
-            lg.out(_DebugLevel, '<<<Route-FAIL %s from %s:%s   sent to %s://%s with %d bytes in %s' % (
-                str(newpacket),
-                strng.to_text(info.proto),
-                strng.to_text(info.host),
-                strng.to_text(info.proto),
-                strng.to_text(info.host),
-                len(raw_data),
-                pout,
-            ))
+            lg.out(
+                _DebugLevel, '<<<Route-FAIL %s from %s:%s   sent to %s://%s with %d bytes in %s' % (
+                    str(newpacket),
+                    strng.to_text(info.proto),
+                    strng.to_text(info.host),
+                    strng.to_text(info.proto),
+                    strng.to_text(info.host),
+                    len(raw_data),
+                    pout,
+                )
+            )
         del raw_data
         del pout
 
@@ -963,7 +962,7 @@ class ProxyRouter(automat.Automat):
                     reason,
                 ),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
         del block
         del routed_packet
@@ -1031,16 +1030,18 @@ class ProxyRouter(automat.Automat):
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayAck(),
             inbox_packet=newpacket,
-            data=serialization.DictToBytes({
-                'command': routed_command,
-                'packet_id': routed_packet_id,
-                'from': sender_idurl,
-                'to': routed_remote_id,
-                'error': '',
-                'wide': wide,
-                'response_timeout': response_timeout,
-                'keep_alive': keep_alive,
-            }),
+            data=serialization.DictToBytes(
+                {
+                    'command': routed_command,
+                    'packet_id': routed_packet_id,
+                    'from': sender_idurl,
+                    'to': routed_remote_id,
+                    'error': '',
+                    'wide': wide,
+                    'response_timeout': response_timeout,
+                    'keep_alive': keep_alive,
+                }
+            ),
             publickey=publickey,
             receiver_idurl=sender_idurl,
             receiver_proto=receiver_proto,
@@ -1069,16 +1070,18 @@ class ProxyRouter(automat.Automat):
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayFail(),
             inbox_packet=newpacket,
-            data=serialization.DictToBytes({
-                'command': routed_command,
-                'packet_id': routed_packet_id,
-                'from': sender_idurl,
-                'to': routed_remote_id,
-                'error': 'routed packet delivery failed',
-                'wide': wide,
-                'response_timeout': response_timeout,
-                'keep_alive': keep_alive,
-            }),
+            data=serialization.DictToBytes(
+                {
+                    'command': routed_command,
+                    'packet_id': routed_packet_id,
+                    'from': sender_idurl,
+                    'to': routed_remote_id,
+                    'error': 'routed packet delivery failed',
+                    'wide': wide,
+                    'response_timeout': response_timeout,
+                    'keep_alive': keep_alive,
+                }
+            ),
             publickey=publickey,
             receiver_idurl=sender_idurl,
             receiver_proto=receiver_proto,
@@ -1112,7 +1115,7 @@ class ProxyRouter(automat.Automat):
                 newpacket.RemoteID.original(),
             ))
             for k, v in self.routes.items():
-                lg.out(_DebugLevel * 2, '        route with %r :  address=%s  contacts=%s' % (
+                lg.out(_DebugLevel*2, '        route with %r :  address=%s  contacts=%s' % (
                     k,
                     v.get('address'),
                     v.get('contacts'),
@@ -1254,7 +1257,7 @@ class ProxyRouter(automat.Automat):
                     receiver_host,
                 ),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
         if _Debug:
             lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route, pkt_out=pkt_out)
@@ -1281,14 +1284,17 @@ class ProxyRouter(automat.Automat):
             lg.dbg(_DebugLevel, 'switched %s://%s to %s://%s for outgoing %r' % (proto, host, receiver_proto, receiver_host, pkt_out))
         if _PacketLogFileEnabled:
             lg.out(
-                0, '\033[1;49;94mOUTBOX HOST SWITCH %s://%s to %s://%s for %s towards %s\033[0m' % (
+                0,
+                '\033[1;49;94mOUTBOX HOST SWITCH %s://%s to %s://%s for %s towards %s\033[0m' % (
                     proto,
                     host,
                     receiver_proto,
                     receiver_host,
                     description,
                     global_id.UrlToGlobalID(remote_idurl),
-                ), log_name='packet', showtime=True
+                ),
+                log_name='packet',
+                showtime=True,
             )
         result_defer = gateway.transport(receiver_proto).call('send_file', remote_idurl, filename, receiver_host, description)
         callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, receiver_proto, receiver_host, filename, description, pkt_out)

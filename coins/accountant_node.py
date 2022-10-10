@@ -275,9 +275,12 @@ class AccountantNode(automat.Automat):
         Action method.
         """
         from coins import accountants_finder
-        accountants_finder.A('start', (self.automat, {
-            'action': 'join',
-        }))
+        accountants_finder.A('start', (
+            self.automat,
+            {
+                'action': 'join',
+            },
+        ))
 
     def doAddAccountant(self, *args, **kwargs):
         """
@@ -422,9 +425,12 @@ class AccountantNode(automat.Automat):
                 p2p_service.SendFail(newpacket, 'coin verification failed')
                 return True
             if coins_db.exist(acoin):
-                self.automat('valid-coins-received', [
-                    acoin,
-                ])
+                self.automat(
+                    'valid-coins-received',
+                    [
+                        acoin,
+                    ],
+                )
             else:
                 self.automat('new-coin-mined', acoin)
             return True

@@ -39,7 +39,9 @@ def vacuum(cursor, name):
 def dupes_check_sigs(cursor, name):
     print(f'Testing {name} for sig duplicates')
 
-    cursor.execute("SELECT * FROM transactions WHERE signature IN (SELECT signature FROM transactions WHERE signature != '0' GROUP BY signature HAVING COUNT(*) >1)")
+    cursor.execute(
+        "SELECT * FROM transactions WHERE signature IN (SELECT signature FROM transactions WHERE signature != '0' GROUP BY signature HAVING COUNT(*) >1)"
+    )
     results = cursor.fetchall()
 
     dupes_allowed = [708334, 708335]
@@ -54,7 +56,7 @@ def dupes_check_rows_transactions(cursor, name):
     print(f'Testing {name} for transaction row duplicates')
 
     cursor.execute(
-        'SELECT block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield, COUNT(*) FROM transactions GROUP BY block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield HAVING COUNT(*) > 1'
+        'SELECT block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield, COUNT(*) FROM transactions GROUP BY block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield HAVING COUNT(*) > 1',
     )
     result = cursor.fetchall()
     for entry in result:

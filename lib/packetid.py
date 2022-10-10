@@ -74,10 +74,10 @@ def UniqueID():
     """
     global _LastUniqueNumber
     if _LastUniqueNumber == 0:
-        _LastUniqueNumber = int(time.time() * 100.0)
+        _LastUniqueNumber = int(time.time()*100.0)
     _LastUniqueNumber += 1
     if _LastUniqueNumber > 100000000000000:
-        _LastUniqueNumber = int(time.time() * 100.0)
+        _LastUniqueNumber = int(time.time()*100.0)
     return str(int(random.getrandbits(8))) + str(_LastUniqueNumber)
 
 

@@ -97,7 +97,7 @@ from userid import id_url
 #------------------------------------------------------------------------------
 
 MAX_QUEUE_LENGTH = 100
-MAX_CONSUMER_PENDING_MESSAGES = int(MAX_QUEUE_LENGTH / 2)
+MAX_CONSUMER_PENDING_MESSAGES = int(MAX_QUEUE_LENGTH/2)
 
 MIN_PROCESS_QUEUES_DELAY = 0.1
 MAX_PROCESS_QUEUES_DELAY = 2.0
@@ -144,7 +144,7 @@ def make_message_id():
     """
     global _LastMessageID
     if _LastMessageID is None:
-        _LastMessageID = int(str(int(time.time() * 100.0))[4:])
+        _LastMessageID = int(str(int(time.time()*100.0))[4:])
     _LastMessageID += 1
     return _LastMessageID
 
@@ -432,7 +432,7 @@ def unsubscribe_consumer(consumer_id, queue_id=None, remove_empty=False):
         raise Exception('consumer not found')
     if queue_id is None:
         consumer(consumer_id).queues = []
-        lg.info('consumer %s unsubscribed from all queues' % (consumer_id,))
+        lg.info('consumer %s unsubscribed from all queues' % (consumer_id, ))
         if remove_empty:
             remove_consumer(consumer_id)
         return True
@@ -522,7 +522,7 @@ def disconnect_producer(producer_id, queue_id=None, remove_empty=False):
         raise Exception('queue not exist')
     if queue_id is None:
         producer(producer_id).queues = []
-        lg.info('producer %s disconnected from all queues' % (producer_id,))
+        lg.info('producer %s disconnected from all queues' % (producer_id, ))
         if remove_empty:
             remove_producer(producer_id)
         return True
@@ -639,9 +639,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
             queue_id,
         ))
     # TODO: add a counter and execute cleanup less frequently
-    do_cleanup(target_queues=[
-        queue_id,
-    ])
+    do_cleanup(target_queues=[queue_id])
     # reactor.callLater(0, do_cleanup, target_queues=[queue_id, ])  # @UndefinedVariable
     return result
 
@@ -662,9 +660,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
             queue_id,
         ))
     # TODO: add a counter and execute cleanup less frequently
-    do_cleanup(target_queues=[
-        queue_id,
-    ])
+    do_cleanup(target_queues=[queue_id])
     return None
 
 
@@ -1081,7 +1077,6 @@ def do_cleanup(target_queues=None):
 
 
 class QueueMessage(object):
-
     def __init__(self, producer_id, queue_id, json_data, created=None):
         self.message_id = make_message_id()
         self.producer_id = producer_id
@@ -1120,7 +1115,6 @@ class QueueMessage(object):
 
 
 class ConsumerInfo(object):
-
     def __init__(self, consumer_id):
         self.state = 'READY'
         self.consumer_id = consumer_id
@@ -1135,7 +1129,6 @@ class ConsumerInfo(object):
 
 
 class ProducerInfo(object):
-
     def __init__(self, producer_id):
         self.state = 'READY'
         self.producer_id = producer_id

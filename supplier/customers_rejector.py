@@ -105,7 +105,6 @@ class CustomersRejector(automat.Automat):
     This class implements all the functionality of the ``customers_rejector()``
     state machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -213,7 +212,7 @@ class CustomersRejector(automat.Automat):
                 lg.warn('last connected_time for customer %r is unknown, rejecting customer' % customer_idurl)
                 dead_customers.append(customer_idurl)
                 continue
-            if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
+            if utime.get_sec1970() - connected_time > customer_idle_days*24*60*60:
                 lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
                     customer_idurl,
                     utime.get_sec1970() - connected_time,

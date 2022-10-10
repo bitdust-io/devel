@@ -75,8 +75,10 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
 
         # Begin with costless checks first, so we can early exit. Time of tx
         if tx.start_time_tx < tx.q_received_timestamp:
-            raise ValueError(f'Future transaction not allowed, timestamp '
-                             f'{quantize_two((tx.q_received_timestamp - tx.start_time_tx) / 60)} minutes in the future')
+            raise ValueError(
+                f'Future transaction not allowed, timestamp '
+                f'{quantize_two((tx.q_received_timestamp - tx.start_time_tx) / 60)} minutes in the future',
+            )
         if node.last_block_timestamp - 86400 > tx.q_received_timestamp:
             raise ValueError('Transaction older than 24h not allowed.')
         # Amount
@@ -89,11 +91,14 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
             raise ValueError('Not a valid recipient address')
 
         # Now we can process cpu heavier checks, decode and check sig itself
-        buffer = str((tx.received_timestamp, tx.received_address, tx.received_recipient, tx.received_amount, tx.received_operation, tx.received_openfield)).encode('utf-8')
+        buffer = str((tx.received_timestamp, tx.received_address, tx.received_recipient, tx.received_amount, tx.received_operation, tx.received_openfield)
+                    ).encode('utf-8')
         # Will raise if error - also includes reconstruction of address from pubkey to make sure it matches
         SignerFactory.verify_bis_signature(tx.received_signature_enc, tx.received_public_key_b64encoded, buffer, tx.received_address)
-        node.logger.app_log.info(f'Valid signature from {tx.received_address} '
-                                 f'to {tx.received_recipient} amount {tx.received_amount}')
+        node.logger.app_log.info(
+            f'Valid signature from {tx.received_address} '
+            f'to {tx.received_recipient} amount {tx.received_amount}',
+        )
 
     def rewards():
         if int(block_instance.block_height_new) % 10 == 0:  # every 10 blocks
@@ -113,22 +118,32 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 if node.old_sqlite:
                     db_handler.execute_param(db_handler.h, 'SELECT block_height FROM transactions WHERE signature = ?1;', (entry_signature,))
                 else:
-                    db_handler.execute_param(db_handler.h, 'SELECT block_height FROM transactions WHERE substr(signature,1,4) = substr(?1,1,4) and signature = ?1;', (entry_signature,))
+                    db_handler.execute_param(
+                        db_handler.h, 'SELECT block_height FROM transactions WHERE substr(signature,1,4) = substr(?1,1,4) and signature = ?1;',
+                        (entry_signature,)
+                    )
 
                 tx_presence_check = db_handler.h.fetchone()
                 if tx_presence_check:
                     # print(node.last_block)
-                    raise ValueError(f'That transaction {entry_signature[:10]} is already in our ledger, '
-                                     f'block_height {tx_presence_check[0]}')
+                    raise ValueError(
+                        f'That transaction {entry_signature[:10]} is already in our ledger, '
+                        f'block_height {tx_presence_check[0]}',
+                    )
                 if node.old_sqlite:
                     db_handler.execute_param(db_handler.c, 'SELECT block_height FROM transactions WHERE signature = ?1;', (entry_signature,))
                 else:
-                    db_handler.execute_param(db_handler.c, 'SELECT block_height FROM transactions WHERE substr(signature,1,4) = substr(?1,1,4) and signature = ?1;', (entry_signature,))
+                    db_handler.execute_param(
+                        db_handler.c, 'SELECT block_height FROM transactions WHERE substr(signature,1,4) = substr(?1,1,4) and signature = ?1;',
+                        (entry_signature,)
+                    )
                 tx_presence_check = db_handler.c.fetchone()
                 if tx_presence_check:
                     # print(node.last_block)
-                    raise ValueError(f'That transaction {entry_signature[:10]} is already in our RAM ledger, '
-                                     f'block_height {tx_presence_check[0]}')
+                    raise ValueError(
+                        f'That transaction {entry_signature[:10]} is already in our RAM ledger, '
+                        f'block_height {tx_presence_check[0]}',
+                    )
             else:
                 raise ValueError(f'Empty signature from {peer_ip}')
 
@@ -168,9 +183,10 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 miner_tx.miner_address = tx.received_address
                 # print("miner_tx1", miner_tx)
 
-            block_instance.transaction_list_converted.append(
-                (tx.received_timestamp, tx.received_address, tx.received_recipient, tx.received_amount, tx.received_signature_enc, tx.received_public_key_b64encoded, tx.received_operation, tx.received_openfield)
-            )
+            block_instance.transaction_list_converted.append((
+                tx.received_timestamp, tx.received_address, tx.received_recipient, tx.received_amount, tx.received_signature_enc,
+                tx.received_public_key_b64encoded, tx.received_operation, tx.received_openfield
+            ))
             transaction_validate()
 
     def process_transactions(block):
@@ -190,7 +206,11 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
 
             for tx_index, transaction in enumerate(block):
                 if float(transaction[0]) < oldest_possible_tx:
-                    raise ValueError('txid {} from {} is older ({}) than oldest possible date ({})'.format(transaction[4][:56], transaction[1], transaction[0], oldest_possible_tx))
+                    raise ValueError(
+                        'txid {} from {} is older ({}) than oldest possible date ({})'.format(
+                            transaction[4][:56], transaction[1], transaction[0], oldest_possible_tx
+                        )
+                    )
                 db_timestamp = '%.2f' % quantize_two(transaction[0])
                 db_address = str(transaction[1])[:56]
                 db_recipient = str(transaction[2])[:56]
@@ -209,7 +229,9 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                         block_debit_address = quantize_eight(Decimal(block_debit_address) + Decimal(x[3]))
 
                         if x != block[-1]:
-                            block_fees_address = quantize_eight(Decimal(block_fees_address) + Decimal(essentials.fee_calculate(db_openfield, db_operation, node.last_block)))  # exclude the mining tx from fees
+                            block_fees_address = quantize_eight(
+                                Decimal(block_fees_address) + Decimal(essentials.fee_calculate(db_openfield, db_operation, node.last_block))
+                            )  # exclude the mining tx from fees
 
                 # node.logger.app_log.info("Fee: " + str(fee))
 
@@ -243,21 +265,37 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
 
                     if quantize_eight(balance) - quantize_eight(block_fees_address) < 0:
                         # exclude fee check for the mining/header tx
-                        raise ValueError(f'{db_address} Cannot afford to pay fees (balance: {balance}, '
-                                         f'block fees: {block_fees_address})')
+                        raise ValueError(
+                            f'{db_address} Cannot afford to pay fees (balance: {balance}, '
+                            f'block fees: {block_fees_address})',
+                        )
 
                 # append, but do not insert to ledger before whole block is validated,
                 # note that it takes already validated values (decimals, length)
-                node.logger.app_log.info(f'Chain: Appending transaction back to block with '
-                                         f'{len(block_transactions)} transactions in it')
+                node.logger.app_log.info(
+                    f'Chain: Appending transaction back to block with '
+                    f'{len(block_transactions)} transactions in it',
+                )
                 block_transactions.append((
-                    str(block_instance.block_height_new), str(db_timestamp), str(db_address), str(db_recipient), str(db_amount), str(db_signature), str(db_public_key_b64encoded), str(block_instance.block_hash), str(fee), str(reward),
-                    str(db_operation), str(db_openfield)
+                    str(block_instance.block_height_new),
+                    str(db_timestamp),
+                    str(db_address),
+                    str(db_recipient),
+                    str(db_amount),
+                    str(db_signature),
+                    str(db_public_key_b64encoded),
+                    str(block_instance.block_hash),
+                    str(fee),
+                    str(reward),
+                    str(db_operation),
+                    str(db_openfield),
                 ))
                 try:
                     mp.MEMPOOL.delete_transaction(db_signature)
-                    node.logger.app_log.info(f'Chain: Removed processed transaction {db_signature[:56]}'
-                                             f' from the mempool while digesting')
+                    node.logger.app_log.info(
+                        f'Chain: Removed processed transaction {db_signature[:56]}'
+                        f' from the mempool while digesting',
+                    )
                 except:
                     # tx was not or is no more in the local mempool
                     pass
@@ -298,8 +336,10 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 # reject blocks older than latest block
                 if miner_tx.q_block_timestamp <= node.last_block_timestamp:
                     # print("miner_tx2", miner_tx)
-                    raise ValueError(f'!Block is older {miner_tx.q_block_timestamp} '
-                                     f'than the previous one {node.last_block_timestamp} , will be rejected')
+                    raise ValueError(
+                        f'!Block is older {miner_tx.q_block_timestamp} '
+                        f'than the previous one {node.last_block_timestamp} , will be rejected',
+                    )
 
                 check_signature(block)
 
@@ -325,15 +365,37 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 db_handler.execute_param(db_handler.h, 'SELECT block_height FROM transactions WHERE block_hash = ?', (block_instance.block_hash,))
                 dummy = db_handler.h.fetchone()
                 if dummy:
-                    raise ValueError('Skipping digestion of block {} from {}, because we already have it on block_height {}'.format(block_instance.block_hash[:10], peer_ip, dummy[0]))
+                    raise ValueError(
+                        'Skipping digestion of block {} from {}, because we already have it on block_height {}'.format(
+                            block_instance.block_hash[:10], peer_ip, dummy[0]
+                        )
+                    )
 
                 if node.is_mainnet:
                     diff_save = mining_heavy3.check_block(
-                        block_instance.block_height_new, miner_tx.miner_address, miner_tx.nonce, node.last_block_hash, diff[0], tx.received_timestamp, tx.q_received_timestamp, node.last_block_timestamp, peer_ip=peer_ip, app_log=node.logger.app_log
+                        block_instance.block_height_new,
+                        miner_tx.miner_address,
+                        miner_tx.nonce,
+                        node.last_block_hash,
+                        diff[0],
+                        tx.received_timestamp,
+                        tx.q_received_timestamp,
+                        node.last_block_timestamp,
+                        peer_ip=peer_ip,
+                        app_log=node.logger.app_log,
                     )
                 elif node.is_testnet:
                     diff_save = mining_heavy3.check_block(
-                        block_instance.block_height_new, miner_tx.miner_address, miner_tx.nonce, node.last_block_hash, diff[0], tx.received_timestamp, tx.q_received_timestamp, node.last_block_timestamp, peer_ip=peer_ip, app_log=node.logger.app_log
+                        block_instance.block_height_new,
+                        miner_tx.miner_address,
+                        miner_tx.nonce,
+                        node.last_block_hash,
+                        diff[0],
+                        tx.received_timestamp,
+                        tx.q_received_timestamp,
+                        node.last_block_timestamp,
+                        peer_ip=peer_ip,
+                        app_log=node.logger.app_log,
                     )
                 else:
                     # it's regnet then, will use a specific fake method here.
@@ -347,7 +409,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                         tx.q_received_timestamp,
                         node.last_block_timestamp,
                         peer_ip=peer_ip,
-                        app_log=node.logger.app_log
+                        app_log=node.logger.app_log,
                     )
 
                 process_transactions(block)
@@ -360,33 +422,38 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
 
                 # quantized vars have to be converted, since Decimal is not json serializable...
                 node.plugin_manager.execute_action_hook(
-                    'block', {
-                        'height': block_instance.block_height_new,
-                        'diff': diff_save,
-                        'hash': block_instance.block_hash,
-                        'timestamp': float(miner_tx.q_block_timestamp),
-                        'miner': miner_tx.miner_address,
-                        'ip': peer_ip
-                    }
-                )
-
-                node.plugin_manager.execute_action_hook(
-                    'fullblock', {
+                    'block',
+                    {
                         'height': block_instance.block_height_new,
                         'diff': diff_save,
                         'hash': block_instance.block_hash,
                         'timestamp': float(miner_tx.q_block_timestamp),
                         'miner': miner_tx.miner_address,
                         'ip': peer_ip,
-                        'transactions': block_transactions
-                    }
+                    },
+                )
+
+                node.plugin_manager.execute_action_hook(
+                    'fullblock',
+                    {
+                        'height': block_instance.block_height_new,
+                        'diff': diff_save,
+                        'hash': block_instance.block_hash,
+                        'timestamp': float(miner_tx.q_block_timestamp),
+                        'miner': miner_tx.miner_address,
+                        'ip': peer_ip,
+                        'transactions': block_transactions,
+                    },
                 )
 
                 db_handler.to_db(block_instance, diff_save, block_transactions)
 
                 # new sha_hash
-                db_handler.execute(db_handler.c, 'SELECT * FROM transactions '
-                                   'WHERE block_height = (SELECT max(block_height) FROM transactions)')
+                db_handler.execute(
+                    db_handler.c,
+                    'SELECT * FROM transactions '
+                    'WHERE block_height = (SELECT max(block_height) FROM transactions)',
+                )
                 # Was trying to simplify, but it's the latest mirror sha_hash.
                 # not the latest block, nor the mirror of the latest block.
                 # c.execute("SELECT * FROM transactions WHERE block_height = ?", (block_instance.block_height_new -1,))
@@ -403,7 +470,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                     f'Valid block: {block_instance.block_height_new}: '
                     f'{block_instance.block_hash[:10]} with {len(block)} txs, '
                     f'digestion from {peer_ip} completed in '
-                    f'{str(time.time() - float(block_instance.start_time_block))[:5]}s.'
+                    f'{str(time.time() - float(block_instance.start_time_block))[:5]}s.',
                 )
 
                 if block_instance.tokens_operation_present:
@@ -493,7 +560,15 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
             delta_t = time.time() - float(block_instance.start_time_block)
             # node.logger.app_log.warning("Block: {}: {} digestion completed in {}s."
             # .format(block_instance.block_height_new,  block_hash[:10], delta_t))
-            node.plugin_manager.execute_action_hook('digestblock', {'failed': block_instance.failed_cause, 'ip': peer_ip, 'deltat': delta_t, 'blocks': block_instance.block_count, 'txs': block_instance.tx_count})
+            node.plugin_manager.execute_action_hook(
+                'digestblock', {
+                    'failed': block_instance.failed_cause,
+                    'ip': peer_ip,
+                    'deltat': delta_t,
+                    'blocks': block_instance.block_count,
+                    'txs': block_instance.tx_count
+                }
+            )
 
     else:
         node.logger.app_log.warning(f'Chain: Skipping processing from {peer_ip}, someone delivered data faster')

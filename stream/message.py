@@ -87,7 +87,7 @@ _OutgoingMessageCallbacks = []
 _MessageQueuePerConsumer = {}
 
 _LastUserPingTime = {}
-_PingTrustIntervalSeconds = 60 * 5
+_PingTrustIntervalSeconds = 60*5
 
 #------------------------------------------------------------------------------
 
@@ -134,7 +134,7 @@ def ConnectCorrespondent(idurl):
 
 
 def UniqueID():
-    return str(int(time.time() * 100.0))
+    return str(int(time.time()*100.0))
 
 
 #------------------------------------------------------------------------------
@@ -199,7 +199,6 @@ class PrivateMessage(object):
     We always encrypt messages with a session key so we need to package
     with encrypted body.
     """
-
     def __init__(self, recipient, sender=None, encrypted_session=None, encrypted_body=None):
         self.sender = strng.to_text(sender or my_id.getGlobalID(key_alias='master'))
         self.recipient = strng.to_text(recipient)
@@ -307,7 +306,6 @@ class PrivateMessage(object):
 
 
 class GroupMessage(PrivateMessage):
-
     def __str__(self):
         return 'GroupMessage(%s->%s)' % (
             self.sender,

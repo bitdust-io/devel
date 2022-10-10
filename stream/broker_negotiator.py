@@ -130,7 +130,8 @@ class BrokerNegotiator(automat.Automat):
         self.queue_id = None
         self.requestor_known_brokers = None
         self.connect_request = None
-        super(BrokerNegotiator, self).__init__(name='broker_negotiator', state='AT_STARTUP', debug_level=debug_level or _DebugLevel, log_events=log_events or _Debug, log_transitions=log_transitions or _Debug, publish_events=publish_events, **kwargs)
+        super(BrokerNegotiator,
+              self).__init__(name='broker_negotiator', state='AT_STARTUP', debug_level=debug_level or _DebugLevel, log_events=log_events or _Debug, log_transitions=log_transitions or _Debug, publish_events=publish_events, **kwargs)
 
     def __repr__(self):
         return '%s[%s:%s](%s)' % (
@@ -372,7 +373,7 @@ class BrokerNegotiator(automat.Automat):
                 lg.warn('received a request to change the cooperation, another broker %r going to replace me on position %d' % (
                     self.requestor_known_brokers[self.my_position],
                     self.my_position,
-                ))
+                ), )
                 if not self.dht_brokers.get(self.my_position):
                     # there is no record in DHT for my position
                     # my info is not stored in DHT and another broker is going to replace me
@@ -390,7 +391,7 @@ class BrokerNegotiator(automat.Automat):
                             self.my_position,
                             self.dht_brokers[self.my_position],
                             self.requestor_known_brokers[self.my_position],
-                        )
+                        ),
                     )
                     if self.my_position == 0:
                         self.automat('my-top-record-busy-replace')
@@ -466,7 +467,7 @@ class BrokerNegotiator(automat.Automat):
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
-            request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
             force_handshake=True,
             attempts=1,
         )
@@ -491,7 +492,7 @@ class BrokerNegotiator(automat.Automat):
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, None),
-            request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
             force_handshake=True,
             attempts=1,
         )
@@ -533,7 +534,7 @@ class BrokerNegotiator(automat.Automat):
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
-                    request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+                    request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
                     exclude_nodes=list(exclude_brokers),
                     force_handshake=True,
                     attempts=1,
@@ -547,7 +548,7 @@ class BrokerNegotiator(automat.Automat):
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
-            request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
             exclude_nodes=list(exclude_brokers),
             attempts=1,
             force_handshake=True,

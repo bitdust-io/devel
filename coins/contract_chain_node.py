@@ -70,7 +70,7 @@ def get_coin_by_hash(hash_id):
         method='get',
         index='hash',
         key=hash_id,
-    )).result
+    ), ).result
 
 
 def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
@@ -83,7 +83,7 @@ def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
             provider_idurl,
             consumer_idurl,
         ),
-    )).result
+    ), ).result
 
 
 def send_to_miner(coins):
@@ -91,10 +91,12 @@ def send_to_miner(coins):
         return succeed(None)
     result = Deferred()
     p2p_service.SendCoin(
-        contract_chain_consumer.A().connected_miner, coins, callbacks={
+        contract_chain_consumer.A().connected_miner,
+        coins,
+        callbacks={
             commands.Ack(): lambda response, info: result.callback(response),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
-        }
+        },
     )
     return result
 
@@ -103,7 +105,6 @@ def send_to_miner(coins):
 
 
 class Query(object):
-
     def __init__(self, query_dict):
         """
         """
@@ -112,10 +113,12 @@ class Query(object):
         for idurl in contract_chain_consumer.A().connected_accountants:
             single_accountant = Deferred()
             outpacket = p2p_service.SendRetrieveCoin(
-                idurl, query_dict, callbacks={
+                idurl,
+                query_dict,
+                callbacks={
                     commands.Coin(): self._on_coin_received,
                     commands.Fail(): self._on_coin_failed,
-                }
+                },
             )
             assert outpacket.PacketID not in self.out_packets
             self.out_packets[outpacket.PacketID] = single_accountant

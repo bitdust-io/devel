@@ -29,11 +29,15 @@ def balanceget_at_block(balance_address, block, h3):
     # verify balance
 
     credit_ledger = Decimal('0')
-    for entry in execute_param(h3, ('SELECT amount FROM transactions WHERE block_height <= ? AND block_height >= ? AND recipient = ?;'), (
-        block,
-        -block,
-        balance_address,
-    )):
+    for entry in execute_param(
+        h3,
+        ('SELECT amount FROM transactions WHERE block_height <= ? AND block_height >= ? AND recipient = ?;'),
+        (
+            block,
+            -block,
+            balance_address,
+        ),
+    ):
         try:
             credit_ledger = quantize_eight(credit_ledger) + quantize_eight(entry[0])
             credit_ledger = 0 if credit_ledger is None else credit_ledger
@@ -43,11 +47,15 @@ def balanceget_at_block(balance_address, block, h3):
     fees = Decimal('0')
     debit_ledger = Decimal('0')
 
-    for entry in execute_param(h3, ('SELECT fee, amount FROM transactions WHERE block_height <= ? AND block_height >= ? AND address = ?;'), (
-        block,
-        -block,
-        balance_address,
-    )):
+    for entry in execute_param(
+        h3,
+        ('SELECT fee, amount FROM transactions WHERE block_height <= ? AND block_height >= ? AND address = ?;'),
+        (
+            block,
+            -block,
+            balance_address,
+        ),
+    ):
         try:
             fees = quantize_eight(fees) + quantize_eight(entry[0])
             fees = 0 if fees is None else fees
@@ -63,11 +71,15 @@ def balanceget_at_block(balance_address, block, h3):
     debit = quantize_eight(debit_ledger)
 
     rewards = Decimal('0')
-    for entry in execute_param(h3, ('SELECT reward FROM transactions WHERE block_height <= ? AND block_height >= ? AND recipient = ?;'), (
-        block,
-        -block,
-        balance_address,
-    )):
+    for entry in execute_param(
+        h3,
+        ('SELECT reward FROM transactions WHERE block_height <= ? AND block_height >= ? AND recipient = ?;'),
+        (
+            block,
+            -block,
+            balance_address,
+        ),
+    ):
         try:
             rewards = quantize_eight(rewards) + quantize_eight(entry[0])
             rewards = 0 if rewards is None else rewards
@@ -101,7 +113,8 @@ def staking_update(conn, c, index, index_cursor, mode, reg_phase_end, app_log):
     app_log.warning('reg_phase_end: {}'.format(reg_phase_end))
 
     c.execute(
-        'SELECT block_height, timestamp, address, recipient,operation, openfield FROM transactions WHERE block_height >= ? AND block_height <= ? AND operation = ? ORDER BY block_height, timestamp LIMIT 100', (
+        'SELECT block_height, timestamp, address, recipient,operation, openfield FROM transactions WHERE block_height >= ? AND block_height <= ? AND operation = ? ORDER BY block_height, timestamp LIMIT 100',
+        (
             reg_phase_start,
             reg_phase_end,
             'staking:register',
@@ -165,10 +178,13 @@ def staking_payout(conn, c, index, index_cursor, block_height, timestamp, app_lo
             app_log.warning('stake: {}'.format(stake))
 
             try:
-                c.execute('SELECT * from transactions WHERE block_height = ? AND recipient = ?', (
-                    -block_height,
-                    address,
-                ))
+                c.execute(
+                    'SELECT * from transactions WHERE block_height = ? AND recipient = ?',
+                    (
+                        -block_height,
+                        address,
+                    )
+                )
                 dummy = c.fetchall()[0]  # check for uniqueness
                 app_log.warning('staking payout already processed: {} {}'.format(block_height, address))
 
@@ -184,7 +200,10 @@ def staking_payout(conn, c, index, index_cursor, block_height, timestamp, app_lo
                 if stake_int < 1:
                     stake_int = 1
 
-                c.execute('INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', (-block_height, timestamp, 'staking', address, '0', '0', '0', mirror_hash, '0', '0', 'token:transfer', 'fuel:{}'.format(stake_int)))
+                c.execute(
+                    'INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+                    (-block_height, timestamp, 'staking', address, '0', '0', '0', mirror_hash, '0', '0', 'token:transfer', 'fuel:{}'.format(stake_int))
+                )
                 conn.commit()
                 app_log.warning('Staking fuel payout added: {} {}'.format(block_height, address))
                 #fuel

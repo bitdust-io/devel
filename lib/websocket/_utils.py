@@ -25,7 +25,6 @@ __all__ = ['NoLock', 'validate_utf8', 'extract_err_message', 'extract_error_code
 
 
 class NoLock(object):
-
     def __enter__(self):
         pass
 

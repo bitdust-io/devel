@@ -34,7 +34,9 @@ from six.moves import range
 
 __author__ = 'Andy Chu'
 
-__all__ = ['Error', 'CompilationError', 'EvaluationError', 'BadFormatter', 'BadPredicate', 'MissingFormatter', 'ConfigurationError', 'TemplateSyntaxError', 'UndefinedVariable', 'CompileTemplate', 'FromString', 'FromFile', 'Template', 'expand']
+__all__ = [
+    'Error', 'CompilationError', 'EvaluationError', 'BadFormatter', 'BadPredicate', 'MissingFormatter', 'ConfigurationError', 'TemplateSyntaxError', 'UndefinedVariable', 'CompileTemplate', 'FromString', 'FromFile', 'Template', 'expand'
+]
 
 from io import StringIO
 import pprint
@@ -57,7 +59,6 @@ class Error(Exception):
     Thus you can "except jsontemplate.Error: to catch all exceptions
     thrown by this module.
     """
-
     def __str__(self):
         """
         This helps people debug their templates.
@@ -84,7 +85,6 @@ class EvaluationError(Error):
     This class of errors generally involve the data dictionary or the
     execution of the formatters.
     """
-
     def __init__(self, msg, original_exception=None):
         Error.__init__(self, msg)
         self.original_exception = original_exception
@@ -138,7 +138,6 @@ class FunctionRegistry(object):
     """
     Abstract class for looking up formatters or predicates at compile time.
     """
-
     def Lookup(self, user_str):
         """
         Lookup a function.
@@ -177,7 +176,6 @@ class DictRegistry(FunctionRegistry):
     """
     Look up functions in a simple dictionary.
     """
-
     def __init__(self, func_dict):
         self.__dict__ = func_dict
 
@@ -189,7 +187,6 @@ class CallableRegistry(FunctionRegistry):
     """
     Look up functions in a (higher-order) function.
     """
-
     def __init__(self, func):
         self.func = func
 
@@ -205,7 +202,6 @@ class PrefixRegistry(FunctionRegistry):
     the prefix, usually a space, is considered the argument delimiter
     (similar to sed/perl's s/foo/bar s|foo|bar syntax).
     """
-
     def __init__(self, functions):
         """
         Args: functions: List of 2-tuples (prefix, function), e.g.
@@ -235,7 +231,6 @@ class ChainedRegistry(FunctionRegistry):
     """
     Look up functions in chain of other FunctionRegistry instances.
     """
-
     def __init__(self, registries):
         self.registries = registries
 
@@ -254,7 +249,6 @@ class _ProgramBuilder(object):
     Receives method calls from the parser, and constructs a tree of _Section()
     instances.
     """
-
     def __init__(self, formatters, predicates):
         """
         Args:
@@ -374,7 +368,6 @@ class _ProgramBuilder(object):
 
 
 class _AbstractSection(object):
-
     def __init__(self):
         # Pairs of func, args, or a literal string
         self.current_clause = []
@@ -396,7 +389,6 @@ class _Section(_AbstractSection):
     """
     Represents a (repeated) section.
     """
-
     def __init__(self, section_name=None):
         """
         Args:
@@ -428,7 +420,6 @@ class _RepeatedSection(_Section):
     """
     Repeated section is like section, but it supports {.alternates with}
     """
-
     def AlternatesWith(self):
         self.current_clause = []
         self.statements['alternates with'] = self.current_clause
@@ -438,7 +429,6 @@ class _PredicateSection(_AbstractSection):
     """
     Represents a sequence of predicate clauses.
     """
-
     def __init__(self):
         _AbstractSection.__init__(self)
         # List of func, statements
@@ -455,7 +445,6 @@ class _Frame(object):
     """
     A stack frame.
     """
-
     def __init__(self, context, index=-1):
         # Public attributes
         self.context = context
@@ -472,7 +461,6 @@ class _ScopedContext(object):
     If the variable isn't in the current context, then we search up the
     stack.
     """
-
     def __init__(self, context, undefined_str):
         """
         Args:
@@ -627,8 +615,7 @@ _DEFAULT_FORMATTERS = {
     #   "substitute 'url' as an HTML attribute value"
     'html-attr-value': _HtmlAttrValue,
     'htmltag': _HtmlAttrValue,
-    'raw': lambda x: x,
-    # Used for the length of a list.  Can be used for the size of a dictionary
+    'raw': lambda x: x,  # Used for the length of a list.  Can be used for the size of a dictionary
     # too, though I haven't run into that use case.
     'size': lambda value: str(len(value)),
 
@@ -716,7 +703,7 @@ def SplitMeta(meta):
     n = len(meta)
     if n % 2 == 1:
         raise ConfigurationError('%r has an odd number of metacharacters' % meta)
-    return meta[:int(n / 2)], meta[int(n / 2):]
+    return meta[:int(n/2)], meta[int(n/2):]
 
 
 _token_re_cache = {}
@@ -950,7 +937,7 @@ def CompileTemplate(template_str, builder=None, meta='{}', format_char='|', more
             if balance_counter < 0:
                 # TODO: Show some context for errors
                 raise TemplateSyntaxError('Got too many %send%s statements.  You may have mistyped an '
-                                          "earlier 'section' or 'repeated section' directive." % (meta_left, meta_right))
+                                          "earlier 'section' or 'repeated section' directive." % (meta_left, meta_right), )
             builder.EndSection()
             continue
 
@@ -1063,7 +1050,6 @@ class Template(object):
     any circumstance, e.g. generating HTML, CSS XML, JavaScript, C programs, text
     files, etc.
     """
-
     def __init__(self, template_str, builder=None, undefined_str=None, **compile_options):
         """
         Args: template_str: The template string. undefined_str: A string to

@@ -115,7 +115,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     if level % 2:
         level -= 1
     if level:
-        s = ' ' * level + s
+        s = ' '*level + s
     if _IsAndroid is None:
         _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ))
     if (_ShowTime and level > 0) or showtime:
@@ -123,7 +123,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
             mn = dt // 60
-            sc = dt - mn * 60
+            sc = dt - mn*60
             if _GlobalDebugLevel >= 6:
                 tm_string += '/%02d:%06.3f' % (mn, sc)
             else:
@@ -293,7 +293,7 @@ def err(message, level=0):
         message = ' %s in %s()' % (message, funcname)
     if not message.count('ERROR'):
         message = 'ERROR ' + message
-    message = '%s%s   ' % ((' ' * (level + 11)), message)
+    message = '%s%s   ' % ((' '*(level + 11)), message)
     if _UseColors:
         message = '\033[1;37;41m%s\033[0m' % message
     out(level, message, showtime=True)
@@ -599,7 +599,7 @@ def print_total_time():
     for t in _TimeTotalDict.keys():
         total = _TimeTotalDict[t]
         counts = _TimeCountsDict[t]
-        out(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total / counts, t))
+        out(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total/counts, t))
 
 
 def exception_hook(typ, value, traceback):
@@ -902,7 +902,6 @@ class STDERR_black_hole(object):
 
 
 class STDOUT_unbuffered(object):
-
     def __init__(self, stream):
         self.stream = stream
 
@@ -925,7 +924,6 @@ class STDOUT_unbuffered(object):
 
 
 class STDERR_unbuffered(object):
-
     def __init__(self, stream):
         self.stream = stream
 

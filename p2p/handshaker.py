@@ -117,13 +117,7 @@ def ping(
         else:
             _RunningHandshakers[remote_idurl]['results'].append(result)
             if _Debug:
-                lg.args(
-                    _DebugLevel,
-                    already_opened=True,
-                    idurl=remote_idurl,
-                    channel=channel,
-                    skip_outbox=skip_outbox,
-                )
+                lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox)
             return result
     pending_results += [
         result,
@@ -133,14 +127,7 @@ def ping(
         'results': pending_results,
     }
     if _Debug:
-        lg.args(
-            _DebugLevel,
-            already_opened=False,
-            idurl=remote_idurl,
-            channel=channel,
-            skip_outbox=skip_outbox,
-            pending_results=len(pending_results),
-        )
+        lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, pending_results=len(pending_results))
     h = Handshaker(
         remote_idurl=remote_idurl,
         ack_timeout=ack_timeout,
@@ -216,8 +203,9 @@ class Handshaker(automat.Automat):
     """
     This class implements all the functionality of ``handshaker()`` state machine.
     """
-
-    def __init__(self, remote_idurl, ack_timeout, cache_timeout, cache_retries, ping_retries, skip_outbox, keep_alive, fake_identity, channel, channel_counter, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(
+        self, remote_idurl, ack_timeout, cache_timeout, cache_retries, ping_retries, skip_outbox, keep_alive, fake_identity, channel, channel_counter, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs
+    ):
         """
         Builds `handshaker()` state machine.
         """
@@ -237,13 +225,8 @@ class Handshaker(automat.Automat):
             _KnownChannels[self.channel] = 0
         _KnownChannels[self.channel] += 1
         super(Handshaker, self).__init__(
-            name='handshake_%s%d_%s' % (self.channel.replace('_', ''), _KnownChannels[self.channel], self.remote_global_id),
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
+            name='handshake_%s%d_%s' % (self.channel.replace('_', ''), _KnownChannels[self.channel], self.remote_global_id), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions,
+            publish_events=publish_events, **kwargs
         )
 
     def init(self):
@@ -413,7 +396,7 @@ class Handshaker(automat.Automat):
                     result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
                         self.remote_idurl,
                         self.cache_attempts,
-                    )))
+                    ), ))
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -465,7 +448,7 @@ class Handshaker(automat.Automat):
                     result_defer.errback(Exception('remote node %s did not respond after %d ping attempt(s)' % (
                         self.remote_global_id,
                         self.ping_attempts,
-                    )))
+                    ), ))
 
     def doReportSuccess(self, *args, **kwargs):
         """

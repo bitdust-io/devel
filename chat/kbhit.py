@@ -32,7 +32,6 @@ else:
 
 
 class KBHit:
-
     def __init__(self):
         """
         Creates a KBHit object that you can call to do various keyboard things.

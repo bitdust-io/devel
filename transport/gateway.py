@@ -453,7 +453,7 @@ def inbox(info):
                 global_id.UrlToGlobalID(newpacket.RemoteID),
             ),
             log_name='packet',
-            showtime=True
+            showtime=True,
         )
     return newpacket
 
@@ -512,7 +512,7 @@ def outbox(
                 global_id.UrlToGlobalID(outpacket.RemoteID),
             ),
             log_name='packet',
-            showtime=True
+            showtime=True,
         )
     return callback.run_outbox_filter_callbacks(
         outpacket,
@@ -534,7 +534,7 @@ def make_transfer_ID():
     """
     global _LastTransferID
     if _LastTransferID is None:
-        _LastTransferID = int(str(int(time.time() * 100.0))[4:])
+        _LastTransferID = int(str(int(time.time()*100.0))[4:])
     _LastTransferID += 1
     return _LastTransferID
 
@@ -670,7 +670,7 @@ def cancel_input_file(transferID, why=None):
 def cancel_outbox_file(proto, host, filename, why=None):
     pkt_out, _ = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        lg.err('gateway.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
+        lg.err('gateway.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename), ))
         return None
     if _Debug:
         lg.out(_DebugLevel, 'gateway.cancel_outbox_file : %s:%s %s, why: %s' % (proto, host, filename, why))
@@ -765,7 +765,7 @@ def monitoring():
         if transport_log() and list_pkt_out and list_pkt_in:
             dt = time.time() - lg.when_life_begins()
             mn = dt // 60
-            sc = dt - mn * 60
+            sc = dt - mn*60
             transport_log().write(u'%02d:%02d    in: %s   out: %s\n' % (mn, sc, list_pkt_in, list_pkt_out))
             transport_log().flush()
 
@@ -885,12 +885,10 @@ def on_transport_state_changed(transport, oldstate, newstate):
 
 def on_transport_initialized(proto, xmlrpcurl=None):
     transport(proto).automat('transport-initialized', xmlrpcurl)
-    events.send(
-        'gateway-transport-initialized', data=dict(
-            proto=proto,
-            rpc_url=xmlrpcurl,
-        )
-    )
+    events.send('gateway-transport-initialized', data=dict(
+        proto=proto,
+        rpc_url=xmlrpcurl,
+    ))
     return True
 
 
@@ -898,13 +896,11 @@ def on_receiving_started(proto, host, options_modified=None):
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
     transport(proto).automat('receiving-started', (proto, host, options_modified))
-    events.send(
-        'gateway-receiving-started', data=dict(
-            proto=proto,
-            host=host,
-            options=options_modified,
-        )
-    )
+    events.send('gateway-receiving-started', data=dict(
+        proto=proto,
+        host=host,
+        options=options_modified,
+    ))
     return True
 
 
@@ -912,12 +908,10 @@ def on_receiving_failed(proto, error_code=None):
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
-    events.send(
-        'gateway-receiving-failed', data=dict(
-            proto=proto,
-            error=error_code,
-        )
-    )
+    events.send('gateway-receiving-failed', data=dict(
+        proto=proto,
+        error=error_code,
+    ))
     return True
 
 
@@ -926,12 +920,10 @@ def on_disconnected(proto, result=None):
         lg.out(_DebugLevel - 2, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if proto in transports():
         transport(proto).automat('stopped')
-    events.send(
-        'gateway-disconnected', data=dict(
-            proto=proto,
-            result=result,
-        )
-    )
+    events.send('gateway-disconnected', data=dict(
+        proto=proto,
+        result=result,
+    ))
     return True
 
 
@@ -1125,7 +1117,6 @@ class TransportGateLocalProxy():
     """
     A class to handle calls from transport plug-ins in the main thread.
     """
-
     def __init__(self):
         self.methods = {
             'transport_initialized': on_transport_initialized,
@@ -1168,7 +1159,6 @@ class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
     """
     XML-RPC server to receive calls from transport plug-ins.
     """
-
     def __init__(self):
         xmlrpc.XMLRPC.__init__(self, allowNone=True)
         self.methods = {

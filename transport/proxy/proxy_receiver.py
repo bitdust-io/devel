@@ -236,15 +236,17 @@ class ProxyReceiver(automat.Automat):
 
     def to_json(self):
         j = super().to_json()
-        j.update({
-            'proto': self.router_proto_host[0] if self.router_proto_host else '',
-            'host': net_misc.pack_address(self.router_proto_host[1]) if self.router_proto_host else '',
-            'idurl': self.router_idurl,
-            'bytes_received': self.traffic_in,
-            'bytes_sent': 0,
-            'connection_info': self.router_connection_info,
-            'idle_seconds': int(time.time() - self.latest_packet_received),
-        })
+        j.update(
+            {
+                'proto': self.router_proto_host[0] if self.router_proto_host else '',
+                'host': net_misc.pack_address(self.router_proto_host[1]) if self.router_proto_host else '',
+                'idurl': self.router_idurl,
+                'bytes_received': self.traffic_in,
+                'bytes_sent': 0,
+                'connection_info': self.router_connection_info,
+                'idle_seconds': int(time.time() - self.latest_packet_received),
+            }
+        )
         return j
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -431,10 +433,12 @@ class ProxyReceiver(automat.Automat):
             self.router_idurl,
         )
         packet_out.create(
-            newpacket, wide=True, callbacks={
+            newpacket,
+            wide=True,
+            callbacks={
                 commands.Ack(): self._on_request_service_ack,
                 commands.Fail(): self._on_request_service_fail,
-            }
+            },
         )
 
     def doProcessInboxPacket(self, *args, **kwargs):
@@ -674,7 +678,7 @@ class ProxyReceiver(automat.Automat):
                     '                \033[0;49;33mRELAY ACK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
                     (ack_info['command'], ack_info['packet_id'], info.bytes_received, global_id.UrlToGlobalID(ack_info['from']), global_id.UrlToGlobalID(ack_info['to']), info.transfer_id),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
             from transport.proxy import proxy_sender
             if proxy_sender.A():
@@ -702,7 +706,7 @@ class ProxyReceiver(automat.Automat):
                     '                \033[0;49;33mRELAY FAIL %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
                     (fail_info['command'], fail_info['packet_id'], info.bytes_received, global_id.UrlToGlobalID(fail_info['from']), global_id.UrlToGlobalID(fail_info['to']), info.transfer_id),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
             from transport.proxy import proxy_sender
             if proxy_sender.A():
@@ -722,7 +726,7 @@ class ProxyReceiver(automat.Automat):
                 '                \033[0;49;33mRELAY IN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
                 (routed_packet.Command, routed_packet.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(routed_packet.RemoteID), info.transfer_id),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
 
         if routed_packet.Command == commands.Identity():

@@ -163,7 +163,6 @@ def log(level, s):
 
 
 class LogPage(resource.Resource):
-
     def __init__(self, parent):
         self.parent = parent
         resource.Resource.__init__(self)
@@ -209,7 +208,7 @@ class LogPage(resource.Resource):
                 continue
 
             s = s.strip().replace('#nl', '\n')
-            s = ('%6d' % lineindex) + ' ' + timestr + (' ' * level) + ' ' + s
+            s = ('%6d' % lineindex) + ' ' + timestr + (' '*level) + ' ' + s
 
             textcolor = level2color.get(level, '')
             color = ''
@@ -269,7 +268,6 @@ class LogPage(resource.Resource):
 
 
 class RootResource(resource.Resource):
-
     def __init__(self):
         resource.Resource.__init__(self)
         logpage = LogPage(self)

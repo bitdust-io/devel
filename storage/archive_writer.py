@@ -87,7 +87,6 @@ class ArchiveWriter(automat.Automat):
     """
     This class implements all the functionality of ``archive_writer()`` state machine.
     """
-
     def __init__(self, local_data_callback, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `archive_writer()` state machine.
@@ -228,7 +227,7 @@ class ArchiveWriter(automat.Automat):
             return
         for block_num in self.packets_out.keys():
             block_packets_failed = list(self.packets_out[block_num].values()).count(False)
-            if block_packets_failed > self.correctable_errors * 2:  # because each packet also have Parity()
+            if block_packets_failed > self.correctable_errors*2:  # because each packet also have Parity()
                 lg.err('all packets for block %d are sent, but too many errors: %d' % (
                     block_num,
                     block_packets_failed,
@@ -295,7 +294,7 @@ class ArchiveWriter(automat.Automat):
             pipe=backupPipe,
             blockResultCallback=self._on_archive_backup_block_result,
             finishCallback=self._on_archive_backup_done,
-            blockSize=1024 * 1024 * 10,
+            blockSize=1024*1024*10,
             sourcePath=local_path,
             keyID=self.group_key_id,
             ecc_map=eccmap.eccmap(self.ecc_map),

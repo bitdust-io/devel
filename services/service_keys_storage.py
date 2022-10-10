@@ -179,7 +179,7 @@ class KeysStorageService(LocalService):
         if not keys_synchronizer.is_synchronized():
             self._do_synchronize_keys()
             return
-        if time.time() - self.last_time_keys_synchronized > 5 * 60:
+        if time.time() - self.last_time_keys_synchronized > 5*60:
             self._do_synchronize_keys()
             return
         from main import events

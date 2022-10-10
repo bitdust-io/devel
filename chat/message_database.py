@@ -126,7 +126,7 @@ def init(filepath=None):
             "payload_type" INTEGER,
             "payload_time" INTEGER,
             "payload_message_id" TEXT,
-            "payload_body" JSON)'''
+            "payload_body" JSON)''',
         )
         _HistoryCursor.execute('CREATE INDEX "sender local key id" on history(sender_local_key_id)')
         _HistoryCursor.execute('CREATE INDEX "recipient local key id" on history(recipient_local_key_id)')
@@ -137,7 +137,7 @@ def init(filepath=None):
             "payload_type" INTEGER,
             "started_time" INTEGER,
             "last_updated_time" INTEGER,
-            "last_message_id" TEXT)'''
+            "last_message_id" TEXT)''',
         )
         _HistoryCursor.execute('CREATE INDEX "conversation id" on conversations(conversation_id)')
 
@@ -438,9 +438,7 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
     db().commit()
     if not found_conversation:
         listeners.push_snapshot(
-            'conversation',
-            snap_id=conversation_id,
-            data=build_json_conversation(
+            'conversation', snap_id=conversation_id, data=build_json_conversation(
                 conversation_id=conversation_id,
                 type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
                 started=payload_time,
@@ -494,11 +492,11 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
         if params:
             q += ' AND payload_type IN (%s)' % (','.join([
                 '?',
-            ] * len(message_types)))
+            ]*len(message_types)))
         else:
             q += ' payload_type IN (%s)' % (','.join([
                 '?',
-            ] * len(message_types)))
+            ]*len(message_types)))
         params.extend([MESSAGE_TYPES.get(mt, 1) for mt in message_types])
     if q:
         sql += ' WHERE %s' % q
@@ -560,7 +558,7 @@ def list_conversations(order_by_time=True, message_types=[], offset=None, limit=
     if message_types:
         q += ' payload_type IN (%s)' % (','.join([
             '?',
-        ] * len(message_types)))
+        ]*len(message_types)))
         params.extend([MESSAGE_TYPES.get(mt, 1) for mt in message_types])
     if q:
         sql += ' WHERE %s' % q
@@ -770,7 +768,7 @@ def fetch_conversations(order_by_time=True, message_types=[], offset=None, limit
         message_types=message_types,
         offset=offset,
         limit=limit,
-    )):
+    ), ):
         conv = build_json_conversation(**conv_record)
         if conv:
             if conv['key_id']:
@@ -830,10 +828,7 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
             continue
         snap_id = '{}/{}'.format(conversation_id, row[7])
         listeners.push_snapshot(
-            'message',
-            snap_id=snap_id,
-            created=row[6],
-            data=build_json_message(
+            'message', snap_id=snap_id, created=row[6], data=build_json_message(
                 sender=row[1],
                 recipient=row[3],
                 direction='in' if row[4] == 0 else 'out',
@@ -860,7 +855,7 @@ def main():
         # limit=3,
         message_types=[
             'group_message',
-        ]
+        ],
     )))
     # pprint.pprint(list(list_conversations(
     # message_types=['group_message', ]

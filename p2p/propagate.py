@@ -229,9 +229,13 @@ def single(idurl, ack_handler=None, wide=False, fail_handler=None):
     Do "propagate" for a single contact.
     """
     d = FetchSingle(idurl)
-    d.addCallback(lambda x: SendToIDs([
-        idurl,
-    ], ack_handler=ack_handler, wide=wide))
+    d.addCallback(lambda x: SendToIDs(
+        [
+            idurl,
+        ],
+        ack_handler=ack_handler,
+        wide=wide,
+    ))
     if ack_handler:
         d.addErrback(fail_handler or ack_handler)
     return d
@@ -306,10 +310,13 @@ def SendServers():
     dlist = []
     for idurl in LocalIdentity.getSources(as_originals=True):
         _, host, webport, filename = nameurl.UrlParse(idurl)
-        url = net_misc.pack_address((
-            host,
-            webport,
-        ), proto='http')
+        url = net_misc.pack_address(
+            (
+                host,
+                webport,
+            ),
+            proto='http',
+        )
         dlist.append(net_misc.http_post_data(
             url=url,
             data=payload,
@@ -458,11 +465,14 @@ def SendToID(
     )
     _PropagateCounter += 1
     result = gateway.outbox(
-        p, wide, response_timeout=response_timeout, callbacks={
+        p,
+        wide,
+        response_timeout=response_timeout,
+        callbacks={
             commands.Ack(): ack_handler,
             commands.Fail(): ack_handler,
             None: timeout_handler,
-        }
+        },
     )
     if wide:
         # this is a ping packet - need to clear old info
@@ -522,11 +532,14 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
                 nameurl.GetName(contact),
             ))
         res = gateway.outbox(
-            p, wide, response_timeout=response_timeout, callbacks={
+            p,
+            wide,
+            response_timeout=response_timeout,
+            callbacks={
                 commands.Ack(): ack_handler,
                 commands.Fail(): ack_handler,
                 None: timeout_handler,
-            }
+            },
         )
         if not res:
             lg.warn('my Identity() was not sent to %r' % contact)

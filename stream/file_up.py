@@ -103,7 +103,6 @@ class FileUp(automat.Automat):
     """
     This class implements all the functionality of ``file_up()`` state machine.
     """
-
     def __init__(self, parent, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `file_up()` state machine.
@@ -128,17 +127,12 @@ class FileUp(automat.Automat):
         self.callOnFail = callOnFail
         self.sendTime = None
         self.ackTime = None
-        self.sendTimeout = 10 * 2 * (max(int(self.fileSize / settings.SendingSpeedLimit()), 5) + 5)  # maximum 5 seconds to get an Ack
+        self.sendTimeout = 10*2*(max(int(self.fileSize/settings.SendingSpeedLimit()), 5) + 5)  # maximum 5 seconds to get an Ack
         self.result = ''
         self.created = utime.get_sec1970()
         super(FileUp, self).__init__(
-            name='file_up_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
+            name='file_up_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions,
+            publish_events=publish_events, **kwargs
         )
 
     def A(self, event, *args, **kwargs):

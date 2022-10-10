@@ -132,7 +132,6 @@ class ProxySender(automat.Automat):
     This class implements all the functionality of the ``proxy_sender()`` state
     machine.
     """
-
     def init(self, **kwargs):
         global _PacketLogFileEnabled
         _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
@@ -140,13 +139,15 @@ class ProxySender(automat.Automat):
 
     def to_json(self):
         j = super().to_json()
-        j.update({
-            'proto': proxy_receiver.GetRouterProtoHost()[0] if proxy_receiver.GetRouterProtoHost() else '',
-            'host': net_misc.pack_address_text(proxy_receiver.GetRouterProtoHost()[1]) if proxy_receiver.GetRouterProtoHost() else '',
-            'idurl': proxy_receiver.GetRouterIDURL(),
-            'bytes_received': 0,
-            'bytes_sent': self.traffic_out,
-        })
+        j.update(
+            {
+                'proto': proxy_receiver.GetRouterProtoHost()[0] if proxy_receiver.GetRouterProtoHost() else '',
+                'host': net_misc.pack_address_text(proxy_receiver.GetRouterProtoHost()[1]) if proxy_receiver.GetRouterProtoHost() else '',
+                'idurl': proxy_receiver.GetRouterIDURL(),
+                'bytes_received': 0,
+                'bytes_sent': self.traffic_out,
+            }
+        )
         return j
 
     def A(self, event, *args, **kwargs):
@@ -272,7 +273,6 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
-
         def _do_send():
             while len(self.pending_packets):
                 outpacket, callbacks, wide, response_timeout, keep_alive, pending_result = self.pending_packets.pop(0)
@@ -375,8 +375,7 @@ class ProxySender(automat.Automat):
             wide=False,
             callbacks={},
             route={
-                'packet': newpacket,
-                # pointing "newpacket" to router node
+                'packet': newpacket,  # pointing "newpacket" to router node
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,

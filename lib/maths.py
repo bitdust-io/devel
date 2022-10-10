@@ -46,7 +46,7 @@ def interval_to_next_hour():
     _struct_time[4] = 0
     _struct_time[5] = 0
     prev_hour_time = time.mktime(tuple(_struct_time))
-    return prev_hour_time + 60 * 60 - time.time()
+    return prev_hour_time + 60*60 - time.time()
 
 
 #-------------------------------------------------------------------------------
@@ -58,10 +58,10 @@ def shedule_continuously(last_time, interval):
     """
     try:
         dt = time.time() - float(last_time)
-        n = int(dt / float(interval))
+        n = int(dt/float(interval))
     except:
         return None
-    return float(last_time) + (n + 1) * float(interval)
+    return float(last_time) + (n + 1)*float(interval)
 
 
 #-------------------------------------------------------------------------------
@@ -364,7 +364,7 @@ if __name__ == '__main__':
     # print time.asctime(time.localtime(shedule_non_stop(t, 60*60)))
     # print shedule_non_stop(t, 60*60) - time.time()
     #    print shedule_next_hourly(time.time()-60*60*9-12, 1)/60
-    t = shedule_next_monthly(time.time() - 60 * 60 * 9 - 12, '1', '14:00', ['2', '6', '9', '15', '16'])
+    t = shedule_next_monthly(time.time() - 60*60*9 - 12, '1', '14:00', ['2', '6', '9', '15', '16'])
     print(time.time(), t, time.time() - t)
     print(time.asctime(time.localtime(t)))
     print(time.asctime(time.localtime()))

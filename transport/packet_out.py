@@ -345,7 +345,6 @@ def on_outgoing_packet_failed(result, *a, **kw):
 
 
 class WorkItem(object):
-
     def __init__(self, proto, host, size=0):
         self.proto = proto
         self.host = net_misc.pack_address(host)
@@ -445,7 +444,7 @@ class PacketOut(automat.Automat):
         self.payloadsize = len(self.outpacket.Payload)
         last_modified_time = identitycache.GetLastModifiedTime(self.remote_idurl)
         self.remote_identity = None
-        if last_modified_time and time.time() - last_modified_time < 5 * 60:
+        if last_modified_time and time.time() - last_modified_time < 5*60:
             # use known that identity from cache if we sure that it is fresh enough
             self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
             if self.remote_identity:
@@ -711,13 +710,13 @@ class PacketOut(automat.Automat):
             os.write(fileno, self.packetdata)
             os.close(fileno)
             self.filesize = len(self.packetdata)
-            if self.filesize < 1024 * 10:
+            if self.filesize < 1024*10:
                 if self.response_timeout:
                     self.timeout = self.response_timeout
                 else:
                     self.timeout = 30
-            elif self.filesize > 1024 * 1024:
-                self.timeout = 5 + int(self.filesize / float(settings.SendingSpeedLimit()))
+            elif self.filesize > 1024*1024:
+                self.timeout = 5 + int(self.filesize/float(settings.SendingSpeedLimit()))
             else:
                 self.timeout = 300
         except:
@@ -793,7 +792,10 @@ class PacketOut(automat.Automat):
         if _PacketLogFileEnabled:
             if self.popped_item.status == 'finished':
                 lg.out(
-                    0, '\033[0;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (self.popped_item.bytes_sent, strng.to_text(self.popped_item.proto), strng.to_text(self.popped_item.host), self.popped_item.transfer_id), log_name='packet', showtime=True
+                    0,
+                    '\033[0;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (self.popped_item.bytes_sent, strng.to_text(self.popped_item.proto), strng.to_text(self.popped_item.host), self.popped_item.transfer_id),
+                    log_name='packet',
+                    showtime=True,
                 )
             else:
                 lg.out(
@@ -801,7 +803,7 @@ class PacketOut(automat.Automat):
                     '\033[0;49;91mFAILED %d bytes to %s://%s with status=%r TID:%s\033[0m' %
                     (self.popped_item.bytes_sent, strng.to_text(self.popped_item.proto), strng.to_text(self.popped_item.host), self.popped_item.status, self.popped_item.transfer_id),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
         p2p_stats.count_outbox(self.remote_idurl, self.popped_item.proto, self.popped_item.status, self.popped_item.bytes_sent)
         callback.run_finish_file_sending_callbacks(self, self.popped_item, self.popped_item.status, self.popped_item.bytes_sent, self.popped_item.error_message)
@@ -847,7 +849,7 @@ class PacketOut(automat.Automat):
                 0,
                 '\033[1;49;91mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (self.outpacket.Command, self.outpacket.PacketID, global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl)),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
         for cb in self.callbacks.pop(None, []):
             cb(self)
@@ -866,18 +868,22 @@ class PacketOut(automat.Automat):
             ]:
                 lg.out(
                     0,
-                    '\033[0;49;31mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' %
-                    (newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl), [i.transfer_id for i in self.results]),
+                    '\033[0;49;31mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+                        newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl
+                                                                                                                                                                                            ), [i.transfer_id for i in self.results]
+                    ),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
             else:
                 lg.out(
                     0,
-                    '\033[1;49;92mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' %
-                    (newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl), [i.transfer_id for i in self.results]),
+                    '\033[1;49;92mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+                        newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl
+                                                                                                                                                                                            ), [i.transfer_id for i in self.results]
+                    ),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         for cb in self.callbacks.pop('acked', []):
@@ -896,7 +902,7 @@ class PacketOut(automat.Automat):
                 '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' %
                 (self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl), [i.transfer_id for i in self.results]),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
         if (args and args[0]) or self.skip_ack:
             callback.run_queue_item_status_callbacks(self, 'finished', '')
@@ -922,7 +928,7 @@ class PacketOut(automat.Automat):
                 '\033[0;49;91mOUT FAILED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' %
                 (self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl), [i.transfer_id for i in self.results], msg),
                 log_name='packet',
-                showtime=True
+                showtime=True,
             )
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
         for cb in self.callbacks.pop('failed', []):
@@ -947,7 +953,7 @@ class PacketOut(automat.Automat):
                     '\033[0;49;97mOUT CANCELED %s(%s) after TIMEOUT with %s bytes from %s to %s TID:%r\033[0m' %
                     (self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl), [i.transfer_id for i in self.results]),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
             for cb in self.callbacks.pop(None, []):
                 cb(self)
@@ -960,7 +966,7 @@ class PacketOut(automat.Automat):
                     '\033[0;49;97mOUT CANCELED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' %
                     (self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl), [i.transfer_id for i in self.results], msg),
                     log_name='packet',
-                    showtime=True
+                    showtime=True,
                 )
             callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
             for cb in self.callbacks.pop('cancelled', []):

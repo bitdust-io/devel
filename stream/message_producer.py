@@ -237,7 +237,6 @@ class MessageProducer(automat.Automat):
     """
     This class implements all the functionality of ``message_producer()`` state machine.
     """
-
     def __init__(self, group_key_id, debug_level=_Debug, log_events=_Debug, log_transitions=_DebugLevel, **kwargs):
         """
         Builds `message_producer()` state machine.
@@ -373,7 +372,7 @@ class MessageProducer(automat.Automat):
             lg.args(_DebugLevel, existing_brokers=existing_brokers)
         known_brokers = [
             None,
-        ] * groups.REQUIRED_BROKERS_COUNT
+        ]*groups.REQUIRED_BROKERS_COUNT
         top_broker_pos = None
         top_broker_idurl = None
         for broker_pos in range(groups.REQUIRED_BROKERS_COUNT):

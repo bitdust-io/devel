@@ -65,7 +65,9 @@ def clean_all_nodes(event_loop, skip_checks=False, verbose=False):
     _begin = time.time()
     info('\nCleaning all nodes')
     event_loop.run_until_complete(asyncio.gather(*[tsup.clean_one_node_async(node, event_loop=event_loop, verbose=verbose) for node in ALL_NODES]))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.clean_one_customer_async(node['name'], event_loop=event_loop, verbose=verbose) for node in ALL_ROLES['customer']]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.clean_one_customer_async(node['name'], event_loop=event_loop, verbose=verbose) for node in ALL_ROLES['customer']])
+    )
     warn('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
 
@@ -88,7 +90,9 @@ def start_all_nodes(event_loop, verbose=False):
     if verbose:
         info(f'ALL STUN SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])])
+    )
     if verbose:
         info(f'ALL PROXY SERVERS STARTED\n')
 
@@ -96,11 +100,17 @@ def start_all_nodes(event_loop, verbose=False):
     if verbose:
         info(f'ALL SUPPLIERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])])
+    )
     if verbose:
         info(f'ALL MESSAGE BROKERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i * 3) for i, customer in enumerate(ALL_ROLES.get('customer', []))]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i * 3) for i, customer in enumerate(ALL_ROLES.get('customer', []))]
+        )
+    )
     if verbose:
         info(f'ALL CUSTOMERS STARTED\n')
 
@@ -114,43 +124,61 @@ def stop_all_nodes(event_loop, verbose=False):
 
     if verbose:
         info('customers: %r' % ALL_ROLES.get('customer', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(customer['name'], event_loop, skip_checks=True, verbose=verbose) for customer in ALL_ROLES.get('customer', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[tsup.stop_daemon_async(customer['name'], event_loop, skip_checks=True, verbose=verbose) for customer in ALL_ROLES.get('customer', [])]
+        )
+    )
     if verbose:
         info(f'ALL CUSTOMERS STOPPED\n')
 
     if verbose:
         info('message-brokers: %r' % ALL_ROLES.get('message-broker', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])]
+        )
+    )
     if verbose:
         info(f'ALL MESSAGE BROKERS STOPPED\n')
 
     if verbose:
         info('suppliers: %r' % ALL_ROLES.get('supplier', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(supplier['name'], event_loop, verbose=verbose) for supplier in ALL_ROLES.get('supplier', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.stop_daemon_async(supplier['name'], event_loop, verbose=verbose) for supplier in ALL_ROLES.get('supplier', [])])
+    )
     if verbose:
         info(f'ALL SUPPLIERS STOPPED\n')
 
     if verbose:
         info('proxy-servers: %r' % ALL_ROLES.get('proxy-server', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(proxy_server['name'], event_loop, verbose=verbose) for proxy_server in ALL_ROLES.get('proxy-server', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.stop_daemon_async(proxy_server['name'], event_loop, verbose=verbose) for proxy_server in ALL_ROLES.get('proxy-server', [])])
+    )
     if verbose:
         info(f'ALL PROXY SERVERS STOPPED\n')
 
     if verbose:
         info('stun-servers: %r' % ALL_ROLES.get('stun-server', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(stunsrv['name'], event_loop, verbose=verbose) for stunsrv in ALL_ROLES.get('stun-server', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.stop_daemon_async(stunsrv['name'], event_loop, verbose=verbose) for stunsrv in ALL_ROLES.get('stun-server', [])])
+    )
     if verbose:
         info(f'ALL STUN SERVERS STOPPED\n')
 
     if verbose:
         info('identity-servers: %r' % ALL_ROLES.get('identity-server', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(idsrv['name'], event_loop, verbose=verbose) for idsrv in ALL_ROLES.get('identity-server', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.stop_daemon_async(idsrv['name'], event_loop, verbose=verbose) for idsrv in ALL_ROLES.get('identity-server', [])])
+    )
     if verbose:
         info(f'ALL ID SERVERS STOPPED\n')
 
     if verbose:
         info('dht-seeds: %r' % ALL_ROLES.get('dht-seed', []))
-    event_loop.run_until_complete(asyncio.gather(*[tsup.stop_daemon_async(dhtseed['name'], event_loop, verbose=verbose) for dhtseed in ALL_ROLES.get('dht-seed', [])]))
+    event_loop.run_until_complete(
+        asyncio.gather(*[tsup.stop_daemon_async(dhtseed['name'], event_loop, verbose=verbose) for dhtseed in ALL_ROLES.get('dht-seed', [])])
+    )
     if verbose:
         info('ALL DHT SEEDS STOPPED\n')
 
@@ -258,7 +286,9 @@ def global_wrapper(event_loop):
     # close_all_tunnels()
     # kill_all_nodes()
 
-    print('\nTest suite %r completed in %5.3f seconds\n' % (
-        TEST_NAME,
-        time.time() - _begin,
-    ))
+    print(
+        '\nTest suite %r completed in %5.3f seconds\n' % (
+            TEST_NAME,
+            time.time() - _begin,
+        )
+    )

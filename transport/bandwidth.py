@@ -293,8 +293,8 @@ def IN(idurl, size):
     currentV = int(BandInDict.get(idurl, 0))
     newV = currentV + size
     BandInDict[idurl] = newV
-    curMB = int(currentV / (1024.0 * 1024.0))
-    newMB = int(newV / (1024.0 * 1024.0))
+    curMB = int(currentV/(1024.0*1024.0))
+    newMB = int(newV/(1024.0*1024.0))
     if curMB == 0 or curMB != newMB:
         saveIN()
 
@@ -317,8 +317,8 @@ def OUT(idurl, size):
     currentV = int(BandOutDict.get(idurl, 0))
     newV = currentV + size
     BandOutDict[idurl] = newV
-    curMB = int(currentV / (1024.0 * 1024.0))
-    newMB = int(newV / (1024.0 * 1024.0))
+    curMB = int(currentV/(1024.0*1024.0))
+    newMB = int(newV/(1024.0*1024.0))
     if curMB == 0 or curMB != newMB:
         saveOUT()
 

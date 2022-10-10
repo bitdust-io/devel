@@ -112,7 +112,9 @@ def _assert_header_version(data):
         try:
             return HEADER.index(data[:HEADER_LEN])
         except:
-            raise DecryptionException('The data appear to be encrypted with a more recent version of simple-crypt (bad header). ' + 'Please update the library and try again.')
+            raise DecryptionException(
+                'The data appear to be encrypted with a more recent version of simple-crypt (bad header). ' + 'Please update the library and try again.'
+            )
     else:
         raise DecryptionException('Missing header.')
 

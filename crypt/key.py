@@ -396,7 +396,7 @@ def SpeedTest():
     Some tests to check the performance.
     """
     import time
-    dataSZ = 1024 * 640
+    dataSZ = 1024*640
     loops = 10
     packets = []
     dt = time.time()

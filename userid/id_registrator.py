@@ -640,10 +640,13 @@ class IdRegistrator(automat.Automat):
         for idurl in self.new_identity.getSources(as_originals=True):
             self.free_idurls.remove(strng.to_bin(idurl))
             _, host, webport, filename = nameurl.UrlParse(idurl)
-            url = net_misc.pack_address((
-                host,
-                webport,
-            ), proto='http')
+            url = net_misc.pack_address(
+                (
+                    host,
+                    webport,
+                ),
+                proto='http',
+            )
             dlist.append(net_misc.http_post_data(
                 url=url,
                 data=payload,

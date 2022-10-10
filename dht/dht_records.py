@@ -72,99 +72,145 @@ LAYERS_REGISTRY = {
 #------------------------------------------------------------------------------
 
 RELATION_RECORD_CACHE_TTL = {
-    'nickname': 60 * 60 * 24,
-    'identity': 60 * 60,
-    'suppliers': 60 * 60 * 12,
-    'message_broker': 60 * 60 * 12,
+    'nickname': 60*60*24,
+    'identity': 60*60,
+    'suppliers': 60*60*12,
+    'message_broker': 60*60*12,
 }
 
 _Rules = {
     'nickname': {
-        'key': [{
-            'op': 'exist',
-        },],
-        'type': [{
-            'op': 'equal',
-            'arg': 'nickname',
-        },],
-        'timestamp': [{
-            'op': 'exist',
-        },],
-        'idurl': [{
-            'op': 'exist',
-        },],
-        'nickname': [{
-            'op': 'exist',
-        },],
-        'position': [{
-            'op': 'exist',
-        },],
+        'key': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'type': [
+            {
+                'op': 'equal',
+                'arg': 'nickname',
+            },
+        ],
+        'timestamp': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'idurl': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'nickname': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'position': [
+            {
+                'op': 'exist',
+            },
+        ],
     },
     'identity': {
-        'key': [{
-            'op': 'exist',
-        },],
-        'type': [{
-            'op': 'equal',
-            'arg': 'identity',
-        },],
-        'timestamp': [{
-            'op': 'exist',
-        },],
-        'idurl': [{
-            'op': 'exist',
-        },],
-        'identity': [{
-            'op': 'exist',
-        },],
+        'key': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'type': [
+            {
+                'op': 'equal',
+                'arg': 'identity',
+            },
+        ],
+        'timestamp': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'idurl': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'identity': [
+            {
+                'op': 'exist',
+            },
+        ],
     },
     'suppliers': {
-        'key': [{
-            'op': 'exist',
-        },],
-        'type': [{
-            'op': 'equal',
-            'arg': 'suppliers',
-        },],
-        'timestamp': [{
-            'op': 'exist',
-        },],
-        'customer_idurl': [{
-            'op': 'exist',
-        },],
-        'ecc_map': [{
-            'op': 'exist',
-        },],
-        'suppliers': [{
-            'op': 'exist',
-        },],
-        'revision': [{
-            'op': 'exist',
-        },],
+        'key': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'type': [
+            {
+                'op': 'equal',
+                'arg': 'suppliers',
+            },
+        ],
+        'timestamp': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'customer_idurl': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'ecc_map': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'suppliers': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'revision': [
+            {
+                'op': 'exist',
+            },
+        ],
     },
     'message_broker': {
-        'key': [{
-            'op': 'exist',
-        },],
-        'type': [{
-            'op': 'equal',
-            'arg': 'message_broker',
-        },],
-        'timestamp': [{
-            'op': 'exist',
-        },],
-        'customer_idurl': [{
-            'op': 'exist',
-        },],
-        'broker_idurl': [{
-            'op': 'exist',
-        },],
-        'position': [{
-            'op': 'exist',
-        },],
-        # 'archive_folder_path': [{'op': 'exist', }, ],
-    },
-    # customers relations are not stored, so this is actually not needed, but decided to leave it here just in case:
+        'key': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'type': [
+            {
+                'op': 'equal',
+                'arg': 'message_broker',
+            },
+        ],
+        'timestamp': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'customer_idurl': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'broker_idurl': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'position': [
+            {
+                'op': 'exist',
+            },
+        ],  # 'archive_folder_path': [{'op': 'exist', }, ],
+    },  # customers relations are not stored, so this is actually not needed, but decided to leave it here just in case:
     # 'customers': {
     #     'key': [{'op': 'exist', }, ],
     #     'type': [{'op': 'equal', 'arg': 'customers', }, ],
@@ -173,10 +219,12 @@ _Rules = {
     #     'revision': [{'op': 'exist', }, ],
     # },
     'skip_validation': {
-        'type': [{
-            'op': 'equal',
-            'arg': 'skip_validation',
-        },],
+        'type': [
+            {
+                'op': 'equal',
+                'arg': 'skip_validation',
+            },
+        ],
     },
 }
 
@@ -281,7 +329,7 @@ def get_suppliers(customer_idurl, return_details=True, use_cache=True):
     )
 
 
-def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60 * 60):
+def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60*60):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, ecc_map=ecc_map, suppliers_list=suppliers_list, revision=revision)
     return dht_service.set_valid_data(
@@ -321,7 +369,7 @@ def get_message_broker(customer_idurl, position=0, return_details=True, use_cach
     )
 
 
-def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, expire=60 * 60):
+def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, expire=60*60):
     if _Debug:
         lg.args(_DebugLevel, customer=customer_idurl, pos=position, broker=broker_idurl, rev=revision)
     return dht_service.set_valid_data(
@@ -334,8 +382,7 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
             'timestamp': utime.get_sec1970(),
             'revision': 0 if revision is None else revision,
             'customer_idurl': customer_idurl.to_text(),
-            'broker_idurl': broker_idurl.to_text(),
-            # 'archive_folder_path': archive_folder_path,
+            'broker_idurl': broker_idurl.to_text(),  # 'archive_folder_path': archive_folder_path,
             'position': position,
         },
         rules=get_rules('message_broker'),

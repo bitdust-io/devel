@@ -56,7 +56,7 @@ _Debug = False
 #------------------------------------------------------------------------------
 
 MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 16
-NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION * 8 * 2
+NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION*8*2
 
 #------------------------------------------------------------------------------
 
@@ -66,7 +66,6 @@ _StreamCounter = 0
 
 
 class FileQueue:
-
     def __init__(self, session):
         self.session = session
         self.streams = {}
@@ -79,7 +78,7 @@ class FileQueue:
         global _StreamCounter
         _StreamCounter += 1
         n = 10 + max(contactsdb.contact_position(self.session.peer_idurl), 0) % 89
-        return n * 1000000 + random.randint(10, 99) * 10000 + _StreamCounter % 10000
+        return n*1000000 + random.randint(10, 99)*10000 + _StreamCounter % 10000
 
     def report_failed_outbox_queue(self, error_message):
         for filename, description, result_defer, keep_alive in self.outboxQueue:
@@ -252,7 +251,7 @@ class FileQueue:
                 # lg.warn('SEND ZERO ACK, got old block %s' % stream_id)
                 self.do_send_ack(stream_id, None, '')
                 return
-            if len(self.streams) >= 2 * MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
+            if len(self.streams) >= 2*MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
                 # too many incoming streams, seems remote side is cheating - drop that session!
                 # TODO: need to add some protection - keep a list of bad guys?
                 inp.close()
@@ -397,7 +396,7 @@ class FileQueue:
         if infile.transfer_id:
             self.report_inbox_file(infile)
         if _Debug:
-            lg.out(2, '!' * 80)
+            lg.out(2, '!'*80)
         s = self.streams[stream_id]
         s.on_close()
         s = None
@@ -415,7 +414,7 @@ class FileQueue:
             outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
             outfile.result_defer = None
         if _Debug:
-            lg.out(2, '!' * 80)
+            lg.out(2, '!'*80)
         s = self.streams[stream_id]
         s.on_close()
         s = None
@@ -438,7 +437,6 @@ class FileQueue:
 
 
 class InboxFile():
-
     def __init__(self, queue, stream_id, size):
         """
         """
@@ -505,7 +503,6 @@ class InboxFile():
 
 
 class OutboxFile():
-
     def __init__(self, queue, stream_id, filename, size, description='', result_defer=None, keep_alive=True):
         """
         """

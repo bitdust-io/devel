@@ -73,7 +73,6 @@ BYTES_LOOP_CLOSED = 2
 
 
 class BytesLoop:
-
     def __init__(self, s=b''):
         self._buffer = s
         self._reader = None

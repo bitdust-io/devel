@@ -290,8 +290,10 @@ class _RWorker(pptransport.CSocketTransport):
                 if not self.persistent:
                     logging.info('Deleting from queue Rworker %s' % (self.id,))
                     return False
-                logging.info('Failed to reconnect with '
-                             '(host=%s, port=%i), will try again in %i s' % (self.host, self.port, _RECONNECT_WAIT_TIME))
+                logging.info(
+                    'Failed to reconnect with '
+                    '(host=%s, port=%i), will try again in %i s' % (self.host, self.port, _RECONNECT_WAIT_TIME),
+                )
                 time.sleep(_RECONNECT_WAIT_TIME)
 
 
@@ -469,8 +471,10 @@ class Server(object):
         """
         # perform some checks for frequent mistakes
         if self.__exiting:
-            raise RuntimeError('Cannot submit jobs: server'
-                               ' instance has been destroyed')
+            raise RuntimeError(
+                'Cannot submit jobs: server'
+                ' instance has been destroyed',
+            )
 
         if not isinstance(args, tuple):
             raise TypeError('args argument must be a tuple')
@@ -678,18 +682,25 @@ class Server(object):
         totaljobs = 0.0
         for ppserver, stat in statistics:
             totaljobs += stat.njobs
-        print(' job count | % of all jobs | job time sum | ' \
-            'time per job | job server')
+        print(
+            ' job count | % of all jobs | job time sum | ' \
+            'time per job | job server',
+        )
         for ppserver, stat in statistics:
             if stat.njobs:
-                print('    %6i |        %6.2f |     %8.4f |  %11.6f | %s' \
-                    % (stat.njobs, 100.0 * stat.njobs / totaljobs, stat.time,
-                       stat.time / stat.njobs, ppserver, ))
+                print(
+                    '    %6i |        %6.2f |     %8.4f |  %11.6f | %s' \
+                    % (
+                        stat.njobs, 100.0 * stat.njobs / totaljobs, stat.time,
+                        stat.time / stat.njobs, ppserver, ),
+                )
         print('Time elapsed since server creation', walltime)
 
         if not self.__accurate_stats:
-            print('WARNING: statistics provided above is not accurate' \
-                  ' due to job rescheduling')
+            print(
+                'WARNING: statistics provided above is not accurate' \
+                  ' due to job rescheduling',
+            )
         print()
 
     # all methods below are for internal use only
@@ -904,8 +915,10 @@ class Server(object):
             sresult = rworker.receive()
             rworker.is_free = True
         except:
-            self.__logger.info('Task %i failed due to broken network '
-                               'connection - rescheduling' % (job.tid,))
+            self.__logger.info(
+                'Task %i failed due to broken network '
+                'connection - rescheduling' % (job.tid,),
+            )
             self.insert(sfunc, sargs, job)
             self.__scheduler()
             self.__update_active_rworkers(rworker.id, -1)

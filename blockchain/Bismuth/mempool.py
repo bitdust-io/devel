@@ -335,7 +335,9 @@ class Mempool:
             self.app_log.warning('Status: MEMPOOL Live = {}'.format(', '.join(set(self.peers_sent.keys()) - set(frozen))))
             status = self.fetchall(SQL_STATUS)
             count, open_len, senders, recipients = status[0]
-            self.app_log.warning('Status: MEMPOOL {} Txs from {} senders to {} distinct recipients. Openfield len {}'.format(count, senders, recipients, open_len))
+            self.app_log.warning(
+                'Status: MEMPOOL {} Txs from {} senders to {} distinct recipients. Openfield len {}'.format(count, senders, recipients, open_len)
+            )
             return status[0]
         except:
             return 0
@@ -573,7 +575,8 @@ class Mempool:
                             continue
 
                         # Then more cpu heavy tests
-                        buffer = str((mempool_timestamp, mempool_address, mempool_recipient, mempool_amount, mempool_operation, mempool_openfield)).encode('utf-8')
+                        buffer = str((mempool_timestamp, mempool_address, mempool_recipient, mempool_amount, mempool_operation, mempool_openfield)
+                                    ).encode('utf-8')
 
                         #  Will raise if error
                         try:
@@ -594,7 +597,10 @@ class Mempool:
                         if self.config.old_sqlite:
                             essentials.execute_param_c(c, 'SELECT timestamp FROM transactions WHERE signature = ?1', (mempool_signature_enc,), self.app_log)
                         else:
-                            essentials.execute_param_c(c, 'SELECT timestamp FROM transactions WHERE substr(signature,1,4) = substr(?1,1,4) AND signature = ?1', (mempool_signature_enc,), self.app_log)
+                            essentials.execute_param_c(
+                                c, 'SELECT timestamp FROM transactions WHERE substr(signature,1,4) = substr(?1,1,4) AND signature = ?1',
+                                (mempool_signature_enc,), self.app_log
+                            )
                         ledger_in = bool(c.fetchone())
                         # remove from mempool if it's in both ledger and mempool already
                         if mempool_in and ledger_in:
@@ -642,7 +648,9 @@ class Mempool:
 
                         credit = DECIMAL0
                         rewards = DECIMAL0
-                        for entry in essentials.execute_param_c(c, 'SELECT amount, reward FROM transactions WHERE recipient = ?', (mempool_address,), self.app_log):
+                        for entry in essentials.execute_param_c(
+                            c, 'SELECT amount, reward FROM transactions WHERE recipient = ?', (mempool_address,), self.app_log
+                        ):
                             credit += quantize_eight(entry[0])
                             rewards += quantize_eight(entry[1])
 
@@ -673,7 +681,10 @@ class Mempool:
                         # Pfew! we can finally insert into mempool - all is str, type converted and enforced above
                         self.execute(
                             'INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?)',
-                            (mempool_timestamp, mempool_address, mempool_recipient, mempool_amount, mempool_signature_enc, mempool_public_key_b64encoded, mempool_operation, mempool_openfield, int(time_now))
+                            (
+                                mempool_timestamp, mempool_address, mempool_recipient, mempool_amount, mempool_signature_enc, mempool_public_key_b64encoded,
+                                mempool_operation, mempool_openfield, int(time_now)
+                            ),
                         )
                         mempool_result.append('Mempool updated with a received transaction from {}'.format(peer_ip))
                         mempool_result.append('Success')  # WARNING: Do not change string or case ever!

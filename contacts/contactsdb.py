@@ -220,7 +220,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     if position >= len(current_suppliers):
         empty_suppliers = [
             id_url.field(b''),
-        ] * (1 + position - len(current_suppliers))
+        ]*(1 + position - len(current_suppliers))
         current_suppliers.extend(empty_suppliers)
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_supplier   %d empty suppliers added for customer %r' % (len(empty_suppliers), customer_idurl))
@@ -439,12 +439,10 @@ def add_correspondent(idurl, nickname=''):
     ))
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
-    listeners.push_snapshot(
-        'correspondent', snap_id=idurl.to_bin(), data=dict(
-            idurl=idurl.to_bin(),
-            nickname=nickname,
-        )
-    )
+    listeners.push_snapshot('correspondent', snap_id=idurl.to_bin(), data=dict(
+        idurl=idurl.to_bin(),
+        nickname=nickname,
+    ))
     return len(curlist)
 
 
@@ -462,24 +460,20 @@ def remove_correspondent(idurl):
             _CorrespondentsList.remove(tupl)
             if _CorrespondentsChangedCallback is not None:
                 _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
-            listeners.push_snapshot(
-                'correspondent', snap_id=idurl.to_bin(), deleted=True, data=dict(
-                    idurl=idurl.to_bin(),
-                    nickname=tupl[1],
-                )
-            )
+            listeners.push_snapshot('correspondent', snap_id=idurl.to_bin(), deleted=True, data=dict(
+                idurl=idurl.to_bin(),
+                nickname=tupl[1],
+            ))
             return True
     return False
 
 
 def populate_correspondents():
     for corr in correspondents():
-        listeners.push_snapshot(
-            'correspondent', snap_id=corr[0], data=dict(
-                idurl=corr[0],
-                nickname=corr[1],
-            )
-        )
+        listeners.push_snapshot('correspondent', snap_id=corr[0], data=dict(
+            idurl=corr[0],
+            nickname=corr[1],
+        ))
 
 
 #-------------------------------------------------------------------------------
@@ -951,12 +945,10 @@ def find_correspondent_by_nickname(nickname):
 
 def on_contacts_changed(old_contacts_list, new_contacts_list):
     from main import events
-    events.send(
-        'contacts-changed', data=dict(
-            old_contacts=old_contacts_list,
-            new_contacts=new_contacts_list,
-        )
-    )
+    events.send('contacts-changed', data=dict(
+        old_contacts=old_contacts_list,
+        new_contacts=new_contacts_list,
+    ))
 
 
 #------------------------------------------------------------------------------

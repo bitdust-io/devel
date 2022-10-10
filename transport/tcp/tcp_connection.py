@@ -61,7 +61,7 @@ from lib import net_misc
 
 #------------------------------------------------------------------------------
 
-FIRST_PRIORITY_SHORT_FILE_SIZE = 64 * 1024
+FIRST_PRIORITY_SHORT_FILE_SIZE = 64*1024
 
 CMD_HELLO = b'h'
 CMD_WAZAP = b'w'

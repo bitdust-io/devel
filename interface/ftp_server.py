@@ -53,19 +53,16 @@ from twisted.protocols.ftp import (
     FTP,
     ASCIIConsumerWrapper,
     _FileReader,
-    _FileWriter,
-    # methods
+    _FileWriter,  # methods
     toSegments,
-    errnoToFailure,
-    # exceptions
+    errnoToFailure,  # exceptions
     FTPCmdError,
     BadCmdSequenceError,
     InvalidPath,
     FileNotFoundError,
     FileExistsError,
     PermissionDeniedError,
-    IsADirectoryError,
-    # FTP codes constants
+    IsADirectoryError,  # FTP codes constants
     DATA_CNX_ALREADY_OPEN_START_XFR,
     TXFR_COMPLETE_OK,
     REQ_FILE_ACTN_COMPLETED_OK,
@@ -116,10 +113,13 @@ def init(ftp_port=None):
         bpio.WriteTextFile(settings.FTPServerCredentialsFile(), 'bitdust:bitdust')
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _FTPServer = reactor.listenTCP(  # @UndefinedVariable
-        ftp_port, BitDustFTPFactory(Portal(FTPRealm('./'), [
-            AllowAnonymousAccess(),
-            FilePasswordDB(settings.FTPServerCredentialsFile()),
-        ]),)
+        ftp_port, BitDustFTPFactory(Portal(
+            FTPRealm('./'),
+            [
+                AllowAnonymousAccess(),
+                FilePasswordDB(settings.FTPServerCredentialsFile()),
+            ],
+        ))
     )
     lg.out(4, '    started on port %d' % ftp_port)
 
@@ -140,7 +140,6 @@ def shutdown():
 
 
 class BitDustFileReader(_FileReader):
-
     def __init__(self, fObj, filepath):
         super(BitDustFileReader, self).__init__(fObj)
         self.filepath = filepath
@@ -155,10 +154,9 @@ class BitDustFileReader(_FileReader):
 
 
 class BitDustFTP(FTP):
-
     def _accessGrantedResponse(self, result, segments):
         self.workingDirectory = segments
-        return (REQ_FILE_ACTN_COMPLETED_OK,)
+        return (REQ_FILE_ACTN_COMPLETED_OK, )
 
     def _dirListingResponse(self, results):
         self.reply(DATA_CNX_ALREADY_OPEN_START_XFR)
@@ -166,7 +164,7 @@ class BitDustFTP(FTP):
             name = self._encodeName(name)
             self.dtpInstance.sendListResponse(name, attrs)
         self.dtpInstance.transport.loseConnection()
-        return (TXFR_COMPLETE_OK,)
+        return (TXFR_COMPLETE_OK, )
 
     def _enableTimeoutLater(self, result, newsegs=None):
         self.setTimeout(self.factory.timeOut)
@@ -174,13 +172,13 @@ class BitDustFTP(FTP):
 
     def _cbFileSent(self, result):
         lg.out(8, 'ftp_server._cbFileSent %s' % result)
-        return (TXFR_COMPLETE_OK,)
+        return (TXFR_COMPLETE_OK, )
 
     def _ebFileSent(self, err):
         lg.warn('Unexpected error attempting to transmit file to client: ' + str(err))
         if err.check(FTPCmdError):
             return err
-        return (CNX_CLOSED_TXFR_ABORTED,)
+        return (CNX_CLOSED_TXFR_ABORTED, )
 
     def _cbReadOpened(self, file_obj, consumer):
         lg.out(8, 'ftp_server._cbWriteOpened %s %s' % (file_obj, consumer))
@@ -233,13 +231,13 @@ class BitDustFTP(FTP):
 #         backup_control.Save()
 # result_defer.callback(None)
 # return consumer
-        return (TXFR_COMPLETE_OK,)
+        return (TXFR_COMPLETE_OK, )
 
     def _ebFileReceived(self, err):
         lg.warn('Unexpected error received during transfer: ' + str(err))
         if err.check(FTPCmdError):
             return err
-        return (CNX_CLOSED_TXFR_ABORTED,)
+        return (CNX_CLOSED_TXFR_ABORTED, )
 
     def _cbWriteOpened(self, consumer, upload_filename, newsegs):
         remote_path = '/'.join(newsegs)
@@ -330,9 +328,7 @@ class BitDustFTP(FTP):
                     True if itm['type'] == 'dir' else False,  # folder or file ?
                     filepath.Permissions(0o7777),  # permissions
                     0,  # hardlinks
-                    time.mktime(
-                        time.strptime(itm['latest'], '%Y-%m-%d %H:%M:%S'))
-                    if itm['latest'] else None,  # time
+                    time.mktime(time.strptime(itm['latest'], '%Y-%m-%d %H:%M:%S'), ) if itm['latest'] else None,  # time
                     itm['customer'],  # owner
                     key_alias,  # group
                 ],
@@ -489,7 +485,7 @@ class BitDustFTP(FTP):
         ret = api.file_delete(full_path)
         if ret['status'] != 'OK':
             return defer.fail(FileNotFoundError(str(ret['errors'])))
-        return succeed((REQ_FILE_ACTN_COMPLETED_OK,))
+        return succeed((REQ_FILE_ACTN_COMPLETED_OK, ))
 
     def ftp_DELE(self, path):
         try:
@@ -500,7 +496,7 @@ class BitDustFTP(FTP):
         ret = api.file_delete(full_path)
         if ret['status'] != 'OK':
             return defer.fail(FileNotFoundError(str(ret['errors'])))
-        return succeed((REQ_FILE_ACTN_COMPLETED_OK,))
+        return succeed((REQ_FILE_ACTN_COMPLETED_OK, ))
 
     def ftp_RNTO(self, toName):
         fromName = self._fromName
@@ -512,7 +508,7 @@ class BitDustFTP(FTP):
         except InvalidPath:
             return defer.fail(FileNotFoundError(fromName))
         # TODO:
-        return succeed((REQ_FILE_ACTN_COMPLETED_OK,))
+        return succeed((REQ_FILE_ACTN_COMPLETED_OK, ))
 
 
 #------------------------------------------------------------------------------

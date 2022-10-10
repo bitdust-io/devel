@@ -109,16 +109,22 @@ _MODULES = (
 )
 
 _VALID_TASKS = {
-    'make': (make.do_in_memory, (
-        make.RoundupFile,
-        make.ReadBinaryFile,
-        make.WriteFile,
-        make.ReadBinaryFileAsArray,
-    )),
-    'read': (read.raidread, (
-        read.RebuildOne,
-        read.ReadBinaryFile,
-    )),
+    'make': (
+        make.do_in_memory,
+        (
+            make.RoundupFile,
+            make.ReadBinaryFile,
+            make.WriteFile,
+            make.ReadBinaryFileAsArray,
+        ),
+    ),
+    'read': (
+        read.raidread,
+        (
+            read.RebuildOne,
+            read.ReadBinaryFile,
+        ),
+    ),
     'rebuild': (rebuild.rebuild, ()),
 }
 
@@ -308,7 +314,7 @@ class RaidWorker(automat.Automat):
             # need to keep at least one for all other operations
             # even decided to use only half of CPUs at the moment
             # TODO: make an option in the software settings
-            ncpus = int(ncpus / 2.0)
+            ncpus = int(ncpus/2.0)
 
         self.processor = ThreadedRaidProcessor()
 
@@ -370,8 +376,7 @@ class RaidWorker(automat.Automat):
             args=params,
             depfuncs=depfuncs,
             modules=_MODULES,
-            callback=lambda result: self._job_done(task_id, cmd, params, result),
-            # error_callback=lambda err: self._job_failed(task_id, cmd, params, err),
+            callback=lambda result: self._job_done(task_id, cmd, params, result),  # error_callback=lambda err: self._job_failed(task_id, cmd, params, err),
         )
 
         self.activetasks[task_id] = (proc, cmd, params)
@@ -438,7 +443,6 @@ class RaidWorker(automat.Automat):
 
 
 class RaidTask(object):
-
     def __init__(self, task_id, worker_method, worker_args=None, on_success=None, on_fail=None):
         self.task_id = task_id
         self.result = None
@@ -462,7 +466,7 @@ class RaidTask(object):
         return True
 
     def run(self):
-        args = self._worker_args + (self.threshold_control,)
+        args = self._worker_args + (self.threshold_control, )
         self.result = self._worker_method(*args)
         return self.result
 
@@ -482,7 +486,6 @@ class RaidTask(object):
 
 
 class RaidTaskInfo(object):
-
     def __init__(self, task_id):
         self.tid = task_id
 
@@ -491,7 +494,6 @@ class RaidTaskInfo(object):
 
 
 class ThreadedRaidProcessor(object):
-
     def __init__(self):
         self.latest_task_id = 0
         self.tasks = {}

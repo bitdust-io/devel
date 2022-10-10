@@ -202,10 +202,13 @@ class BroadcastersFinder(automat.Automat):
         """
         # service_info = 'service_broadcasting ' + self.request_service_params
         out_packet = p2p_service.SendRequestService(
-            self.target_idurl, 'service_broadcasting', json_payload=self.request_service_params, callbacks={
+            self.target_idurl,
+            'service_broadcasting',
+            json_payload=self.request_service_params,
+            callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
-            }
+            },
         )
         self.requested_packet_id = out_packet.PacketID
 

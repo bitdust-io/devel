@@ -148,7 +148,7 @@ class SupplierContractExecutor(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of supplier_contract_executor() machine.
         """
-        self.current_duration = 60 * 60  # TODO: read from settings
+        self.current_duration = 60*60  # TODO: read from settings
 
     def A(self, event, *args, **kwargs):
         """
@@ -286,12 +286,14 @@ class SupplierContractExecutor(automat.Automat):
         )
         coin_json_sined = coins_io.add_signature(coin_json, 'creator')
         p2p_service.SendCoin(
-            self.customer_idurl, [
+            self.customer_idurl,
+            [
                 coin_json_sined,
-            ], callbacks={
+            ],
+            callbacks={
                 commands.Ack(): self._on_signature_ack,
                 commands.Fail(): self._on_signature_fail,
-            }
+            },
         )
 
     def doSendFirstCoin(self, *args, **kwargs):
@@ -301,7 +303,7 @@ class SupplierContractExecutor(automat.Automat):
         coin_json = args[0]
         contract_chain_node.send_to_miner([
             coin_json,
-        ],).addCallbacks(
+        ], ).addCallbacks(
             self._on_coin_mined,
             self._on_coin_failed,
         )

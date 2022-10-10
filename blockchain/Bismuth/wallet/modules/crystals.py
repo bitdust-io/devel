@@ -154,7 +154,13 @@ class CrystalManager:
                 spec = self.available_crystals[crystal_name]['info']
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                self.loaded_crystals[crystal_name] = {'name': crystal_name, 'info': self.available_crystals[crystal_name]['info'], 'module': module, 'active': active, 'icon': self.available_crystals[crystal_name]['about'].get('icon', False)}
+                self.loaded_crystals[crystal_name] = {
+                    'name': crystal_name,
+                    'info': self.available_crystals[crystal_name]['info'],
+                    'module': module,
+                    'active': active,
+                    'icon': self.available_crystals[crystal_name]['about'].get('icon', False)
+                }
                 if self.verbose:
                     self.app_log.info("Crystal '{}' loaded".format(crystal_name))
             else:

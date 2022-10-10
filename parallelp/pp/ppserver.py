@@ -70,7 +70,18 @@ class _NetworkServer(Server):
     Network Server Class.
     """
 
-    def __init__(self, ncpus='autodetect', interface='0.0.0.0', broadcast='255.255.255.255', port=None, secret=None, timeout=None, loglevel=logging.WARNING, restart=False, proto=0):
+    def __init__(
+        self,
+        ncpus='autodetect',
+        interface='0.0.0.0',
+        broadcast='255.255.255.255',
+        port=None,
+        secret=None,
+        timeout=None,
+        loglevel=logging.WARNING,
+        restart=False,
+        proto=0
+    ):
         Server.__init__(self, ncpus, secret=secret, loglevel=loglevel, restart=restart, proto=proto)
         self.host = interface
         self.bcast = broadcast
@@ -85,8 +96,10 @@ class _NetworkServer(Server):
 
         logging.debug('Strarting network server interface=%s port=%i' % (self.host, self.port))
         if self.timeout is not None:
-            logging.debug('ppserver will exit in %i seconds if no '
-                          'connections with clients exist' % (self.timeout))
+            logging.debug(
+                'ppserver will exit in %i seconds if no '
+                'connections with clients exist' % (self.timeout),
+            )
             six.moves._thread.start_new_thread(self.check_timeout, ())
 
     def ncon_add(self, val):
@@ -108,8 +121,11 @@ class _NetworkServer(Server):
                 if idle_time < self.timeout:
                     time.sleep(self.timeout - idle_time)
                 else:
-                    logging.debug('exiting ppserver due to timeout (no client'
-                                  ' connections in last %i sec)', self.timeout)
+                    logging.debug(
+                        'exiting ppserver due to timeout (no client'
+                        ' connections in last %i sec)',
+                        self.timeout,
+                    )
                     os._exit(0)
             else:
                 time.sleep(self.timeout)
@@ -200,8 +216,11 @@ def parse_config(file_loc):
     try:
         from configobj import ConfigObj
     except ImportError as ie:
-        print('ERROR: You must have configobj installed to use \
-configuration files. You can still use command line switches.', file=sys.stderr)
+        print(
+            'ERROR: You must have configobj installed to use \
+configuration files. You can still use command line switches.',
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if not os.access(file_loc, os.F_OK):
@@ -270,16 +289,20 @@ def print_usage():
     Prints help.
     """
     print('Parallel Python Network Server (pp-' + version + ')')
-    print('Usage: ppserver.py [-hdar] [-n proto] [-c config_path]'\
+    print(
+        'Usage: ppserver.py [-hdar] [-n proto] [-c config_path]'\
         ' [-i interface] [-b broadcast] [-p port] [-w nworkers]'\
-        ' [-s secret] [-t seconds]')
+        ' [-s secret] [-t seconds]',
+    )
     print()
     print('Options: ')
     print('-h                 : this help message')
     print('-d                 : debug')
     print('-a                 : enable auto-discovery service')
-    print('-r                 : restart worker process after each'\
-        ' task completion')
+    print(
+        '-r                 : restart worker process after each'\
+        ' task completion',
+    )
     print('-n proto           : protocol number for pickle module')
     print('-c path            : path to config file')
     print('-i interface       : interface to listen')
@@ -287,8 +310,10 @@ def print_usage():
     print('-p port            : port to listen')
     print('-w nworkers        : number of workers to start')
     print('-s secret          : secret for authentication')
-    print('-t seconds         : timeout to exit if no connections with '\
-        'clients exist')
+    print(
+        '-t seconds         : timeout to exit if no connections with '\
+        'clients exist',
+    )
     print()
     print('Due to the security concerns always use a non-trivial secret key.')
     print('Secret key set by -s switch will override secret key assigned by')

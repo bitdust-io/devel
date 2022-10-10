@@ -71,12 +71,17 @@ class CustomerFamilyService(LocalService):
                 fm = family_member.create_family(customer_idurl)
             fm.automat('init')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-            reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
-                'supplier_idurl': my_id.getIDURL().to_bin(),
-                'ecc_map': local_customer_meta_info.get('ecc_map'),
-                'position': local_customer_meta_info.get('position', -1),
-                'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
-            })
+            reactor.callLater(
+                0,
+                fm.automat,
+                'family-join',
+                {  # @UndefinedVariable
+                    'supplier_idurl': my_id.getIDURL().to_bin(),
+                    'ecc_map': local_customer_meta_info.get('ecc_map'),
+                    'position': local_customer_meta_info.get('position', -1),
+                    'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
+                },
+            )
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
@@ -117,7 +122,7 @@ class CustomerFamilyService(LocalService):
                 'ecc_map': evt.data.get('ecc_map'),
                 'position': evt.data.get('position', -1),
                 'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
-            }
+            },
         )
 
     def _on_existing_customer_accepted(self, evt):
@@ -146,7 +151,7 @@ class CustomerFamilyService(LocalService):
                 'ecc_map': evt.data.get('ecc_map'),
                 'position': evt.data.get('position'),
                 'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
-            }
+            },
         )
 
     def _on_existing_customer_terminated(self, evt):
@@ -169,7 +174,7 @@ class CustomerFamilyService(LocalService):
             {  # @UndefinedVariable
                 'supplier_idurl': my_id.getIDURL().to_bin(),
                 'ecc_map': evt.data.get('ecc_map'),
-            }
+            },
         )
 
     def _on_incoming_contacts_packet(self, newpacket, info):
@@ -225,7 +230,7 @@ class CustomerFamilyService(LocalService):
                     'customer_ecc_map': ecc_map,
                     'suppliers_list': suppliers_list,
                     'transaction_revision': transaction_revision,
-                }
+                },
             )
             return True
 
@@ -250,15 +255,20 @@ class CustomerFamilyService(LocalService):
                     customer_idurl,
                 ))
                 return False
-            reactor.callLater(0, fm.automat, 'contacts-received', {  # @UndefinedVariable
-                'type': contacts_type,
-                'packet': newpacket,
-                'customer_idurl': customer_idurl,
-                'customer_ecc_map': ecc_map,
-                'supplier_idurl': supplier_idurl,
-                'supplier_position': supplier_position,
-                'family_snapshot': family_snapshot,
-            })
+            reactor.callLater(
+                0,
+                fm.automat,
+                'contacts-received',
+                {  # @UndefinedVariable
+                    'type': contacts_type,
+                    'packet': newpacket,
+                    'customer_idurl': customer_idurl,
+                    'customer_ecc_map': ecc_map,
+                    'supplier_idurl': supplier_idurl,
+                    'supplier_position': supplier_position,
+                    'family_snapshot': family_snapshot,
+                },
+            )
             return True
 
         return False

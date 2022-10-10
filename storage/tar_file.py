@@ -260,7 +260,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024 * 1024)
+    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
     tar.add(
         name=sourcepath,
         arcname=arcname,

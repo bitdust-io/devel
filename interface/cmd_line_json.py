@@ -479,7 +479,9 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 lg.set_debug_level(settings.getDebugLevel())
                 reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')  # @UndefinedVariable
                 reactor.callWhenRunning(  # @UndefinedVariable
-                    id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort())
+                    id_server.A,
+                    'init',
+                    (settings.getIdServerWebPort(), settings.getIdServerTCPPort()),
                 )
                 reactor.callLater(0, id_server.A, 'start')  # @UndefinedVariable
                 reactor.run()  # @UndefinedVariable
@@ -538,7 +540,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if len(args) < 3:
                 return 2
             src = bpio.ReadTextFile(args[2])
-            if len(src) > 1024 * 10:
+            if len(src) > 1024*10:
                 print_text('file is too big for private key')
                 return 0
             try:
@@ -1021,7 +1023,6 @@ def cmd_integrate(opts, args, overDict):
         #!/bin/sh
         python [path to `bitdust` folder]/bitdust.py "$@"
     """
-
     def print_text(msg, nl='\n'):
         sys.stdout.write(msg + nl)
         sys.stdout.flush()
@@ -1251,7 +1252,7 @@ def cmd_storage(opts, args, overDict):
                     'donated': result1['result'],
                     'consumed': result2['result'],
                     'local': result3['result'],
-                }]
+                }],
             }
             print_template(result, jsontemplate.Template(templ.TPL_STORAGE))
             reactor.stop()  # @UndefinedVariable
@@ -1469,8 +1470,7 @@ def cmd_dhtseed(opts, args, overDict):
         print_text('starting Distributed Hash Table seed node and detach main BitDust process')
         result = misc.DoRestart(
             param='dhtseed',
-            detach=True,
-            # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
             # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
         )
         try:
@@ -1530,8 +1530,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         appdata = settings.BaseDir()
         print_text('run and detach main BitDust process')
         result = misc.DoRestart(
-            detach=True,
-            # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
             # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
         )
         try:
@@ -1574,8 +1573,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 'shutdown',
                 misc.DoRestart,
                 param='show' if ui else '',
-                detach=True,
-                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
                 # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             reactor.stop()  # @UndefinedVariable
@@ -1613,8 +1611,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('run and detach main BitDust process')
             result = misc.DoRestart(
                 'show',
-                detach=True,
-                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
                 # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             try:

@@ -108,7 +108,6 @@ def on_incoming_message(msg):
 
 
 class SimpleTerminalChat(object):
-
     def __init__(self, send_message_func=None, search_user_func=None):
         self.chars = []
         self.input = []
@@ -210,7 +209,7 @@ class SimpleTerminalChat(object):
                 break
             time.sleep(0.05)
             if self.printed < len(self.history):
-                sys.stdout.write('\b' * (len(last_line) + 2))
+                sys.stdout.write('\b'*(len(last_line) + 2))
                 # sys.stdout.write('\n\r')
                 sys.stdout.flush()
                 for h in self.history[self.printed:]:
@@ -279,7 +278,7 @@ class SimpleTerminalChat(object):
                         sys.stdout.flush()
                         self.quitnow = True
                         return
-                    sys.stdout.write('\b' * (len(msg)))
+                    sys.stdout.write('\b'*(len(msg)))
                     sys.stdout.flush()
                     self.on_my_message(msg)
                     continue

@@ -109,7 +109,7 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, include_si
             commands.Ack(): lambda response, info: _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout),
             commands.Fail(): lambda response, info: result.errback(Exception('"service_keys_registry" not started on remote node')),
             None: lambda pkt_out: result.errback(Exception('timeout')),
-        }
+        },
     )
     return result
 
@@ -324,7 +324,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         'audit': {
             'public_sample': base64.b64encode(public_test_sample),
             'private_sample': '',
-        }
+        },
     }
     raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
     block = encrypted.Block(
@@ -421,7 +421,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         'audit': {
             'public_sample': '',
             'private_sample': base64.b64encode(private_test_encrypted_sample),
-        }
+        },
     }
     raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
     block = encrypted.Block(

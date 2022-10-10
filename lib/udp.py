@@ -162,7 +162,6 @@ def get_last_datagram_time():
 
 
 class BasicProtocol(protocol.DatagramProtocol):
-
     def __init__(self):
         self.port = None
         self.callbacks = []

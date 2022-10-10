@@ -76,7 +76,7 @@ def long_to_bytes(n, blocksize=0):
     # add back some pad bytes.  this could be done more efficiently w.r.t. the
     # de-padding being done above, but sigh...
     if blocksize > 0 and len(s) % blocksize:
-        s = (blocksize - len(s) % blocksize) * b('\000') + s
+        s = (blocksize - len(s) % blocksize)*b('\000') + s
     return s
 
 
@@ -91,7 +91,7 @@ def bytes_to_long(s):
     length = len(s)
     if length % 4:
         extra = (4 - length % 4)
-        s = b('\000') * extra + s
+        s = b('\000')*extra + s
         length = length + extra
     for i in range(0, length, 4):
         acc = (acc << 32) + unpack('>I', s[i:i + 4])[0]

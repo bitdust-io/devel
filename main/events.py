@@ -101,7 +101,6 @@ def shutdown():
 
 
 class Event(object):
-
     def __init__(self, event_id, data=None, created=None):
         self.event_id = event_id
         self.data = data

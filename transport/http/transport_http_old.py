@@ -159,7 +159,6 @@ class TransportHTTPClientFactory(HTTPClientFactory):
 
 
 class TransportHTTPProxyClientFactory(HTTPClientFactory):
-
     def setURL(self, url):
         HTTPClientFactory.setURL(self, url)
         self.path = url
@@ -221,18 +220,22 @@ def receive():
 
         if dhnnet.proxy_is_on():
             f = TransportHTTPProxyClientFactory(
-                url, method='POST', headers={
+                url,
+                method='POST',
+                headers={
                     'User-Agent': 'BitDust transport_http',
                     'idurl': misc.getLocalID(),
-                }
+                },
             )
             conn = reactor.connectTCP(dhnnet.get_proxy_host(), int(dhnnet.get_proxy_port()), f)
         else:
             f = TransportHTTPClientFactory(
-                url, method='POST', headers={
+                url,
+                method='POST',
+                headers={
                     'User-Agent': 'BitDust transport_http',
                     'idurl': misc.getLocalID(),
-                }
+                },
             )
             conn = reactor.connectTCP(host, int(port), f)
 
@@ -289,7 +292,7 @@ def increase_receiving_delay(idurl):
     if idurl not in _PingDelayDict:
         _PingDelayDict[idurl] = _CurrentDelay
     d = _PingDelayDict[idurl]
-    if d < settings.DefaultSendTimeOutHTTP() / 2:
+    if d < settings.DefaultSendTimeOutHTTP()/2:
         lg.out(14, 'http_node.increase_receiving_delay   %s for %s' % (str(d), idurl))
         _PingDelayDict[idurl] *= 2
 

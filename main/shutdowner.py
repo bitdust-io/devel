@@ -320,8 +320,7 @@ class Shutdowner(automat.Automat):
                 detach = True
             misc.DoRestart(
                 param,
-                detach=detach,
-                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                detach=detach,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
                 # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             settings.shutdown()

@@ -32,7 +32,6 @@ class DistributedTupleSpacePeer(EntangledNode):
     A specialized form of an Entangled DHT node that provides an API for
     participating in a distributed Tuple Space (aka Object Space)
     """
-
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
         EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol, **kwargs)
         self._blockingGetRequests = {}

@@ -125,7 +125,6 @@ class IdRotator(automat.Automat):
     """
     This class implements all the functionality of ``id_rotator()`` state machine.
     """
-
     def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=True, **kwargs):
         """
         Builds `id_rotator()` state machine.
@@ -391,12 +390,7 @@ class IdRotator(automat.Automat):
         new_sources = []
         new_idurl = strng.to_bin(args[0])
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                current_sources=current_sources,
-                alive_idurls=self.alive_idurls,
-                new_idurl=new_idurl,
-            )
+            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, new_idurl=new_idurl)
         # first get rid of "dead" sources
         for current_idurl in current_sources:
             if current_idurl not in self.alive_idurls:
@@ -630,10 +624,13 @@ class IdRotator(automat.Automat):
                 webport = int(self.known_servers[host][0])
             if not webport:
                 webport = _webport
-            url = net_misc.pack_address((
-                host,
-                webport,
-            ), proto='http')
+            url = net_misc.pack_address(
+                (
+                    host,
+                    webport,
+                ),
+                proto='http',
+            )
             dlist.append(net_misc.http_post_data(
                 url=url,
                 data=payload,

@@ -132,18 +132,18 @@ class IdRestorer(automat.Automat):
     """
 
     MESSAGES = {
-        'MSG_01': ['requesting user identity from remote ID server',],
+        'MSG_01': ['requesting user identity from remote ID server'],
         'MSG_02': ['key verification failed!', 'red'],
-        'MSG_03': ['downloading user identity from remote ID server',],
+        'MSG_03': ['downloading user identity from remote ID server'],
         'MSG_04': ['incorrect or non-existing IDURL provided', 'red'],
-        'MSG_05': ['verifying user identity and private key',],
+        'MSG_05': ['verifying user identity and private key'],
         'MSG_06': ['your identity restored successfully!', 'green'],
-        'MSG_07': ['checking network connectivity',],
+        'MSG_07': ['checking network connectivity'],
         'MSG_08': [
             'network connection failed',
             'red',
         ],
-        'MSG_09': ['reading list of my suppliers from DHT',],
+        'MSG_09': ['reading list of my suppliers from DHT'],
     }
 
     def init(self):

@@ -253,7 +253,7 @@ def on_supplier_file_modified(evt):
                 callbacks={
                     commands.Files(): lambda r, i: on_list_files_response(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
                     commands.Fail(): lambda r, i: on_list_files_failed(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                }
+                },
             )
 
 
@@ -342,7 +342,7 @@ def on_my_list_files_refreshed(evt):
                     callbacks={
                         commands.Files(): lambda r, i: on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
                         commands.Fail(): lambda r, i: on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
-                    }
+                    },
                 )
 
 
@@ -365,7 +365,7 @@ def on_list_files_failed(response, info, customer_idurl, supplier_idurl, key_id)
             key_id,
             supplier_idurl,
             err,
-        )))
+        ), ))
     else:
         lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r: %r' % (
             key_id,
@@ -386,7 +386,7 @@ def on_key_transfer_success(customer_idurl, supplier_idurl, key_id):
         callbacks={
             commands.Files(): lambda r, i: on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
             commands.Fail(): lambda r, i: on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
-        }
+        },
     )
 
 
@@ -420,24 +420,25 @@ class SharedAccessCoordinator(automat.Automat):
         self.last_time_in_sync = -1
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
-        super(SharedAccessCoordinator, self).__init__(
-            name='%s$%s' % (
-                self.key_alias,
-                self.glob_id['customer'],
-            ), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs
-        )
+        super(SharedAccessCoordinator,
+              self).__init__(name='%s$%s' % (
+                  self.key_alias,
+                  self.glob_id['customer'],
+              ), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def to_json(self):
         j = super().to_json()
-        j.update({
-            'active': my_keys.is_active(self.key_id),
-            'key_id': self.key_id,
-            'alias': self.key_alias,
-            'label': my_keys.get_label(self.key_id) or '',
-            'creator': self.customer_idurl.to_id(),
-            'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
-            'ecc_map': self.known_ecc_map,
-        })
+        j.update(
+            {
+                'active': my_keys.is_active(self.key_id),
+                'key_id': self.key_id,
+                'alias': self.key_alias,
+                'label': my_keys.get_label(self.key_id) or '',
+                'creator': self.customer_idurl.to_id(),
+                'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
+                'ecc_map': self.known_ecc_map,
+            }
+        )
         return j
 
     def add_connected_callback(self, callback_id, callback_method):
@@ -801,12 +802,12 @@ class SharedAccessCoordinator(automat.Automat):
             creatorID=my_id.getIDURL(),
             packetID=packetID,
             remoteID=supplier_idurl,
-            response_timeout=60 * 2,
+            response_timeout=60*2,
             payload=raw_payload,
             callbacks={
                 commands.Data(): self._on_index_file_response,
                 commands.Fail(): self._on_index_file_fail,
-            }
+            },
         )
         if _Debug:
             lg.args(_DebugLevel, pid=packetID, supplier=supplier_idurl)

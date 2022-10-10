@@ -73,7 +73,7 @@ _ValidRequests = [
 
 #------------------------------------------------------------------------------
 
-DHT_RECORD_REFRESH_INTERVAL = 5 * 60
+DHT_RECORD_REFRESH_INTERVAL = 5*60
 
 #------------------------------------------------------------------------------
 
@@ -126,13 +126,7 @@ class FamilyMember(automat.Automat):
             name='family_%s_member_%s' % (
                 nameurl.GetName(self.customer_idurl),
                 nameurl.GetName(self.supplier_idurl),
-            ),
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
+            ), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs
         )
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -323,7 +317,7 @@ class FamilyMember(automat.Automat):
         self.transaction = None
         self.dht_value_exists = False
         self.dht_read_use_cache = True
-        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
+        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL*settings.DefaultDesiredSuppliers()
         self.refresh_task = LoopingCall(self._on_family_refresh_task)
 
     def doPush(self, event, *args, **kwargs):
@@ -371,7 +365,7 @@ class FamilyMember(automat.Automat):
             known_ecc_map = self.transaction.get('ecc_map')
             if known_ecc_map:
                 expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
-                self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * expected_suppliers_count
+                self.refresh_period = DHT_RECORD_REFRESH_INTERVAL*expected_suppliers_count
 
     def doRequestSuppliersReview(self, *args, **kwargs):
         """
@@ -621,11 +615,14 @@ class FamilyMember(automat.Automat):
                 another_suppliers[possible_position] = my_id.getIDURL().to_bin()
             except:
                 lg.exc()
-            contactsdb.add_customer_meta_info(self.customer_idurl, {
-                'ecc_map': another_ecc_map,
-                'position': possible_position,
-                'family_snapshot': id_url.to_bin_list(another_suppliers),
-            })
+            contactsdb.add_customer_meta_info(
+                self.customer_idurl,
+                {
+                    'ecc_map': another_ecc_map,
+                    'position': possible_position,
+                    'family_snapshot': id_url.to_bin_list(another_suppliers),
+                },
+            )
         return {
             'revision': int(another_revision),
             'publisher_idurl': my_id.getIDURL(),  # I will be a publisher of that revision
@@ -692,9 +689,7 @@ class FamilyMember(automat.Automat):
             if len(merged_info['suppliers']) < expected_suppliers_count:
                 merged_info['suppliers'] += [
                     b'',
-                ] * (
-                    expected_suppliers_count - len(merged_info['suppliers'])
-                )
+                ]*(expected_suppliers_count - len(merged_info['suppliers']))
             elif len(merged_info['suppliers']) > expected_suppliers_count:
                 merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
         if merged_info['revision'] != latest_revision:
@@ -760,14 +755,12 @@ class FamilyMember(automat.Automat):
         if not merged_info['suppliers']:
             merged_info['suppliers'] = [
                 b'',
-            ] * expected_suppliers_count
+            ]*expected_suppliers_count
 
         if len(merged_info['suppliers']) < expected_suppliers_count:
             merged_info['suppliers'] += [
                 b'',
-            ] * (
-                expected_suppliers_count - len(merged_info['suppliers'])
-            )
+            ]*(expected_suppliers_count - len(merged_info['suppliers']))
         else:
             merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
 
@@ -793,7 +786,7 @@ class FamilyMember(automat.Automat):
                         merged_info['suppliers'][current_request['position']],
                         current_request['position'],
                         self.customer_idurl,
-                    ))
+                    ), )
                 merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
                 if _Debug:
                     lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (current_request['supplier_idurl'], current_request['position'], self.customer_idurl))
@@ -843,14 +836,12 @@ class FamilyMember(automat.Automat):
         if not merged_info['suppliers']:
             merged_info['suppliers'] = [
                 b'',
-            ] * expected_suppliers_count
+            ]*expected_suppliers_count
 
         if len(merged_info['suppliers']) < expected_suppliers_count:
             merged_info['suppliers'] += [
                 b'',
-            ] * (
-                expected_suppliers_count - len(merged_info['suppliers'])
-            )
+            ]*(expected_suppliers_count - len(merged_info['suppliers']))
         else:
             merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
 
@@ -901,9 +892,7 @@ class FamilyMember(automat.Automat):
             if len(merged_info['suppliers']) < my_expected_suppliers_count:
                 merged_info['suppliers'] += [
                     b'',
-                ] * (
-                    my_expected_suppliers_count - len(merged_info['suppliers'])
-                )
+                ]*(my_expected_suppliers_count - len(merged_info['suppliers']))
             else:
                 merged_info['suppliers'] = merged_info['suppliers'][:my_expected_suppliers_count]
 
@@ -919,7 +908,7 @@ class FamilyMember(automat.Automat):
                     merged_info['suppliers'][my_position],
                     my_position,
                     self.customer_idurl,
-                ))
+                ), )
             merged_info['suppliers'][my_position] = my_id.getIDURL().to_bin()
             if _Debug:
                 lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (my_id.getIDURL(), my_position, self.customer_idurl))
@@ -1088,11 +1077,14 @@ class FamilyMember(automat.Automat):
             _existing_position = self.my_info['suppliers'].index(supplier_idurl)
         except:
             _existing_position = -1
-        contactsdb.add_customer_meta_info(self.customer_idurl, {
-            'ecc_map': ecc_map,
-            'position': supplier_position,
-            'family_snapshot': id_url.to_bin_list(family_snapshot),
-        })
+        contactsdb.add_customer_meta_info(
+            self.customer_idurl,
+            {
+                'ecc_map': ecc_map,
+                'position': supplier_position,
+                'family_snapshot': id_url.to_bin_list(family_snapshot),
+            },
+        )
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_supplier_position stored new meta info for customer %s:\n' % self.customer_idurl)
             lg.out(_DebugLevel, '    ecc_map=%s position=%s family_snapshot=%s' % (

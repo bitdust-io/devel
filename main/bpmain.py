@@ -529,7 +529,6 @@ class _callable():
 
     I tried to decrease the number of delayed calls.
     """
-
     def __init__(self, delay, callabl, *args, **kw):
         self.callabl = callabl
         self.to_call = lambda: self.run(*args, **kw)
@@ -582,7 +581,6 @@ def monitorDelayedCalls(r):
 
 
 class TwistedUnhandledErrorsObserver:
-
     def __init__(self, level):
         self.level = level
 
@@ -591,14 +589,11 @@ class TwistedUnhandledErrorsObserver:
             if 'log_failure' in event_dict:
                 f = event_dict['log_failure']
                 from logs import lg
-                lg.exc(
-                    msg=f'Unhandled error in Deferred:\n{event_dict.get("debugInfo", "")}',
-                    exc_info=(
-                        f.type,
-                        f.value,
-                        f.getTracebackObject(),
-                    ),
-                )
+                lg.exc(msg=f'Unhandled error in Deferred:\n{event_dict.get("debugInfo", "")}', exc_info=(
+                    f.type,
+                    f.value,
+                    f.getTracebackObject(),
+                ))
 
 
 #-------------------------------------------------------------------------------
@@ -838,8 +833,7 @@ def main(executable_path=None, start_reactor=True):
         from lib import misc
         print_text('new BitDust process will be started in daemon mode\n', nl='')
         result = misc.DoRestart(
-            detach=True,
-            # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
             # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
         )
         if result is not None:
@@ -893,8 +887,7 @@ def main(executable_path=None, start_reactor=True):
                     'shutdown',
                     misc.DoRestart,
                     param='show' if ui else '',
-                    detach=True,
-                    # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                    detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
                     # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
                 )
                 reactor.stop()  # @UndefinedVariable
@@ -978,7 +971,7 @@ def main(executable_path=None, start_reactor=True):
                 if opts.coverage_report:
                     cov.report(file=open(opts.coverage_report, 'w'))
             return ret
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'),)
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) > 0:
             if cmd == 'kill':
                 print_text('found main BitDust process: %s, about to kill running process ... ' % appList, nl='')

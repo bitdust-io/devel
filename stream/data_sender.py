@@ -181,12 +181,12 @@ class DataSender(automat.Automat):
         if not args or not args[0] or not isinstance(args[0], list) or not isinstance(args[0], tuple):
             is_empty = io_throttle.IsSendingQueueEmpty()
             if _Debug:
-                lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
+                lg.out(_DebugLevel*2, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
             return is_empty
         remoteID, _ = args[0]
         can_send_to = io_throttle.OkToSend(remoteID)
         if _Debug:
-            lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (
+            lg.out(_DebugLevel*2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (
                 can_send_to,
                 remoteID,
             ))
@@ -240,11 +240,7 @@ class DataSender(automat.Automat):
                     continue
                 if item.key_id and customerGlobalID and customerGlobalID != item.key_id:
                     if _Debug:
-                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog: %r ~ %r' % (
-                            backupID,
-                            customerGlobalID,
-                            item.key_id,
-                        ))
+                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog: %r ~ %r' % (backupID, customerGlobalID, item.key_id))
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID, limit_per_supplier=None)
                 total_for_customer = sum([len(v) for v in packetsBySupplier.values()])
@@ -302,11 +298,7 @@ class DataSender(automat.Automat):
                             ):
                                 progress += 1
                                 if _Debug:
-                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d' % (
-                                        item.name(),
-                                        packetID,
-                                        progress,
-                                    ))
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d' % (item.name(), packetID, progress))
                             else:
                                 if _Debug:
                                     lg.out(_DebugLevel, 'data_sender.doScanAndQueue    io_throttle.QueueSendFile FAILED %s' % packetID)
@@ -342,7 +334,7 @@ class DataSender(automat.Automat):
         if settings.getGeneralWaitSuppliers() is True:
             from customer import fire_hire
             # but he want to be sure - all suppliers are green for a long time
-            if len(online_status.listOfflineSuppliers()) > 0 or (time.time() - fire_hire.GetLastFireTime() < 24 * 60 * 60):
+            if len(online_status.listOfflineSuppliers()) > 0 or (time.time() - fire_hire.GetLastFireTime() < 24*60*60):
                 # some people are not there or we do not have stable team yet
                 # do not remove the files because we need it to rebuild
                 return

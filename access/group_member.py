@@ -243,10 +243,7 @@ def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
         return False
     A_new = get_active_group_member(new_group_key_id)
     if A_new and A_new in _ActiveGroupMembers:
-        lg.err('it seems group %r already rotated, but older copy also exists at the moment: %r' % (
-            A_new,
-            A_old,
-        ))
+        lg.err('it seems group %r already rotated, but older copy also exists at the moment: %r' % (A_new, A_old))
         return False
     del A_new  # just my paranoia
     unregister_group_member(A_old)
@@ -260,7 +257,6 @@ def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
 
 
 def start_group_members():
-
     def _start():
         started = 0
         for group_key_id, group_info in groups.active_groups().items():
@@ -336,7 +332,6 @@ class GroupMember(automat.Automat):
     """
     This class implements all the functionality of ``group_member()`` state machine.
     """
-
     def __init__(self, group_key_id, member_idurl=None, use_dht_cache=True, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `group_member()` state machine.
@@ -384,19 +379,22 @@ class GroupMember(automat.Automat):
 
     def to_json(self):
         j = super().to_json()
-        j.update({
-            'active': groups.is_group_active(self.group_key_id),
-            'member_id': self.member_id,
-            'group_key_id': self.group_key_id,
-            'alias': self.group_glob_id['key_alias'],
-            'label': my_keys.get_label(self.group_key_id) or '',
-            'creator': self.group_creator_id,
-            'active_broker_id': self.active_broker_id,
-            'active_queue_id': self.active_queue_id,
-            'connected_brokers': {p: id_url.idurl_to_id(b) for p, b in self.connected_brokers.items()},
-            'last_sequence_id': self.last_sequence_id,
-            'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
-        })
+        j.update(
+            {
+                'active': groups.is_group_active(self.group_key_id),
+                'member_id': self.member_id,
+                'group_key_id': self.group_key_id,
+                'alias': self.group_glob_id['key_alias'],
+                'label': my_keys.get_label(self.group_key_id) or '',
+                'creator': self.group_creator_id,
+                'active_broker_id': self.active_broker_id,
+                'active_queue_id': self.active_queue_id,
+                'connected_brokers': {p: id_url.idurl_to_id(b)
+                                      for p, b in self.connected_brokers.items()},
+                'last_sequence_id': self.last_sequence_id,
+                'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
+            }
+        )
         return j
 
     def init(self):
@@ -428,38 +426,25 @@ class GroupMember(automat.Automat):
             lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'IN_SYNC!':
             lg.info('group synchronized : %s' % self.group_key_id)
-            events.send(
-                'group-synchronized', data=dict(
-                    group_key_id=self.group_key_id,
-                    old_state=oldstate,
-                    new_state=newstate,
-                )
-            )
-        if newstate not in [
-            'DISCONNECTED',
-            'IN_SYNC!',
-            'CLOSED',
-        ] and oldstate in [
-            'DISCONNECTED',
-            'IN_SYNC!',
-        ]:
+            events.send('group-synchronized', data=dict(
+                group_key_id=self.group_key_id,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
+        if newstate not in ['DISCONNECTED', 'IN_SYNC!', 'CLOSED'] and oldstate in ['DISCONNECTED', 'IN_SYNC!']:
             lg.info('group connecting : %s' % self.group_key_id)
-            events.send(
-                'group-connecting', data=dict(
-                    group_key_id=self.group_key_id,
-                    old_state=oldstate,
-                    new_state=newstate,
-                )
-            )
+            events.send('group-connecting', data=dict(
+                group_key_id=self.group_key_id,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
         if newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
             lg.info('group disconnected : %s' % self.group_key_id)
-            events.send(
-                'group-disconnected', data=dict(
-                    group_key_id=self.group_key_id,
-                    old_state=oldstate,
-                    new_state=newstate,
-                )
-            )
+            events.send('group-disconnected', data=dict(
+                group_key_id=self.group_key_id,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
 
     def A(self, event, *args, **kwargs):
         """
@@ -633,13 +618,7 @@ class GroupMember(automat.Automat):
                 self.dht_read_use_cache = True
                 self.automat('brokers-read', known_brokers=cooperated_brokers)
                 return
-        if event in [
-            'reconnect',
-            'push-message-failed',
-            'replace-active-broker',
-            'broker-position-mismatch',
-            'top-broker-connect-failed',
-        ]:
+        if event in ['reconnect', 'push-message-failed', 'replace-active-broker', 'broker-position-mismatch', 'top-broker-connect-failed']:
             self.dht_read_use_cache = False
         if _Debug:
             lg.args(_DebugLevel, e=event, use_cache=self.dht_read_use_cache)
@@ -693,7 +672,9 @@ class GroupMember(automat.Automat):
             channel='ping_broker',
             keep_alive=False,
         ).addBoth(
-            self._on_brokers_ping_result, cooperated_brokers=cooperated_brokers, archive_folder_path=archive_folder_path
+            self._on_brokers_ping_result,
+            cooperated_brokers=cooperated_brokers,
+            archive_folder_path=archive_folder_path,
         )
 
     def doRememberBrokers(self, *args, **kwargs):
@@ -821,14 +802,14 @@ class GroupMember(automat.Automat):
         """
         self.dht_read_use_cache = True
         if self.group_brokers_updated:
-            events.send(
-                'group-brokers-updated', data=dict(
-                    group_creator_id=self.group_creator_id,
-                    group_key_id=self.group_key_id,
-                    member_id=self.member_id,
-                    connected_brokers=self.connected_brokers,
-                )
-            )
+            # yapf: disable
+            events.send('group-brokers-updated', data=dict(
+                group_creator_id=self.group_creator_id,
+                group_key_id=self.group_key_id,
+                member_id=self.member_id,
+                connected_brokers=self.connected_brokers,
+            ))
+            # yapf: enable
             self.group_brokers_updated = False
 
     def doDisconnected(self, *args, **kwargs):
@@ -901,27 +882,15 @@ class GroupMember(automat.Automat):
         last_pos = groups.REQUIRED_BROKERS_COUNT - 1
         if self.dead_broker_id:
             if not self.active_broker_id or self.active_broker_id == self.dead_broker_id:
-                return {
-                    'broker_idurl': None,
-                    'broker_pos': last_pos,
-                }
+                return {'broker_idurl': None, 'broker_pos': last_pos}
         if available_brokers:
             if last_pos in available_brokers:
-                return {
-                    'broker_idurl': available_brokers[last_pos],
-                    'broker_pos': last_pos,
-                }
+                return {'broker_idurl': available_brokers[last_pos], 'broker_pos': last_pos}
         if dht_brokers:
             for dht_broker in dht_brokers:
                 if dht_broker['position'] == last_pos and dht_broker['broker_idurl']:
-                    return {
-                        'broker_idurl': dht_broker['broker_idurl'],
-                        'broker_pos': last_pos,
-                    }
-        return {
-            'broker_idurl': None,
-            'broker_pos': last_pos,
-        }
+                    return {'broker_idurl': dht_broker['broker_idurl'], 'broker_pos': last_pos}
+        return {'broker_idurl': None, 'broker_pos': last_pos}
 
     def _do_connect_target_broker(self, broker_pos, broker_idurl):
         if broker_idurl:
@@ -1043,10 +1012,7 @@ class GroupMember(automat.Automat):
             found_broker_ids.add(incoming_broker_id)
             if incoming_group_key_id != self.group_key_id:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'skip message based on packet_id for %r : %r' % (
-                        self.group_key_id,
-                        incoming_group_key_id,
-                    ))
+                    lg.dbg(_DebugLevel, 'skip message based on packet_id for %r : %r' % (self.group_key_id, incoming_group_key_id))
                 continue
             if chunk_last_sequence_id > latest_known_sequence_id:
                 latest_known_sequence_id = chunk_last_sequence_id
@@ -1084,17 +1050,10 @@ class GroupMember(automat.Automat):
             if self.active_broker_id and received_broker_id != self.active_broker_id:
                 if not to_be_reconnected:
                     to_be_reconnected = True
-                    lg.warn('received message from broker %r which is different from my active broker %r' % (
-                        received_broker_id,
-                        self.active_broker_id,
-                    ))
+                    lg.warn('received message from broker %r which is different from my active broker %r' % (received_broker_id, self.active_broker_id))
         if received_group_messages and len(found_broker_ids) > 0 and self.active_broker_id not in found_broker_ids:
             to_be_reconnected = True
-            lg.warn('active broker is %r but incoming message received from another broker %r in %r' % (
-                self.active_broker_id,
-                list(found_broker_ids),
-                self,
-            ))
+            lg.warn('active broker is %r but incoming message received from another broker %r in %r' % (self.active_broker_id, list(found_broker_ids), self))
         packets_to_ack.clear()
         if to_be_reconnected:
             cooperated_brokers = json_message.get('cooperated_brokers', {}) or {}
@@ -1107,10 +1066,7 @@ class GroupMember(automat.Automat):
                     lg.dbg(_DebugLevel, 'no messages for %r found in the incoming stream' % self.active_queue_id)
                 return True
             if latest_known_sequence_id < self.last_sequence_id:
-                lg.warn('found queue latest sequence %d is behind of my current position %d' % (
-                    latest_known_sequence_id,
-                    self.last_sequence_id,
-                ))
+                lg.warn('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id))
                 self.automat('queue-in-sync')
                 if to_be_reconnected:
                     if _Debug:
@@ -1118,15 +1074,8 @@ class GroupMember(automat.Automat):
                     reactor.callLater(0.01, self.automat, 'reconnect', cooperated_brokers=cooperated_brokers)  # @UndefinedVariable
                 return True
             if latest_known_sequence_id > self.last_sequence_id:
-                lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
-                    latest_known_sequence_id,
-                    self.last_sequence_id,
-                ))
-                self.automat(
-                    'queue-is-ahead',
-                    latest_known_sequence_id=latest_known_sequence_id,
-                    received_messages=received_group_messages,
-                )
+                lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (latest_known_sequence_id, self.last_sequence_id))
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages)
                 if to_be_reconnected:
                     if _Debug:
                         lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
@@ -1169,33 +1118,16 @@ class GroupMember(automat.Automat):
                 newly_processed += 1
                 groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
                 groups.save_group_info(self.group_key_id)
-                lg.info('new message consumed in %r, last_sequence_id incremented to %d' % (
-                    self.group_key_id,
-                    self.last_sequence_id,
-                ))
+                lg.info('new message consumed in %r, last_sequence_id incremented to %d' % (self.group_key_id, self.last_sequence_id))
                 self.automat('message-in', **inp_message)
         if len(self.buffered_messages) > MAX_BUFFERED_MESSAGES:
-            raise Exception('message sequence is broken by message broker %s, currently %d buffered messages' % (
-                self.active_broker_id,
-                len(self.buffered_messages),
-            ))
+            raise Exception('message sequence is broken by message broker %s, currently %d buffered messages' % (self.active_broker_id, len(self.buffered_messages)))
         if _Debug:
-            lg.dbg(_DebugLevel, 'my_last_sequence_id=%d  newly_processed=%d  buffered_messages=%d' % (
-                self.last_sequence_id,
-                newly_processed,
-                len(self.buffered_messages),
-            ))
+            lg.dbg(_DebugLevel, 'my_last_sequence_id=%d  newly_processed=%d  buffered_messages=%d' % (self.last_sequence_id, newly_processed, len(self.buffered_messages)))
         if not newly_processed or newly_processed != len(received_group_messages):
             if latest_known_sequence_id > self.last_sequence_id:
-                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
-                    latest_known_sequence_id,
-                    self.last_sequence_id,
-                ))
-                self.automat(
-                    'queue-is-ahead',
-                    latest_known_sequence_id=latest_known_sequence_id,
-                    received_messages=received_group_messages,
-                )
+                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (latest_known_sequence_id, self.last_sequence_id))
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages)
                 return True
         if _Debug:
             lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
@@ -1221,10 +1153,7 @@ class GroupMember(automat.Automat):
             }
         else:
             if self.outgoing_messages[outgoing_counter]['attempts'] > CRITICAL_PUSH_MESSAGE_FAILS:
-                lg.err('failed sending message to broker %r after %d attempts' % (
-                    self.active_broker_id,
-                    self.outgoing_messages[outgoing_counter]['attempts'],
-                ))
+                lg.err('failed sending message to broker %r after %d attempts' % (self.active_broker_id, self.outgoing_messages[outgoing_counter]['attempts']))
                 self.outgoing_messages[outgoing_counter]['attempts'] = 0
                 self.outgoing_messages[outgoing_counter]['last_attempt'] = None
                 self.automat('push-message-failed')
@@ -1238,12 +1167,7 @@ class GroupMember(automat.Automat):
             json_payload = self.outgoing_messages[outgoing_counter]['payload']
             if self.outgoing_messages[outgoing_counter]['attempts'] >= 1:
                 require_handshake = True
-            lg.warn('re-trying sending message to broker %r   counter=%d attempts=%d packet_id=%s' % (
-                self.active_broker_id,
-                outgoing_counter,
-                self.outgoing_messages[outgoing_counter]['attempts'],
-                packet_id,
-            ))
+            lg.warn('re-trying sending message to broker %r   counter=%d attempts=%d packet_id=%s' % (self.active_broker_id, outgoing_counter, self.outgoing_messages[outgoing_counter]['attempts'], packet_id))
         raw_payload = serialization.DictToBytes(
             json_payload,
             pack_types=True,
@@ -1283,22 +1207,13 @@ class GroupMember(automat.Automat):
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position=-1, action='queue-connect'):
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                broker=possible_broker_idurl,
-                pos=desired_broker_position,
-                action=action,
-                owner=self.group_creator_id,
-            )
+            lg.args(_DebugLevel, broker=possible_broker_idurl, pos=desired_broker_position, action=action, owner=self.group_creator_id)
         group_key_info = {}
         # if not my_keys.is_key_registered(self.group_key_id):
         #     lg.warn('group key %r was not registered, checking all registered keys' % self.group_key_id)
         #     my_keys.check_rename_my_keys(prefix=self.group_key_id.split('@')[0])
         if not my_keys.is_key_registered(self.group_key_id):
-            lg.err('closing group_member %r because key %r is not registered' % (
-                self,
-                self.group_key_id,
-            ))
+            lg.err('closing group_member %r because key %r is not registered' % (self, self.group_key_id))
             lg.exc('group key %r is not registered' % self.group_key_id)
             self.automat('shutdown')
             return
@@ -1366,17 +1281,10 @@ class GroupMember(automat.Automat):
         if archive_folder_path:
             current_path = groups.get_archive_folder_path(self.group_key_id)
             if current_path and current_path != archive_folder_path:
-                lg.warn('for %r overwriting existing archive_folder_path %r with new value %r' % (
-                    self.group_key_id,
-                    current_path,
-                    archive_folder_path,
-                ))
+                lg.warn('for %r overwriting existing archive_folder_path %r with new value %r' % (self.group_key_id, current_path, archive_folder_path))
             else:
                 if not current_path:
-                    lg.info('recognized archive folder path for %r from broker response: %r' % (
-                        self.group_key_id,
-                        archive_folder_path,
-                    ))
+                    lg.info('recognized archive folder path for %r from broker response: %r' % (self.group_key_id, archive_folder_path))
             groups.set_archive_folder_path(self.group_key_id, archive_folder_path)
         groups.save_group_info(self.group_key_id)
         if brokers_changed:
@@ -1440,16 +1348,10 @@ class GroupMember(automat.Automat):
                 self.automat('broker-connect-failed', err)
                 return
             if mismatch_info:
-                lg.warn('broker request mismatch at position %d: %r' % (
-                    broker_pos,
-                    mismatch_info,
-                ))
+                lg.warn('broker request mismatch at position %d: %r' % (broker_pos, mismatch_info))
                 self.automat('brokers-mismatch', **mismatch_info)
                 return
-        lg.err('failed connecting to broker at position %d : %r' % (
-            broker_pos,
-            err,
-        ))
+        lg.err('failed connecting to broker at position %d : %r' % (broker_pos, err))
         self.automat('broker-connect-failed', err)
 
     def _on_broker_hired(self, response_info, broker_pos, *args, **kwargs):
@@ -1574,22 +1476,21 @@ class GroupMember(automat.Automat):
                 sequence_id=archive_message['sequence_id'],
             ))
         for received_message in received_messages:
-            received_group_messages.append(dict(
-                json_message=received_message['json_message'],
-                direction='incoming',
-                group_key_id=self.group_key_id,
-                producer_id=received_message['producer_id'],
-                sequence_id=received_message['sequence_id'],
-            ))
+            received_group_messages.append(
+                dict(
+                    json_message=received_message['json_message'],
+                    direction='incoming',
+                    group_key_id=self.group_key_id,
+                    producer_id=received_message['producer_id'],
+                    sequence_id=received_message['sequence_id'],
+                )
+            )
             if received_message['sequence_id'] > latest_known_sequence_id:
                 latest_known_sequence_id = received_message['sequence_id']
         self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
 
     def _on_read_archive_failed(self, err, received_messages, latest_known_sequence_id):
-        lg.warn('received %d recent messages but read archived messages failed with: %r' % (
-            len(received_messages),
-            err,
-        ))
+        lg.warn('received %d recent messages but read archived messages failed with: %r' % (len(received_messages), err))
         self.last_sequence_id = latest_known_sequence_id
         groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
         groups.save_group_info(self.group_key_id)

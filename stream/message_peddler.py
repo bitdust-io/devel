@@ -226,7 +226,7 @@ def on_consume_queue_messages(json_messages):
                     lg.warn('group creator idurl was rotated, consumer must refresh own identity cache: %r ~ %r' % (
                         group_creator_idurl.to_original(),
                         group_creator_idurl.to_bin(),
-                    ))
+                    ), )
                     known_ident = identitycache.get_one(group_creator_idurl.to_bin())
                     if not known_ident:
                         lg.err('unknown group creator identity: %r' % group_creator_idurl.to_bin())
@@ -403,12 +403,8 @@ def on_message_processed(processed_message):
     sequence_id = processed_message.get_sequence_id()
     if _Debug:
         lg.args(
-            _DebugLevel,
-            queue_id=processed_message.queue_id,
-            sequence_id=sequence_id,
-            message_id=processed_message.message_id,
-            success_notifications=processed_message.success_notifications,
-            failed_notifications=processed_message.failed_notifications,
+            _DebugLevel, queue_id=processed_message.queue_id, sequence_id=sequence_id, message_id=processed_message.message_id, success_notifications=processed_message.success_notifications,
+            failed_notifications=processed_message.failed_notifications
         )
     if sequence_id is None:
         return False
@@ -455,7 +451,7 @@ def on_consumer_notify(message_info):
         lg.exc(exc_value=Exception('not possible to notify consumer %r because queue keeper for %r do not exist' % (
             consumer_id,
             group_creator_idurl,
-        )))
+        ), ))
         return True
     if _Debug:
         lg.args(_DebugLevel, p=producer_id, c=consumer_id, q=queue_id, s=sequence_id, l=last_sequence_id, qk=qk, b=qk.cooperated_brokers)
@@ -464,12 +460,14 @@ def on_consumer_notify(message_info):
             'msg_type': 'queue_message',
             'action': 'read',
             'created': utime.get_sec1970(),
-            'items': [{
-                'sequence_id': sequence_id,
-                'created': payload['created'],
-                'producer_id': producer_id,
-                'payload': payload['payload'],
-            },],
+            'items': [
+                {
+                    'sequence_id': sequence_id,
+                    'created': payload['created'],
+                    'producer_id': producer_id,
+                    'payload': payload['payload'],
+                },
+            ],
             'last_sequence_id': last_sequence_id,
             'cooperated_brokers': qk.cooperated_brokers,
         },
@@ -1235,7 +1233,6 @@ class MessagePeddler(automat.Automat):
     """
     This class implements all the functionality of ``message_peddler()`` state machine.
     """
-
     def __init__(self, name, state, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `message_peddler()` state machine.
@@ -1691,7 +1688,7 @@ class MessagePeddler(automat.Automat):
                 if id_url.is_not_in(my_id.getIDURL(), json_value['cooperated_brokers'].values(), as_field=False):
                     lg.warn('did not found my own idurl in the stored cooperated brokers list')
                     continue
-                if utime.get_sec1970() - json_value['time'] > 60 * 60 * 2:
+                if utime.get_sec1970() - json_value['time'] > 60*60*2:
                     lg.warn('skip restoring queue_keeper for %s because stored state is too old' % customer_id)
                     continue
                 customer_idurl = global_id.glob2idurl(customer_id)
@@ -1707,7 +1704,7 @@ class MessagePeddler(automat.Automat):
                 qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True, event='skip-init')
                 # a small delay to avoid starting too many activities at once
                 reactor.callLater(
-                    (self.total_keepers + 1) * 1.0,
+                    (self.total_keepers + 1)*1.0,
                     qk.automat,  # @UndefinedVariable
                     event='restore',
                     desired_position=json_value['position'],
@@ -2149,17 +2146,7 @@ class MessagePeddler(automat.Automat):
             if not is_stream_active(queue_id):
                 start_stream(queue_id)
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                q=loaded_queues,
-                c=loaded_consumers,
-                p=loaded_producers,
-                m=loaded_messages,
-                a=loaded_archive_messages,
-                s=len(to_be_started),
-                l=self.loaded_keepers,
-                t=self.total_keepers,
-            )
+            lg.args(_DebugLevel, q=loaded_queues, c=loaded_consumers, p=loaded_producers, m=loaded_messages, a=loaded_archive_messages, s=len(to_be_started), l=self.loaded_keepers, t=self.total_keepers)
         if self.loaded_keepers >= self.total_keepers:
             reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 

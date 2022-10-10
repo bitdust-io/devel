@@ -104,7 +104,7 @@ def do_service_restart(service_name, result_defer, wait_timeout):
     d.addErrback(lambda err: result_defer.callback(dict(
         error=err,
         reason='{}_restart_error'.format(service_name),
-    )))
+    ), ))
     return None
 
 
@@ -245,13 +245,14 @@ def connected(wait_timeout=5):
                         # service_proxy_transport() is enabled, proxy_receiver() is listening: all good
                         wait_timeout_defer = Deferred()
                         wait_timeout_defer.addBoth(
-                            lambda _: ret.callback({
+                            lambda _: ret.
+                            callback({
                                 'service_network': 'started',
                                 'service_gateway': 'started',
                                 'service_p2p_hookups': 'started',
                                 'service_proxy_transport': 'started',
                                 'proxy_receiver_state': proxy_receiver_machine.state,
-                            })
+                            }),
                         )
                         if not wait_timeout:
                             wait_timeout = 0.01

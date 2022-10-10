@@ -332,10 +332,12 @@ class P2PServiceSeeker(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with "service denied" response: %r %r' % (response, info))
             self.automat(
-                'service-denied', (
+                'service-denied',
+                (
                     response,
                     info,
-                ), reason='service-denied'
+                ),
+                reason='service-denied',
             )
             return
         if _Debug:
@@ -349,10 +351,12 @@ class P2PServiceSeeker(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
         self.automat(
-            'service-denied', (
+            'service-denied',
+            (
                 response,
                 info,
-            ), reason='service-denied'
+            ),
+            reason='service-denied',
         )
 
     def _node_timed_out(self, pkt_out):

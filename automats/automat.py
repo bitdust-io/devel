@@ -213,9 +213,7 @@ def communicate(index, event, *args, **kwargs):
     if not A:
         return fail(Exception('state machine with index %d not exist' % index))
     d = Deferred()
-    args = tuple(list(args) + [
-        d,
-    ])
+    args = tuple(list(args) + [d])
     A.automat(event, *args, **kwargs)
     return d
 
@@ -371,7 +369,6 @@ class Automat(object):
     You also must set that flag in the MS Visio document and rebuild the code:
     put ``[post]`` string into the last line of the LABEL shape.
     """
-
     def __init__(self, name, state, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, publish_event_state_not_changed=False, publish_fast=True, **kwargs):
         self.id, self.index = create_index(name)
         self.name = name
@@ -501,9 +498,7 @@ class Automat(object):
         d = Deferred()
         if not args:
             args = tuple()
-        args = tuple(list(args) + [
-            d,
-        ])
+        args = tuple(list(args) + [d])
         self.automat(event_string, args)
         return d
 
@@ -669,13 +664,11 @@ class Automat(object):
                 self.log(0, msg)
             self.log(0, e)
         if _LogExceptionsHandler is not None:
-            _LogExceptionsHandler(
-                msg=msg, exc_info=(
-                    exc_type,
-                    exc_value,
-                    exc_traceback,
-                )
-            )
+            _LogExceptionsHandler(msg=msg, exc_info=(
+                exc_type,
+                exc_value,
+                exc_traceback,
+            ))
 
     def log(self, level, text):
         """
@@ -702,13 +695,13 @@ class Automat(object):
                     _LogFile.close()
                     _LogFile = open(_LogFilename, 'w')
                     _LogsCount = 0
-                s = ' ' * level + text + '\n'
+                s = ' '*level + text + '\n'
                 tm_str = time.strftime('%H:%M:%S')
                 if _LifeBeginsTime != 0:
                     dt = time.time() - _LifeBeginsTime
                     mn = dt // 60
-                    sc = dt - mn * 60
-                    tm_str += ('/%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100))
+                    sc = dt - mn*60
+                    tm_str += ('/%02d:%02d.%02d' % (mn, sc, (sc - int(sc))*100))
                 s = tm_str + s
                 if sys.version_info[0] == 3:
                     if not isinstance(s, str):

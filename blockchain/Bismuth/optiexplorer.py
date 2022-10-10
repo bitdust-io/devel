@@ -197,7 +197,7 @@ def main():
         recentminers=zip(data_addres, data_shares, data_mrate, data_mname, data_wcount),
         bpstats=zip(data_block, data_reward, data_tShares, data_rewardps, data_tReward, data_tHash, data_twcount),
         payouts=zip(data_addres, data_bismuthreward, data_blockheight, data_ptime),
-        payoutsfees=zip(data_pendingaddress, data_pendingreward)
+        payoutsfees=zip(data_pendingaddress, data_pendingreward),
     )
 
 

@@ -374,7 +374,6 @@ class HTTPProgressDownloader(HTTPDownloader):
     ugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=
     enigma2-plugins;only_with_tag=HEAD
     """
-
     def __init__(self, url, fileOrName, writeProgress=None, *args, **kwargs):
         HTTPDownloader.__init__(self, url, fileOrName, supportPartial=0, *args, **kwargs)
         # Save callback(s) locally
@@ -456,7 +455,6 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     from OpenSSL import SSL  # @UnresolvedImport
 
     class MyClientContextFactory(ssl.ClientContextFactory):
-
         def __init__(self, certificates_filenames):
             self.certificates_filenames = list(certificates_filenames)
 
@@ -502,7 +500,6 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
 
 
 class custom_ReadBodyProtocol(_ReadBodyProtocol):
-
     def connectionLost(self, reason):
         if self.deferred.called:
             return
@@ -510,7 +507,6 @@ class custom_ReadBodyProtocol(_ReadBodyProtocol):
 
 
 def readBody(response):
-
     def cancel(deferred):
         abort = getAbort()
         if abort is not None:
@@ -543,7 +539,7 @@ def readResponse(response, timeout):
         return fail(Exception('Bad response from the server: [%d] %s' % (
             response.code,
             response.phrase.strip(),
-        )))
+        ), ))
     d = readBody(response)
     d.addTimeout(timeout=timeout, clock=reactor)
     d.addErrback(readBodyFailed)
@@ -581,7 +577,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
     d = agent.request(
         method=method,
         uri=url,
-        headers=Headers({b'User-Agent': [_UserAgentString,]}),
+        headers=Headers({b'User-Agent': [_UserAgentString]}),
     )
     #     d = getPage(url, agent=_UserAgentString, timeout=timeout)
     #     if timeout:
@@ -807,7 +803,6 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 
     http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
     """
-
     class StringReceiver(protocol.Protocol):
         buffer = ''
 
@@ -1020,7 +1015,6 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 
 @implementer(iweb.IBodyProducer)
 class BytesProducer(object):
-
     def __init__(self, body):
         self.body = body
         self.length = len(body)
@@ -1039,9 +1033,14 @@ class BytesProducer(object):
 def http_post_data(url, data, connectTimeout=15):
     agent = Agent(reactor, connectTimeout=connectTimeout)
     body = BytesProducer(data)
-    requested = agent.request(b'POST', url, Headers({
-        'User-Agent': ['BitDust HTTP client',],
-    }), body)
+    requested = agent.request(
+        b'POST',
+        url,
+        Headers({
+            'User-Agent': ['BitDust HTTP client'],
+        }),
+        body,
+    )
     return requested
 
 

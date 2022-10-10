@@ -130,7 +130,6 @@ def make(callback=None):
 
 
 def deploy(callback=None):
-
     def _clone(out, retcode):
         make(callback=callback)
 
@@ -197,7 +196,6 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
 
 
 class GethProcessProtocol(protocol.ProcessProtocol):
-
     def __init__(self, callback):
         """
         """

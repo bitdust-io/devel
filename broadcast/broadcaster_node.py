@@ -183,7 +183,7 @@ class BroadcasterNode(automat.Automat):
                 return True
         if not self.last_success_action_time:
             return False
-        return time.time() - self.last_success_action_time > 5 * 60
+        return time.time() - self.last_success_action_time > 5*60
 
     def isAnyBroadcasters(self, *args, **kwargs):
         """
@@ -209,9 +209,13 @@ class BroadcasterNode(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
-        broadcasters_finder.A('start', (self.automat, {
-            'action': 'route',
-        }, list(self.connected_broadcasters)))
+        broadcasters_finder.A('start', (
+            self.automat,
+            {
+                'action': 'route',
+            },
+            list(self.connected_broadcasters),
+        ))
 
     def doAddBroadcaster(self, *args, **kwargs):
         """

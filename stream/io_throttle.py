@@ -261,7 +261,6 @@ def GetRequestQueueLength(supplierIDURL):
 
 
 class SupplierQueue:
-
     def __init__(self, supplierIdentity, creatorID, customerIDURL=None):
         self.customerIDURL = customerIDURL
         if self.customerIDURL is None:
@@ -414,7 +413,7 @@ class SupplierQueue:
             return
         self._runSend = True
         if _Debug:
-            lg.out(_DebugLevel * 2, 'io_throttle.RunSend  fileSendQueue=%d' % len(self.fileSendQueue))
+            lg.out(_DebugLevel*2, 'io_throttle.RunSend  fileSendQueue=%d' % len(self.fileSendQueue))
         packetsToBeFailed = {}
         packetsToRemove = set()
         packetsSent = 0
@@ -747,7 +746,6 @@ class IOThrottle:
     All of the backup rebuilds will run their data requests through this
     So it gets throttled, also to reduce duplicate requests.
     """
-
     def __init__(self):
         self.creatorID = my_id.getIDURL()
         self.supplierQueues = {}

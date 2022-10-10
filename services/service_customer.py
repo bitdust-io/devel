@@ -121,7 +121,7 @@ class CustomerService(LocalService):
                         supplier_pos,
                         evt.data['old_idurl'],
                         evt.data['new_idurl'],
-                    ))
+                    ), )
             for customer_idurl, sc_dict in supplier_connector.connectors(as_dict=True).items():
                 if old_idurl == customer_idurl:
                     customer_idurl.refresh()

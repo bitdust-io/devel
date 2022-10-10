@@ -291,7 +291,7 @@ def on_request_timeout(call_id):
     #         timeout_task.cancel()
     res_cb = _CallbacksQueue.pop(call_id, None)
     if _DebugAPIResponses:
-        print('WS API Request TIMEOUT {}'.format(call_id,))
+        print('WS API Request TIMEOUT {}'.format(call_id))
     if res_cb:
         reactor.callFromThread(res_cb, Exception('request timeout'))  # @UndefinedVariable
 
