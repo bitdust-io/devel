@@ -322,10 +322,7 @@ def rename_queue(old_queue_id, new_queue_id):
     for producer_id in connected_producers:
         producer(producer_id).queues.remove(old_queue_id)
         producer(producer_id).queues.append(new_queue_id)
-    lg.info('existing queue renamed: %s -> %s' % (
-        old_queue_id,
-        new_queue_id,
-    ))
+    lg.info('existing queue renamed: %s -> %s' % (old_queue_id, new_queue_id))
     return True
 
 
@@ -418,10 +415,7 @@ def subscribe_consumer(consumer_id, queue_id):
     if queue_id in consumer(consumer_id).queues:
         raise Exception('consumer is already subscribed')
     consumer(consumer_id).queues.append(queue_id)
-    lg.info('consumer %s subscribed to read queue %s' % (
-        consumer_id,
-        queue_id,
-    ))
+    lg.info('consumer %s subscribed to read queue %s' % (consumer_id, queue_id))
     return True
 
 
@@ -439,10 +433,7 @@ def unsubscribe_consumer(consumer_id, queue_id=None, remove_empty=False):
     if queue_id not in consumer(consumer_id).queues:
         raise Exception('consumer is not subscribed')
     consumer(consumer_id).queues.remove(queue_id)
-    lg.info('consumer %s unsubscribed from queue %s' % (
-        consumer_id,
-        queue_id,
-    ))
+    lg.info('consumer %s unsubscribed from queue %s' % (consumer_id, queue_id))
     if remove_empty:
         if len(consumer(consumer_id).queues) == 0:
             remove_consumer(consumer_id)
@@ -503,15 +494,9 @@ def connect_producer(producer_id, queue_id):
         raise Exception('queue not exist')
     if queue_id not in producer(producer_id).queues:
         producer(producer_id).queues.append(queue_id)
-        lg.info('producer %s connected to queue %s' % (
-            producer_id,
-            queue_id,
-        ))
+        lg.info('producer %s connected to queue %s' % (producer_id, queue_id))
     else:
-        lg.warn('producer %s already connected to queue %s' % (
-            producer_id,
-            queue_id,
-        ))
+        lg.warn('producer %s already connected to queue %s' % (producer_id, queue_id))
     return True
 
 
@@ -529,10 +514,7 @@ def disconnect_producer(producer_id, queue_id=None, remove_empty=False):
     if queue_id not in producer(producer_id).queues:
         raise Exception('producer is not connected to that queue')
     producer(producer_id).queues.remove(queue_id)
-    lg.info('producer %s disconnected from queue %s' % (
-        producer_id,
-        queue_id,
-    ))
+    lg.info('producer %s disconnected from queue %s' % (producer_id, queue_id))
     if remove_empty:
         if len(producer(producer_id).queues) == 0:
             remove_producer(producer_id)
@@ -621,11 +603,7 @@ def finish_notification(consumer_id, queue_id, message_id, success):
 
 def on_notification_succeed(result, consumer_id, queue_id, message_id):
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %r delivered to consumer %r in %r' % (
-            message_id,
-            consumer_id,
-            queue_id,
-        ))
+        lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %r delivered to consumer %r in %r' % (message_id, consumer_id, queue_id))
     if is_queue_exist(queue_id) and is_consumer_exists(consumer_id):
         try:
             # reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=True)  # @UndefinedVariable
@@ -633,11 +611,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
         except:
             lg.exc()
     else:
-        lg.warn('notification %r was not finished for consumer %r in %r' % (
-            message_id,
-            consumer_id,
-            queue_id,
-        ))
+        lg.warn('notification %r was not finished for consumer %r in %r' % (message_id, consumer_id, queue_id))
     # TODO: add a counter and execute cleanup less frequently
     do_cleanup(target_queues=[queue_id])
     # reactor.callLater(0, do_cleanup, target_queues=[queue_id, ])  # @UndefinedVariable
@@ -654,11 +628,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
         except:
             lg.exc()
     else:
-        lg.warn('failed notification %r was not finished for consumer %r in %r' % (
-            message_id,
-            consumer_id,
-            queue_id,
-        ))
+        lg.warn('failed notification %r was not finished for consumer %r in %r' % (message_id, consumer_id, queue_id))
     # TODO: add a counter and execute cleanup less frequently
     do_cleanup(target_queues=[queue_id])
     return None
@@ -681,11 +651,7 @@ def write_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s with %r' % (
-            new_message.message_id,
-            queue_id,
-            data,
-        ))
+        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s with %r' % (new_message.message_id, queue_id, data))
     touch_queues()
     return new_message
 
@@ -706,10 +672,7 @@ def pull_message(queue_id, message_id=None):
     existing_message = queue(queue_id).pop(message_id)
     existing_message.state = 'PULLED'
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.pull_message  %r removed from queue %s' % (
-            message_id,
-            queue_id,
-        ))
+        lg.out(_DebugLevel, 'p2p_queue.pull_message  %r removed from queue %s' % (message_id, queue_id))
     return existing_message
 
 
@@ -844,10 +807,7 @@ def do_handle_event_packet(newpacket, e_json):
         # TODO: need more verifications to be implemented here
         # SECURITY
         if _Debug:
-            lg.info('received new event %s from the queue at %s' % (
-                event_id,
-                queue_id,
-            ))
+            lg.info('received new event %s from the queue at %s' % (event_id, queue_id))
         payload.update(dict(
             queue_id=queue_id,
             producer_id=producer_id,
@@ -913,10 +873,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
     event_id = global_id.ParseGlobalQueueID(queue_id)['queue_alias']
     if consumer_id in existing_message.notifications:
         if _Debug:
-            lg.dbg(_DebugLevel, 'notification %r already started for consumer %r' % (
-                message_id,
-                consumer_id,
-            ))
+            lg.dbg(_DebugLevel, 'notification %r already started for consumer %r' % (message_id, consumer_id))
         # notification already sent to given consumer
         return False
     if _Debug:
@@ -1093,11 +1050,7 @@ class QueueMessage(object):
                 self.consumers.append(consumer_id)
         if len(self.consumers) == 0:
             if _Debug:
-                lg.warn('message %r from %r in queue %r will have no consumers' % (
-                    self.message_id,
-                    self.producer_id,
-                    self.queue_id,
-                ))
+                lg.warn('message %r from %r in queue %r will have no consumers' % (self.message_id, self.producer_id, self.queue_id))
 
     def __repr__(self):
         return 'QueueMessage[%s](%s by %s in %s)' % (

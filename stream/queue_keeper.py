@@ -259,11 +259,7 @@ def write_state(customer_id, broker_id, json_value):
             lg.exc()
             return None
     if not local_fs.WriteTextFile(keeper_state_file_path, jsn.dumps(json_value)):
-        lg.err('failed writing queue_keeper state for customer %r of broker %r to %r' % (
-            customer_id,
-            broker_id,
-            keeper_state_file_path,
-        ))
+        lg.err('failed writing queue_keeper state for customer %r of broker %r to %r' % (customer_id, broker_id, keeper_state_file_path))
         return None
     if _Debug:
         lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)

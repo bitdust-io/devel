@@ -13,7 +13,6 @@ from essentials import address_validate
 
 
 class Tar():
-
     def __init__(self):
         self.hdd = sqlite3.connect('ledger.db', timeout=1)
         self.hdd.text_factory = str
@@ -39,9 +38,7 @@ def vacuum(cursor, name):
 def dupes_check_sigs(cursor, name):
     print(f'Testing {name} for sig duplicates')
 
-    cursor.execute(
-        "SELECT * FROM transactions WHERE signature IN (SELECT signature FROM transactions WHERE signature != '0' GROUP BY signature HAVING COUNT(*) >1)"
-    )
+    cursor.execute("SELECT * FROM transactions WHERE signature IN (SELECT signature FROM transactions WHERE signature != '0' GROUP BY signature HAVING COUNT(*) >1)")
     results = cursor.fetchall()
 
     dupes_allowed = [708334, 708335]
@@ -77,7 +74,7 @@ def dupes_check_rows_misc(cursor, name):
 def balance_from_cursor(cursor, address):
     credit = Decimal('0')
     debit = Decimal('0')
-    for entry in cursor.execute('SELECT amount,reward FROM transactions WHERE recipient = ? ', (address,)):
+    for entry in cursor.execute('SELECT amount,reward FROM transactions WHERE recipient = ? ', (address, )):
         try:
             #result = cursor.fetchall()
             credit = credit + quantize_eight(entry[0]) + quantize_eight(entry[1])
@@ -87,7 +84,7 @@ def balance_from_cursor(cursor, address):
             credit = 0
         #print (credit)
 
-    for entry in cursor.execute('SELECT amount,fee FROM transactions WHERE address = ? ', (address,)):
+    for entry in cursor.execute('SELECT amount,fee FROM transactions WHERE address = ? ', (address, )):
         try:
             # result = cursor.fetchall()
             debit = debit + quantize_eight(entry[0]) + quantize_eight(entry[1])

@@ -25,7 +25,6 @@ class CrystalManager:
     """
     A simple plugin aka crystals manager
     """
-
     def __init__(
         self,
         app_log=None,

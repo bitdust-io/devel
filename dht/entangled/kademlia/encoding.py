@@ -105,7 +105,6 @@ class Encoding(object):
     All encoding implementations used with this library should inherit
     and implement this.
     """
-
     def encode(self, data):
         """
         Encode the specified data.
@@ -141,7 +140,6 @@ class Bencode(Encoding):
            that it can encode/decode floating point values in addition to
            integers.
     """
-
     def encode(self, data, encoding='utf-8'):
         """
         Encoder implementation of the Bencode algorithm.
@@ -152,7 +150,6 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-
         def _e():
             if data is None:
                 return b'i0e'  # return 0
@@ -189,12 +186,10 @@ class Bencode(Encoding):
         try:
             ret = _e()
             if _Debug:
-                print(
-                    '[DHT ENCODING]         encode  %r  into  %d bytes' % (
-                        type(data),
-                        len(ret),
-                    )
-                )
+                print('[DHT ENCODING]         encode  %r  into  %d bytes' % (
+                    type(data),
+                    len(ret),
+                ))
             return ret
         except Exception as exc:
             if _Debug:
@@ -216,12 +211,10 @@ class Bencode(Encoding):
         try:
             ret, endPos = self._decodeRecursive(data, encoding=encoding)
             if _Debug:
-                print(
-                    '[DHT ENCODING]         decode %r  endPos=%d' % (
-                        type(ret),
-                        endPos,
-                    )
-                )
+                print('[DHT ENCODING]         decode %r  endPos=%d' % (
+                    type(ret),
+                    endPos,
+                ))
             return ret
         except Exception as exc:
             if _Debug:

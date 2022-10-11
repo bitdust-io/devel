@@ -324,20 +324,14 @@ def scan_local_keys(keys_folder=None):
             continue
         _LatestLocalKeyID += 1
         new_local_key_id = _LatestLocalKeyID
-        lg.warn('about to register key %r with local_key_id=%r' % (
-            key_id,
-            new_local_key_id,
-        ))
+        lg.warn('about to register key %r with local_key_id=%r' % (key_id, new_local_key_id))
         known_keys()[key_id].local_key_id = new_local_key_id
         save_key(key_id, keys_folder=keys_folder)
         registered_count += 1
     unregistered_keys = []
     save_latest_local_key_id(keys_folder=keys_folder)
     if _Debug:
-        lg.out(_DebugLevel, '    %d keys found and %d registered' % (
-            count,
-            registered_count,
-        ))
+        lg.out(_DebugLevel, '    %d keys found and %d registered' % (count, registered_count))
 
 
 def read_key_file(key_id, keys_folder=None):
@@ -399,14 +393,7 @@ def load_key(key_id, keys_folder=None):
             local_keys()[key_object.local_key_id] = key_id
             local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
             if _Debug:
-                lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  active=%r  is_private=%r  local_key_id=%r  from %s' % (
-                    key_id,
-                    key_object.label,
-                    key_object.active,
-                    not key_object.isPublic(),
-                    key_object.local_key_id,
-                    keys_folder,
-                ))
+                lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  active=%r  is_private=%r  local_key_id=%r  from %s' % (key_id, key_object.label, key_object.active, not key_object.isPublic(), key_object.local_key_id, keys_folder))
         else:
             lg.warn('for key %r local_key_id was not set' % key_id)
     events.send('key-loaded', data=dict(
@@ -447,19 +434,12 @@ def save_key(key_id, keys_folder=None):
         key_dict = key_object.toDict(include_private=True)
         key_string = jsn.dumps(key_dict, indent=1, separators=(',', ':'))
     if not bpio.WriteTextFile(key_filepath, key_string):
-        lg.warn('failed saving key %r to %r' % (
-            key_id,
-            key_filepath,
-        ))
+        lg.warn('failed saving key %r to %r' % (key_id, key_filepath))
         return False
     local_keys()[key_object.local_key_id] = key_id
     local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.save_key stored key %r with local_key_id=%r in %r' % (
-            key_id,
-            key_object.local_key_id,
-            key_filepath,
-        ))
+        lg.out(_DebugLevel, 'my_keys.save_key stored key %r with local_key_id=%r in %r' % (key_id, key_object.local_key_id, key_filepath))
     return True
 
 
@@ -688,10 +668,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     save_key(new_key_id, keys_folder=keys_folder)
     gc.collect()
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (
-            current_key_id,
-            new_key_id,
-        ))
+        lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id))
     events.send('key-renamed', data=dict(old_key_id=current_key_id, new_key_id=new_key_id, is_private=is_private))
     return True
 
@@ -817,10 +794,7 @@ def encrypt(key_id, inp):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes with key %s' % (
-            len(inp),
-            key_id,
-        ))
+        lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes with key %s' % (len(inp), key_id))
     result = key_object.encrypt(inp)
     return result
 
@@ -854,10 +828,7 @@ def decrypt(key_id, inp):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with registered key %s' % (
-            len(inp),
-            key_id,
-        ))
+        lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with registered key %s' % (len(inp), key_id))
     result = key_object.decrypt(inp)
     return result
 

@@ -381,10 +381,7 @@ class StunClient(automat.Automat):
             result = ('stun-failed', None, None, [])
             self.my_address = None
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %r' % (
-                len(self.stun_results),
-                result,
-            ))
+            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %r' % (len(self.stun_results), result))
         if self.my_address:
             current_external_ip = misc.readExternalIP()
             if current_external_ip != self.my_address[0]:
@@ -473,18 +470,11 @@ class StunClient(automat.Automat):
 
     def _stun_port_received(self, result, node):
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s node_id=%r' % (
-                result,
-                node,
-                node.id,
-            ))
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s node_id=%r' % (result, node, node.id))
         self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             if _Debug:
-                lg.dbg(_DebugLevel, 'empty result received from node %r : %r' % (
-                    node,
-                    result,
-                ))
+                lg.dbg(_DebugLevel, 'empty result received from node %r : %r' % (node, result))
             return
         try:
             port = int(strng.to_text(result['stun_port']))
@@ -495,10 +485,7 @@ class StunClient(automat.Automat):
         if port == 0:
             return
         if _Debug:
-            lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (
-                address,
-                port,
-            ))
+            lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (address, port))
         self.automat('port-number-received', (address, port))
 
 

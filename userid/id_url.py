@@ -110,10 +110,7 @@ def init():
                 continue
             one_user_identity_files.append(one_ident_number)
         if _Debug:
-            lg.out(_DebugLevel, 'id_url.init   found %d historical records in %r' % (
-                len(one_user_identity_files),
-                one_user_dir_path,
-            ))
+            lg.out(_DebugLevel, 'id_url.init   found %d historical records in %r' % (len(one_user_identity_files), one_user_dir_path))
         one_user_identity_files.sort()
         for one_ident_file in one_user_identity_files:
             one_ident_path = os.path.join(one_user_dir_path, strng.to_text(one_ident_file))
@@ -339,10 +336,7 @@ def identity_cached(new_id_obj):
         if one_source not in _KnownSources[pub_key]:
             _KnownSources[pub_key].append(one_source)
             if _Debug:
-                lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for user %r' % (
-                    one_source,
-                    user_name,
-                ))
+                lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for user %r' % (one_source, user_name))
     if _Debug:
         lg.args(_DebugLevel, is_identity_rotated=is_identity_rotated, latest_id_obj=bool(latest_id_obj))
     if is_identity_rotated and latest_id_obj is not None:
@@ -377,20 +371,16 @@ def identity_cached(new_id_obj):
                     ))
                     # yapf: enable
                     if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
-                        events.send(
-                            'my-identity-url-changed', data=dict(
-                                old_idurl=latest_id_obj.getIDURL(as_original=True),
-                                new_idurl=new_id_obj.getIDURL(as_original=True),
-                                old_revision=latest_id_obj.getRevisionValue(),
-                                new_revision=new_revision,
-                            )
-                        )
+                        # yapf: disable
+                        events.send('my-identity-url-changed', data=dict(
+                            old_idurl=latest_id_obj.getIDURL(as_original=True),
+                            new_idurl=new_id_obj.getIDURL(as_original=True),
+                            old_revision=latest_id_obj.getRevisionValue(),
+                            new_revision=new_revision,
+                        ))
+                        # yapf: enable
         else:
-            lg.warn('cached out-dated revision %d for %r, most recent revision is %d' % (
-                new_revision,
-                new_sources[0],
-                latest_revision,
-            ))
+            lg.warn('cached out-dated revision %d for %r, most recent revision is %d' % (new_revision, new_sources[0], latest_revision))
     else:
         if _Debug:
             lg.out(_DebugLevel, 'id_url.identity_cached revision %d for %r' % (new_revision, new_sources[0]))
@@ -436,11 +426,7 @@ def field(idurl):
                 cod = sys._getframe(1).f_back.f_code
                 modul = os.path.basename(cod.co_filename).replace('.py', '')
                 caller = cod.co_name
-                lg.warn('unknown yet idurl %s, call from %s.%s' % (
-                    idurl,
-                    modul,
-                    caller,
-                ))
+                lg.warn('unknown yet idurl %s, call from %s.%s' % (idurl, modul, caller))
     return ID_URL_FIELD(idurl)
 
 

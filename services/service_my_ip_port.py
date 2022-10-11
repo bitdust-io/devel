@@ -91,8 +91,4 @@ class MyIPPortService(LocalService):
             lg.warn('stun my external IP failed, retry after 10 seconds')
             reactor.callLater(10, self._do_stun)  # @UndefinedVariable
         else:
-            lg.info('stun success  nat_type=%r, my_ip=%r, details=%r' % (
-                nat_type,
-                my_ip,
-                details,
-            ))
+            lg.info('stun success  nat_type=%r, my_ip=%r, details=%r' % (nat_type, my_ip, details))

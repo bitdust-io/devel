@@ -10,7 +10,6 @@ DEFAULT_PASSPHRASE = 'BismuthGVP'
 
 
 class BIP39:
-
     def __init__(self, entropy: bytes = None):
         self.mnemonic = Mnemonic('english')
         self.entropy = entropy

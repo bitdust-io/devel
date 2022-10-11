@@ -231,18 +231,12 @@ class DHTUDPConnector(automat.Automat):
         active_sessions = udp_session.get(peer_address)
         if active_sessions:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer address %s : %s' % (
-                    peer_address,
-                    active_sessions,
-                ))
+                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer address %s : %s' % (peer_address, active_sessions))
             return
         active_sessions = udp_session.get_by_peer_id(self.peer_id)
         if active_sessions:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer id %s : %s' % (
-                    self.peer_id,
-                    active_sessions,
-                ))
+                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer id %s : %s' % (self.peer_id, active_sessions))
             return
         s = udp_session.create(self.node, peer_address, self.peer_id)
         s.automat('init', (self.listen_port, self.my_id, self.my_address))

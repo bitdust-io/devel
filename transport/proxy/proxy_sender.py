@@ -391,37 +391,15 @@ class ProxySender(automat.Automat):
             else:
                 routed_packet.set_callback(command, cb_list)
         if not is_retry:
-            _key = (
-                outpacket.Command,
-                outpacket.PacketID,
-                outpacket.RemoteID.to_bin(),
-            )
-            self.sent_packets[_key] = (
-                routed_packet,
-                outpacket,
-            )
+            _key = (outpacket.Command, outpacket.PacketID, outpacket.RemoteID.to_bin())
+            self.sent_packets[_key] = (routed_packet, outpacket)
         self.event('relay-out', (outpacket, newpacket, routed_packet))
         if _Debug:
-            lg.out(_DebugLevel, '>>>Relay-OUT %s sent to %s://%s with %d bytes, timeout=%r' % (
-                str(outpacket),
-                router_proto,
-                router_host,
-                len(block_encrypted),
-                response_timeout,
-            ))
+            lg.out(_DebugLevel, '>>>Relay-OUT %s sent to %s://%s with %d bytes, timeout=%r' % (str(outpacket), router_proto, router_host, len(block_encrypted), response_timeout))
         if _PacketLogFileEnabled:
             lg.out(
-                0,
-                '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s via %s\033[0m' % (
-                    outpacket.Command,
-                    outpacket.PacketID,
-                    len(raw_bytes),
-                    global_id.UrlToGlobalID(outpacket.CreatorID),
-                    global_id.UrlToGlobalID(outpacket.RemoteID),
-                    global_id.UrlToGlobalID(router_idurl),
-                ),
-                log_name='packet',
-                showtime=True,
+                0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s via %s\033[0m' %
+                (outpacket.Command, outpacket.PacketID, len(raw_bytes), global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID), global_id.UrlToGlobalID(router_idurl)), log_name='packet', showtime=True
             )
         del raw_bytes
         del block

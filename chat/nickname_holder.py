@@ -280,10 +280,7 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (
-                self.key,
-                args[0],
-            ))
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0]))
         for cb in self.result_callbacks:
             cb('my own', self.key)
 
@@ -310,10 +307,7 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameFailed : %s with %s' % (
-                self.key,
-                args[0] if args else None,
-            ))
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameFailed : %s with %s' % (self.key, args[0] if args else None))
         for cb in self.result_callbacks:
             cb('failed', self.key)
 

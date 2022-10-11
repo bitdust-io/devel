@@ -430,10 +430,7 @@ class FamilyMember(automat.Automat):
                     self.transaction = None
                 else:
                     self.transaction['suppliers'][another_supplier_position] = another_supplier_idurl
-                    lg.info('found desired position %d in the family and solved conflict with supplier %s' % (
-                        another_supplier_position,
-                        another_supplier_idurl,
-                    ))
+                    lg.info('found desired position %d in the family and solved conflict with supplier %s' % (another_supplier_position, another_supplier_idurl))
 
     def doDHTRead(self, *args, **kwargs):
         """
@@ -454,11 +451,7 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'family_member.doNotifyConnected\n            my_info=%r\n            dht_info=%r\n            requests=%r' % (
-                self.my_info,
-                self.dht_info,
-                self.requests,
-            ))
+            lg.out(_DebugLevel, 'family_member.doNotifyConnected\n            my_info=%r\n            dht_info=%r\n            requests=%r' % (self.my_info, self.dht_info, self.requests))
         to_be_closed = False
         if self.current_request['command'] == 'family-leave':
             to_be_closed = True
@@ -693,10 +686,7 @@ class FamilyMember(automat.Automat):
             elif len(merged_info['suppliers']) > expected_suppliers_count:
                 merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
         if merged_info['revision'] != latest_revision:
-            lg.info('will switch known revision %d to the latest: %d' % (
-                merged_info['revision'],
-                latest_revision,
-            ))
+            lg.info('will switch known revision %d to the latest: %d' % (merged_info['revision'], latest_revision))
         merged_info['revision'] = latest_revision
         if _Debug:
             lg.out(_DebugLevel, '    merged_info=%r' % merged_info)
@@ -707,10 +697,7 @@ class FamilyMember(automat.Automat):
             possible_transaction['customer_idurl'] = self.customer_idurl
             possible_transaction['revision'] += 1
             possible_transaction['publisher_idurl'] = my_id.getIDURL()
-            lg.info('incremented family revision after customer %r identity rotated: %r' % (
-                self.customer_idurl,
-                possible_transaction['revision'],
-            ))
+            lg.info('incremented family revision after customer %r identity rotated: %r' % (self.customer_idurl, possible_transaction['revision']))
             return possible_transaction
         if self.dht_info:
             if self.dht_info['suppliers'] == possible_transaction['suppliers']:
@@ -782,11 +769,7 @@ class FamilyMember(automat.Automat):
                 if merged_info['suppliers'][current_request['position']]:
                     # TODO: SECURITY need to implement a signature verification and
                     # also build solution to validate that change was approved by customer
-                    lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
-                        merged_info['suppliers'][current_request['position']],
-                        current_request['position'],
-                        self.customer_idurl,
-                    ), )
+                    lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (merged_info['suppliers'][current_request['position']], current_request['position'], self.customer_idurl))
                 merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
                 if _Debug:
                     lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (current_request['supplier_idurl'], current_request['position'], self.customer_idurl))
@@ -847,18 +830,12 @@ class FamilyMember(automat.Automat):
 
         if existing_position < 0:
             if _Debug:
-                lg.dbg(_DebugLevel, 'supplier %r not found in customer family %r, probably already left' % (
-                    current_request['supplier_idurl'],
-                    self.customer_idurl,
-                ))
+                lg.dbg(_DebugLevel, 'supplier %r not found in customer family %r, probably already left' % (current_request['supplier_idurl'], self.customer_idurl))
         else:
             if existing_position < expected_suppliers_count:
                 merged_info['suppliers'][existing_position] = b''
                 if _Debug:
-                    lg.info('erasing supplier %r from customer family %r' % (
-                        current_request['supplier_idurl'],
-                        self.customer_idurl,
-                    ))
+                    lg.info('erasing supplier %r from customer family %r' % (current_request['supplier_idurl'], self.customer_idurl))
         return merged_info
 
     def _do_process_family_refresh_request(self, merged_info):
@@ -904,11 +881,7 @@ class FamilyMember(automat.Automat):
             if merged_info['suppliers'][my_position]:
                 # TODO: SECURITY need to implement a signature verification and
                 # also build solution to validate that change was approved by customer
-                lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
-                    merged_info['suppliers'][my_position],
-                    my_position,
-                    self.customer_idurl,
-                ), )
+                lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (merged_info['suppliers'][my_position], my_position, self.customer_idurl))
             merged_info['suppliers'][my_position] = my_id.getIDURL().to_bin()
             if _Debug:
                 lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (my_id.getIDURL(), my_position, self.customer_idurl))
@@ -933,10 +906,7 @@ class FamilyMember(automat.Automat):
 
     def _do_write_transaction(self, retries):
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._do_write_transaction  suppliers=%d  retries=%d' % (
-                len(self.transaction['suppliers']),
-                retries,
-            ))
+            lg.out(_DebugLevel, 'family_member._do_write_transaction  suppliers=%d  retries=%d' % (len(self.transaction['suppliers']), retries))
         d = dht_relations.write_customer_suppliers(
             customer_idurl=self.customer_idurl,
             suppliers_list=self.transaction['suppliers'],
@@ -1077,21 +1047,14 @@ class FamilyMember(automat.Automat):
             _existing_position = self.my_info['suppliers'].index(supplier_idurl)
         except:
             _existing_position = -1
-        contactsdb.add_customer_meta_info(
-            self.customer_idurl,
-            {
-                'ecc_map': ecc_map,
-                'position': supplier_position,
-                'family_snapshot': id_url.to_bin_list(family_snapshot),
-            },
-        )
+        contactsdb.add_customer_meta_info(self.customer_idurl, {
+            'ecc_map': ecc_map,
+            'position': supplier_position,
+            'family_snapshot': id_url.to_bin_list(family_snapshot),
+        })
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_supplier_position stored new meta info for customer %s:\n' % self.customer_idurl)
-            lg.out(_DebugLevel, '    ecc_map=%s position=%s family_snapshot=%s' % (
-                ecc_map,
-                supplier_position,
-                family_snapshot,
-            ))
+            lg.out(_DebugLevel, '    ecc_map=%s position=%s family_snapshot=%s' % (ecc_map, supplier_position, family_snapshot))
         return p2p_service.SendAck(incoming_packet)
 
     def _on_incoming_contacts_packet(self, inp):

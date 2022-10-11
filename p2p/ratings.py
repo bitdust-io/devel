@@ -224,16 +224,7 @@ def rate_all_users():
         month_percent = 100.0*float(malive)/float(mall)
         total_percent = 100.0*float(talive)/float(tall)
         if _Debug:
-            lg.out(_DebugLevel, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
-                month_percent,
-                malive,
-                mall,
-                monthStr,
-                total_percent,
-                talive,
-                tall,
-                nameurl.GetName(idurl),
-            ))
+            lg.out(_DebugLevel, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (month_percent, malive, mall, monthStr, total_percent, talive, tall, nameurl.GetName(idurl)))
     read_index()
 
 

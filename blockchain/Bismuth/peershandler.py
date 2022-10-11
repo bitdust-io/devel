@@ -166,10 +166,8 @@ class Peers:
                                 if versiongot == '*':
                                     raise ValueError('peer busy')
                                 if versiongot not in self.config.version_allow:
-                                    raise ValueError(
-                                        f'cannot save {ip}, incompatible protocol version {versiongot} '
-                                        f'not in {self.config.version_allow}',
-                                    )
+                                    raise ValueError(f'cannot save {ip}, incompatible protocol version {versiongot} '
+                                                     f'not in {self.config.version_allow}', )
                                 self.app_log.info(f'Inbound: Distant peer {ip}:{port} responding: {versiongot}')
                             else:
                                 s.connect((ip, int(port)))
@@ -233,10 +231,8 @@ class Peers:
             # TODO: use a dict instead of several occurrences in a list
             for x in range(count):
                 self.warning_list.append(ip)
-            self.app_log.warning(
-                f'Added {count} warning(s) to {ip}: {reason} '
-                f'({self.warning_list.count(ip)} / {self.ban_threshold})',
-            )
+            self.app_log.warning(f'Added {count} warning(s) to {ip}: {reason} '
+                                 f'({self.warning_list.count(ip)} / {self.ban_threshold})', )
             if self.warning_list.count(ip) >= self.ban_threshold:
                 self.banlist.append(ip)
                 self.app_log.warning(f'{ip} is banned: {reason}')
@@ -298,7 +294,7 @@ class Peers:
         if 'block' == command and self.is_whitelisted(peer_ip):
             return True
         # always allowed commands, only required and non cpu intensive.
-        if command in ('portget',):
+        if command in ('portget', ):
             return True
         # only allow local host for "stop" and addpeers command
         if command in ('stop', 'addpeers'):
@@ -455,11 +451,11 @@ class Peers:
         if tries <= 0:  # First time can be temp, retry again
             delay = 30
         elif tries == 1:  # second time, give it 5 minutes
-            delay = 5 * 60
+            delay = 5*60
         elif tries == 2:  # third time, give it 15 minutes
-            delay = 15 * 60
+            delay = 15*60
         else:  # 30 minutes before trying again
-            delay = 30 * 60
+            delay = 30*60
         tries += 1
         if tries > 3:
             tries = 3
@@ -492,7 +488,7 @@ class Peers:
         Remove the older timeouts from the tried list.
         Keep the recent ones or we end up trying the first ones again and again
         """
-        limit = time() + 12 * 60  # matches 2.5 tries :)
+        limit = time() + 12*60  # matches 2.5 tries :)
         remove = [client for client in self.tried if self.tried[client][1] > limit]
         for client in remove:
             del self.tried[client]
@@ -508,7 +504,7 @@ class Peers:
 
                 if self.is_testnet:
                     port = 2829
-                if threading.active_count() / 3 < self.config.thread_limit and self.can_connect_to(host, port):
+                if threading.active_count()/3 < self.config.thread_limit and self.can_connect_to(host, port):
                     self.app_log.info(f'Will attempt to connect to {host}:{port}')
                     self.add_try(host, port)
                     t = threading.Thread(target=this_target, args=(host, port, node), name=f'out_{host}_{port}')  # threaded connectivity to nodes here
@@ -529,10 +525,8 @@ class Peers:
                 del self.warning_list[:]
 
             if len(self.connection_pool) < 10:
-                self.app_log.warning(
-                    f'Only {len(self.connection_pool)} connections active, '
-                    f'resetting the connection history',
-                )
+                self.app_log.warning(f'Only {len(self.connection_pool)} connections active, '
+                                     f'resetting the connection history', )
                 # TODO: only reset large timeouts, or we end up trying the sames over and over if we never get to 10.
                 # self.
                 self.reset_tried()
@@ -540,10 +534,8 @@ class Peers:
             if self.config.nodes_ban_reset <= len(self.banlist) and len(self.connection_pool) <= len(self.banlist) \
                     and (time() - self.reset_time) > 60 * 10:
                 # do not reset too often. 10 minutes here
-                self.app_log.warning(
-                    f'Less active connections ({len(self.connection_pool)}) '
-                    f'than banlist ({len(self.banlist)}), resetting banlist and tried list',
-                )
+                self.app_log.warning(f'Less active connections ({len(self.connection_pool)}) '
+                                     f'than banlist ({len(self.banlist)}), resetting banlist and tried list', )
                 del self.banlist[:]
                 self.banlist.extend(self.config.banlist)  # reset to config version
                 del self.warning_list[:]

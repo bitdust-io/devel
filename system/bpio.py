@@ -318,10 +318,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                         os.remove(full_name)
                         counter += 1
                     except Exception as exc:
-                        lg.err('can not remove file %r : %r' % (
-                            full_name,
-                            exc,
-                        ))
+                        lg.err('can not remove file %r : %r' % (full_name, exc))
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -332,10 +329,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except Exception as exc:
-            lg.err('can not remove dir %r : %r' % (
-                dirpath,
-                exc,
-            ))
+            lg.err('can not remove dir %r : %r' % (dirpath, exc))
     return counter
 
 

@@ -17,7 +17,6 @@ class SqliteBase:
     """
     Generic Sqlite storage backend.
     """
-
     def __init__(self, verbose=False, db_path='./data/', db_name='posmempool.db', app_log=None, ram=False):
         self.db_path = db_path + db_name
         self.db_name = db_name

@@ -28,7 +28,6 @@ class MessageTranslator(object):
     between the classes used internally by this Kademlia implementation
     and the actual data that is transmitted between nodes.
     """
-
     def fromPrimitive(self, msgPrimitive):
         """
         Create an RPC Message from a message's string representation.
@@ -63,15 +62,11 @@ class DefaultFormat(MessageTranslator):
     def fromPrimitive(self, msgPrimitive):
         msgType = msgPrimitive[self.headerType]
         if msgType == self.typeRequest:
-            msg = msgtypes.RequestMessage(
-                msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID]
-            )
+            msg = msgtypes.RequestMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID])
         elif msgType == self.typeResponse:
             msg = msgtypes.ResponseMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload])
         elif msgType == self.typeError:
-            msg = msgtypes.ErrorMessage(
-                msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs]
-            )
+            msg = msgtypes.ErrorMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs])
         else:
             # Unknown message, no payload
             msg = msgtypes.Message(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID])
@@ -101,34 +96,16 @@ class MultiLayerFormat(MessageTranslator):
         msgType = msgPrimitive[self.headerType]
         if msgType == self.typeRequest:
             layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.RequestMessage(
-                msgPrimitive[self.headerNodeID],
-                msgPrimitive[self.headerPayload],
-                msgPrimitive[self.headerArgs],
-                msgPrimitive[self.headerMsgID],
-                layerID=layerID
-            )
+            msg = msgtypes.RequestMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID], layerID=layerID)
         elif msgType == self.typeResponse:
             layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
             msg = msgtypes.ResponseMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], layerID=layerID)
         elif msgType == self.typeError:
             layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.ErrorMessage(
-                msgPrimitive[self.headerMsgID],
-                msgPrimitive[self.headerNodeID],
-                msgPrimitive[self.headerPayload],
-                msgPrimitive[self.headerArgs],
-                layerID=layerID
-            )
+            msg = msgtypes.ErrorMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], layerID=layerID)
         elif msgType == self.typeQuestion:
             layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.QuestionMessage(
-                msgPrimitive[self.headerNodeID],
-                msgPrimitive[self.headerPayload],
-                msgPrimitive[self.headerArgs],
-                msgPrimitive[self.headerMsgID],
-                layerID=layerID
-            )
+            msg = msgtypes.QuestionMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID], layerID=layerID)
         else:
             # Unknown message, no payload
             msg = msgtypes.Message(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID])

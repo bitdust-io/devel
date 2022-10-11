@@ -492,12 +492,7 @@ class PacketIn(automat.Automat):
         newpacket = gateway.inbox(self)
         if newpacket is None:
             if _Debug:
-                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
-                    self.proto.upper().ljust(5),
-                    self.status.ljust(8),
-                    self.host,
-                    os.path.basename(self.filename),
-                ))
+                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (self.proto.upper().ljust(5), self.status.ljust(8), self.host, os.path.basename(self.filename)))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
                 fd, _ = tmpfile.make('error', extension='.inbox')
@@ -537,10 +532,7 @@ class PacketIn(automat.Automat):
             status = 'failed'
             bytes_received = 0
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-        lg.warn('incoming packet failed %s with %s' % (
-            self.transfer_id,
-            status,
-        ))
+        lg.warn('incoming packet failed %s with %s' % (self.transfer_id, status))
         if _PacketLogFileEnabled:
             lg.out(0, '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (status, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
 

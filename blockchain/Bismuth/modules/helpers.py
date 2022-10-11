@@ -39,7 +39,7 @@ def replace_regex(string, replace):
 
 def fee_calculate(openfield, operation='', block=0):
     # block var will be removed after HF
-    fee = Decimal('0.01') + (Decimal(len(openfield)) / Decimal('100000'))  # 0.01 dust
+    fee = Decimal('0.01') + (Decimal(len(openfield))/Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':
         fee = Decimal(fee) + Decimal('10')
     if openfield.startswith('alias='):

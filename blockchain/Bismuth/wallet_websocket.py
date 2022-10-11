@@ -202,7 +202,7 @@ if __name__ == '__main__':
     # app_log.addHandler(ch)
     logfile = os.path.abspath('websocket_app.log')
     # Rotate log after reaching 512K, keep 5 old copies.
-    rotateHandler = RotatingFileHandler(logfile, 'a', 512 * 1024, 10)
+    rotateHandler = RotatingFileHandler(logfile, 'a', 512*1024, 10)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler.setFormatter(formatter)
     app_log.addHandler(rotateHandler)
@@ -210,7 +210,7 @@ if __name__ == '__main__':
     access_log = logging.getLogger('tornado.access')
     tornado.log.enable_pretty_logging()
     logfile2 = os.path.abspath('websocket_access.log')
-    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512 * 1024, 10)
+    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512*1024, 10)
     formatter2 = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler2.setFormatter(formatter2)
     access_log.addHandler(rotateHandler2)

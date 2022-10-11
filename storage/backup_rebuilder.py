@@ -604,11 +604,7 @@ class BackupRebuilder(automat.Automat):
             return
         BlockNumber = self.workingBlocksQueue[self.blockIndex]
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
-                BlockNumber,
-                self.blockIndex,
-                str(self.workingBlocksQueue),
-            ))
+            lg.out(_DebugLevel, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (BlockNumber, self.blockIndex, str(self.workingBlocksQueue)))
         task_params = (
             self.currentBackupID,
             BlockNumber,
@@ -669,10 +665,7 @@ class BackupRebuilder(automat.Automat):
             self.blocksSucceed.append(_blockNumber)
             data_sender.A('new-data')
             if _Debug:
-                lg.out(_DebugLevel, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
-                    count,
-                    self.blockIndex,
-                ))
+                lg.out(_DebugLevel, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (count, self.blockIndex))
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        NO CHANGES, blockIndex=%d' % self.blockIndex)

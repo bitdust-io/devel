@@ -509,10 +509,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
         if not try_other_sources:
             p2p_stats.count_identity_cache(idurl, 0)
             _LastTimeCached.pop(idurl, None)
-            lg.warn('[cache failed] %s : %s' % (
-                idurl,
-                err.getErrorMessage(),
-            ))
+            lg.warn('[cache failed] %s : %s' % (idurl, err.getErrorMessage()))
             defer_results = caching().pop(idurl, [])
             for result in defer_results:
                 if result and not result.called:
@@ -545,20 +542,13 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
             lg.args(_DebugLevel, idurl=idurl, latest_idurl=latest_idurl, latest_ident=latest_ident, sources=sources)
 
         if sources:
-            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (
-                idurl,
-                err.getErrorMessage(),
-                len(sources),
-            ))
+            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (idurl, err.getErrorMessage(), len(sources)))
             _next_source(None, idurl, sources, 0)
             return None
 
         p2p_stats.count_identity_cache(idurl, 0)
         _LastTimeCached.pop(idurl, None)
-        lg.warn('[cache failed] and also no other sources found %s : %s' % (
-            idurl,
-            err.getErrorMessage(),
-        ))
+        lg.warn('[cache failed] and also no other sources found %s : %s' % (idurl, err.getErrorMessage()))
         defer_results = caching().pop(idurl, [])
         if _Debug:
             lg.args(_DebugLevel, known=len(id_url.known().keys()), defer_results=len(defer_results))

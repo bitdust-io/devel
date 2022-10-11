@@ -181,10 +181,7 @@ def inbox(newpacket, info, status, error_message):
         Contacts(newpacket, info)
 
     else:
-        lg.warn('unexpected command received: %r from %r' % (
-            newpacket,
-            info,
-        ))
+        lg.warn('unexpected command received: %r from %r' % (newpacket, info))
 
     return False
 

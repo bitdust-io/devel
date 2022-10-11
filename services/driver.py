@@ -297,11 +297,7 @@ def build_order():
             for depend_name in svc.dependent_on():
                 if depend_name not in order:
                     fail = True
-                    lg.warn('dependency not satisfied: #%d:%s depend on %s' % (
-                        position,
-                        name,
-                        depend_name,
-                    ))
+                    lg.warn('dependency not satisfied: #%d:%s depend on %s' % (position, name, depend_name))
                     break
                 depend_position = order.index(depend_name)
                 if depend_position > depend_position_max:
@@ -449,10 +445,7 @@ def restart(service_name, wait_timeout=None):
         return start_result
 
     def _on_failed(err):
-        lg.warn('failed service %s in driver.restart() : %r' % (
-            service_name,
-            err,
-        ))
+        lg.warn('failed service %s in driver.restart() : %r' % (service_name, err))
         restart_result.errback(str(err))
         return None
 
@@ -548,10 +541,7 @@ def start_single(service_name):
         return response
 
     def _on_failed(err, action):
-        lg.warn('failed to %s service %s in driver.start_single()' % (
-            action,
-            service_name,
-        ))
+        lg.warn('failed to %s service %s in driver.start_single()' % (action, service_name))
         return None
 
     _starting.addCallback(_on_started)
@@ -605,10 +595,7 @@ def stop_single(service_name):
         raise Exception('bad response: %r' % response)
 
     def _on_failed(err, action):
-        lg.warn('failed to %s service %s in driver.stop_single()' % (
-            action,
-            service_name,
-        ))
+        lg.warn('failed to %s service %s in driver.stop_single()' % (action, service_name))
         return None
 
     _starting.addCallback(_on_started)

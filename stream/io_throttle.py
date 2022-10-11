@@ -437,10 +437,7 @@ class SupplierQueue:
                     if time.time() - f_up.sendTime > f_up.sendTimeout:
                         # so this packet is failed because no response for too long
                         packetsToBeFailed[packetID] = 'timeout'
-                        lg.warn('uploading %r failed because of timeout %d src' % (
-                            packetID,
-                            f_up.sendTimeout,
-                        ))
+                        lg.warn('uploading %r failed because of timeout %d src' % (packetID, f_up.sendTimeout))
                 # this packet already in progress - check next one
                 continue
 
@@ -560,10 +557,7 @@ class SupplierQueue:
             another_packetID = global_id.SubstitutePacketID(packetID, idurl=latest_idurl)
             if (another_packetID in self.fileRequestQueue) and (another_packetID in self.fileRequestDict):
                 packetID = another_packetID
-                lg.warn('found incoming %r with outdated packet id, corrected: %r' % (
-                    newpacket,
-                    another_packetID,
-                ))
+                lg.warn('found incoming %r with outdated packet id, corrected: %r' % (newpacket, another_packetID))
         if (packetID not in self.fileRequestQueue) or (packetID not in self.fileRequestDict):
             lg.err('unexpected %r received which is not in the downloading queue' % newpacket)
         else:

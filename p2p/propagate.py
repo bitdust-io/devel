@@ -136,11 +136,7 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
             response_timeout=response_timeout,
         )
         if _Debug:
-            lg.out(_DebugLevel, 'propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes: %r' % (
-                len(x),
-                len(selected_contacts),
-                res,
-            ))
+            lg.out(_DebugLevel, 'propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes: %r' % (len(x), len(selected_contacts), res))
         if wait_packets:
             if not res:
                 result.callback([])
@@ -527,10 +523,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
         )
         _PropagateCounter += 1
         if _Debug:
-            lg.out(_DebugLevel, '        sending %r to %s' % (
-                p,
-                nameurl.GetName(contact),
-            ))
+            lg.out(_DebugLevel, '        sending %r to %s' % (p, nameurl.GetName(contact)))
         res = gateway.outbox(
             p,
             wide,

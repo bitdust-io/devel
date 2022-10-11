@@ -344,10 +344,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.info('share key [%s] with %r finished with success' % (
-            self.key_id,
-            self.remote_idurl,
-        ))
+        lg.info('share key [%s] with %r finished with success' % (self.key_id, self.remote_idurl))
         events.send('private-key-shared', data=dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
@@ -360,11 +357,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.warn('share key [%s] with %s failed: %s' % (
-            self.key_id,
-            self.remote_idurl,
-            args,
-        ))
+        lg.warn('share key [%s] with %s failed: %s' % (self.key_id, self.remote_idurl, args))
         reason = 'key transfer failed with unknown reason'
         if args and args[0]:
             reason = args[0]
@@ -426,10 +419,7 @@ class SharedAccessDonor(automat.Automat):
         return None
 
     def _on_user_priv_key_shared(self, response):
-        lg.info('your private key %s was sent to %s' % (
-            self.key_id,
-            self.remote_idurl,
-        ))
+        lg.info('your private key %s was sent to %s' % (self.key_id, self.remote_idurl))
         self.automat('priv-key-ok', response)
         return None
 

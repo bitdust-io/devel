@@ -363,10 +363,7 @@ class IdRotator(automat.Automat):
             tcpport = int(tcpport)
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
             if _Debug:
-                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d' % (
-                    server_url,
-                    tcpport,
-                ))
+                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d' % (server_url, tcpport))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_server_replied, host, pos)
             d.addErrback(_server_failed, host, pos)
@@ -409,10 +406,7 @@ class IdRotator(automat.Automat):
         if len(new_sources) > max_servers:
             all_new_sources = list(new_sources)
             new_sources = new_sources[max(0, len(new_sources) - max_servers):]
-            lg.warn('skip %d identity sources, require maximum %d sources' % (
-                len(all_new_sources) - len(new_sources),
-                max_servers,
-            ))
+            lg.warn('skip %d identity sources, require maximum %d sources' % (len(all_new_sources) - len(new_sources), max_servers))
         if len(new_sources) < min_servers:
             additional_sources = self.possible_sources[:min_servers - len(new_sources)]
             if additional_sources:

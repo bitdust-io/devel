@@ -195,10 +195,7 @@ def on_files_received(newpacket, info):
     if not contactsdb.is_supplier(newpacket.OwnerID):
         # ignore Files() if this is not my supplier
         if _Debug:
-            lg.dbg(_DebugLevel, 'incoming %r received, but %r is not my supplier' % (
-                newpacket,
-                newpacket.OwnerID,
-            ))
+            lg.dbg(_DebugLevel, 'incoming %r received, but %r is not my supplier' % (newpacket, newpacket.OwnerID))
         return False
     if _Debug:
         lg.args(_DebugLevel, 'service_backups._on_inbox_packet_received: %r for us from %s at %s' % (newpacket, newpacket.CreatorID, info))
@@ -229,10 +226,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     from customer import list_files_orator
     target_key_id = my_keys.latest_key_id(list_files_global_id['key_id'])
     if not my_keys.is_key_private(target_key_id):
-        lg.warn('key %r not registered, not possible to decrypt ListFiles() packet from %r' % (
-            target_key_id,
-            supplier_idurl,
-        ))
+        lg.warn('key %r not registered, not possible to decrypt ListFiles() packet from %r' % (target_key_id, supplier_idurl))
         return False
     try:
         block = encrypted.Unserialize(

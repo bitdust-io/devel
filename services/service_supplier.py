@@ -167,19 +167,12 @@ class SupplierService(LocalService):
                 # external customer requesting access to data which belongs not to that customer
                 # this is "third" customer accessing data belongs to "second" customer
                 # TODO: for now just stop it
-                lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (
-                    key_id,
-                    customer_idurl,
-                    target_customer_idurl,
-                ))
+                lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (key_id, customer_idurl, target_customer_idurl))
                 p2p_service.SendFail(newpacket, 'under construction')
                 return False
             customer_space.register_customer_key(customer_public_key_id, customer_public_key)
             # do not create connection with that customer, only accept the request
-            lg.info('external customer %s requested access to shared data at %s' % (
-                customer_id,
-                key_id,
-            ))
+            lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id))
             return p2p_service.SendAck(newpacket, 'accepted')
         # key_id is not present in the request:
         # this is a request to connect new customer (or reconnect existing one) to that supplier
@@ -236,14 +229,11 @@ class SupplierService(LocalService):
         free_bytes = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
         space_dict[customer_idurl.to_bin()] = bytes_for_customer
-        contactsdb.add_customer_meta_info(
-            customer_idurl,
-            {
-                'ecc_map': ecc_map,
-                'position': family_position,
-                'family_snapshot': family_snapshot,
-            },
-        )
+        contactsdb.add_customer_meta_info(customer_idurl, {
+            'ecc_map': ecc_map,
+            'position': family_position,
+            'family_snapshot': family_snapshot,
+        })
         accounting.write_customers_quotas(space_dict, free_bytes)
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()

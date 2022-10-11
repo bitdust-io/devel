@@ -273,10 +273,7 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
             continue
         matching_packet_ids_count += 1
         if p.outpacket.PacketID != incoming_packet_id:
-            lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
-                p.outpacket.PacketID,
-                incoming_packet_id,
-            ))
+            lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (p.outpacket.PacketID, incoming_packet_id))
         if outgoing_command is None and not commands.IsCommandAck(p.outpacket.Command, incoming_command):
             # this command must not be in the reply
             continue

@@ -322,10 +322,7 @@ def on_incoming_message(request, info, status, error_message):
     """
     global _IncomingMessageCallbacks
     if _Debug:
-        lg.out(_DebugLevel, 'message.on_incoming_message new PrivateMessage %r from %s' % (
-            request.PacketID,
-            request.OwnerID,
-        ))
+        lg.out(_DebugLevel, 'message.on_incoming_message new PrivateMessage %r from %s' % (request.PacketID, request.OwnerID))
     private_message_object = PrivateMessage.deserialize(request.Payload)
     if private_message_object is None:
         lg.err('PrivateMessage deserialize failed, can not extract message from request payload of %d bytes' % len(request.Payload))
@@ -341,10 +338,7 @@ def on_incoming_message(request, info, status, error_message):
         )
         json_message = jsn.dict_keys_to_text(jsn.dict_values_to_text(json_message))
     except Exception as exc:
-        lg.err('decrypt %r failed: %r' % (
-            private_message_object,
-            exc,
-        ))
+        lg.err('decrypt %r failed: %r' % (private_message_object, exc))
         return False
     if request.PacketID in received_messages_ids():
         lg.warn('skip incoming message %s because found in recent history' % request.PacketID)
@@ -375,10 +369,7 @@ def on_ping_success(ok, idurl):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
     _LastUserPingTime[idurl] = time.time()
-    lg.info('shake up hands %r before sending a message : %s' % (
-        idurl,
-        ok,
-    ))
+    lg.info('shake up hands %r before sending a message : %s' % (idurl, ok))
     return ok
 
 
@@ -395,12 +386,7 @@ def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, respo
 def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None, error=None):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
-    lg.err('message %s failed sending to %s in %s because : %r' % (
-        packet_id,
-        recipient_global_id,
-        response,
-        error,
-    ))
+    lg.err('message %s failed sending to %s in %s because : %r' % (packet_id, recipient_global_id, response, error))
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
@@ -495,13 +481,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     if not packet_id:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, 'message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d' % (
-            recipient_global_id,
-            packet_id,
-            ping_timeout,
-            message_ack_timeout,
-            ping_retries,
-        ))
+        lg.out(_DebugLevel, 'message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d' % (recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
         lg.warn('invalid recipient')
@@ -514,12 +494,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     remote_identity = identitycache.FromCache(remote_idurl)
     is_online = online_status.isOnline(remote_idurl)
     if _Debug:
-        lg.out(_DebugLevel, '    is_ping_expired=%r  remote_identity=%r  is_online=%r  skip_handshake=%r' % (
-            is_ping_expired,
-            bool(remote_identity),
-            is_online,
-            skip_handshake,
-        ))
+        lg.out(_DebugLevel, '    is_ping_expired=%r  remote_identity=%r  is_online=%r  skip_handshake=%r' % (is_ping_expired, bool(remote_identity), is_online, skip_handshake))
     if require_handshake or remote_identity is None or ((is_ping_expired or not is_online) and not skip_handshake):
         d = online_status.handshake(
             idurl=remote_idurl,
@@ -710,10 +685,7 @@ def do_read():
             consumers_callbacks().pop(consumer_id, None)
             message_queue().pop(consumer_id, None)
             if _Debug:
-                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", pending_messages=%d' % (
-                    consumer_id,
-                    len(pending_messages),
-                ))
+                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", pending_messages=%d' % (consumer_id, len(pending_messages)))
             continue
         # filter messages which consumer is not interested in
         if cb_info['direction']:

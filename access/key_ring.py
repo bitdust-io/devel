@@ -275,16 +275,10 @@ def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_
         orig_sample = my_keys.encrypt(key_id, test_sample)
     if response_sample == orig_sample:
         if _Debug:
-            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s' % (
-                key_id,
-                untrusted_idurl,
-            ))
+            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s' % (key_id, untrusted_idurl))
         result.callback(True)
         return True
-    lg.warn('key %s on %s is not OK' % (
-        key_id,
-        untrusted_idurl,
-    ))
+    lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl))
     result.callback(False)
     return False
 
@@ -362,16 +356,10 @@ def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test
         return False
     if response_sample == test_sample:
         if _Debug:
-            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s' % (
-                key_id,
-                untrusted_idurl,
-            ))
+            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s' % (key_id, untrusted_idurl))
         result.callback(True)
         return True
-    lg.warn('key %s on %s is not OK' % (
-        key_id,
-        untrusted_idurl,
-    ))
+    lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl))
     result.callback(False)
     return False
 
@@ -401,20 +389,14 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     remote_idurl = recipient_id_obj.getIDURL()
     private_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.info('doing audit of master key %r for remote user %r' % (
-            key_id,
-            remote_idurl,
-        ))
+        lg.info('doing audit of master key %r for remote user %r' % (key_id, remote_idurl))
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
             result.errback(Exception('unknown key: "%s"' % key_id))
             return result
-        lg.info('doing audit of private key %r for remote user %r' % (
-            key_id,
-            remote_idurl,
-        ))
+        lg.info('doing audit of private key %r for remote user %r' % (key_id, remote_idurl))
         private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
         'key_id': key_id,
@@ -676,10 +658,7 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     Restore given key from my suppliers if I do not have it locally.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'key_ring.do_restore_key     key_id=%r    is_private=%r' % (
-            key_id,
-            is_private,
-        ))
+        lg.out(_DebugLevel, 'key_ring.do_restore_key     key_id=%r    is_private=%r' % (key_id, is_private))
     key_id = my_keys.latest_key_id(key_id)
     if my_keys.is_key_registered(key_id):
         lg.err('local key already exist: "%s"' % key_id)
@@ -833,11 +812,7 @@ def on_files_received(newpacket, info):
     supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
     known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
     if known_supplier_pos < 0:
-        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (
-            newpacket,
-            external_supplier_idurl,
-            trusted_customer_idurl,
-        ))
+        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl))
         return False
     if _Debug:
         lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl, trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)

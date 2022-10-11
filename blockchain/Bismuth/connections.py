@@ -27,7 +27,7 @@ if 'Linux' in platform.system():
             sdef.setblocking(1)
             poller = select.poll()
             poller.register(sdef, READ_OR_ERROR)
-            ready = poller.poll(timeout * 1000)
+            ready = poller.poll(timeout*1000)
             if not ready:
                 # logical timeout
                 return '*'
@@ -48,7 +48,7 @@ if 'Linux' in platform.system():
             chunks = []
             bytes_recd = 0
             while bytes_recd < data:
-                ready = poller.poll(timeout * 1000)
+                ready = poller.poll(timeout*1000)
                 if not ready:
                     raise RuntimeError('Socket Timeout2')
                 fd, flag = ready[0]

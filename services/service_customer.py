@@ -109,34 +109,18 @@ class CustomerService(LocalService):
         for customer_idurl, suppliers_list in contactsdb.all_suppliers(as_dict=True).items():
             if old_idurl == customer_idurl:
                 customer_idurl.refresh()
-                lg.info('found customer family idurl rotated : %r -> %r' % (
-                    evt.data['old_idurl'],
-                    evt.data['new_idurl'],
-                ))
+                lg.info('found customer family idurl rotated : %r -> %r' % (evt.data['old_idurl'], evt.data['new_idurl']))
             for supplier_pos, supplier_idurl in enumerate(suppliers_list):
                 if old_idurl == supplier_idurl:
                     supplier_idurl.refresh()
-                    lg.info('found supplier idurl rotated for customer family %r at position %r : %r -> %r' % (
-                        customer_idurl,
-                        supplier_pos,
-                        evt.data['old_idurl'],
-                        evt.data['new_idurl'],
-                    ), )
+                    lg.info('found supplier idurl rotated for customer family %r at position %r : %r -> %r' % (customer_idurl, supplier_pos, evt.data['old_idurl'], evt.data['new_idurl']), )
             for customer_idurl, sc_dict in supplier_connector.connectors(as_dict=True).items():
                 if old_idurl == customer_idurl:
                     customer_idurl.refresh()
-                    lg.info('found customer idurl rotated in supplier_connector.connectors() : %r -> %r' % (
-                        evt.data['old_idurl'],
-                        evt.data['new_idurl'],
-                    ))
+                    lg.info('found customer idurl rotated in supplier_connector.connectors() : %r -> %r' % (evt.data['old_idurl'], evt.data['new_idurl']))
                 for supplier_idurl, sc in sc_dict.items():
                     if old_idurl == supplier_idurl:
                         supplier_idurl.refresh()
                         sc.customer_idurl.refresh()
                         sc.supplier_idurl.refresh()
-                        lg.info('found supplier idurl rotated in %r for customer %r : %r -> %r' % (
-                            sc,
-                            customer_idurl,
-                            evt.data['old_idurl'],
-                            evt.data['new_idurl'],
-                        ))
+                        lg.info('found supplier idurl rotated in %r for customer %r : %r -> %r' % (sc, customer_idurl, evt.data['old_idurl'], evt.data['new_idurl']))

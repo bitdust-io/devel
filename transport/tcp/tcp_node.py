@@ -240,11 +240,7 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     remoteaddress = net_misc.normalize_address(remoteaddress)
     result_defer = Deferred()
     if remoteaddress == my_host(normalize=True):
-        lg.err('sending file %r %r to my own host connection at %r is blocked' % (
-            filename,
-            description,
-            remoteaddress,
-        ))
+        lg.err('sending file %r %r to my own host connection at %r is blocked' % (filename, description, remoteaddress))
         result_defer.callback((filename, description, 'failed', 'cancelled'))
         return result_defer
     if remoteaddress in started_connections():
@@ -394,11 +390,7 @@ class TCPFactory(protocol.ClientFactory):
         if connection:
             connection.connector = None
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_node.clientConnectionFailed with %s, %d more connections started : %r' % (
-                str(destaddress),
-                len(started_connections()),
-                reason,
-            ))
+            lg.out(_DebugLevel, 'tcp_node.clientConnectionFailed with %s, %d more connections started : %r' % (str(destaddress), len(started_connections()), reason))
         for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
             try:
                 tcp_interface.interface_cancelled_file_sending(destaddress, filename, 0, description, 'connection failed').addErrback(lambda err: lg.exc(err))

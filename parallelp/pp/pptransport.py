@@ -55,18 +55,13 @@ except ImportError:
 
 
 class Transport(object):
-
     def send(self, msg):
-        raise NotImplemented(
-            "abstact function 'send' must be implemented "
-            'in a subclass',
-        )
+        raise NotImplemented("abstact function 'send' must be implemented "
+                             'in a subclass', )
 
     def receive(self, preprocess=None):
-        raise NotImplemented(
-            "abstact function 'receive' must be implemented "
-            'in a subclass',
-        )
+        raise NotImplemented("abstact function 'receive' must be implemented "
+                             'in a subclass', )
 
     def authenticate(self, secret):
         remote_version = self.receive()
@@ -114,12 +109,11 @@ class CTransport(Transport):
         else:
             msg = msg[1:]
             hash1 = self.hash(msg)
-            self.rcache[hash1] = [r for r in map(preprocess or (lambda m: m), (msg,))][0]
+            self.rcache[hash1] = [r for r in map(preprocess or (lambda m: m), (msg, ))][0]
         return self.rcache[hash1]
 
 
 class PipeTransport(Transport):
-
     def __init__(self, r, w):
         self.scache = {}
         self.exiting = False
@@ -127,10 +121,8 @@ class PipeTransport(Transport):
             self.r = r
             self.w = w
         else:
-            raise TypeError(
-                'Both arguments of PipeTransport constructor '
-                'must be file objects',
-            )
+            raise TypeError('Both arguments of PipeTransport constructor '
+                            'must be file objects', )
 
     def send(self, msg):
         if not isinstance(msg, six.binary_type):
@@ -152,7 +144,7 @@ class PipeTransport(Transport):
         msg = self.r.read(msg_len)
         if isinstance(msg, six.binary_type):
             msg = msg.decode('latin1')
-        return [r for r in map(preprocess or (lambda m: m), (msg,))][0]
+        return [r for r in map(preprocess or (lambda m: m), (msg, ))][0]
 
     def close(self):
         self.w.close()
@@ -160,7 +152,6 @@ class PipeTransport(Transport):
 
 
 class SocketTransport(Transport):
-
     def __init__(self, socket1=None):
         if socket1:
             self.socket = socket1

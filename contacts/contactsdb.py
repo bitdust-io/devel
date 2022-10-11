@@ -210,10 +210,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     if _Debug:
         lg.args(_DebugLevel, idurl=idurl, position=position, customer_idurl=customer_idurl)
     if position is None or position == -1:
-        lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (
-            idurl,
-            customer_idurl,
-        ))
+        lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (idurl, customer_idurl))
         _SuppliersList[customer_idurl].append(idurl)
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
@@ -225,18 +222,9 @@ def add_supplier(idurl, position=None, customer_idurl=None):
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_supplier   %d empty suppliers added for customer %r' % (len(empty_suppliers), customer_idurl))
     if current_suppliers[position] and current_suppliers[position] != idurl:
-        lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
-            current_suppliers[position],
-            idurl,
-            position,
-            customer_idurl,
-        ))
+        lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (current_suppliers[position], idurl, position, customer_idurl))
     else:
-        lg.info('added supplier "%s" at position %d for customer %s' % (
-            idurl,
-            position,
-            customer_idurl,
-        ))
+        lg.info('added supplier "%s" at position %d for customer %s' % (idurl, position, customer_idurl))
     current_suppliers[position] = idurl
     update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
     return position
@@ -612,10 +600,7 @@ def save_suppliers(path=None, customer_idurl=None):
         bpio._dirs_make(os.path.dirname(path))
     bpio._write_list(path, lst)
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (
-            customer_id,
-            lst,
-        ))
+        lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (customer_id, lst))
     return True
 
 
@@ -723,10 +708,7 @@ def save_customers(path=None, save_meta_info=False):
             keys_to_text=True,
         ))
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.save_customers save_meta_info=%r : %r' % (
-            save_meta_info,
-            lst,
-        ))
+        lg.out(_DebugLevel, 'contactsdb.save_customers save_meta_info=%r : %r' % (save_meta_info, lst))
 
 
 def load_customers(path=None):
@@ -993,17 +975,11 @@ def add_customer_meta_info(customer_idurl, info):
         info['ecc_map'] = strng.to_text(info['ecc_map'])
     if customer_idurl not in _CustomersMetaInfo:
         if _Debug:
-            lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (
-                customer_idurl,
-                info,
-            ))
+            lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (customer_idurl, info))
         _CustomersMetaInfo[customer_idurl] = {}
     else:
         if _Debug:
-            lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
-                customer_idurl,
-                info,
-            ))
+            lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (customer_idurl, info))
         _CustomersMetaInfo[customer_idurl].update(info)
     json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     try:

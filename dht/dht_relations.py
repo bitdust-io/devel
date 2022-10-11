@@ -162,10 +162,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers SKIP processing my own suppliers')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers  OK  for %r  returned %d suppliers' % (
-                ret['customer_idurl'],
-                len(ret['suppliers']),
-            ))
+            lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers  OK  for %r  returned %d suppliers' % (ret['customer_idurl'], len(ret['suppliers'])))
         result.callback(ret)
         return ret
 
@@ -175,10 +172,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         except:
             msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers ERROR %r  failed with %r' % (
-                customer_idurl,
-                msg,
-            ))
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers ERROR %r  failed with %r' % (customer_idurl, msg))
         result.errback(err)
         return None
 
@@ -308,11 +302,7 @@ def read_customer_message_brokers(
         except:
             msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_message_brokers ERROR %r at position %d failed with %r' % (
-                customer_idurl,
-                position,
-                msg,
-            ))
+            lg.out(_DebugLevel, 'dht_relations.read_customer_message_brokers ERROR %r at position %d failed with %r' % (customer_idurl, position, msg))
         broker_result.errback(err)
         return None
 

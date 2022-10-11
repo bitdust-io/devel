@@ -39,21 +39,20 @@ def string_to_int(s):
     for c in s:
         if not isinstance(c, int):
             c = ord(c)
-        result = 256 * result + c
+        result = 256*result + c
     return result
 
 
 def random_padding(data: bytes, block_size: int = 16, pad_with_zeros=False) -> bytes:
     padding_len = block_size - len(data) % block_size
     if pad_with_zeros:
-        padding = b'\x00' * padding_len
+        padding = b'\x00'*padding_len
     else:
         padding = get_random_bytes(padding_len)
     return data + padding
 
 
 class DerivableKey:
-
     def __init__(self, entropy: bytes = None, seed: bytes = None):
         if seed is None:
             # reconstruct seed from entropy via BIP39

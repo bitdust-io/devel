@@ -209,10 +209,7 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
     _LookupTasks.append(t)
     reactor.callLater(0, work)  # @UndefinedVariable
     if _Debug:
-        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes at layer %d' % (
-            count,
-            layer_id,
-        ))
+        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes at layer %d' % (count, layer_id))
     return t
 
 
@@ -299,10 +296,7 @@ def on_idurl_response(response, result):
 
 def observe_dht_node(node, layer_id=0):
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.observe_dht_node   %s  layer_id=%d' % (
-            node,
-            layer_id,
-        ))
+        lg.out(_DebugLevel, 'lookup.observe_dht_node   %s  layer_id=%d' % (node, layer_id))
     result = Deferred()
     d = node.request('idurl', layerID=layer_id)
     d.addCallback(on_idurl_response, result)
@@ -324,10 +318,7 @@ def on_identity_cached(src, idurl, result):
 
 def process_idurl(idurl, node):
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.process_idurl %r from %r' % (
-            idurl,
-            node,
-        ))
+        lg.out(_DebugLevel, 'lookup.process_idurl %r from %r' % (idurl, node))
     result = Deferred()
     if not idurl:
         result.errback(Exception(idurl))
@@ -431,11 +422,7 @@ class DiscoveryTask(object):
             lg.warn('DiscoveryTask[%r] : discovery process already stopped' % self.id)
             return
         if _Debug:
-            lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._observe_nodes  started for %d items  layer_id=%d' % (
-                self.id,
-                len(nodes),
-                self.layer_id,
-            ))
+            lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._observe_nodes  started for %d items  layer_id=%d' % (self.id, len(nodes), self.layer_id))
         observe_list = []
         for node in nodes:
             d = self.observe_method(node, layer_id=self.layer_id)
@@ -465,10 +452,7 @@ class DiscoveryTask(object):
         self.result_defer = None
 
     def _report_fails(self, err):
-        lg.err('DHT lookup %r failed: %r' % (
-            self.id,
-            err,
-        ))
+        lg.err('DHT lookup %r failed: %r' % (self.id, err))
         if self.result_defer:
             self.result_defer.errback(err)
         self.result_defer = None

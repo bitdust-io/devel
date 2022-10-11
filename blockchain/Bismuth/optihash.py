@@ -73,7 +73,7 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
         process_mmap = True
     try:
         tries = 0
-        try_arr = [('%0x' % getrandbits(32)) for i in range(nonce_time * hashcount)]
+        try_arr = [('%0x' % getrandbits(32)) for i in range(nonce_time*hashcount)]
         address = pool_address
         timeout = time.time() + nonce_time
         # print(pool_address)
@@ -89,14 +89,11 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
                 prefix = pool_address + seed
                 # This is where the actual hashing takes place
                 # possibles = [nonce for nonce in try_arr if mining_condition in (sha224((prefix + nonce + db_block_hash).encode("utf-8")).hexdigest())]
-                possibles = [
-                    nonce for nonce in try_arr if mining_condition in
-                    (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + db_block_hash).encode('utf-8')).digest(), 'big')))
-                ]
+                possibles = [nonce for nonce in try_arr if mining_condition in (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + db_block_hash).encode('utf-8')).digest(), 'big')))]
                 # hash rate calculation
                 try:
                     t2 = time.time()
-                    h1 = int(((nonce_time * hashcount) / (t2 - t1)) / 1000)
+                    h1 = int(((nonce_time*hashcount)/(t2 - t1))/1000)
                 except Exception as e:
                     h1 = 1
                 if possibles:
@@ -169,7 +166,7 @@ def runit():
             netdiff = int((work_pack[-1][3]))
             s.close()
 
-            diff_hex = math.floor((diff / 8) - 1)
+            diff_hex = math.floor((diff/8) - 1)
             mining_condition = db_block_hash[0:diff_hex]
 
             instances = range(int(mining_threads_conf))
@@ -192,7 +189,7 @@ def runit():
             totoally_mined_coins += sum([int(r.split('_')[1]) for r in raw_results])
             dh = sum(results)
             print('Current total hash rate is {} kh/s : in total {} coins mined '.format(str(dh), totoally_mined_coins))
-            if totoally_mined_coins >= how_much_coins * len(instances):
+            if totoally_mined_coins >= how_much_coins*len(instances):
                 break
 
         except Exception as e:

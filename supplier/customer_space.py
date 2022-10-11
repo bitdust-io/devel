@@ -747,10 +747,7 @@ def on_identity_url_changed(evt):
         if old_idurl == customer_idurl:
             customer_idurl.refresh()
             contacts_changed = True
-            lg.info('found customer idurl rotated : %r -> %r' % (
-                evt.data['old_idurl'],
-                evt.data['new_idurl'],
-            ))
+            lg.info('found customer idurl rotated : %r -> %r' % (evt.data['old_idurl'], evt.data['new_idurl']))
     if contacts_changed:
         contactsdb.save_customers()
     # update meta info for that customer
@@ -763,10 +760,7 @@ def on_identity_url_changed(evt):
                 if latest_customer_idurl_bin != customer_idurl_bin:
                     all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
                     meta_info_changed = True
-                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (
-                        latest_customer_idurl_bin,
-                        customer_idurl_bin,
-                    ))
+                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (latest_customer_idurl_bin, customer_idurl_bin))
     if meta_info_changed:
         contactsdb.write_customers_meta_info_all(all_meta_info)
     # update customer idurl in "space" file
@@ -779,10 +773,7 @@ def on_identity_url_changed(evt):
                 if latest_customer_idurl_bin != customer_idurl_bin:
                     space_dict[latest_customer_idurl_bin] = space_dict.pop(customer_idurl_bin)
                     space_changed = True
-                    lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (
-                        latest_customer_idurl_bin,
-                        customer_idurl_bin,
-                    ))
+                    lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (latest_customer_idurl_bin, customer_idurl_bin))
     if space_changed:
         accounting.write_customers_quotas(space_dict, free_space)
     # rename customer folder where I store all his files
@@ -794,10 +785,7 @@ def on_identity_url_changed(evt):
     if os.path.isdir(old_owner_dir):
         try:
             bpio.move_dir_recursive(old_owner_dir, new_owner_dir)
-            lg.info('copied %r into %r' % (
-                old_owner_dir,
-                new_owner_dir,
-            ))
+            lg.info('copied %r into %r' % (old_owner_dir, new_owner_dir))
             if os.path.exists(old_owner_dir):
                 bpio._dir_remove(old_owner_dir)
                 lg.warn('removed %r' % old_owner_dir)

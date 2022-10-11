@@ -375,7 +375,4 @@ def IncomingListFiles(newpacket):
         A('inbox-files', newpacket)
     else:
         if _Debug:
-            lg.dbg(_DebugLevel, 'received and ignored %r, currently target customer is %r' % (
-                newpacket,
-                A().target_customer_idurl,
-            ))
+            lg.dbg(_DebugLevel, 'received and ignored %r, currently target customer is %r' % (newpacket, A().target_customer_idurl))

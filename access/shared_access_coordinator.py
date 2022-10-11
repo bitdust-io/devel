@@ -354,25 +354,12 @@ def on_list_files_response(response, info, customer_idurl, supplier_idurl, key_i
 
 def on_list_files_failed(response, info, customer_idurl, supplier_idurl, key_id):
     if strng.to_text(response.Payload).count('key not registered'):
-        lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (
-            supplier_idurl,
-            customer_idurl,
-            key_id,
-        ))
+        lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (supplier_idurl, customer_idurl, key_id))
         result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
         result.addCallback(lambda r: on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
-        result.addErrback(lambda err: lg.err('failed sending key %r to %r : %r' % (
-            key_id,
-            supplier_idurl,
-            err,
-        ), ))
+        result.addErrback(lambda err: lg.err('failed sending key %r to %r : %r' % (key_id, supplier_idurl, err)))
     else:
-        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r: %r' % (
-            key_id,
-            customer_idurl,
-            supplier_idurl,
-            strng.to_text(response.Payload),
-        ))
+        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r: %r' % (key_id, customer_idurl, supplier_idurl, strng.to_text(response.Payload)))
     return None
 
 
@@ -420,11 +407,18 @@ class SharedAccessCoordinator(automat.Automat):
         self.last_time_in_sync = -1
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
-        super(SharedAccessCoordinator,
-              self).__init__(name='%s$%s' % (
-                  self.key_alias,
-                  self.glob_id['customer'],
-              ), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+        super(SharedAccessCoordinator, self).__init__(
+            name='%s$%s' % (
+                self.key_alias,
+                self.glob_id['customer'],
+            ),
+            state='AT_STARTUP',
+            debug_level=debug_level,
+            log_events=log_events,
+            log_transitions=log_transitions,
+            publish_events=publish_events,
+            **kwargs,
+        )
 
     def to_json(self):
         j = super().to_json()
@@ -854,11 +848,7 @@ class SharedAccessCoordinator(automat.Automat):
             lg.args(_DebugLevel, pid=packetID, sz=len(data), supplier=supplier_idurl)
 
     def _on_supplier_failed(self, err, supplier_idurl, reason):
-        lg.err('supplier %s failed with %r : %r' % (
-            supplier_idurl,
-            reason,
-            err,
-        ))
+        lg.err('supplier %s failed with %r : %r' % (supplier_idurl, reason, err))
         self.automat('supplier-failed', supplier_idurl=supplier_idurl)
         return None
 
@@ -890,18 +880,10 @@ class SharedAccessCoordinator(automat.Automat):
     def _on_list_files_failed(self, response, info, customer_idurl, supplier_idurl, key_id):
         if strng.to_text(response.Payload) == 'key not registered':
             if _Debug:
-                lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (
-                    supplier_idurl,
-                    customer_idurl,
-                    key_id,
-                ))
+                lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (supplier_idurl, customer_idurl, key_id))
             self.automat('key-not-registered', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
             return None
-        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
-            key_id,
-            customer_idurl,
-            supplier_idurl,
-        ))
+        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (key_id, customer_idurl, supplier_idurl))
         self.automat('list-files-failed', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
         return None
 
@@ -922,11 +904,7 @@ class SharedAccessCoordinator(automat.Automat):
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet, key_id=self.key_id)
         self.received_index_file_revision[supplier_idurl] = supplier_revision
         if _Debug:
-            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_response %s from %r with rev: %s' % (
-                newpacket,
-                supplier_idurl,
-                supplier_revision,
-            ))
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_response %s from %r with rev: %s' % (newpacket, supplier_idurl, supplier_revision))
         self.automat('index-received', supplier_idurl=supplier_idurl)
 
     def _on_index_file_fail(self, newpacket, info):
@@ -936,18 +914,11 @@ class SharedAccessCoordinator(automat.Automat):
         self.received_index_file_revision[supplier_idurl] = None
         if strng.to_text(newpacket.Payload) == 'key not registered':
             if _Debug:
-                lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (
-                    supplier_idurl,
-                    self.customer_idurl,
-                    self.key_id,
-                ))
+                lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (supplier_idurl, self.customer_idurl, self.key_id))
             self.automat('key-not-registered', supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl, key_id=self.key_id)
             return None
         if _Debug:
-            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_fail %s from %r' % (
-                newpacket,
-                supplier_idurl,
-            ))
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_fail %s from %r' % (newpacket, supplier_idurl))
         self.automat('index-missing', supplier_idurl=supplier_idurl)
 
     def _on_send_index_file_ack(self, newpacket, info):
@@ -958,10 +929,7 @@ class SharedAccessCoordinator(automat.Automat):
         else:
             lg.warn('did not found supplier connector for %r' % supplier_idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'shared_access_coordinator._on_send_index_file_ack %s from %r' % (
-                newpacket,
-                supplier_idurl,
-            ))
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_send_index_file_ack %s from %r' % (newpacket, supplier_idurl))
         if newpacket.Command == commands.Ack():
             self.automat('index-sent', supplier_idurl=supplier_idurl)
         else:

@@ -213,11 +213,7 @@ class CustomerFamilyService(LocalService):
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
-                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
-                    newpacket,
-                    info,
-                    customer_idurl,
-                ))
+                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (newpacket, info, customer_idurl))
                 return False
             reactor.callLater(
                 0,
@@ -249,11 +245,7 @@ class CustomerFamilyService(LocalService):
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
-                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
-                    newpacket,
-                    info,
-                    customer_idurl,
-                ))
+                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (newpacket, info, customer_idurl))
                 return False
             reactor.callLater(
                 0,
@@ -288,8 +280,5 @@ class CustomerFamilyService(LocalService):
             if customer_idurl == id_url.field(evt.data['old_idurl']):
                 customer_idurl.refresh(replace_original=True)
                 fm.customer_idurl.refresh(replace_original=True)
-                lg.info('found %r for customer with rotated identity and refreshed: %r' % (
-                    fm,
-                    customer_idurl,
-                ))
+                lg.info('found %r for customer with rotated identity and refreshed: %r' % (fm, customer_idurl))
                 reactor.callLater(0, fm.automat, 'family-refresh')  # @UndefinedVariable

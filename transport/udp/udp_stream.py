@@ -879,10 +879,7 @@ class UDPStream(automat.Automat):
             self.output_buffer_size += len(piece)
         outp.close()
         if _Debug:
-            lg.out(self.debug_level + 6, 'PUSH %d [%s]' % (
-                self.output_block_id_current,
-                ','.join(map(str, self.output_blocks_ids)),
-            ))
+            lg.out(self.debug_level + 6, 'PUSH %d [%s]' % (self.output_block_id_current, ','.join(map(str, self.output_blocks_ids))))
 
     def _sending_loop(self):
         total_rate_out = 0.0

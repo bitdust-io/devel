@@ -811,11 +811,7 @@ def on_identity_received(newpacket, send_ack=True):
             # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
             # this may happen after identity restore - the user starts counting revision number from 0
             # but other nodes already store previous copies, user just need to jump to the most recent revision number
-            lg.warn('received new identity with out-dated revision number %d from %r, known revision is %d' % (
-                newidentity.getRevisionValue(),
-                idurl,
-                latest_identity.getRevisionValue(),
-            ))
+            lg.warn('received new identity with out-dated revision number %d from %r, known revision is %d' % (newidentity.getRevisionValue(), idurl, latest_identity.getRevisionValue()))
             lg.warn('received identity: %r' % newxml)
             lg.warn('known identity: %r' % latest_identity.serialize())
             ident_packet = signed.Packet(
@@ -842,12 +838,7 @@ def on_identity_received(newpacket, send_ack=True):
             lg.dbg(_DebugLevel, '%s  idurl=%s  remoteID=%r  sending wide Ack()' % (newpacket.PacketID, idurl, newpacket.RemoteID))
     else:
         if _Debug:
-            lg.dbg(_DebugLevel, '%s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()' % (
-                newpacket.PacketID,
-                idurl,
-                newpacket.RemoteID,
-                newpacket.OwnerID,
-            ))
+            lg.dbg(_DebugLevel, '%s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()' % (newpacket.PacketID, idurl, newpacket.RemoteID, newpacket.OwnerID))
     # wide=True : a small trick to respond to all known contacts of the remote user
     reactor.callLater(0, p2p_service.SendAck, newpacket, wide=True)  # @UndefinedVariable
     return True
@@ -964,12 +955,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
 #         pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        lg.warn('skip register file sending, packet_out not found: %r %r %r %r' % (
-            proto,
-            host,
-            os.path.basename(filename),
-            receiver_idurl,
-        ))
+        lg.warn('skip register file sending, packet_out not found: %r %r %r %r' % (proto, host, os.path.basename(filename), receiver_idurl))
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
@@ -1020,12 +1006,7 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
     # if pkt_out.outpacket:
     #     control.request_update([('packet', pkt_out.outpacket.PacketID)])
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
-            os.path.basename(filename),
-            proto,
-            host,
-            error_message,
-        ))
+        lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (os.path.basename(filename), proto, host, error_message))
     return True
 
 

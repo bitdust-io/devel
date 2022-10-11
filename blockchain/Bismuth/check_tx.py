@@ -34,7 +34,7 @@ def is_in_mempool(txid):
     mempool = sqlite3.connect(mempool_path)
     mempool.text_factory = str
     m = mempool.cursor()
-    m.execute('SELECT timestamp, address, recipient, amount, openfield FROM transactions WHERE signature like ?;', (txid + '%',))
+    m.execute('SELECT timestamp, address, recipient, amount, openfield FROM transactions WHERE signature like ?;', (txid + '%', ))
     result = m.fetchone()
     if result:
         return (True, list_to_tx(list(result)))
@@ -49,7 +49,7 @@ def is_in_ledger(txid):
     ledger = sqlite3.connect(ledger_path)
     ledger.text_factory = str
     m = ledger.cursor()
-    m.execute('SELECT timestamp, address, recipient, amount, openfield, block_height FROM transactions WHERE signature like ?;', (txid + '%',))
+    m.execute('SELECT timestamp, address, recipient, amount, openfield, block_height FROM transactions WHERE signature like ?;', (txid + '%', ))
     result = m.fetchone()
     if result:
         m.execute('SELECT block_height FROM transactions ORDER BY block_height desc LIMIT 1')

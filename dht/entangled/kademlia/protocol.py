@@ -104,7 +104,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         if self._counter:
             self._counter('sendRPC')
         # Set the RPC timeout timer
-        timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, msg.id)  # IGNORE:E1101
+        timeoutCall = reactor.callLater(constants.rpcTimeout*3, self._msgTimeout, msg.id)  # IGNORE:E1101
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         return df
@@ -122,13 +122,11 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._node.addContact(remoteContact)
 
         if _Debug:
-            print(
-                '[DHT PROTO] >>> [%s] dht.dispatch %r from %r' % (
-                    time.time(),
-                    message.id,
-                    address,
-                )
-            )
+            print('[DHT PROTO] >>> [%s] dht.dispatch %r from %r' % (
+                time.time(),
+                message.id,
+                address,
+            ))
 
         if isinstance(message, msgtypes.RequestMessage):
             # This is an RPC method request
@@ -145,12 +143,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 del self._sentMessages[message.id]
             else:
                 if _Debug:
-                    print(
-                        '[DHT PROTO]             RPC Request message %r was not identified, recently sent: %d' % (
-                            message.id,
-                            len([k for k in self._sentMessages.keys()]),
-                        )
-                    )
+                    print('[DHT PROTO]             RPC Request message %r was not identified, recently sent: %d' % (
+                        message.id,
+                        len([k for k in self._sentMessages.keys()]),
+                    ))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -185,12 +181,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # If the original message isn't found, it must have timed out
                 # TODO: we should probably do something with this...
                 if _Debug:
-                    print(
-                        '[DHT PROTO]             SKIP    message %r was not identified, recently sent: %d' % (
-                            message.id,
-                            len([k for k in self._sentMessages.keys()]),
-                        )
-                    )
+                    print('[DHT PROTO]             SKIP    message %r was not identified, recently sent: %d' % (
+                        message.id,
+                        len([k for k in self._sentMessages.keys()]),
+                    ))
         return True
 
     def datagramReceived(self, datagram, address):
@@ -223,10 +217,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             msgID = encoding.to_text(header[5:45], encoding='utf-8')
 
             if _Debug:
-                print(
-                    '[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' %
-                    (len(datagram), totalPackets, seqNumber, msgID, address)
-                )
+                print('[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (len(datagram), totalPackets, seqNumber, msgID, address))
 
             if seqNumber < 0 or seqNumber >= totalPackets:
                 if _Debug:
@@ -275,18 +266,16 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         try:
             if data is None:
-                print(
-                    '[DHT PROTO]       SENDING EMPTY DATA to %r at %r' % (
-                        rpcID,
-                        address,
-                    )
-                )
+                print('[DHT PROTO]       SENDING EMPTY DATA to %r at %r' % (
+                    rpcID,
+                    address,
+                ))
                 data = b''
             if len(data) > self.msgSizeLimit:
                 # We have to spread the data over multiple UDP datagrams, and provide sequencing information
                 # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
                 # bytes 4 & 5 are the sequence number for this specific packet
-                totalPackets = int(len(data) / self.msgSizeLimit)
+                totalPackets = int(len(data)/self.msgSizeLimit)
                 if len(data) % self.msgSizeLimit > 0:
                     totalPackets += 1
                 encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
@@ -299,7 +288,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     # actually we must always pass a header!
                     txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
                     txData = b'\x00' + txHeader + b'\x00' + packetData
-                    reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
+                    reactor.callLater(self.maxToSendDelay*seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
                     startPos += self.msgSizeLimit
                     seqNumber += 1
             else:
@@ -430,7 +419,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                         df.errback(failure.Failure(TimeoutError(remoteContactID)))
                         return
                 # Reset the RPC timeout timer
-                timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, messageID)  # IGNORE:E1101
+                timeoutCall = reactor.callLater(constants.rpcTimeout*3, self._msgTimeout, messageID)  # IGNORE:E1101
                 self._sentMessages[messageID] = (remoteContactID, df, timeoutCall)
                 if _Debug:
                     print('[DHT PROTO]              reset timeout for', messageID)
@@ -446,7 +435,6 @@ class KademliaProtocol(protocol.DatagramProtocol):
 
 
 class KademliaMultiLayerProtocol(KademliaProtocol):
-
     def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.MultiLayerFormat()):
         KademliaProtocol.__init__(self, node, msgEncoder=msgEncoder, msgTranslator=msgTranslator)
 
@@ -466,13 +454,10 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
         if rawResponse:
             df._rpcRawResponse = True
         if _Debug:
-            print(
-                '[DHT PROTO] <<< [%s] sendRPC  layerID=%d method=%r msg_id=%r addr=%r port=%r kwargs=%r' %
-                (msg, layerID, method, msg.id, contact.address, contact.port, kwargs)
-            )
+            print('[DHT PROTO] <<< [%s] sendRPC  layerID=%d method=%r msg_id=%r addr=%r port=%r kwargs=%r' % (msg, layerID, method, msg.id, contact.address, contact.port, kwargs))
         if self._counter:
             self._counter('sendRPC')
-        timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, msg.id)  # IGNORE:E1101
+        timeoutCall = reactor.callLater(constants.rpcTimeout*3, self._msgTimeout, msg.id)  # IGNORE:E1101
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall, method)
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         if layerID not in self._node.packets_out:
@@ -491,12 +476,10 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
         if layerID not in self._node.layers:
             # TODO: add protection here
             if _Debug:
-                print(
-                    '[DHT PROTO]    dispatch datagram %r was not identified, layer %d not opened: %r' % (
-                        message.id,
-                        layerID,
-                    )
-                )
+                print('[DHT PROTO]    dispatch datagram %r was not identified, layer %d not opened: %r' % (
+                    message.id,
+                    layerID,
+                ))
             return True
 
         if layerID not in self._node.packets_in:
@@ -509,29 +492,23 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
             # Refresh the remote node's details in the local node's k-buckets
             self._node.addContact(remoteContact, layerID=layerID)
             if _Debug:
-                print(
-                    '[DHT PROTO]    dispatch  add or update contact %r at layer %d to my routing table' % (
-                        remoteContact,
-                        layerID,
-                    )
-                )
+                print('[DHT PROTO]    dispatch  add or update contact %r at layer %d to my routing table' % (
+                    remoteContact,
+                    layerID,
+                ))
         else:
             if _Debug:
-                print(
-                    '[DHT PROTO]    dispatch  skip adding contact %r at layer %d to my routing table' % (
-                        remoteContact,
-                        layerID,
-                    )
-                )
+                print('[DHT PROTO]    dispatch  skip adding contact %r at layer %d to my routing table' % (
+                    remoteContact,
+                    layerID,
+                ))
 
         if _Debug:
-            print(
-                '[DHT PROTO]    dispatch  >>> [%s] dht.dispatch %r from %r' % (
-                    time.time(),
-                    message.id,
-                    address,
-                )
-            )
+            print('[DHT PROTO]    dispatch  >>> [%s] dht.dispatch %r from %r' % (
+                time.time(),
+                message.id,
+                address,
+            ))
 
         if isinstance(message, msgtypes.RequestMessage) or isinstance(message, msgtypes.QuestionMessage):
             # This is an RPC method request
@@ -555,12 +532,10 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
                 del self._sentMessages[message.id]
             else:
                 if _Debug:
-                    print(
-                        '[DHT PROTO]    dispatch   RPC Request message %r is not a reply, latest outgoing messages: %r' % (
-                            message.id,
-                            [k for k in self._sentMessages.keys()],
-                        )
-                    )
+                    print('[DHT PROTO]    dispatch   RPC Request message %r is not a reply, latest outgoing messages: %r' % (
+                        message.id,
+                        [k for k in self._sentMessages.keys()],
+                    ))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -607,12 +582,10 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
                 # If the original message isn't found, it must have timed out
                 # TODO: we should probably do something with this...
                 if _Debug:
-                    print(
-                        '[DHT PROTO]    dispatch  message %r was not identified, currently sent: %r' % (
-                            message.id,
-                            [k for k in self._sentMessages.keys()],
-                        )
-                    )
+                    print('[DHT PROTO]    dispatch  message %r was not identified, currently sent: %r' % (
+                        message.id,
+                        [k for k in self._sentMessages.keys()],
+                    ))
         return True
 
     def _sendResponse(self, contact, rpcID, response):
@@ -666,10 +639,7 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
             msgID = encoding.to_text(header[5:45], encoding='utf-8')
 
             if _Debug:
-                print(
-                    '[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' %
-                    (len(datagram), totalPackets, seqNumber, msgID, address)
-                )
+                print('[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (len(datagram), totalPackets, seqNumber, msgID, address))
 
             if seqNumber < 0 or seqNumber >= totalPackets:
                 if _Debug:
@@ -724,7 +694,7 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
                         df.errback(failure.Failure(TimeoutError(remoteContactID)))
                         return
                 # Reset the RPC timeout timer
-                timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, messageID)  # IGNORE:E1101
+                timeoutCall = reactor.callLater(constants.rpcTimeout*3, self._msgTimeout, messageID)  # IGNORE:E1101
                 self._sentMessages[messageID] = (remoteContactID, df, timeoutCall, method)
                 if _Debug:
                     print('[DHT PROTO]              reset timeout for', messageID)

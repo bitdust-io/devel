@@ -265,14 +265,11 @@ def create_new_group(label, creator_id=None, key_size=2048, group_alias=None, wi
     if remote_path is None:
         return None
     if with_group_info:
-        set_group_info(
-            group_key_id,
-            {
-                'last_sequence_id': -1,
-                'active': False,
-                'archive_folder_path': remote_path,
-            },
-        )
+        set_group_info(group_key_id, {
+            'last_sequence_id': -1,
+            'active': False,
+            'archive_folder_path': remote_path,
+        })
         save_group_info(group_key_id)
     return group_key_id
 
@@ -357,11 +354,7 @@ def load_groups():
             existing_broker_id = known_brokers(latest_customer_id)[int(latest_broker_info['position'])]
             if existing_broker_id:
                 if os.path.isfile(latest_broker_path):
-                    lg.err('found duplicated broker for customer %r on position %d, erasing file %r' % (
-                        latest_customer_id,
-                        int(latest_broker_info['position']),
-                        latest_broker_path,
-                    ), )
+                    lg.err('found duplicated broker for customer %r on position %d, erasing file %r' % (latest_customer_id, int(latest_broker_info['position']), latest_broker_path))
                     try:
                         os.remove(latest_broker_path)
                     except:
@@ -474,10 +467,7 @@ def set_broker(customer_id, broker_id, position=0):
         bpio._dirs_make(customer_dir)
     if os.path.isfile(broker_path):
         if _Debug:
-            lg.dbg(_DebugLevel, 'broker %r already exist for customer %r, overwriting' % (
-                broker_id,
-                customer_id,
-            ))
+            lg.dbg(_DebugLevel, 'broker %r already exist for customer %r, overwriting' % (broker_id, customer_id))
     broker_info = {
         'position': position,
     }
@@ -489,23 +479,14 @@ def set_broker(customer_id, broker_id, position=0):
             return True
         prev_broker_path = os.path.join(customer_dir, prev_borker_id)
         if os.path.isfile(prev_broker_path):
-            lg.info('replacing existing broker for customer %r at position %d : %r -> %r' % (
-                customer_id,
-                position,
-                prev_borker_id,
-                broker_id,
-            ))
+            lg.info('replacing existing broker for customer %r at position %d : %r -> %r' % (customer_id, position, prev_borker_id, broker_id))
             try:
                 os.remove(prev_broker_path)
             except:
                 lg.exc()
                 return False
     if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
-        lg.err('failed to set broker %r at position %d for customer %r' % (
-            broker_id,
-            position,
-            customer_id,
-        ))
+        lg.err('failed to set broker %r at position %d for customer %r' % (broker_id, position, customer_id))
         return False
     known_brokers(customer_id)[position] = broker_id
     if _Debug:
@@ -528,10 +509,7 @@ def clear_broker(customer_id, position):
         broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
         if not broker_info:
             to_be_erased.append(broker_id)
-            lg.warn('found empty broker info for customer %r : %r' % (
-                customer_id,
-                broker_id,
-            ))
+            lg.warn('found empty broker info for customer %r : %r' % (customer_id, broker_id))
             continue
         if broker_info.get('position') != position:
             continue
@@ -583,11 +561,7 @@ def set_group_active(group_key_id, value):
     old_value = active_groups()[group_key_id]['active']
     active_groups()[group_key_id]['active'] = value
     if old_value != value:
-        lg.info('group %r "active" status changed: %r -> %r' % (
-            group_key_id,
-            old_value,
-            value,
-        ))
+        lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value))
     return True
 
 
@@ -611,10 +585,7 @@ def on_identity_url_changed(evt):
             old_group_path = os.path.join(groups_dir, group_key_id)
             latest_group_key_id = my_keys.latest_key_id(group_key_id)
             latest_group_path = os.path.join(groups_dir, latest_group_key_id)
-            lg.info('going to rename rotated group file: %r -> %r' % (
-                old_group_path,
-                latest_group_path,
-            ))
+            lg.info('going to rename rotated group file: %r -> %r' % (old_group_path, latest_group_path))
             if os.path.isfile(old_group_path):
                 try:
                     os.rename(old_group_path, latest_group_path)
@@ -627,10 +598,7 @@ def on_identity_url_changed(evt):
             group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
         gm = group_member.get_active_group_member(group_key_id)
         if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
-            lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (
-                old_idurl,
-                gm,
-            ))
+            lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (old_idurl, gm))
             if group_key_id not in to_be_reconnected:
                 to_be_reconnected.append(group_key_id)
     known_customers = list(known_brokers().keys())
@@ -639,10 +607,7 @@ def on_identity_url_changed(evt):
         customer_idurl = global_id.glob2idurl(customer_id)
         if id_url.is_the_same(customer_idurl, old_idurl):
             latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
-            lg.info('going to rename rotated customer id: %r -> %r' % (
-                customer_id,
-                latest_customer_id,
-            ))
+            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id))
             old_customer_dir = os.path.join(brokers_dir, customer_id)
             if os.path.isdir(old_customer_dir):
                 try:
@@ -659,10 +624,7 @@ def on_identity_url_changed(evt):
             if broker_idurl == old_idurl:
                 latest_broker_id = global_id.idurl2glob(new_idurl)
                 latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
-                lg.info('going to rename rotated broker id: %r -> %r' % (
-                    broker_id,
-                    latest_broker_id,
-                ))
+                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id))
                 old_broker_path = os.path.join(latest_customer_dir, broker_id)
                 if os.path.isfile(old_broker_path):
                     try:

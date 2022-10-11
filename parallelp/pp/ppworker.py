@@ -78,7 +78,6 @@ def preprocess(msg):
 
 
 class _WorkerProcess(object):
-
     def __init__(self):
         self.hashmap = {}
         self.e = sys.__stderr__

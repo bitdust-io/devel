@@ -313,18 +313,11 @@ class SupplierConnector(automat.Automat):
                 if cb in self.callbacks[name]:
                     self.callbacks[name].remove(cb)
                 else:
-                    lg.warn('callback %r not registered in %r with name %s' % (
-                        cb,
-                        self,
-                        name,
-                    ))
+                    lg.warn('callback %r not registered in %r with name %s' % (cb, self, name))
             else:
                 self.callbacks.pop(name)
         else:
-            lg.warn('callback with name %s not registered in %r' % (
-                name,
-                self,
-            ))
+            lg.warn('callback with name %s not registered in %r' % (name, self))
 
     def do_calculate_needed_bytes(self):
         if self.needed_bytes is None:

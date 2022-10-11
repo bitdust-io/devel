@@ -320,10 +320,7 @@ class RestoreWorker(automat.Automat):
             return False
         result = bool(len(self.RequestFails) <= self.max_errors)
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.isStillCorrectable max_errors=%d, fails=%d' % (
-                self.max_errors,
-                len(self.RequestFails),
-            ))
+            lg.out(_DebugLevel, 'restore_worker.isStillCorrectable max_errors=%d, fails=%d' % (self.max_errors, len(self.RequestFails)))
         return result
 
     def isBlockFixable(self, *args, **kwargs):
@@ -381,10 +378,7 @@ class RestoreWorker(automat.Automat):
                         known_ecc_map = active_share.known_ecc_map
                 if known_ecc_map:
                     self.EccMap = eccmap.eccmap(known_ecc_map)
-                    lg.info('ECC map %r recognized from active share %r' % (
-                        self.EccMap,
-                        active_share,
-                    ))
+                    lg.info('ECC map %r recognized from active share %r' % (self.EccMap, active_share))
                 else:
                     num_suppliers = len(self.known_suppliers)
                     if num_suppliers not in eccmap.GetPossibleSuppliersCount():
@@ -645,10 +639,7 @@ class RestoreWorker(automat.Automat):
 
     def _do_check_run_requests(self):
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker._do_check_run_requests for %s at block %d' % (
-                self.backup_id,
-                self.block_number,
-            ))
+            lg.out(_DebugLevel, 'restore_worker._do_check_run_requests for %s at block %d' % (self.backup_id, self.block_number))
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
             request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')
@@ -660,10 +651,7 @@ class RestoreWorker(automat.Automat):
                 continue
             if request_packet_id in self.block_requests:
                 if _Debug:
-                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (
-                        request_packet_id,
-                        SupplierNumber,
-                    ))
+                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (request_packet_id, SupplierNumber))
                 continue
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
@@ -687,10 +675,7 @@ class RestoreWorker(automat.Automat):
                 continue
             if request_packet_id in self.block_requests:
                 if _Debug:
-                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (
-                        request_packet_id,
-                        SupplierNumber,
-                    ))
+                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (request_packet_id, SupplierNumber))
                 continue
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
@@ -712,10 +697,7 @@ class RestoreWorker(automat.Automat):
                 # if packetID not in self.AlreadyRequestedCounts:
                 #     self.AlreadyRequestedCounts[packetID] = 0
                 # self.AlreadyRequestedCounts[packetID] += 1
-                lg.warn('packet already in IO queue for supplier %s : %s' % (
-                    SupplierID,
-                    packetID,
-                ))
+                lg.warn('packet already in IO queue for supplier %s : %s' % (SupplierID, packetID))
                 continue
             self.block_requests[packetID] = None
             if io_throttle.QueueRequestFile(
@@ -733,10 +715,7 @@ class RestoreWorker(automat.Automat):
         del packetsToRequest
         if requests_made:
             if _Debug:
-                lg.out(_DebugLevel, '        requested %d packets for block %d' % (
-                    requests_made,
-                    self.block_number,
-                ))
+                lg.out(_DebugLevel, '        requested %d packets for block %d' % (requests_made, self.block_number))
             return
         current_block_requests_results = list(self.block_requests.values())
         if _Debug:
@@ -744,24 +723,15 @@ class RestoreWorker(automat.Automat):
         pending_count = current_block_requests_results.count(None)
         if pending_count > 0:
             if _Debug:
-                lg.out(_DebugLevel, '        nothing for request, currently %d pending packets for block %d' % (
-                    pending_count,
-                    self.block_number,
-                ))
+                lg.out(_DebugLevel, '        nothing for request, currently %d pending packets for block %d' % (pending_count, self.block_number))
             return
         failed_count = current_block_requests_results.count(False)
         if failed_count > self.max_errors:
-            lg.err('all requests finished and %d packets failed, not possible to read data for block %d' % (
-                failed_count,
-                self.block_number,
-            ))
+            lg.err('all requests finished and %d packets failed, not possible to read data for block %d' % (failed_count, self.block_number))
             reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
             return
         if _Debug:
-            lg.out(_DebugLevel, '        all requests finished for block %d : %r' % (
-                self.block_number,
-                current_block_requests_results,
-            ))
+            lg.out(_DebugLevel, '        all requests finished for block %d : %r' % (self.block_number, current_block_requests_results))
         reactor.callLater(0, self.automat, 'request-finished', None)  # @UndefinedVariable
 
     def _on_block_restored(self, restored_blocks, filename):
@@ -792,10 +762,7 @@ class RestoreWorker(automat.Automat):
                     if resp['key_alias'] == req['key_alias'] and resp['user'] == req['user']:
                         if id_url.is_the_same(resp['idurl'], req['idurl']):
                             packet_id = req_packet_id
-                            lg.warn('found matching packet request %r for rotated idurl %r' % (
-                                packet_id,
-                                resp['idurl'],
-                            ))
+                            lg.warn('found matching packet request %r for rotated idurl %r' % (packet_id, resp['idurl']))
                             break
         if packet_id not in self.block_requests:
             if _Debug:

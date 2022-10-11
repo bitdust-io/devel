@@ -143,7 +143,7 @@ def test_fee(myserver, verbose=False):
     tx = client.latest_transactions(num=1)
     if verbose:
         print(f'latest_transactions returns {tx}')
-    assert float(tx[0]['fee']) == 0.01 + 1e-5 * len(data)
+    assert float(tx[0]['fee']) == 0.01 + 1e-5*len(data)
 
 
 def test_operation_length(myserver, verbose=False):

@@ -120,7 +120,6 @@ class Node(object):
     In Entangled, all interactions with the Kademlia network by a client
     application is performed via this class (or a subclass).
     """
-
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
         """
         @param dataStore: The data store to use. This must be class inheriting
@@ -722,13 +721,11 @@ class Node(object):
         @rtype: twisted.internet.defer.Deferred
         """
         if _Debug:
-            print(
-                '[DHT NODE]  SINGLE _iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (
-                    rpc,
-                    key,
-                    startupShortlist,
-                )
-            )
+            print('[DHT NODE]  SINGLE _iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (
+                rpc,
+                key,
+                startupShortlist,
+            ))
         # if self._counter:
         #     self._counter('_iterativeFind')
         if rpc != 'findNode':
@@ -843,7 +840,7 @@ class Node(object):
 
         def cancelActiveProbe(contactID):
             activeProbes.pop()
-            if len(activeProbes) <= int(constants.alpha / 2.0) and len(pendingIterationCalls):
+            if len(activeProbes) <= int(constants.alpha/2.0) and len(pendingIterationCalls):
                 # Force the iteration
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
@@ -937,12 +934,10 @@ class Node(object):
             'type': 'skip_validation',
         }
         if _Debug:
-            print(
-                '[DHT NODE]  SINGLE _persistState id=%r state=%r' % (
-                    self.id,
-                    state,
-                )
-            )
+            print('[DHT NODE]  SINGLE _persistState id=%r state=%r' % (
+                self.id,
+                state,
+            ))
         json_value = json.dumps(state)
         now = int(time.time())
 
@@ -1057,7 +1052,6 @@ class Node(object):
 
 
 class MultiLayerNode(Node):
-
     def __init__(self, udpPort=4000, dataStores=None, routingTables=None, networkProtocol=None, **kwargs):
         self._counter = None
         self.port = udpPort
@@ -1125,12 +1119,10 @@ class MultiLayerNode(Node):
                 contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layer_id)
                 self._routingTables[layer_id].addContact(contact)
             if _Debug:
-                print(
-                    '[DHT NODE]    createLayer : layer %d : found "nodeState" key in local db and added %d contacts to routing table' % (
-                        layer_id,
-                        len(state['closestNodes']),
-                    )
-                )
+                print('[DHT NODE]    createLayer : layer %d : found "nodeState" key in local db and added %d contacts to routing table' % (
+                    layer_id,
+                    len(state['closestNodes']),
+                ))
             loaded = True
         if not self.layers[layer_id]:
             self.layers[layer_id] = self._generateID()
@@ -1139,12 +1131,10 @@ class MultiLayerNode(Node):
 #         if layer_id != 0 and not loaded and warmUp:
 #             loaded = self.warmUpLayer(layer_id)
         if _Debug:
-            print(
-                '[DHT NODE]    createLayer : layer %d created,  loaded=%r' % (
-                    layer_id,
-                    loaded,
-                )
-            )
+            print('[DHT NODE]    createLayer : layer %d created,  loaded=%r' % (
+                layer_id,
+                loaded,
+            ))
         return True
 
     def destroyLayer(self, layer_id):
@@ -1260,12 +1250,10 @@ class MultiLayerNode(Node):
             kwargs['layerID'] = layerID
 
         if _Debug:
-            print(
-                '[DHT NODE]   iterativeStore layerID=%d  key=%r' % (
-                    layerID,
-                    key,
-                )
-            )
+            print('[DHT NODE]   iterativeStore layerID=%d  key=%r' % (
+                layerID,
+                key,
+            ))
         # Prepare a callback for doing "STORE" RPC calls
 
         def storeRPCsCollected(store_results, store_nodes):
@@ -1495,20 +1483,16 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print(
-                    '[DHT NODE]    rpcmethod.store %r layerID=%d SKIP because layer is not active' % (
-                        key,
-                        layerID,
-                    )
-                )
-            raise ValueError('Layer is not active')
-        if _Debug:
-            print(
-                '[DHT NODE]    rpcmethod.store %r layerID=%d' % (
+                print('[DHT NODE]    rpcmethod.store %r layerID=%d SKIP because layer is not active' % (
                     key,
                     layerID,
-                )
-            )
+                ))
+            raise ValueError('Layer is not active')
+        if _Debug:
+            print('[DHT NODE]    rpcmethod.store %r layerID=%d' % (
+                key,
+                layerID,
+            ))
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -1532,12 +1516,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print(
-                    '[DHT NODE]    rpcmethod.delete %r layerID=%d SKIP because layer is not active' % (
-                        key,
-                        layerID,
-                    )
-                )
+                print('[DHT NODE]    rpcmethod.delete %r layerID=%d SKIP because layer is not active' % (
+                    key,
+                    layerID,
+                ))
             return []
         if _Debug:
             print('[DHT NODE]    rpcmethod.delete %r layerID=%d : %r' % (key, layerID, kwargs))
@@ -1555,12 +1537,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print(
-                    '[DHT NODE]    rpcmethod.findNode %r layerID=%d SKIP because layer is not active' % (
-                        key,
-                        layerID,
-                    )
-                )
+                print('[DHT NODE]    rpcmethod.findNode %r layerID=%d SKIP because layer is not active' % (
+                    key,
+                    layerID,
+                ))
             return []
         if _Debug:
             print('[DHT NODE]    rpcmethod.findNode %r layerID=%d : %r' % (key, layerID, kwargs))
@@ -1589,12 +1569,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print(
-                    '[DHT NODE]    rpcmethod.findValue %r layerID=%d SKIP because layer is not active' % (
-                        key,
-                        layerID,
-                    )
-                )
+                print('[DHT NODE]    rpcmethod.findValue %r layerID=%d SKIP because layer is not active' % (
+                    key,
+                    layerID,
+                ))
             return []
         if _Debug:
             print('[DHT NODE]    rpcmethod.findValue %r layerID=%r : %r' % (key, layerID, kwargs))
@@ -1620,10 +1598,7 @@ class MultiLayerNode(Node):
 
     def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False, layerID=0, parallel_calls=None):
         if _Debug:
-            print(
-                '[DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r parallel_calls=%r' %
-                (layerID, rpc, key, startupShortlist, self._routingTables, parallel_calls)
-            )
+            print('[DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r parallel_calls=%r' % (layerID, rpc, key, startupShortlist, self._routingTables, parallel_calls))
         if rpc != 'findNode':
             findValue = True
         else:
@@ -1736,7 +1711,7 @@ class MultiLayerNode(Node):
 
         def cancelActiveProbe(contactID):
             activeProbes.pop()
-            if len(activeProbes) <= int((parallel_calls or constants.alpha) / 2.0) and len(pendingIterationCalls):
+            if len(activeProbes) <= int((parallel_calls or constants.alpha)/2.0) and len(pendingIterationCalls):
                 # Force the iteration
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
@@ -1843,14 +1818,12 @@ class MultiLayerNode(Node):
             'type': 'skip_validation',
         }
         if _Debug:
-            print(
-                '[DHT NODE]    _persistState  layerID=%d id=%r closestNodes=%r state=%r' % (
-                    layerID,
-                    self.layers[layerID],
-                    closestNodes,
-                    state,
-                )
-            )
+            print('[DHT NODE]    _persistState  layerID=%d id=%r closestNodes=%r state=%r' % (
+                layerID,
+                self.layers[layerID],
+                closestNodes,
+                state,
+            ))
         json_value = json.dumps(state)
         now = int(time.time())
         self._dataStores[layerID].setItem(self.nodeStateKey, json_value, now, now, self.layers[layerID])
@@ -1906,12 +1879,10 @@ class MultiLayerNode(Node):
 
     def _scheduleNextNodeRefresh(self, *args, **kwargs):
         if _Debug:
-            print(
-                '[DHT NODE] will refresh layer %d in %d seconds' % (
-                    kwargs['layerID'],
-                    constants.checkRefreshInterval,
-                )
-            )
+            print('[DHT NODE] will refresh layer %d in %d seconds' % (
+                kwargs['layerID'],
+                constants.checkRefreshInterval,
+            ))
         self.refreshers[kwargs['layerID']] = twisted.internet.reactor.callLater(  # @UndefinedVariable
             constants.checkRefreshInterval,
             self._refreshNode,

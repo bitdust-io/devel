@@ -172,10 +172,7 @@ def fs(customer_idurl=None, key_alias='master'):
     if key_alias not in _FileSystemIndexByName[customer_idurl]:
         _FileSystemIndexByName[customer_idurl][key_alias] = {}
         if _Debug:
-            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (
-                customer_idurl,
-                key_alias,
-            ))
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias))
     return _FileSystemIndexByName[customer_idurl][key_alias]
 
 
@@ -196,10 +193,7 @@ def fsID(customer_idurl=None, key_alias='master'):
     if key_alias not in _FileSystemIndexByID[customer_idurl]:
         _FileSystemIndexByID[customer_idurl][key_alias] = {}
         if _Debug:
-            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (
-                customer_idurl,
-                key_alias,
-            ))
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias))
     return _FileSystemIndexByID[customer_idurl][key_alias]
 
 
@@ -221,10 +215,7 @@ def revision(customer_idurl=None, key_alias='master'):
     if key_alias not in _RevisionNumber[customer_idurl]:
         _RevisionNumber[customer_idurl][key_alias] = -1
         if _Debug:
-            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (
-                customer_idurl,
-                key_alias,
-            ))
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias))
     return _RevisionNumber[customer_idurl][key_alias]
 
 
@@ -245,10 +236,7 @@ def commit(new_revision_number=None, customer_idurl=None, key_alias='master'):
     if key_alias not in _RevisionNumber[customer_idurl]:
         _RevisionNumber[customer_idurl][key_alias] = 0
         if _Debug:
-            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (
-                customer_idurl,
-                key_alias,
-            ))
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias))
     old_v = _RevisionNumber[customer_idurl][key_alias]
     if new_revision_number is not None:
         _RevisionNumber[customer_idurl][key_alias] = new_revision_number
@@ -278,10 +266,7 @@ def forget(customer_idurl=None, key_alias=None):
         _RevisionNumber[customer_idurl].clear()
         return
     if key_alias not in _RevisionNumber[customer_idurl]:
-        lg.warn('key alias %r was not registered for customer %r' % (
-            key_alias,
-            customer_idurl,
-        ))
+        lg.warn('key alias %r was not registered for customer %r' % (key_alias, customer_idurl))
         return
     _RevisionNumber[customer_idurl].pop(key_alias)
 
@@ -1882,11 +1867,7 @@ def Serialize(customer_idurl, key_alias=None, encoding='utf-8', filter_cb=None):
             iterID=fsID(customer_idurl, k_alias),
         )
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Serialize done with %d indexed files of %d aliases for %r' % (
-            cnt[0],
-            len(key_aliases),
-            customer_idurl,
-        ))
+        lg.out(_DebugLevel, 'backup_fs.Serialize done with %d indexed files of %d aliases for %r' % (cnt[0], len(key_aliases), customer_idurl))
     return result
 
 
@@ -1904,12 +1885,7 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
             cur_revision = revision(customer_idurl, key_alias)
             if cur_revision > new_revision:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>%d' % (
-                        customer_idurl,
-                        key_alias,
-                        cur_revision,
-                        new_revision,
-                    ))
+                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>%d' % (customer_idurl, key_alias, cur_revision, new_revision))
                 continue
         Clear(customer_idurl, key_alias)
         count = 0
@@ -1946,10 +1922,7 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
             if _Debug:
                 lg.args(_DebugLevel, count=count, customer=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d updated items, loaded data for %d keys' % (
-            total_count,
-            len(updated_keys),
-        ))
+        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d updated items, loaded data for %d keys' % (total_count, len(updated_keys)))
     return total_count, updated_keys
 
 
@@ -2023,10 +1996,7 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
                     key_alias,
                 ))
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.ReadIndex %d items loaded for %d keys' % (
-            total_count,
-            len(updated_customers_keys),
-        ))
+        lg.out(_DebugLevel, 'backup_fs.ReadIndex %d items loaded for %d keys' % (total_count, len(updated_customers_keys)))
     return total_count, updated_customers_keys
 
 

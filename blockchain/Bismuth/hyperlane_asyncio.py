@@ -3,9 +3,8 @@ import asyncio
 
 
 class HyperlaneManager(threading.Thread):
-
     def __init__(self, app_log):
-        threading.Thread.__init__(self, target=self.loop_in_thread, args=(self.loop,))
+        threading.Thread.__init__(self, target=self.loop_in_thread, args=(self.loop, ))
         self.app_log = app_log
 
     async def hyperlane_manager(self):

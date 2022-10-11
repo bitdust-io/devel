@@ -213,10 +213,7 @@ class CustomersRejector(automat.Automat):
                 dead_customers.append(customer_idurl)
                 continue
             if utime.get_sec1970() - connected_time > customer_idle_days*24*60*60:
-                lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
-                    customer_idurl,
-                    utime.get_sec1970() - connected_time,
-                ))
+                lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (customer_idurl, utime.get_sec1970() - connected_time))
                 dead_customers.append(customer_idurl)
         if dead_customers:
             lg.warn('found idle customers: %r' % dead_customers)

@@ -248,10 +248,7 @@ class GateInterface():
             return []
         search_for_host = net_misc.normalize_address(host)
         if _Debug:
-            lg.dbg(_DebugLevel, 'looking for %r, known connections: %r' % (
-                search_for_host,
-                list(tcp_node.opened_connections().keys()),
-            ))
+            lg.dbg(_DebugLevel, 'looking for %r, known connections: %r' % (search_for_host, list(tcp_node.opened_connections().keys())))
         return tcp_node.opened_connections().get(search_for_host, [])
 
     def find_stream(self, stream_id=None, transfer_id=None):

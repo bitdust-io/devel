@@ -27,7 +27,6 @@ def execute(cursor, query):
 
 
 class MainHandler(tornado.web.RequestHandler):
-
     def get(self):
         # redraw chart
 
@@ -214,14 +213,14 @@ class MainHandler(tornado.web.RequestHandler):
         html.append(''.join(plotter))
         html.append('</div>')
 
-        data_total = str(sys.getsizeof(str(all)) / 1024)
+        data_total = str(sys.getsizeof(str(all))/1024)
         html.append("<div class ='container-fluid'>")
         html.append("<table class='table table-responsive'>")
 
         html.append('<tr><th>Statistics for the last 500 blocks</th>')
         html.append('<tr><td>Size in KB: </td><td>{}</td>'.format(data_total))
         html.append('<tr><td>Transactions: </td><td>{}</td>'.format(tx_count))
-        html.append('<tr><td>Transactions per block: </td><td>{}</td>'.format(tx_count / 500))
+        html.append('<tr><td>Transactions per block: </td><td>{}</td>'.format(tx_count/500))
         html.append('<tr><td>Total BIS transferred: </td><td>{}</td>'.format(transferred_total))
 
         html.append('</table>')

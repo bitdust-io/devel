@@ -228,10 +228,7 @@ class ArchiveWriter(automat.Automat):
         for block_num in self.packets_out.keys():
             block_packets_failed = list(self.packets_out[block_num].values()).count(False)
             if block_packets_failed > self.correctable_errors*2:  # because each packet also have Parity()
-                lg.err('all packets for block %d are sent, but too many errors: %d' % (
-                    block_num,
-                    block_packets_failed,
-                ))
+                lg.err('all packets for block %d are sent, but too many errors: %d' % (block_num, block_packets_failed))
                 self.automat('sending-failed')
                 return
         self.automat('packets-delivered')
@@ -353,10 +350,7 @@ class ArchiveWriter(automat.Automat):
                 )
         if failed_supliers > self.correctable_errors:
             self.block_failed = True
-            lg.err('too many failed suppliers %d in block %d' % (
-                failed_supliers,
-                block_num,
-            ))
+            lg.err('too many failed suppliers %d in block %d' % (failed_supliers, block_num))
 
     def _on_read_queue_owner_suppliers_success(self, dht_value):
         # TODO: add more validations of dht_value

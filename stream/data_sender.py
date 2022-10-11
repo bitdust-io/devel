@@ -186,10 +186,7 @@ class DataSender(automat.Automat):
         remoteID, _ = args[0]
         can_send_to = io_throttle.OkToSend(remoteID)
         if _Debug:
-            lg.out(_DebugLevel*2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (
-                can_send_to,
-                remoteID,
-            ))
+            lg.out(_DebugLevel*2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID))
         return can_send_to
 
     def doInit(self, *args, **kwargs):

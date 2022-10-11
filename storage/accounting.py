@@ -100,12 +100,9 @@ def get_customer_quota(customer_idurl):
 
 def check_create_customers_quotas(donated_bytes=None):
     if not os.path.isfile(settings.CustomersSpaceFile()):
-        bpio._write_dict(
-            settings.CustomersSpaceFile(),
-            {
-                'free': donated_bytes or settings.getDonatedBytes(),
-            },
-        )
+        bpio._write_dict(settings.CustomersSpaceFile(), {
+            'free': donated_bytes or settings.getDonatedBytes(),
+        })
         lg.info('created a new customers quotas file: %s' % settings.CustomersSpaceFile())
         return True
     return False

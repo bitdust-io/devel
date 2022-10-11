@@ -3,7 +3,6 @@ import time
 
 
 class HyperlaneManager(threading.Thread):
-
     def __init__(self, app_log):
         threading.Thread.__init__(self)
         self.app_log = app_log

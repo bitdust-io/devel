@@ -259,10 +259,7 @@ class FileDown(automat.Automat):
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Retrieve():
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (
-                        pkt_out,
-                        pkt_out.remote_idurl,
-                    ))
+                    lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (pkt_out, pkt_out.remote_idurl))
                 pkt_out.automat('cancel')
 
     def doQueueNext(self, *args, **kwargs):

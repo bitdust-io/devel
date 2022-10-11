@@ -377,10 +377,7 @@ def run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, descr
             continue
         if one_result is not None:
             if _Debug:
-                lg.out(_DebugLevel, '    filtered by %r : %r' % (
-                    cb,
-                    one_result,
-                ))
+                lg.out(_DebugLevel, '    filtered by %r : %r' % (cb, one_result))
             break
     return one_result
 
@@ -438,10 +435,7 @@ def run_begin_file_receiving_callbacks(pkt_in):
 def run_finish_file_receiving_callbacks(info, data):
     global _FinishFileReceivingCallbacksList
     if _Debug:
-        lg.out(_DebugLevel, 'callback.run_finish_file_receiving_callbacks %d bytes : %s' % (
-            len(data),
-            info,
-        ))
+        lg.out(_DebugLevel, 'callback.run_finish_file_receiving_callbacks %d bytes : %s' % (len(data), info))
     handled = False
     for cb in _FinishFileReceivingCallbacksList:
         try:

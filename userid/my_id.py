@@ -578,10 +578,7 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     # remember the current identity - full XML source code
     current_identity_xmlsrc = getLocalIdentity().serialize()
     if _Debug:
-        lg.out(_DebugLevel, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (
-            len(current_identity_xmlsrc),
-            new_revision,
-        ))
+        lg.out(_DebugLevel, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (len(current_identity_xmlsrc), new_revision))
     # getting a copy of local identity to be modified or another object to be used
     lid = identity_object or identity.identity(xmlsrc=current_identity_xmlsrc)
     # create a full list of needed transport methods

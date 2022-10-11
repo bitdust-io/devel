@@ -74,10 +74,7 @@ class NetworkService(LocalService):
     def _on_my_external_ip_changed(self, evt):
         from logs import lg
         if evt.data['old'].strip():
-            lg.info('need to reconnect because my external IP changed %r -> %r' % (
-                evt.data['old'],
-                evt.data['new'],
-            ))
+            lg.info('need to reconnect because my external IP changed %r -> %r' % (evt.data['old'], evt.data['new']))
             from p2p import network_connector
             network_connector.A('reconnect')
 

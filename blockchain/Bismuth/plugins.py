@@ -21,7 +21,6 @@ class PluginManager:
     """
     A simple plugin manager
     """
-
     def __init__(self, app_log=None, main_module: str = '__init__', plugin_folder: str = './plugins', config=None, verbose: bool = True, init: bool = False):
         if app_log:
             self.app_log = app_log

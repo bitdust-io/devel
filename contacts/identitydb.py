@@ -370,10 +370,7 @@ def update(idurl, xml_src):
 
     new_idurl = newid.getIDURL(as_original=True)
     if idurl != new_idurl:
-        lg.warn('original IDURL is not matching, updated: %r -> %r' % (
-            idurl,
-            new_idurl,
-        ))
+        lg.warn('original IDURL is not matching, updated: %r -> %r' % (idurl, new_idurl))
         idurl = new_idurl
 
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))

@@ -161,14 +161,7 @@ class BroadcastListener(automat.Automat):
         scope = args[0]
         if not scope:
             scope = []
-        broadcasters_finder.A('start', (
-            self.automat,
-            {
-                'action': 'listen',
-                'scopes': json.dumps(scope),
-            },
-            [],
-        ))
+        broadcasters_finder.A('start', (self.automat, {'action': 'listen', 'scopes': json.dumps(scope)}, []))
 
     def doSetBroadcaster(self, *args, **kwargs):
         """

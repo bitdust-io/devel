@@ -369,10 +369,7 @@ def push(json_data):
     for _key, transp in _WebSocketTransports.items():
         transp.write(raw_bytes)
         if _Debug:
-            lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (
-                len(raw_bytes),
-                '%s://%s:%s' % (_key[0], _key[1], _key[2]),
-            ))
+            lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2])))
     if _Debug:
         lg.out(_DebugLevel, '***   API WS PUSH  %d bytes' % len(raw_bytes))
     if _APILogFileEnabled:

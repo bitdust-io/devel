@@ -69,19 +69,7 @@ class _NetworkServer(Server):
     """
     Network Server Class.
     """
-
-    def __init__(
-        self,
-        ncpus='autodetect',
-        interface='0.0.0.0',
-        broadcast='255.255.255.255',
-        port=None,
-        secret=None,
-        timeout=None,
-        loglevel=logging.WARNING,
-        restart=False,
-        proto=0
-    ):
+    def __init__(self, ncpus='autodetect', interface='0.0.0.0', broadcast='255.255.255.255', port=None, secret=None, timeout=None, loglevel=logging.WARNING, restart=False, proto=0):
         Server.__init__(self, ncpus, secret=secret, loglevel=loglevel, restart=restart, proto=proto)
         self.host = interface
         self.bcast = broadcast
@@ -96,10 +84,8 @@ class _NetworkServer(Server):
 
         logging.debug('Strarting network server interface=%s port=%i' % (self.host, self.port))
         if self.timeout is not None:
-            logging.debug(
-                'ppserver will exit in %i seconds if no '
-                'connections with clients exist' % (self.timeout),
-            )
+            logging.debug('ppserver will exit in %i seconds if no '
+                          'connections with clients exist' % (self.timeout), )
             six.moves._thread.start_new_thread(self.check_timeout, ())
 
     def ncon_add(self, val):
@@ -149,7 +135,7 @@ class _NetworkServer(Server):
                 (csocket, address) = ssocket.accept()
                 # now do something with the clientsocket
                 # in this case, we'll pretend this is a threaded server
-                six.moves._thread.start_new_thread(self.crun, (csocket,))
+                six.moves._thread.start_new_thread(self.crun, (csocket, ))
         except:
             logging.debug('Closing server socket')
             ssocket.close()

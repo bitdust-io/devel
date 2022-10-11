@@ -350,10 +350,7 @@ class LocalService(automat.Automat):
         if result:
             self.automat('service-started')
         else:
-            lg.warn('failed to start %r, result from .start() method is %r' % (
-                self,
-                result,
-            ))
+            lg.warn('failed to start %r, result from .start() method is %r' % (self, result))
             self.automat('service-failed', Exception('service %r failed to start' % self))
 
     def doStopService(self, *args, **kwargs):

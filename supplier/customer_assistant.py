@@ -223,10 +223,7 @@ class CustomerAssistant(automat.Automat):
                     remote_idurl=self.customer_idurl,  # send to the customer
                 )
             else:
-                lg.err('key %s (and also %s) is not registered, not able to send customer files' % (
-                    customer_key_id,
-                    customer_master_key_id,
-                ))
+                lg.err('key %s (and also %s) is not registered, not able to send customer files' % (customer_key_id, customer_master_key_id))
 
     def doDestroyMe(self, *args, **kwargs):
         """

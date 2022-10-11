@@ -65,7 +65,7 @@ def format_raw_tx(raw: list) -> dict:
 
 
 def percentage(percent, whole):
-    return Decimal(percent) * Decimal(whole) / 100
+    return Decimal(percent)*Decimal(whole)/100
 
 
 def replace_regex(string: str, replace: str) -> str:
@@ -83,7 +83,7 @@ def download_file(url: str, filename: str) -> None:
     """
     try:
         r = requests.get(url, stream=True)
-        total_size = int(r.headers.get('content-length')) / 1024
+        total_size = int(r.headers.get('content-length'))/1024
 
         with open(filename, 'wb') as fp:
             chunkno = 0
@@ -112,11 +112,11 @@ def most_common_dict(a_dict: dict):
 
 
 def percentage_in(individual, whole):
-    return (float(list(whole).count(individual) / float(len(whole)))) * 100
+    return (float(list(whole).count(individual)/float(len(whole))))*100
 
 
 def round_down(number, order):
-    return int(math.floor(number / order)) * order
+    return int(math.floor(number/order))*order
 
 
 def checkpoint_set(node):
@@ -136,14 +136,14 @@ def ledger_balance3(address, cache, db_handler):
         return cache[address]
     credit_ledger = Decimal(0)
 
-    db_handler.execute_param(db_handler.c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address,))
+    db_handler.execute_param(db_handler.c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address, ))
     entries = db_handler.c.fetchall()
 
     for entry in entries:
         credit_ledger += quantize_eight(entry[0]) + quantize_eight(entry[1])
 
     debit_ledger = Decimal(0)
-    db_handler.execute_param(db_handler.c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address,))
+    db_handler.execute_param(db_handler.c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address, ))
     entries = db_handler.c.fetchall()
 
     for entry in entries:
@@ -292,7 +292,7 @@ def keys_load_new(keyfile='wallet.der'):
 
 def fee_calculate(openfield: str, operation: str = '', block: int = 0) -> Decimal:
     # block var will be removed after HF
-    fee = Decimal('0.01') + (Decimal(len(openfield)) / Decimal('100000'))  # 0.01 dust
+    fee = Decimal('0.01') + (Decimal(len(openfield))/Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':
         fee = Decimal(fee) + Decimal('10')
     if openfield.startswith('alias='):

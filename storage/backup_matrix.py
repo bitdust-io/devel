@@ -243,20 +243,13 @@ def SuppliersChangedNumbers(oldSupplierList, customer_idurl=None):
         if not old_supplier_idurl:
             if new_supplier_idurl:
                 changedList.append(i)
-                lg.info('found empty supplier on position %d replaced with new supplier %r' % (
-                    i,
-                    new_supplier_idurl,
-                ))
+                lg.info('found empty supplier on position %d replaced with new supplier %r' % (i, new_supplier_idurl))
             else:
                 lg.warn('found empty supplier on position %d which was not replaced yet' % i)
             continue
         if not id_url.is_the_same(new_supplier_idurl, old_supplier_idurl):
             changedList.append(i)
-            lg.info('found supplier change on position %d: %r -> %r' % (
-                i,
-                old_supplier_idurl,
-                new_supplier_idurl,
-            ))
+            lg.info('found supplier change on position %d: %r -> %r' % (i, old_supplier_idurl, new_supplier_idurl))
     if _Debug:
         lg.args(_DebugLevel, changed=changedList, old_suppliers=oldSupplierList)
     return changedList
@@ -500,10 +493,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         if not item.has_version(versionName):
             if not current_key_alias or not customer_idurl:
                 if _Debug:
-                    lg.out(_DebugLevel, '        AUTO CREATE VERSION (skip key verification) "%s" at "%s" in the index' % (
-                        versionName,
-                        remotePath,
-                    ))
+                    lg.out(_DebugLevel, '        AUTO CREATE VERSION (skip key verification) "%s" at "%s" in the index' % (versionName, remotePath))
                 item.add_version(versionName)
                 modified = True
             else:
@@ -517,11 +507,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                     item.add_version(versionName)
                     modified = True
                 else:
-                    lg.warn('skip auto create version %r for path %r because key %r not registered' % (
-                        versionName,
-                        remotePath,
-                        authorized_key_id,
-                    ))
+                    lg.warn('skip auto create version %r for path %r because key %r not registered' % (versionName, remotePath, authorized_key_id))
     if not item.has_version(versionName):
         if is_in_sync:
             if customer_idurl == my_id.getIDURL():
@@ -940,10 +926,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         return
     supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
     if not supplier_idurl:
-        lg.warn('empty supplier at position %s for customer %s' % (
-            supplierNum,
-            customer_idurl,
-        ))
+        lg.warn('empty supplier at position %s for customer %s' % (supplierNum, customer_idurl))
         return
     localDest = os.path.join(settings.getLocalBackupsDir(), customer, filename)
     if backupID not in local_files():
@@ -986,11 +969,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     customer_idurl = global_id.GlobalUserToIDURL(customer)
     # repaint_flag = False
     if _Debug:
-        lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (
-            blockNumber,
-            backupID,
-            customer,
-        ))
+        lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer))
     num_suppliers = contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for supplierNum in range(num_suppliers):
         supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)

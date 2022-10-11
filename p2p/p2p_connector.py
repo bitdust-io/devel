@@ -527,10 +527,7 @@ class P2PConnector(automat.Automat):
 
     def _do_propagate(self, result, rotated):
         if _Debug:
-            lg.out(_DebugLevel, 'p2p_connector._do_propagate rotated=%r result=%r' % (
-                rotated,
-                result,
-            ))
+            lg.out(_DebugLevel, 'p2p_connector._do_propagate rotated=%r result=%r' % (rotated, result))
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text())

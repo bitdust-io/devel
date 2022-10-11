@@ -32,7 +32,7 @@ k = 4
 rpcTimeout = 10
 
 # Delay between iterations of iterative node lookups (for loose parallelism)  (in seconds)
-iterativeLookupDelay = rpcTimeout / 2
+iterativeLookupDelay = rpcTimeout/2
 
 #: If a k-bucket has not been used for this amount of time, refresh it (in seconds)
 refreshTimeout = 600  # 10 min
@@ -42,13 +42,13 @@ replicateInterval = refreshTimeout
 # will also republish the data at this time if it is still valid
 dataExpireTimeout = 86400  # 24 hours
 # Default value for all records to be expired
-dataExpireSecondsDefaut = 60 * 60 * 12  # 12 hours
+dataExpireSecondsDefaut = 60*60*12  # 12 hours
 
 ######## IMPLEMENTATION-SPECIFIC CONSTANTS ###########
 
 #: The interval in which the node should check its whether any buckets need refreshing,
 #: or whether any data needs to be republished (in seconds)
-checkRefreshInterval = refreshTimeout / 5
+checkRefreshInterval = refreshTimeout/5
 
 #: Max size of a single UDP datagram, in bytes. If a message is larger than this, it will
 #: be spread accross several UDP packets.

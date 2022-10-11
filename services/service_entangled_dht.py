@@ -97,10 +97,7 @@ class EntangledDHTService(LocalService):
             dht_dir_path=settings.ServiceDir('service_entangled_dht'),
             open_layers=dht_layers,
         )
-        lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (
-            known_seeds,
-            dht_layers,
-        ))
+        lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (known_seeds, dht_layers))
         self.starting_deferred = Deferred()
         d = dht_service.connect(
             seed_nodes=known_seeds,
@@ -159,10 +156,7 @@ class EntangledDHTService(LocalService):
         combined_services_attached_layers = set()
         count_combined = len(list(map(combined_services_attached_layers.update, all_services_attached_layers)))
         services_attached_layers = list(combined_services_attached_layers)
-        lg.info('combined attached DHT layers from %d services: %r' % (
-            count_combined,
-            services_attached_layers,
-        ))
+        lg.info('combined attached DHT layers from %d services: %r' % (count_combined, services_attached_layers))
         attached_layers = list(set(attached_layers + services_attached_layers))
         lg.info('DHT layers to be attached at startup: %r' % attached_layers)
         for layer_id in attached_layers:

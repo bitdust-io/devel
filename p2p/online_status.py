@@ -486,10 +486,7 @@ def OutboxStatus(pkt_out, status, error=''):
             if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
                 # if not handshaker.is_running(pkt_out.outpacket.RemoteID):
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'ping packet %s addressed to %r was "unanswered"' % (
-                        pkt_out,
-                        pkt_out.outpacket.RemoteID,
-                    ))
+                    lg.dbg(_DebugLevel, 'ping packet %s addressed to %r was "unanswered"' % (pkt_out, pkt_out.outpacket.RemoteID))
     else:
         if _Debug:
             lg.dbg(_DebugLevel, 'packet %s is "%s" with %s error: %r' % (pkt_out, status, pkt_out.outpacket, error))
@@ -882,10 +879,7 @@ class OnlineStatus(automat.Automat):
         except:
             lg.exc()
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (
-                self.idurl,
-                result,
-            ))
+            lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (self.idurl, result))
         self.automat('shook-up-hands', (
             response,
             info,
@@ -898,9 +892,6 @@ class OnlineStatus(automat.Automat):
         except:
             msg = str(err)
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (
-                self.idurl,
-                msg,
-            ))
+            lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (self.idurl, msg))
         self.automat('ping-failed', err)
         return None

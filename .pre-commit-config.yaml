@@ -2,11 +2,8 @@ exclude: |
   (?x)(
       ^CodernityDB/|
       ^CodernityDB3/|
-      ^blockchain/Bismuth/|
       ^devops/|
-      ^dht/entangled/kademlia/|
       ^icons/|
-      ^parallelp/|
       ^regress/|
       ^release/|
       ^scripts/|

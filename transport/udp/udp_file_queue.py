@@ -458,14 +458,8 @@ class InboxFile():
             lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s with %d bytes' % (os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address), self.size))
 
     def __del__(self):
-        """
-
-        """
         if _Debug:
-            lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (
-                os.path.basename(self.filename),
-                self.stream_id,
-            ))
+            lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id))
 
     def set_stream_callback(self, stream_callback):
         self.stream_callback = stream_callback

@@ -388,18 +388,11 @@ class MessageProducer(automat.Automat):
             except IndexError:
                 broker_idurl = None
             if not broker_idurl:
-                lg.warn('broker is empty for %r at position %d' % (
-                    self.group_key_id,
-                    broker_pos,
-                ))
+                lg.warn('broker is empty for %r at position %d' % (self.group_key_id, broker_pos))
                 continue
             known_brokers[broker_pos] = broker_idurl
             if _Debug:
-                lg.dbg(_DebugLevel, 'found broker %r at position %r for %r' % (
-                    broker_idurl,
-                    broker_pos,
-                    self.group_key_id,
-                ))
+                lg.dbg(_DebugLevel, 'found broker %r at position %r for %r' % (broker_idurl, broker_pos, self.group_key_id))
             if top_broker_pos is None:
                 top_broker_pos = broker_pos
                 top_broker_idurl = broker_idurl

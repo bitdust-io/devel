@@ -94,9 +94,7 @@ class WalletServer(TCPServer):
         try:
             header = await tornado.gen.with_timeout(datetime.timedelta(seconds=35), stream.read_bytes(10), quiet_exceptions=tornado.iostream.StreamClosedError)
             data_len = int(header)
-            data = await tornado.gen.with_timeout(
-                datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError
-            )
+            data = await tornado.gen.with_timeout(datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError)
             data = json.loads(data.decode('utf-8'))
             return data
         except Exception as e:
@@ -291,7 +289,7 @@ if __name__ == '__main__':
     # app_log.addHandler(ch)
     logfile = os.path.abspath('wallet_app.log')
     # Rotate log after reaching 512K, keep 5 old copies.
-    rotateHandler = RotatingFileHandler(logfile, 'a', 512 * 1024, 10)
+    rotateHandler = RotatingFileHandler(logfile, 'a', 512*1024, 10)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler.setFormatter(formatter)
     app_log.addHandler(rotateHandler)
@@ -299,7 +297,7 @@ if __name__ == '__main__':
     access_log = logging.getLogger('tornado.access')
     tornado.log.enable_pretty_logging()
     logfile2 = os.path.abspath('wallet_access.log')
-    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512 * 1024, 10)
+    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512*1024, 10)
     formatter2 = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler2.setFormatter(formatter2)
     access_log.addHandler(rotateHandler2)
@@ -307,10 +305,8 @@ if __name__ == '__main__':
     app_log.warning('Testnet: {}'.format(is_testnet))
     # fail safe
     if is_testnet and int(CONFIG.node_port) != 2829:
-        app_log.warning(
-            'Testnet is active, but node_port set to {} instead of 2829. '
-            'Make sure!'.format(CONFIG.node_port),
-        )
+        app_log.warning('Testnet is active, but node_port set to {} instead of 2829. '
+                        'Make sure!'.format(CONFIG.node_port), )
         time.sleep(2)
 
     if os.name == 'posix':

@@ -234,10 +234,7 @@ class RSAKey(object):
             TypeError,
         ):
             # do not raise any exception... just return False
-            lg.exc('signature=%r message=%r' % (
-                signature,
-                message,
-            ))
+            lg.exc('signature=%r message=%r' % (signature, message))
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)

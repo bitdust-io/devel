@@ -249,10 +249,7 @@ class NicknameObserver(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (
-                self.key,
-                args[0],
-            ))
+            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0]))
         if self.result_callback is not None:
             try:
                 key_info = dht_service.split_key(self.key)

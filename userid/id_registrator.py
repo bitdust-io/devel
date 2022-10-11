@@ -415,10 +415,7 @@ class IdRegistrator(automat.Automat):
             self.automat('id-server-response', (id_server_host, htmlsrc))
 
         def _eb(err, id_server_host):
-            lg.out(4, '               FAILED: %s : %s' % (
-                id_server_host,
-                err.getErrorMessage(),
-            ))
+            lg.out(4, '               FAILED: %s : %s' % (id_server_host, err.getErrorMessage()))
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
 

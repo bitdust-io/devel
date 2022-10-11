@@ -147,10 +147,7 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (
-            api_method,
-            sample[:150],
-        ))
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -207,10 +204,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (
-            api_method,
-            sample[:150],
-        ))
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -842,13 +836,10 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
 
     try:
         my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
-        my_id_restorer.A(
-            'start',
-            {
-                'idurl': idurl_list[0],
-                'keysrc': pk_source,
-            },
-        )
+        my_id_restorer.A('start', {
+            'idurl': idurl_list[0],
+            'keysrc': pk_source,
+        })
         # TODO: iterate over idurl_list to find at least one reliable source
     except Exception as exc:
         lg.exc()
@@ -1870,10 +1861,7 @@ def files_uploads(include_running=True, include_pending=True):
     from lib import misc
     from storage import backup_control
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_uploads include_running=%s include_pending=%s' % (
-            include_running,
-            include_pending,
-        ))
+        lg.out(_DebugLevel, 'api.file_uploads include_running=%s include_pending=%s' % (include_running, include_pending))
         lg.out(_DebugLevel, '     %d jobs running, %d tasks pending' % (len(backup_control.jobs()), len(backup_control.tasks())))
     r = {
         'running': [],
@@ -1929,11 +1917,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_upload_start local_path=%s remote_path=%s wait_result=%s' % (
-            local_path,
-            remote_path,
-            wait_result,
-        ))
+        lg.out(_DebugLevel, 'api.file_upload_start local_path=%s remote_path=%s wait_result=%s' % (local_path, remote_path, wait_result))
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
@@ -2014,10 +1998,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
         backup_control.Save(customer_idurl, key_alias)
         # control.request_update([('pathID', pathIDfull), ])
         if _Debug:
-            lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (
-                remote_path,
-                pathIDfull,
-            ))
+            lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return task_created_defer
 
     tsk = backup_control.StartSingle(
@@ -2027,18 +2008,12 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     )
     if key_alias != 'master':
         tsk.result_defer.addCallback(_restart_active_share)
-    tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (
-        result[0],
-        result[1],
-    ), ))
+    tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1])))
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_control.Save(customer_idurl, key_alias)
     # control.request_update([('pathID', pathIDfull), ])
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (
-            remote_path,
-            pathIDfull,
-        ))
+        lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
         {
             'remote_path': remote_path,
@@ -2158,11 +2133,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s' % (
-            remote_path,
-            destination_path,
-            wait_result,
-        ))
+        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s' % (remote_path, destination_path, wait_result))
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
@@ -2300,16 +2271,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
 
     def _on_share_connected(active_share, callback_id, result):
         if _Debug:
-            lg.out(_DebugLevel, 'api.download_start._on_share_connected callback_id=%s result=%s' % (
-                callback_id,
-                result,
-            ))
+            lg.out(_DebugLevel, 'api.download_start._on_share_connected callback_id=%s result=%s' % (callback_id, result))
         if not result:
             if _Debug:
-                lg.out(_DebugLevel, '    share %s is now DISCONNECTED, removing callback %s' % (
-                    active_share.key_id,
-                    callback_id,
-                ))
+                lg.out(_DebugLevel, '    share %s is now DISCONNECTED, removing callback %s' % (active_share.key_id, callback_id))
             active_share.remove_connected_callback(callback_id)
             ret.callback(
                 ERROR(
@@ -2325,10 +2290,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
             )
             return True
         if _Debug:
-            lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
-                active_share.key_id,
-                callback_id,
-            ))
+            lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (active_share.key_id, callback_id))
         reactor.callLater(0, active_share.remove_connected_callback, callback_id)  # @UndefinedVariable
         _start_restore()
         return True
@@ -3719,12 +3681,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         limit=limit,
     )]
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages' % (
-            recipient_id,
-            sender_id,
-            message_type,
-            len(messages),
-        ))
+        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages' % (recipient_id, sender_id, message_type, len(messages)))
     return RESULT(messages)
 
 
@@ -3749,10 +3706,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         limit=limit,
     )
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (
-            message_types,
-            len(conversations),
-        ))
+        lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (message_types, len(conversations)))
     return RESULT(conversations)
 
 
@@ -3807,11 +3761,7 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
         result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
         return ret
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_send to %r ping_timeout=%d message_ack_timeout=%d' % (
-            target_glob_id,
-            ping_timeout,
-            message_ack_timeout,
-        ))
+        lg.out(_DebugLevel, 'api.message_send to %r ping_timeout=%d message_ack_timeout=%d' % (target_glob_id, ping_timeout, message_ack_timeout))
     data['msg_type'] = 'private_message'
     data['action'] = 'read'
     result = message.send_message(
@@ -4330,10 +4280,7 @@ def space_donated():
     from storage import accounting
     result = accounting.report_donated_storage()
     if _Debug:
-        lg.out(_DebugLevel, 'api.space_donated finished with %d customers and %d errors' % (
-            len(result['customers']),
-            len(result['errors']),
-        ))
+        lg.out(_DebugLevel, 'api.space_donated finished with %d customers and %d errors' % (len(result['customers']), len(result['errors'])))
     for err in result['errors']:
         if _Debug:
             lg.out(_DebugLevel, '    %s' % err)
@@ -4775,10 +4722,7 @@ def connections_list(protocols=None):
                     }
                 )
             else:
-                lg.warn('unknown proto %r: %r' % (
-                    proto,
-                    connection,
-                ))
+                lg.warn('unknown proto %r: %r' % (proto, connection))
             result.append(item)
     return RESULT(result)
 

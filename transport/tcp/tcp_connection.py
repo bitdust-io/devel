@@ -255,10 +255,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         tcp_node.opened_connections()[self.peer_address].append(self)
         tcp_node.increase_connections_counter()
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.doInit with %s, total connections to that address : %d' % (
-                self.peer_address,
-                len(tcp_node.opened_connections()[self.peer_address]),
-            ))
+            lg.out(_DebugLevel, 'tcp_connection.doInit with %s, total connections to that address : %d' % (self.peer_address, len(tcp_node.opened_connections()[self.peer_address])))
 
     def doCloseOutgoing(self, *args, **kwargs):
         """

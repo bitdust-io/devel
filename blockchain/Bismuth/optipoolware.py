@@ -109,7 +109,7 @@ bin_format_dict = dict((x, format(ord(x), '8b').replace(' ', '0')) for x in '012
 
 
 def percentage(percent, whole):
-    return int((percent * whole) / 100)
+    return int((percent*whole)/100)
 
 
 def checkdb():
@@ -158,7 +158,7 @@ def payout(payout_threshold, myfee, othfee):
 
     #get eligible blocks
     reward_list = []
-    for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address,) + (block_threshold,)):
+    for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address, ) + (block_threshold, )):
         reward_list.append(float(row[9]))
 
     super_total = sum(reward_list)
@@ -167,7 +167,7 @@ def payout(payout_threshold, myfee, othfee):
     # so now we have sum of shares, total reward, block threshold
 
     # reduce total rewards by total fees percentage
-    reward_total = '%.8f' % (((100 - (myfee + othfee)) * super_total) / 100)
+    reward_total = '%.8f' % (((100 - (myfee + othfee))*super_total)/100)
     reward_total = float(reward_total)
 
     if reward_total > 0:
@@ -176,16 +176,16 @@ def payout(payout_threshold, myfee, othfee):
 
         ft = super_total - reward_total
         try:
-            at = '%.8f' % (ft * (othfee / (myfee + othfee)))
+            at = '%.8f' % (ft*(othfee/(myfee + othfee)))
         except:
             at = 0
 
         # calculate reward per share
-        reward_per_share = reward_total / shares_total
+        reward_per_share = reward_total/shares_total
 
         # calculate shares threshold for payment
 
-        shares_threshold = math.floor(payout_threshold / reward_per_share)
+        shares_threshold = math.floor(payout_threshold/reward_per_share)
 
         #get unique addresses
         addresses = []
@@ -201,7 +201,7 @@ def payout(payout_threshold, myfee, othfee):
         payadd = []
         new_sum = 0
         for x in addresses:
-            s.execute('SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x,))
+            s.execute('SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x, ))
             shares_sum = s.fetchone()[0]
 
             if shares_sum == None:
@@ -214,7 +214,7 @@ def payout(payout_threshold, myfee, othfee):
         # recalculate reward per share now we have removed those below payout threshold
         try:
 
-            reward_per_share = reward_total / new_sum
+            reward_per_share = reward_total/new_sum
 
         except:
             reward_per_share = 0
@@ -223,7 +223,7 @@ def payout(payout_threshold, myfee, othfee):
 
         paylist = []
         for p in payadd:
-            payme = '%.8f' % (p[1] * reward_per_share)
+            payme = '%.8f' % (p[1]*reward_per_share)
             paylist.append([p[0], payme])
 
         if othfee > 0:
@@ -238,7 +238,7 @@ def payout(payout_threshold, myfee, othfee):
             payout_passed = 1
             openfield = 'pool'
             keep = 0
-            fee = float('%.8f' % float(0.01 + (float(len(openfield)) / 100000) + (keep)))  # 0.01 + openfield fee + keep fee
+            fee = float('%.8f' % float(0.01 + (float(len(openfield))/100000) + (keep)))  # 0.01 + openfield fee + keep fee
             #make payout
 
             timestamp = '%.2f' % time.time()
@@ -252,14 +252,11 @@ def payout(payout_threshold, myfee, othfee):
             print('Encoded Signature: {}'.format(signature_enc.decode('utf-8')))
 
             verifier = PKCS1_v1_5.new(key)
-            if verifier.verify(h, signature) ==True:
+            if verifier.verify(h, signature) == True:
                 print('The signature is valid, proceeding to send transaction')
                 txid = signature_enc[:56]
                 mytxid = txid.decode('utf-8')
-                tx_submit = (
-                    str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode('utf-8')),
-                    str(public_key_hashed.decode('utf-8')), str(keep), str(openfield)
-                )  #float kept for compatibility
+                tx_submit = (str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), str(keep), str(openfield))  #float kept for compatibility
 
                 t = socks.socksocket()
                 t.connect((node_ip_conf, int(port)))  # connect to local node
@@ -275,11 +272,11 @@ def payout(payout_threshold, myfee, othfee):
 
             t.close()
 
-            s.execute('UPDATE shares SET paid = 1 WHERE address = ?', (recipient,))
+            s.execute('UPDATE shares SET paid = 1 WHERE address = ?', (recipient, ))
             shares.commit()
 
         if payout_passed == 1:
-            s.execute('UPDATE shares SET timestamp = ?', (time.time(),))
+            s.execute('UPDATE shares SET timestamp = ?', (time.time(), ))
             shares.commit()
 
         # calculate payouts
@@ -469,7 +466,6 @@ if checkdb():
 
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
-
     def handle(self):
         global new_diff
         key = RSA.importKey(private_key_readable)
@@ -586,18 +582,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         app_log.warning('prepare empty block and clear data')
 
                         for dbdata in result:
-                            transaction = (
-                                str(dbdata[0]), str(dbdata[1][:56]), str(dbdata[2][:56]), '%.8f' % float(dbdata[3]), str(dbdata[4]), str(dbdata[5]),
-                                str(dbdata[6]), str(dbdata[7])
-                            )  # create tuple
+                            transaction = (str(dbdata[0]), str(dbdata[1][:56]), str(dbdata[2][:56]), '%.8f' % float(dbdata[3]), str(dbdata[4]), str(dbdata[5]), str(dbdata[6]), str(dbdata[7]))  # create tuple
                             block_send.append(transaction)  # append tuple to list for each run
                             removal_signature.append(str(dbdata[4]))  # for removal after successful mining
 
                         # claim reward
                         transaction_reward = tuple
-                        transaction_reward = (
-                            str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce)
-                        )  # only this part is signed!
+                        transaction_reward = (str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce))  # only this part is signed!
                         print('transaction_reward', transaction_reward)
 
                         h = SHA.new(str(transaction_reward).encode('utf-8'))
@@ -605,13 +596,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         signature = signer.sign(h)
                         signature_enc = base64.b64encode(signature)
 
-                        if signer.verify(h, signature) ==True:
+                        if signer.verify(h, signature) == True:
                             app_log.warning('Signature valid')
 
-                            block_send.append((
-                                str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')),
-                                str(public_key_hashed.decode('utf-8')), '0', str(nonce)
-                            ))  # mining reward tx
+                            block_send.append((str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), '0', str(nonce)))  # mining reward tx
                             app_log.warning('Block to send: {}'.format(block_send))
 
                             if not any(isinstance(el, list) for el in block_send):  # if it's not a list of lists (only the mining tx and no others)
@@ -663,7 +651,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     s = shares.cursor()
 
                     # protect against used share resubmission
-                    execute_param(s, ('SELECT nonce FROM nonces WHERE nonce = ?'), (nonce,))
+                    execute_param(s, ('SELECT nonce FROM nonces WHERE nonce = ?'), (nonce, ))
 
                     try:
                         result = s.fetchone()[0]
@@ -677,15 +665,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         if real_diff >= diff_shares:
                             app_log.warning('Difficulty requirement satisfied for saving shares \n')
 
-                            execute_param(s, ('INSERT INTO nonces VALUES (?)'), (nonce,))
+                            execute_param(s, ('INSERT INTO nonces VALUES (?)'), (nonce, ))
                             commit(shares)
 
                             timestamp = '%.2f' % time.time()
 
-                            s.execute(
-                                'INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)',
-                                (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname)
-                            )
+                            s.execute('INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)', (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname))
                             shares.commit()
 
                         else:
@@ -714,7 +699,7 @@ if __name__ == '__main__':
         # background_thread.daemon = True
         # background_thread.start()
 
-        worker_thread = threading.Thread(target=worker, args=(w_time,))
+        worker_thread = threading.Thread(target=worker, args=(w_time, ))
         worker_thread.daemon = True
         worker_thread.start()
         app_log.warning('Starting up background tasks....')

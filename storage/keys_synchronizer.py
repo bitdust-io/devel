@@ -308,11 +308,7 @@ class KeysSynchronizer(automat.Automat):
         if is_any_private_key_unreliable and not self.stored_keys:
             if _Debug:
                 lg.args(_DebugLevel, unreliable_keys=self.unreliable_keys)
-            lg.err('not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (
-                len(self.stored_keys),
-                len(self.not_stored_keys),
-                len(self.unreliable_keys),
-            ))
+            lg.err('not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (len(self.stored_keys), len(self.not_stored_keys), len(self.unreliable_keys)))
             self.automat('error', Exception('not possible to restore any keys, all backup copies unreliable'))
             return
         keys_to_be_restored = []
@@ -345,10 +341,7 @@ class KeysSynchronizer(automat.Automat):
             return None
 
         def _on_failed_one(err, pos, key_id):
-            lg.err('failed to restore key %r : %r' % (
-                key_id,
-                err,
-            ))
+            lg.err('failed to restore key %r : %r' % (key_id, err))
             _do_restore_one(pos + 1)
             return None
 

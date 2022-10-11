@@ -113,8 +113,5 @@ class CustomerSupportService(LocalService):
             if customer_idurl == id_url.field(evt.data['old_idurl']):
                 customer_idurl.refresh(replace_original=True)
                 ca.customer_idurl.refresh(replace_original=True)
-                lg.info('found %r to be refreshed after rotated identity: %r' % (
-                    ca,
-                    customer_idurl,
-                ))
+                lg.info('found %r to be refreshed after rotated identity: %r' % (ca, customer_idurl))
                 reactor.callLater(0, ca.automat, 'connect')  # @UndefinedVariable

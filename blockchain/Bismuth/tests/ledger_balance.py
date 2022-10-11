@@ -67,17 +67,17 @@ def execute_param(cursor, query, param):
 def ledger_balance_node(address, c):
 
     credit_ledger = Decimal('0')
-    for entry in execute_param(c, 'SELECT amount FROM transactions WHERE recipient = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT amount FROM transactions WHERE recipient = ?;', (address, )):
         credit_ledger = quantize_eight(credit_ledger) + quantize_eight(entry[0])
         credit_ledger = 0 if credit_ledger is None else quantize_eight(credit_ledger)
 
     debit_ledger = Decimal('0')
-    for entry in execute_param(c, 'SELECT amount FROM transactions WHERE address = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT amount FROM transactions WHERE address = ?;', (address, )):
         debit_ledger = quantize_eight(debit_ledger) + quantize_eight(entry[0])
         debit_ledger = 0 if debit_ledger is None else quantize_eight(debit_ledger)
 
     fees = Decimal('0')
-    for entry in execute_param(c, 'SELECT fee FROM transactions WHERE address = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT fee FROM transactions WHERE address = ?;', (address, )):
         try:
             fees = quantize_eight(fees) + quantize_eight(entry[0])
             fees = 0 if fees is None else fees
@@ -85,7 +85,7 @@ def ledger_balance_node(address, c):
             fees = 0
 
     rewards = Decimal('0')
-    for entry in execute_param(c, 'SELECT reward FROM transactions WHERE recipient = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT reward FROM transactions WHERE recipient = ?;', (address, )):
         try:
             rewards = quantize_eight(rewards) + quantize_eight(entry[0])
             rewards = 0 if rewards is None else rewards
@@ -98,11 +98,11 @@ def ledger_balance_node(address, c):
 def ledger_balance2(address, c):
     # 2 sql requests only instead of 4 + more rational quantize use.
     credit_ledger = Decimal(0)
-    for entry in execute_param(c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address, )):
         credit_ledger += quantize_eight(entry[0]) + quantize_eight(entry[1])
 
     debit_ledger = Decimal(0)
-    for entry in execute_param(c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address, )):
         debit_ledger += quantize_eight(entry[0]) + quantize_eight(entry[1])
 
     return quantize_eight(credit_ledger - debit_ledger)
@@ -114,11 +114,11 @@ def ledger_balance3(address, c, cache):
     if address in cache:
         return cache[address]
     credit_ledger = Decimal(0)
-    for entry in execute_param(c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address, )):
         credit_ledger += quantize_eight(entry[0]) + quantize_eight(entry[1])
 
     debit_ledger = Decimal(0)
-    for entry in execute_param(c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address,)):
+    for entry in execute_param(c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address, )):
         debit_ledger += quantize_eight(entry[0]) + quantize_eight(entry[1])
 
     cache[address] = quantize_eight(credit_ledger - debit_ledger)

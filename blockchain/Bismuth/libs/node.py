@@ -5,7 +5,6 @@ import platform
 
 
 class Node:
-
     def platform(self):
         if 'Linux' in platform.system():
             return True

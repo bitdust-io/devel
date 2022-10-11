@@ -361,10 +361,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
     else:
         sender_local_key_id = my_keys.get_local_key_id(sender)
     if sender_local_key_id is None or recipient_local_key_id is None:
-        lg.err('failed to store message because local_key_id is not found, sender=%r recipient=%r' % (
-            sender_local_key_id,
-            recipient_local_key_id,
-        ))
+        lg.err('failed to store message because local_key_id is not found, sender=%r recipient=%r' % (sender_local_key_id, recipient_local_key_id))
         return None
     cur().execute(
         '''INSERT INTO history (
@@ -457,10 +454,7 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
         recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
         sender_local_key_id = my_keys.get_local_key_id(sender_id)
         if recipient_local_key_id is None or sender_local_key_id is None:
-            lg.warn('local_key_id was not found, recipient_local_key_id=%r sender_local_key_id=%r' % (
-                recipient_local_key_id,
-                sender_local_key_id,
-            ))
+            lg.warn('local_key_id was not found, recipient_local_key_id=%r sender_local_key_id=%r' % (recipient_local_key_id, sender_local_key_id))
             return []
         q += ' sender_local_key_id IN (?, ?) AND recipient_local_key_id IN (?, ?)'
         params += [
@@ -715,10 +709,7 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
                 lg.args(_DebugLevel, sql=sql, params=params)
         if local_key_id != new_local_key_id:
             changed = True
-            lg.warn('found new public key which is re-using already known key with different local key id: %r -> %r' % (
-                local_key_id,
-                new_local_key_id,
-            ))
+            lg.warn('found new public key which is re-using already known key with different local key id: %r -> %r' % (local_key_id, new_local_key_id))
             update_history_with_new_local_key_id(local_key_id, new_local_key_id)
             update_conversations_with_new_local_key_id(local_key_id, new_local_key_id)
             sql = 'UPDATE keys SET local_key_id=? WHERE public_key=?'

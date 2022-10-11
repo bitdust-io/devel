@@ -96,10 +96,7 @@ def done(size, dirpath):
     global _Dirs
     global _Jobs
     if _Debug:
-        lg.out(_DebugLevel, 'dirsize.done %s %s' % (
-            str(size),
-            dirpath.decode(),
-        ))
+        lg.out(_DebugLevel, 'dirsize.done %s %s' % (str(size), dirpath.decode()))
     _Dirs[dirpath] = str(size)
     try:
         _, cb, arg = _Jobs.pop(dirpath, (None, None, None))

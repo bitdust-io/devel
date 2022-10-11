@@ -275,12 +275,9 @@ class AccountantNode(automat.Automat):
         Action method.
         """
         from coins import accountants_finder
-        accountants_finder.A('start', (
-            self.automat,
-            {
-                'action': 'join',
-            },
-        ))
+        accountants_finder.A('start', (self.automat, {
+            'action': 'join',
+        }))
 
     def doAddAccountant(self, *args, **kwargs):
         """

@@ -343,10 +343,7 @@ class BrokerNegotiator(automat.Automat):
         # cooperation was done before with other brokers and my own position is known already to me
         if self.desired_position != self.my_position:
             # but the request was done to a wrong position
-            lg.warn('requester desired position %d mismatch, my current position is: %d' % (
-                self.desired_position,
-                self.my_position,
-            ))
+            lg.warn('requester desired position %d mismatch, my current position is: %d' % (self.desired_position, self.my_position))
             self.automat('request-invalid', Exception('position mismatch, current position is: %d' % self.my_position), cooperated_brokers=self.cooperated_brokers)
             return
         if not self.cooperated_brokers.get(self.my_position):
@@ -370,10 +367,7 @@ class BrokerNegotiator(automat.Automat):
         if self.requestor_known_brokers.get(self.my_position):
             if not id_url.is_the_same(self.requestor_known_brokers[self.my_position], self.my_broker_idurl):
                 # but there is a request to change the cooperation - it looks like a trigger for a brokers rotation
-                lg.warn('received a request to change the cooperation, another broker %r going to replace me on position %d' % (
-                    self.requestor_known_brokers[self.my_position],
-                    self.my_position,
-                ), )
+                lg.warn('received a request to change the cooperation, another broker %r going to replace me on position %d' % (self.requestor_known_brokers[self.my_position], self.my_position))
                 if not self.dht_brokers.get(self.my_position):
                     # there is no record in DHT for my position
                     # my info is not stored in DHT and another broker is going to replace me
@@ -416,10 +410,7 @@ class BrokerNegotiator(automat.Automat):
         # there is a record in DHT on my expected position
         if not id_url.is_the_same(self.dht_brokers[self.my_position], self.my_broker_idurl):
             # DHT record on my expected position is occupied by another broker
-            lg.warn('DHT record on my expected position %d is occupied by another broker: %r' % (
-                self.my_position,
-                self.dht_brokers[self.my_position],
-            ))
+            lg.warn('DHT record on my expected position %d is occupied by another broker: %r' % (self.my_position, self.dht_brokers[self.my_position]))
             if self.my_position == 0:
                 self.automat('my-top-record-busy')
             else:

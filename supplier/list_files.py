@@ -78,18 +78,10 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
             if not my_keys.register_key(key_id, known_ident.getPublicKey()):
                 lg.err('failed to register known public key of the customer: %r' % key_id)
     if not my_keys.is_key_registered(key_id):
-        lg.warn('not able to return Files() for customer %s, key %s not registered' % (
-            customer_idurl,
-            key_id,
-        ))
+        lg.warn('not able to return Files() for customer %s, key %s not registered' % (customer_idurl, key_id))
         return p2p_service.SendFailNoRequest(customer_idurl, packet_id, response='key not registered')
     if _Debug:
-        lg.out(_DebugLevel, 'list_files.send to %s, customer_idurl=%s, key_id=%s, query_items=%r' % (
-            remote_idurl,
-            customer_idurl,
-            key_id,
-            query_items,
-        ))
+        lg.out(_DebugLevel, 'list_files.send to %s, customer_idurl=%s, key_id=%s, query_items=%r' % (remote_idurl, customer_idurl, key_id, query_items))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
     plaintext = ''
     if os.path.isdir(ownerdir):
@@ -158,17 +150,11 @@ def process_query_item(query_path, key_alias, ownerdir):
 
 def on_acked(response, info):
     if _Debug:
-        lg.out(_DebugLevel, 'list_files.on_acked with %s in %s' % (
-            response,
-            info,
-        ))
+        lg.out(_DebugLevel, 'list_files.on_acked with %s in %s' % (response, info))
 
 
 def on_failed(response, error):
-    lg.warn('send files %s failed with %s' % (
-        response,
-        error,
-    ))
+    lg.warn('send files %s failed with %s' % (response, error))
 
 
 def on_timeout(pkt_out):

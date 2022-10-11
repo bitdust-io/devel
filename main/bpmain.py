@@ -589,11 +589,7 @@ class TwistedUnhandledErrorsObserver:
             if 'log_failure' in event_dict:
                 f = event_dict['log_failure']
                 from logs import lg
-                lg.exc(msg=f'Unhandled error in Deferred:\n{event_dict.get("debugInfo", "")}', exc_info=(
-                    f.type,
-                    f.value,
-                    f.getTracebackObject(),
-                ))
+                lg.exc(msg=f'Unhandled error in Deferred:\n{event_dict.get("debugInfo", "")}', exc_info=(f.type, f.value, f.getTracebackObject()))
 
 
 #-------------------------------------------------------------------------------

@@ -516,10 +516,7 @@ class FireHire(automat.Automat):
             for supplier_index in range(number_desired, contactsdb.num_suppliers()):
                 idurl = contactsdb.supplier(supplier_index)
                 if idurl:
-                    lg.info('found REDUNDANT supplier %s at position %d' % (
-                        idurl,
-                        supplier_index,
-                    ))
+                    lg.info('found REDUNDANT supplier %s at position %d' % (idurl, supplier_index))
                     redundant_suppliers.add(idurl)
         if redundant_suppliers:
             result = list(redundant_suppliers)
@@ -586,10 +583,7 @@ class FireHire(automat.Automat):
             return
         max_offline_suppliers_count = eccmap.GetCorrectableErrors(number_desired)
         if len(offline_suppliers) > max_offline_suppliers_count:
-            lg.warn('SKIP, too many OFFLINE suppliers at the moment : %d > %d' % (
-                len(offline_suppliers),
-                max_offline_suppliers_count,
-            ))
+            lg.warn('SKIP, too many OFFLINE suppliers at the moment : %d > %d' % (len(offline_suppliers), max_offline_suppliers_count))
             self.automat('made-decision', [])
             return
         critical_offline_suppliers_count = eccmap.GetFireHireErrors(number_desired)
@@ -598,10 +592,7 @@ class FireHire(automat.Automat):
                 # TODO: check that issue
                 # too aggressive replacing suppliers who still have the data is very dangerous !!!
                 one_dead_supplier = offline_suppliers.pop()
-                lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (
-                    one_dead_supplier,
-                    critical_offline_suppliers_count,
-                ))
+                lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (one_dead_supplier, critical_offline_suppliers_count))
                 potentialy_fired.add(one_dead_supplier)
         if not potentialy_fired:
             if _Debug:
@@ -646,10 +637,7 @@ class FireHire(automat.Automat):
                 position_for_new_supplier = pos
                 break
             if id_url.is_in(supplier_idurl, self.dismiss_list, as_field=False):
-                lg.info('going to find new supplier on existing position %d to replace supplier %s' % (
-                    pos,
-                    supplier_idurl,
-                ))
+                lg.info('going to find new supplier on existing position %d to replace supplier %s' % (pos, supplier_idurl))
                 position_for_new_supplier = pos
                 break
         if position_for_new_supplier is None:
