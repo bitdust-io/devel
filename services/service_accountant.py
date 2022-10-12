@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -57,7 +56,6 @@ class AccountantService(LocalService):
         from coins import coins_db
         from coins import accountant_node
         from coins import accountants_finder
-
         coins_db.init()
         accountants_finder.A('init')
         accountant_node.A('init')
@@ -68,7 +66,6 @@ class AccountantService(LocalService):
     def stop(self):
         from coins import coins_db
         from coins import accountant_node
-
         accountant_node.A().removeStateChangedCallback(self._on_accountant_node_switched)
         accountant_node.A('stop')
         accountant_node.A('shutdown')
@@ -78,7 +75,6 @@ class AccountantService(LocalService):
     def request(self, json_payload, newpacket, info):
         from logs import lg
         from p2p import p2p_service
-
         # words = newpacket.Payload.split(' ')
         try:
             # mode = words[1][:10]
@@ -90,7 +86,6 @@ class AccountantService(LocalService):
             lg.out(8, 'service_accountant.request DENIED, wrong mode provided : %s' % mode)
             return p2p_service.SendFail(newpacket, 'invalid request')
         from coins import accountant_node
-
         if not accountant_node.A():
             lg.out(8, 'service_accountant.request DENIED, accountant_node() state machine not exist')
             return p2p_service.SendFail(newpacket, 'accountant_node service not started')
@@ -107,7 +102,6 @@ class AccountantService(LocalService):
 
     def health_check(self):
         from coins import accountant_node
-
         return accountant_node.A().state in [
             'READY',
             'READ_COINS',
@@ -119,7 +113,6 @@ class AccountantService(LocalService):
         from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
         from coins import accountant_node
-
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
-            reactor.callLater(10 * 60, accountant_node.A, 'start')  # @UndefinedVariable
+            reactor.callLater(10*60, accountant_node.A, 'start')  # @UndefinedVariable
             lg.out(8, 'service_broadcasting._on_accountant_node_switched will try to reconnect again after 10 minutes')

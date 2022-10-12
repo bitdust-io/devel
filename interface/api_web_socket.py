@@ -23,32 +23,31 @@
 #
 #
 #
-
 """
 ..
 
 module:: api_web_socket
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
 _APILogFileEnabled = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.application.strports import listen
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol, Factory
 from twisted.python.failure import Failure
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -62,14 +61,14 @@ from main import settings
 
 from interface import api
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _WebSocketListener = None
 _WebSocketTransports = {}
 _AllAPIMethods = []
 _APISecret = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(port=None):
@@ -144,7 +143,7 @@ def shutdown():
         lg.warn('_WebSocketListener is None')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def read_api_secret():
@@ -152,7 +151,7 @@ def read_api_secret():
     _APISecret = local_fs.ReadTextFile(settings.APISecretFile())
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
@@ -177,7 +176,7 @@ class BitDistWrappedWebSocketFactory(txws.WebSocketFactory):
     protocol = BitDustWrappedWebSocketProtocol
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BitDustWebSocketProtocol(Protocol):
@@ -221,7 +220,7 @@ class BitDustWebSocketProtocol(Protocol):
         events.send('web-socket-disconnected', data=dict(peer=peer))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BitDustWebSocketFactory(Factory):
@@ -239,7 +238,7 @@ class BitDustWebSocketFactory(Factory):
         return proto
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def do_process_incoming_message(json_data):
@@ -252,31 +251,23 @@ def do_process_incoming_message(json_data):
 
         if not method:
             lg.warn('api method name was not provided')
-            return push(
-                {
-                    'type': 'api_call',
-                    'payload': {
-                        'call_id': call_id,
-                        'errors': [
-                            'api method name was not provided',
-                        ],
-                    },
-                }
-            )
+            return push({
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': ['api method name was not provided'],
+                },
+            })
 
         if method not in _AllAPIMethods:
             lg.warn('invalid api method name: %r' % method)
-            return push(
-                {
-                    'type': 'api_call',
-                    'payload': {
-                        'call_id': call_id,
-                        'errors': [
-                            'invalid api method name',
-                        ],
-                    },
-                }
-            )
+            return push({
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': ['invalid api method name'],
+                },
+            })
 
         if _Debug:
             lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (call_id, method, kwargs))
@@ -289,105 +280,85 @@ def do_process_incoming_message(json_data):
             response = func(**kwargs)
         except Exception as err:
             lg.err(f'{method}({kwargs}) : {err}')
-            return push(
-                {
-                    'type': 'api_call',
-                    'payload': {
-                        'call_id': call_id,
-                        'errors': [
-                            str(err),
-                        ],
-                    },
-                }
-            )
+            return push({
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': [str(err)],
+                },
+            })
 
         if isinstance(response, Deferred):
 
             def _cb(r):
-                return push(
-                    {
-                        'type': 'api_call',
-                        'payload': {
-                            'call_id': call_id,
-                            'response': r,
-                        },
-                    }
-                )
+                return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'response': r,
+                    },
+                })
 
             def _eb(err):
                 err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
-                return push(
-                    {
-                        'type': 'api_call',
-                        'payload': {
-                            'call_id': call_id,
-                            'errors': [
-                                err_msg,
-                            ],
-                        },
-                    }
-                )
+                return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'errors': [err_msg],
+                    },
+                })
 
             response.addCallback(_cb)
             response.addErrback(_eb)
             return True
 
-        return push(
-            {
-                'type': 'api_call',
-                'payload': {
-                    'call_id': call_id,
-                    'response': response,
-                },
-            }
-        )
+        return push({
+            'type': 'api_call',
+            'payload': {
+                'call_id': call_id,
+                'response': response,
+            },
+        })
 
     return False
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_event(evt):
-    return push(
-        {
-            'type': 'event',
-            'payload': {
-                'event_id': evt.event_id,
-                'data': evt.data,
-            },
-        }
-    )
+    return push({
+        'type': 'event',
+        'payload': {
+            'event_id': evt.event_id,
+            'data': evt.data,
+        },
+    })
 
 
 def on_stream_message(message_json):
-    return push(
-        {
-            'type': 'stream_message',
-            'payload': message_json,
-        }
-    )
+    return push({
+        'type': 'stream_message',
+        'payload': message_json,
+    })
 
 
 def on_online_status_changed(status_info):
-    return push(
-        {
-            'type': 'online_status',
-            'payload': status_info,
-        }
-    )
+    return push({
+        'type': 'online_status',
+        'payload': status_info,
+    })
 
 
 def on_model_changed(snapshot_object):
-    return push(
-        {
-            'type': 'model',
-            'payload': snapshot_object.to_json(),
-        }
-    )
+    return push({
+        'type': 'model',
+        'payload': snapshot_object.to_json(),
+    })
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def push(json_data):
@@ -398,21 +369,13 @@ def push(json_data):
     for _key, transp in _WebSocketTransports.items():
         transp.write(raw_bytes)
         if _Debug:
-            lg.dbg(
-                _DebugLevel,
-                'sent %d bytes to web socket %s'
-                % (
-                    len(raw_bytes),
-                    '%s://%s:%s' % (_key[0], _key[1], _key[2]),
-                ),
-            )
+            lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2])))
     if _Debug:
         lg.out(_DebugLevel, '***   API WS PUSH  %d bytes' % len(raw_bytes))
     if _APILogFileEnabled:
         lg.out(
             0,
-            '*** WS PUSH  %d bytes : %r'
-            % (
+            '*** WS PUSH  %d bytes : %r' % (
                 len(raw_bytes),
                 json_data,
             ),

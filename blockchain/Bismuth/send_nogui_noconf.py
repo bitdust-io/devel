@@ -113,16 +113,9 @@ if __name__ == '__main__':
         is_float = 0
         sys.exit(1)
 
-    timestamp = '%.2f' % (time.time() - 5)  # remote proofing
+    timestamp = '%.2f' % (time.time() - 5)  #remote proofing
     # TODO: use transaction object, no dup code for buffer assembling
-    transaction = (
-        str(timestamp),
-        str(address),
-        str(recipient_input),
-        '%.8f' % float(amount_input),
-        str(operation_input),
-        str(openfield_input),
-    )  # this is signed
+    transaction = (str(timestamp), str(address), str(recipient_input), '%.8f' % float(amount_input), str(operation_input), str(openfield_input))  # this is signed
     # TODO: use polysign here
     h = SHA.new(str(transaction).encode('utf-8'))
     signer = PKCS1_v1_5.new(key)
@@ -143,16 +136,7 @@ if __name__ == '__main__':
             print('Mempool: Sending more than owned')
 
         else:
-            tx_submit = (
-                str(timestamp),
-                str(address),
-                str(recipient_input),
-                '%.8f' % float(amount_input),
-                str(signature_enc.decode('utf-8')),
-                str(public_key_b64encoded.decode('utf-8')),
-                str(operation_input),
-                str(openfield_input),
-            )
+            tx_submit = (str(timestamp), str(address), str(recipient_input), '%.8f' % float(amount_input), str(signature_enc.decode('utf-8')), str(public_key_b64encoded.decode('utf-8')), str(operation_input), str(openfield_input))
             while True:
                 try:
                     s._send('mpinsert')

@@ -18,7 +18,6 @@ from modules.i18n import (
 
 class BaseHandler(RequestHandler):
     """Common ancestor for all route handlers"""
-
     def initialize(self):
         """Common init for every request"""
         # TODO: advantage in using Tornado Babel maybe? https://media.readthedocs.org/pdf/tornado-babel/0.1/tornado-babel.pdf
@@ -65,7 +64,7 @@ class BaseHandler(RequestHandler):
         self.crystals = self.settings['bismuth_crystals']
         self.ro_mode = self.settings['ro_mode']
         if self.bismuth_vars['address'] is None:
-            self.bismuth_vars['address'] = _('No Bismuth address, please create or load a wallet first.')
+            self.bismuth_vars['address'] = _('No Bismuth address, please create or load a wallet first.', )
         self.update_crystals()
         # self.bismuth_vars['dtlanguage'] = get_dt_language(_)
         self.error = False
@@ -225,7 +224,6 @@ class BaseHandler(RequestHandler):
 
 class CrystalHandler(BaseHandler):
     """Common ancestor for all crystals handlers"""
-
     def render_string(self, template_name, **kwargs):
         """Generate the given template with the given arguments.
 
@@ -274,8 +272,8 @@ class CrystalHandler(BaseHandler):
 
 
 class CrystalLoader(Loader):
-    """A template loader that loads from several root directory to account for crystals and base template."""
-
+    """A template loader that loads from several root directory to account for crystals and base template.
+    """
     def __init__(self, root_directory, fallback_directory, **kwargs):
         super(Loader, self).__init__(**kwargs)
         self.root = path.abspath(root_directory)
@@ -291,12 +289,12 @@ class CrystalLoader(Loader):
             my_root = self.fallback
         # print("resolve path root", my_root)
         self.current = my_root
-        if parent_path and not parent_path.startswith('<') and not parent_path.startswith('/') and not name.startswith('/'):
+        if (parent_path and not parent_path.startswith('<') and not parent_path.startswith('/') and not name.startswith('/')):
             current_path = path.join(my_root, parent_path)
             file_dir = path.dirname(path.abspath(current_path))
             relative_path = path.abspath(path.join(file_dir, name))
             if relative_path.startswith(my_root):
-                name = relative_path[len(my_root) + 1 :]
+                name = relative_path[len(my_root) + 1:]
         # print("name", name)
         return name
 

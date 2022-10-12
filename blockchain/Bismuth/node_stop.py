@@ -16,7 +16,6 @@ elif 'regnet' in version:
     print('Regtest mode')
     port = 3030
 
-
 while True:
     try:
         s.connect(('127.0.0.1', port))

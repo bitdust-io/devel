@@ -22,36 +22,34 @@
 #
 #
 #
-
 """
 .. module:: my_keys.
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import gc
 import base64
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -76,14 +74,14 @@ from userid import global_id
 from userid import id_url
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _KnownKeys = {}
 _LatestLocalKeyID = -1
 _LocalKeysRegistry = {}
 _LocalKeysIndex = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -102,7 +100,7 @@ def shutdown():
     _LatestLocalKeyID = 0
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def key_obj(key_id=None):
@@ -150,7 +148,7 @@ def local_keys_index():
     return _LocalKeysIndex
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def is_key_registered(key_id, include_master=True):
@@ -187,7 +185,7 @@ def is_key_private(key_id, include_master=True):
     return not key_obj(key_id).isPublic()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
@@ -281,7 +279,7 @@ def get_creator_idurl(key_id, as_field=True):
     return global_id.glob2idurl(creator_glob_id, as_field=as_field)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def scan_local_keys(keys_folder=None):
@@ -326,27 +324,14 @@ def scan_local_keys(keys_folder=None):
             continue
         _LatestLocalKeyID += 1
         new_local_key_id = _LatestLocalKeyID
-        lg.warn(
-            'about to register key %r with local_key_id=%r'
-            % (
-                key_id,
-                new_local_key_id,
-            )
-        )
+        lg.warn('about to register key %r with local_key_id=%r' % (key_id, new_local_key_id))
         known_keys()[key_id].local_key_id = new_local_key_id
         save_key(key_id, keys_folder=keys_folder)
         registered_count += 1
     unregistered_keys = []
     save_latest_local_key_id(keys_folder=keys_folder)
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            '    %d keys found and %d registered'
-            % (
-                count,
-                registered_count,
-            ),
-        )
+        lg.out(_DebugLevel, '    %d keys found and %d registered' % (count, registered_count))
 
 
 def read_key_file(key_id, keys_folder=None):
@@ -408,32 +393,16 @@ def load_key(key_id, keys_folder=None):
             local_keys()[key_object.local_key_id] = key_id
             local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'my_keys.load_key %r  label=%r  active=%r  is_private=%r  local_key_id=%r  from %s'
-                    % (
-                        key_id,
-                        key_object.label,
-                        key_object.active,
-                        not key_object.isPublic(),
-                        key_object.local_key_id,
-                        keys_folder,
-                    ),
-                )
+                lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  active=%r  is_private=%r  local_key_id=%r  from %s' % (key_id, key_object.label, key_object.active, not key_object.isPublic(), key_object.local_key_id, keys_folder))
         else:
             lg.warn('for key %r local_key_id was not set' % key_id)
-    events.send(
-        'key-loaded',
-        data=dict(
-            key_id=key_id,
-            label=key_object.label,
-            key_size=key_object.size(),
-        ),
-    )
+    events.send('key-loaded', data=dict(
+        key_id=key_id,
+        label=key_object.label,
+        key_size=key_object.size(),
+    ))
     listeners.push_snapshot(
-        'key',
-        snap_id=key_id,
-        data=make_key_info(
+        'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
             key_id=key_id,
             event='key-loaded',
@@ -442,7 +411,7 @@ def load_key(key_id, keys_folder=None):
             include_signature=True,
             include_label=True,
             include_state=True,
-        ),
+        )
     )
     return True
 
@@ -465,26 +434,12 @@ def save_key(key_id, keys_folder=None):
         key_dict = key_object.toDict(include_private=True)
         key_string = jsn.dumps(key_dict, indent=1, separators=(',', ':'))
     if not bpio.WriteTextFile(key_filepath, key_string):
-        lg.warn(
-            'failed saving key %r to %r'
-            % (
-                key_id,
-                key_filepath,
-            )
-        )
+        lg.warn('failed saving key %r to %r' % (key_id, key_filepath))
         return False
     local_keys()[key_object.local_key_id] = key_id
     local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'my_keys.save_key stored key %r with local_key_id=%r in %r'
-            % (
-                key_id,
-                key_object.local_key_id,
-                key_filepath,
-            ),
-        )
+        lg.out(_DebugLevel, 'my_keys.save_key stored key %r with local_key_id=%r in %r' % (key_id, key_object.local_key_id, key_filepath))
     return True
 
 
@@ -513,7 +468,7 @@ def save_latest_local_key_id(keys_folder=None):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None):
@@ -539,18 +494,13 @@ def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None)
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     save_key(key_id, keys_folder=keys_folder)
-    events.send(
-        'key-generated',
-        data=dict(
-            key_id=key_id,
-            label=label,
-            key_size=key_size,
-        ),
-    )
+    events.send('key-generated', data=dict(
+        key_id=key_id,
+        label=label,
+        key_size=key_size,
+    ))
     listeners.push_snapshot(
-        'key',
-        snap_id=key_id,
-        data=make_key_info(
+        'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
             key_id=key_id,
             event='key-generated',
@@ -559,7 +509,7 @@ def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None)
             include_signature=True,
             include_label=True,
             include_state=True,
-        ),
+        )
     )
     return key_object
 
@@ -593,14 +543,11 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
         if known_key_id is not None:
             known_key_id = latest_key_id(known_key_id)
             if known_key_id != key_id:
-                raise Exception(
-                    'must not register same key with local_key_id=%r twice with different key_id: %r ~ %r'
-                    % (
-                        known_local_key_id,
-                        known_key_id,
-                        key_id,
-                    )
-                )
+                raise Exception('must not register same key with local_key_id=%r twice with different key_id: %r ~ %r' % (
+                    known_local_key_id,
+                    known_key_id,
+                    key_id,
+                ))
     new_local_key_id = known_local_key_id
     if new_local_key_id is None:
         _LatestLocalKeyID += 1
@@ -613,18 +560,13 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
     if _Debug:
         lg.out(_DebugLevel, '    key %r registered' % key_id)
     save_key(key_id, keys_folder=keys_folder)
-    events.send(
-        'key-registered',
-        data=dict(
-            key_id=key_id,
-            label=label,
-            key_size=key_object.size(),
-        ),
-    )
+    events.send('key-registered', data=dict(
+        key_id=key_id,
+        label=label,
+        key_size=key_object.size(),
+    ))
     listeners.push_snapshot(
-        'key',
-        snap_id=key_id,
-        data=make_key_info(
+        'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
             key_id=key_id,
             event='key-registered',
@@ -633,7 +575,7 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
             include_signature=True,
             include_label=True,
             include_state=True,
-        ),
+        )
     )
     return key_object
 
@@ -664,10 +606,7 @@ def erase_key(key_id, keys_folder=None):
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
     events.send('key-erased', data=dict(key_id=key_id, is_private=is_private))
     listeners.push_snapshot(
-        'key',
-        snap_id=key_id,
-        deleted=True,
-        data=make_key_info(
+        'key', snap_id=key_id, deleted=True, data=make_key_info(
             key_object=None,
             key_id=key_id,
             event='key-erased',
@@ -676,7 +615,7 @@ def erase_key(key_id, keys_folder=None):
             include_signature=True,
             include_label=True,
             include_state=True,
-        ),
+        )
     )
     return True
 
@@ -729,14 +668,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     save_key(new_key_id, keys_folder=keys_folder)
     gc.collect()
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'my_keys.rename_key   key %s renamed to %s'
-            % (
-                current_key_id,
-                new_key_id,
-            ),
-        )
+        lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id))
     events.send('key-renamed', data=dict(old_key_id=current_key_id, new_key_id=new_key_id, is_private=is_private))
     return True
 
@@ -769,18 +701,13 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
     known_keys()[key_id] = key_object
     if save:
         save_key(key_id, keys_folder=keys_folder)
-    events.send(
-        'key-signed',
-        data=dict(
-            key_id=key_id,
-            label=key_object.label,
-            key_size=key_object.size(),
-        ),
-    )
+    events.send('key-signed', data=dict(
+        key_id=key_id,
+        label=key_object.label,
+        key_size=key_object.size(),
+    ))
     listeners.push_snapshot(
-        'key',
-        snap_id=key_id,
-        data=make_key_info(
+        'key', snap_id=key_id, data=make_key_info(
             key_object=key_object,
             key_id=key_id,
             event='key-signed',
@@ -789,12 +716,12 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
             include_signature=True,
             include_label=True,
             include_state=True,
-        ),
+        )
     )
     return key_object
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def sign(key_id, inp):
@@ -835,7 +762,7 @@ def verify(key_id, hashcode, signature):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def encrypt(key_id, inp):
@@ -867,14 +794,7 @@ def encrypt(key_id, inp):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'my_keys.encrypt  payload of %d bytes with key %s'
-            % (
-                len(inp),
-                key_id,
-            ),
-        )
+        lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes with key %s' % (len(inp), key_id))
     result = key_object.encrypt(inp)
     return result
 
@@ -908,19 +828,12 @@ def decrypt(key_id, inp):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'my_keys.decrypt  payload of %d bytes with registered key %s'
-            % (
-                len(inp),
-                key_id,
-            ),
-        )
+        lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with registered key %s' % (len(inp), key_id))
     result = key_object.decrypt(inp)
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def serialize_key(key_id):
@@ -944,7 +857,7 @@ def unserialize_key_to_object(raw_string):
     return key_object
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def get_public_key_raw(key_id):
@@ -988,7 +901,7 @@ def get_local_key(local_key_id):
     return local_keys().get(local_key_id)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def is_active(key_id):
@@ -1008,7 +921,7 @@ def set_active(key_id, active=True):
     key_obj(key_id).active = active
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def make_master_key_info(include_private=False):
@@ -1018,8 +931,7 @@ def make_master_key_info(include_private=False):
         'label': my_id.getGlobalID(key_alias='master'),
         'active': True,
         'creator': my_id.getIDURL(),
-        'is_public': key.MyPrivateKeyObject().isPublic(),
-        # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
+        'is_public': key.MyPrivateKeyObject().isPublic(),  # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
         # 'type': str(key.MyPrivateKeyObject().type()),
         # 'ssh_type': str(key.MyPrivateKeyObject().sshType()),
         'public': strng.to_text(key.MyPrivateKeyObject().toPublicString()),
@@ -1035,19 +947,7 @@ def make_master_key_info(include_private=False):
     return r
 
 
-def make_key_info(
-    key_object,
-    key_id=None,
-    key_alias=None,
-    creator_idurl=None,
-    include_private=False,
-    generate_signature=False,
-    include_signature=False,
-    include_local_id=False,
-    include_label=True,
-    include_state=False,
-    event=None,
-):
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, generate_signature=False, include_signature=False, include_local_id=False, include_label=True, include_state=False, event=None):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -1148,7 +1048,7 @@ def read_key_info(key_json):
     return latest_key_id(key_id), key_object
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def sign_key_info(key_info):
@@ -1188,7 +1088,7 @@ def verify_key_info_signature(key_info):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def check_rename_my_keys(prefix=None):
@@ -1214,28 +1114,24 @@ def check_rename_my_keys(prefix=None):
         rename_key(current_key_id, new_key_id)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def populate_keys():
     for key_id, key_object in known_keys().items():
-        listeners.push_snapshot(
-            'key',
-            snap_id=key_id,
-            data=make_key_info(
-                key_object=key_object,
-                key_id=key_id,
-                event=None,
-                include_private=False,
-                include_local_id=True,
-                include_signature=True,
-                include_label=True,
-                include_state=True,
-            ),
-        )
+        listeners.push_snapshot('key', snap_id=key_id, data=make_key_info(
+            key_object=key_object,
+            key_id=key_id,
+            event=None,
+            include_private=False,
+            include_local_id=True,
+            include_signature=True,
+            include_label=True,
+            include_state=True,
+        ))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     bpio.init()
@@ -1243,7 +1139,6 @@ if __name__ == '__main__':
     settings.init()
     init()
     import pprint
-
     pprint.pprint(local_keys_index())
     pprint.pprint(local_keys())
     print(get_key_info('master$recalx@seed.bitdust.io'))

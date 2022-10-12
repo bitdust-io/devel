@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: customer_contract_executor
 .. role:: red
@@ -44,24 +42,23 @@ EVENTS:
     * :red:`timer-5min`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -71,11 +68,11 @@ from lib import nameurl
 
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _ActiveCustomerContracts = dict()  # provides CustomerContractExecutor object by supplier idurl
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def all_contracts():
@@ -118,7 +115,7 @@ def recheck_contract(supplier_idurl):
     contract_executor.automat('recheck')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class CustomerContractExecutor(automat.Automat):
@@ -142,12 +139,12 @@ class CustomerContractExecutor(automat.Automat):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READ_COINS?'
                 self.doRequestCoins(*args, **kwargs)
-        # ---READ_COINS?---
+        #---READ_COINS?---
         elif self.state == 'READ_COINS?':
             if event == 'coins-received':
                 self.state = 'SUPERVISE'
@@ -155,7 +152,7 @@ class CustomerContractExecutor(automat.Automat):
                 self.doSuperviseSupplier(*args, **kwargs)
             elif event == 'timer-1min' or event == 'request-failed':
                 self.state = 'UNCLEAR'
-        # ---SUPERVISE---
+        #---SUPERVISE---
         elif self.state == 'SUPERVISE':
             if event == 'timer-5min':
                 self.doSuperviseSupplier(*args, **kwargs)
@@ -174,7 +171,7 @@ class CustomerContractExecutor(automat.Automat):
                 self.doCancelPayment(*args, **kwargs)
                 self.doSendLastCoin(*args, **kwargs)
                 self.doReplaceSupplier(*args, **kwargs)
-        # ---SUPPLIER_COIN?---
+        #---SUPPLIER_COIN?---
         elif self.state == 'SUPPLIER_COIN?':
             if event == 'supplier-coin-mined':
                 self.state = 'EXTENSION?'
@@ -184,7 +181,7 @@ class CustomerContractExecutor(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-30min':
                 self.state = 'UNCLEAR'
-        # ---EXTENSION?---
+        #---EXTENSION?---
         elif self.state == 'EXTENSION?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -197,15 +194,15 @@ class CustomerContractExecutor(automat.Automat):
                 self.state = 'FINISHED'
                 self.doSendFinishCoin(*args, **kwargs)
                 self.doReplaceSupplier(*args, **kwargs)
-        # ---FINISHED---
+        #---FINISHED---
         elif self.state == 'FINISHED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        # ---MY_COIN!---
+        #---MY_COIN!---
         elif self.state == 'MY_COIN!':
             if event == 'coin-published' and not self.isChainClosed(*args, **kwargs):
                 self.state = 'SUPPLIER_COIN?'
@@ -218,7 +215,7 @@ class CustomerContractExecutor(automat.Automat):
                 self.state = 'FINISHED'
                 self.doSendFinishCoin(*args, **kwargs)
                 self.doReplaceSupplier(*args, **kwargs)
-        # ---UNCLEAR---
+        #---UNCLEAR---
         elif self.state == 'UNCLEAR':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -243,8 +240,11 @@ class CustomerContractExecutor(automat.Automat):
         Action method.
         """
         from coins import contract_chain_node
-
-        contract_chain_node.get_coins_by_chain(chain='supplier_customer', provider_idurl=self.supplier_idurl, consumer_idurl=my_id.getIDURL(),).addCallbacks(
+        contract_chain_node.get_coins_by_chain(
+            chain='supplier_customer',
+            provider_idurl=self.supplier_idurl,
+            consumer_idurl=my_id.getIDURL(),
+        ).addCallbacks(
             self._on_coins_received,
             self._on_coins_failed,
         )
@@ -253,7 +253,7 @@ class CustomerContractExecutor(automat.Automat):
         """
         Action method.
         """
-        # TODO: create supplier_supervisor() machine
+        #TODO: create supplier_supervisor() machine
 
     def doSchedulePayment(self, *args, **kwargs):
         """

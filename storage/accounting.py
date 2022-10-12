@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: accouning.
 
@@ -36,16 +35,16 @@ Various methods to keep track of:
     + consumed space
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import math
@@ -67,7 +66,7 @@ from userid import id_url
 
 from storage import backup_fs
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -75,7 +74,7 @@ def init():
         lg.out(_DebugLevel, 'accounting.init')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def read_customers_quotas():
@@ -101,12 +100,9 @@ def get_customer_quota(customer_idurl):
 
 def check_create_customers_quotas(donated_bytes=None):
     if not os.path.isfile(settings.CustomersSpaceFile()):
-        bpio._write_dict(
-            settings.CustomersSpaceFile(),
-            {
-                'free': donated_bytes or settings.getDonatedBytes(),
-            },
-        )
+        bpio._write_dict(settings.CustomersSpaceFile(), {
+            'free': donated_bytes or settings.getDonatedBytes(),
+        })
         lg.info('created a new customers quotas file: %s' % settings.CustomersSpaceFile())
         return True
     return False
@@ -145,7 +141,7 @@ def validate_customers_quotas(space_dict=None, free_space=None):
     return unknown_customers, unused_quotas
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def read_customers_usage():
@@ -174,7 +170,7 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
             lg.exc()
             files_size = 0
         try:
-            ratio = float(files_size) / float(allocated_bytes)
+            ratio = float(files_size)/float(allocated_bytes)
         except:
             lg.exc()
             continue
@@ -182,7 +178,7 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
     return used_space_ratio_dict
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def report_consumed_storage():
@@ -190,7 +186,7 @@ def report_consumed_storage():
     result['suppliers_num'] = contactsdb.num_suppliers()
     result['needed'] = settings.getNeededBytes()
     # result['needed_str'] = diskspace.MakeStringFromBytes(result['needed'])
-    result['used'] = int(backup_fs.sizebackups() / 2)
+    result['used'] = int(backup_fs.sizebackups()/2)
     # result['used_str'] = diskspace.MakeStringFromBytes(result['used'])
     result['available'] = result['needed'] - result['used']
     # result['available_str'] = diskspace.MakeStringFromBytes(result['available'])
@@ -198,8 +194,8 @@ def report_consumed_storage():
     result['used_per_supplier'] = 0
     result['available_per_supplier'] = 0
     if result['suppliers_num'] > 0:
-        result['needed_per_supplier'] = int(math.ceil(2.0 * result['needed'] / result['suppliers_num']))
-        result['used_per_supplier'] = int(math.ceil(2.0 * result['used'] / result['suppliers_num']))
+        result['needed_per_supplier'] = int(math.ceil(2.0*result['needed']/result['suppliers_num']))
+        result['used_per_supplier'] = int(math.ceil(2.0*result['used']/result['suppliers_num']))
         result['available_per_supplier'] = result['needed_per_supplier'] - result['used_per_supplier']
     # result['needed_per_supplier_str'] = diskspace.MakeStringFromBytes(result['needed_per_supplier'])
     # result['used_per_supplier_str'] = diskspace.MakeStringFromBytes(result['used_per_supplier'])
@@ -262,10 +258,7 @@ def report_donated_storage():
     # r['used_str'] = diskspace.MakeStringFromBytes(r['used'])
     # r['consumed_str'] = diskspace.MakeStringFromBytes(r['consumed'])
     if r['donated'] != r['free'] + r['consumed']:
-        r['errors'].append(
-            'total consumed %d and known free %d (%d total) bytes not match with donated %d bytes'
-            % (r['consumed'], r['free'], r['consumed'] + r['free'], r['donated'])
-        )
+        r['errors'].append('total consumed %d and known free %d (%d total) bytes not match with donated %d bytes' % (r['consumed'], r['free'], r['consumed'] + r['free'], r['donated']))
     if r['used'] > r['donated']:
         r['errors'].append('total space used by customers exceed the donated limit')
     if len(space_dict) > 0:
@@ -281,15 +274,11 @@ def report_donated_storage():
         except:
             r['errors'].append('incorrect value of used space for customer %r' % idurl)
             continue
-        r['old_customers'].append(
-            {
-                'idurl': strng.to_text(idurl),
-                'used': used,
-                # 'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
-                'real': real,
-                # 'real_str': diskspace.MakeStringFromBytes(real),
-            }
-        )
+        r['old_customers'].append({
+            'idurl': strng.to_text(idurl),
+            'used': used,  # 'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
+            'real': real,  # 'real_str': diskspace.MakeStringFromBytes(real),
+        })
         old_customers_used += used
         old_customers_real += real
     r['old_customers_used'] = old_customers_used

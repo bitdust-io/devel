@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: signed.
 
@@ -42,23 +41,23 @@ Packet Fields are all strings (no integers, objects, etc)
     - Signature : signature on Hash is always by CreatorID
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
 from twisted.internet import threads
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -79,7 +78,7 @@ from crypt import key
 from userid import my_id
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class Packet(object):
@@ -96,7 +95,6 @@ class Packet(object):
     messages. This is outside work, here is most important things to
     make all network working.
     """
-
     def __init__(
         self,
         Command,
@@ -183,13 +181,13 @@ class Packet(object):
         except Exception as exc:
             lg.exc()
             raise exc
-        #         if _Debug:
-        #             if _LogSignVerify:
-        #                 try:
-        #                     from main import settings
-        #                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
-        #                 except:
-        #                     lg.exc()
+#         if _Debug:
+#             if _LogSignVerify:
+#                 try:
+#                     from main import settings
+#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
+#                 except:
+#                     lg.exc()
         return stufftosum
 
     def GenerateHash(self):
@@ -242,17 +240,18 @@ class Packet(object):
             lg.err('could not get Identity for %r so returning False' % self.CreatorID)
             return False
 
-        #         if _Debug:
-        #             if _LogSignVerify:
-        #                 try:
-        #                     from main import settings
-        #                     try:
-        #                         from Cryptodome.Util import number
-        #                     except:
-        #                         from Crypto.Util import number  # @UnresolvedImport @Reimport
-        #                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
-        #                 except:
-        #                     lg.exc()
+
+#         if _Debug:
+#             if _LogSignVerify:
+#                 try:
+#                     from main import settings
+#                     try:
+#                         from Cryptodome.Util import number
+#                     except:
+#                         from Crypto.Util import number  # @UnresolvedImport @Reimport
+#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
+#                 except:
+#                     lg.exc()
 
         Result = key.Verify(CreatorIdentity, self.GenerateHash(), self.Signature)
 
@@ -303,7 +302,8 @@ class Packet(object):
         return True
 
     def BackupID(self):
-        """ """
+        """
+        """
         backupID, _, _ = self.PacketID.rpartition('/')
         return backupID
 
@@ -359,7 +359,6 @@ class PacketZeroSigned(Packet):
     """
     I was playing with hacking packets and do some debug also.
     """
-
     def GenerateSignature(self):
         return '0'
 
@@ -451,19 +450,16 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     return threads.deferToThread(MakePacket, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     bpio.init()
     lg.set_debug_level(18)
     from main import settings
-
     settings.init()
     key.InitMyKey()
     from userid import identity
     from contacts import identitycache
-
     if len(sys.argv) > 2:
         creator_ident = identity.identity(xmlsrc=bpio.ReadTextFile(sys.argv[2]))
         identitycache.UpdateAfterChecking(idurl=creator_ident.getIDURL(), xml_src=creator_ident.serialize())

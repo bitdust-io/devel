@@ -1,7 +1,6 @@
 import re
 import six
 from six import PY2, b
-
 if PY2:
     from itertools import ifilter as filter  # @UnresolvedImport
 from functools import wraps
@@ -59,7 +58,7 @@ class APIResource(Resource):
         for m, r, cb in filter(filterf, self._registry):
             result = r.search(path_to_check)
             if result:
-                request._remaining_path = path_to_check[result.span()[1] :]
+                request._remaining_path = path_to_check[result.span()[1]:]
                 return cb, result.groupdict()
         return None, None
 

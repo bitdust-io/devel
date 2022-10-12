@@ -39,7 +39,6 @@ from ._ssl_compat import *
 from ._utils import *
 
 __all__ = ['WebSocket', 'create_connection']
-
 """
 websocket python client.
 =========================
@@ -76,7 +75,6 @@ class WebSocket(object):
     enable_multithread: if set to True, lock send method.
     skip_utf8_validation: skip utf8 validation.
     """
-
     def __init__(self, get_mask_key=None, sockopt=None, sslopt=None, fire_cont_frame=False, enable_multithread=False, skip_utf8_validation=False, **_):
         """
         Initialize WebSocket object.
@@ -266,7 +264,7 @@ class WebSocket(object):
             frame.get_mask_key = self.get_mask_key
         data = frame.format()
         length = len(data)
-        if isEnabledForTrace():
+        if (isEnabledForTrace()):
             trace('send: ' + repr(data))
 
         with self.lock:
@@ -499,14 +497,7 @@ def create_connection(url, timeout=None, class_=WebSocket, **options):
     fire_cont_frame = options.pop('fire_cont_frame', False)
     enable_multithread = options.pop('enable_multithread', False)
     skip_utf8_validation = options.pop('skip_utf8_validation', False)
-    websock = class_(
-        sockopt=sockopt,
-        sslopt=sslopt,
-        fire_cont_frame=fire_cont_frame,
-        enable_multithread=enable_multithread,
-        skip_utf8_validation=skip_utf8_validation,
-        **options
-    )
+    websock = class_(sockopt=sockopt, sslopt=sslopt, fire_cont_frame=fire_cont_frame, enable_multithread=enable_multithread, skip_utf8_validation=skip_utf8_validation, **options)
     websock.settimeout(timeout if timeout is not None else getdefaulttimeout())
     websock.connect(url, **options)
     return websock

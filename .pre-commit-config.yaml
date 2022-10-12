@@ -2,16 +2,25 @@ exclude: |
   (?x)(
       ^CodernityDB/|
       ^CodernityDB3/|
-      .git |
-      .__pycache__|
-      .hg|
-      .mypy_cache|
-      .tox|
-      .venv|
-      _build|
-      buck-out|
-      build|
-      dist
+      ^devops/|
+      ^icons/|
+      ^regress/|
+      ^release/|
+      ^scripts/|
+      ^tests/|
+      ^.git/|
+      ^.circleci/|
+      ^.github/|
+      ^.__pycache__/|
+      ^.hg/|
+      ^.mypy_cache/|
+      ^.tox/|
+      ^.venv/|
+      ^venv/|
+      ^_build/|
+      ^buck-out/|
+      ^build/|
+      ^dist/
   )
 
 repos:
@@ -22,20 +31,13 @@ repos:
         args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
       - id: double-quote-string-fixer
-      - id: check-json
-      - id: check-toml
-      - id: check-yaml
-      - id: pretty-format-json
-        exclude: package(-lock)?\.json
-        args:
-          - --autofix
       - id: requirements-txt-fixer
 
-  - repo: https://github.com/psf/black
-    rev: 22.8.0
+  - repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.32.0
     hooks:
-      - id: black
-        args: [--config=bitdust-precommit.toml]
+      - id: yapf
+        args: ['--style=.style.yapf', '--in-place']
 
   - repo: https://github.com/hadialqattan/pycln
     rev: v2.1.1

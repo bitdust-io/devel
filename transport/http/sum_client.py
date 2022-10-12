@@ -18,7 +18,7 @@ def connected(protocol):
 
 
 def gotResult(result):
-    print(('total: %d' % (result['total'],)))
+    print(('total: %d' % (result['total'], )))
     reactor.stop()
 
 

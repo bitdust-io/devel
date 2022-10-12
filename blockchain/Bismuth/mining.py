@@ -6,7 +6,6 @@ import hashlib
 from decimal import Decimal
 from quantizer import quantize_ten
 
-
 __version__ = '0.0.1'
 
 
@@ -14,9 +13,7 @@ def bin_convert(string):
     return ''.join(format(ord(x), '8b').replace(' ', '0') for x in string)
 
 
-def check_block(
-    block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None
-):
+def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None):
     """
     Checks that the given block matches the mining algo.
 
@@ -34,7 +31,7 @@ def check_block(
     """
     mining_hash = bin_convert(hashlib.sha224((miner_address + nonce + db_block_hash).encode('utf-8')).hexdigest())
     diff_drop_time = Decimal(180)
-    mining_condition = bin_convert(db_block_hash)[0 : int(diff0)]
+    mining_condition = bin_convert(db_block_hash)[0:int(diff0)]
     # simplified comparison, no backwards mining
     if mining_condition in mining_hash:
         if app_log:
@@ -44,11 +41,11 @@ def check_block(
     elif Decimal(received_timestamp) > q_db_timestamp_last + Decimal(diff_drop_time):
         # uses block timestamp, don't merge with diff() for security reasons
         time_difference = q_received_timestamp - q_db_timestamp_last
-        diff_dropped = quantize_ten(diff0) - quantize_ten(time_difference / diff_drop_time)
+        diff_dropped = quantize_ten(diff0) - quantize_ten(time_difference/diff_drop_time)
         if diff_dropped < 50:
             diff_dropped = 50
 
-        mining_condition = bin_convert(db_block_hash)[0 : int(diff_dropped)]
+        mining_condition = bin_convert(db_block_hash)[0:int(diff_dropped)]
         if mining_condition in mining_hash:  # simplified comparison, no backwards mining
             if app_log:
                 app_log.info('Readjusted difficulty requirement satisfied for block {} from {}'.format(block_height_new, peer_ip))

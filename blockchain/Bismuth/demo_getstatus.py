@@ -52,7 +52,6 @@ import connections
 import json
 import socks
 
-
 __version__ = '0.0.1'
 
 

@@ -27,14 +27,13 @@ import sys
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 from userid import my_id
@@ -45,23 +44,19 @@ from transport.udp import udp_node
 from transport.udp import udp_session
 from transport import gateway
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
     lg.set_debug_level(18)
     lg.life_begins()
     from crypt import key
-
     key.InitMyKey()
     from contacts import identitycache
-
     identitycache.init()
     from system import tmpfile
-
     tmpfile.init()
     from services import driver
-
     driver.disabled_services().add('service_tcp_connections')
     driver.disabled_services().add('service_p2p_hookups')
     driver.disabled_services().add('service_nodes_lookup')
@@ -126,7 +121,6 @@ def main():
 
             def _send(c):
                 from transport.udp import udp_stream
-
                 for idurl in sys.argv[2:]:
                     print('_send', list(udp_stream.streams().keys()))
                     p = signed.Packet(commands.Data(), my_id.getIDURL(), my_id.getIDURL(), 'packet%d' % c, bpio.ReadBinaryFile(sys.argv[1]), idurl)

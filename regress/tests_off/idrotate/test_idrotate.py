@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
@@ -48,43 +47,42 @@ def test_idrotate():
 
     prepare()
 
-    # --- SCENARIO 12 begin: customer-rotated group chat with customer-1 but broker IDURL rotated
+    #--- SCENARIO 12 begin: customer-rotated group chat with customer-1 but broker IDURL rotated
     old_customer_1_info_s12 = scenarios.scenario12_begin()
 
-    # --- SCENARIO 13 begin: supplier of customer-1 has IDURL rotated
+    #--- SCENARIO 13 begin: supplier of customer-1 has IDURL rotated
     old_customer_1_info_s13 = scenarios.scenario13_begin()
 
-    # --- SCENARIO 10 begin: customer-rotated IDURL was rotated
+    #--- SCENARIO 10 begin: customer-rotated IDURL was rotated
     old_customer_rotated_file_info = scenarios.scenario10_begin()
 
-    # --- SCENARIO 11 begin: customer-1 talk to customer-rotated
+    #--- SCENARIO 11 begin: customer-1 talk to customer-rotated
     old_customer_1_info_s11 = scenarios.scenario11_begin()
 
-    # --- SCENARIO 9: ID server id-dead is dead
+    #--- SCENARIO 9: ID server id-dead is dead
     _, old_customer_rotated_info, _, _, old_customer_rotated_keys, _, new_customer_rotated_info, _, _ = scenarios.scenario9()
 
-    # --- SCENARIO 10 end: customer-rotated IDURL was rotated
+    #--- SCENARIO 10 end: customer-rotated IDURL was rotated
     scenarios.scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, old_customer_rotated_keys, new_customer_rotated_info)
 
-    # --- SCENARIO 13 end: supplier of customer-1 has IDURL rotated
+    #--- SCENARIO 13 end: supplier of customer-1 has IDURL rotated
     scenarios.scenario13_end(old_customer_1_info_s13)
 
-    # --- SCENARIO 12 end: customer-rotated group chat with customer-1 but broker IDURL rotated
+    #--- SCENARIO 12 end: customer-rotated group chat with customer-1 but broker IDURL rotated
     scenarios.scenario12_end(old_customer_1_info_s12)
 
-    # --- SCENARIO 11 end: customer-1 talk to customer-rotated
+    #--- SCENARIO 11 end: customer-1 talk to customer-rotated
     scenarios.scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_customer_1_info_s11)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def prepare():
     set_active_scenario('PREPARE')
     kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_1, expected_min_suppliers=2, expected_max_suppliers=2)
     kw.wait_service_state(
-        scenarios.SUPPLIERS_IDS_12
-        + [
+        scenarios.SUPPLIERS_IDS_12 + [
             'supplier-rotated',
         ],
         'service_supplier',
@@ -96,8 +94,7 @@ def prepare():
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_message_history', 'ON')
     kw.wait_service_state(
-        scenarios.BROKERS_IDS
-        + [
+        scenarios.BROKERS_IDS + [
             'broker-rotated',
         ],
         'service_message_broker',
@@ -105,14 +102,9 @@ def prepare():
     )
     kw.config_set_v1('customer-1', 'services/employer/candidates', '')
     kw.wait_packets_finished(
-        scenarios.PROXY_IDS
-        + scenarios.CUSTOMERS_IDS_1
-        + scenarios.BROKERS_IDS
-        + [
+        scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_1 + scenarios.BROKERS_IDS + [
             'broker-rotated',
-        ]
-        + scenarios.SUPPLIERS_IDS_12
-        + [
+        ] + scenarios.SUPPLIERS_IDS_12 + [
             'supplier-rotated',
-        ]
+        ],
     )

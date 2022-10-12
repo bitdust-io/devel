@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: tray_icon.
 
@@ -33,7 +32,7 @@ Uses wxPython to show tray icon for BitDust. This is working inside
 ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -41,7 +40,7 @@ import os
 import sys
 import platform
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 USE_TRAY_ICON = True
 LABEL = 'BitDust'
@@ -76,7 +75,7 @@ _PopUpIconsDict = {
     'shutdown': 'shutdown24x24.png',
 }
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def icons_dict():
@@ -89,7 +88,7 @@ def popup_icons_dict():
     return _PopUpIconsDict
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def shutdown():
@@ -242,7 +241,7 @@ def main_porcess_stopped():
         _IconObject = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def control(cmd):
@@ -294,7 +293,7 @@ def SetControlFunc(f):
     _ControlFunc = f
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
 
@@ -307,10 +306,8 @@ if __name__ == '__main__':
             # sys.exit()
 
     from twisted.internet import wxreactor
-
     wxreactor.install()
     from twisted.internet import reactor  # @UnresolvedImport
-
     init(sys.argv[1])
     SetControlFunc(test_control)
     reactor.run()

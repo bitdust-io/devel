@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -62,11 +61,8 @@ class PersonalMessagesService(LocalService):
         from access import groups
         from crypt import my_keys
         from userid import my_id
-
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(
-            lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason'))
-        )
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         self.personal_group_key_id = my_keys.make_key_id(alias='person', creator_glob_id=my_id.getGlobalID())
 
         # TODO: needs more work, service_private_groups() must be reliable first
@@ -94,14 +90,12 @@ class PersonalMessagesService(LocalService):
 
     def stop(self):
         from interface import api
-
         # api.group_leave(self.personal_group_key_id, erase_key=False)
         return True
 
     def _do_join_my_personal_group(self):
         from logs import lg
         from interface import api
-
         lg.info('about to join my personal message group: %r' % self.personal_group_key_id)
         api.group_join(self.personal_group_key_id)
         if self.starting_deferred:

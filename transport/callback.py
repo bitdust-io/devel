@@ -19,31 +19,30 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 ..
 
 module:: callback
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # receiving callbacks
 _InterestedParties = {}
@@ -59,7 +58,7 @@ _BeginFileSendingCallbacksList = []
 _FinishFileSendingCallbacksList = []
 _FileSendingFilterCallbacksList = []
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class InterestedParty:
@@ -68,7 +67,7 @@ class InterestedParty:
         self.ComboID = combine_IDs(CreatorID, PacketID)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def interested_parties():
@@ -76,14 +75,14 @@ def interested_parties():
     return _InterestedParties
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def combine_IDs(CreatorID, PacketID):
     return str(CreatorID) + ':' + str(PacketID)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def append_inbox_callback(cb):
@@ -282,7 +281,7 @@ def remove_file_sending_filter_callback(cb):
         _FileSendingFilterCallbacksList.remove(cb)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def run_inbox_callbacks(newpacket, info, status, error_message):
@@ -378,14 +377,7 @@ def run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, descr
             continue
         if one_result is not None:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '    filtered by %r : %r'
-                    % (
-                        cb,
-                        one_result,
-                    ),
-                )
+                lg.out(_DebugLevel, '    filtered by %r : %r' % (cb, one_result))
             break
     return one_result
 
@@ -443,14 +435,7 @@ def run_begin_file_receiving_callbacks(pkt_in):
 def run_finish_file_receiving_callbacks(info, data):
     global _FinishFileReceivingCallbacksList
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'callback.run_finish_file_receiving_callbacks %d bytes : %s'
-            % (
-                len(data),
-                info,
-            ),
-        )
+        lg.out(_DebugLevel, 'callback.run_finish_file_receiving_callbacks %d bytes : %s' % (len(data), info))
     handled = False
     for cb in _FinishFileReceivingCallbacksList:
         try:

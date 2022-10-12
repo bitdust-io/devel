@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: nickname_holder
 
@@ -46,16 +44,16 @@ EVENTS:
     * :red:`timer-5min`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
@@ -71,11 +69,11 @@ from userid import id_url
 from dht import dht_service
 from dht import dht_records
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _NicknameHolder = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -111,7 +109,7 @@ def Destroy():
     _NicknameHolder = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class NicknameHolder(automat.Automat):
@@ -141,7 +139,7 @@ class NicknameHolder(automat.Automat):
         self.result_callbacks.remove(cb)
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'set':
                 self.state = 'DHT_READ'
@@ -149,7 +147,7 @@ class NicknameHolder(automat.Automat):
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        # ---READY---
+        #---READY---
         elif self.state == 'READY':
             if event == 'timer-5min':
                 self.state = 'DHT_READ'
@@ -160,7 +158,7 @@ class NicknameHolder(automat.Automat):
                 self.state = 'DHT_ERASE'
                 self.doDHTEraseKey(*args, **kwargs)
                 self.doSetNickname(*args, **kwargs)
-        # ---DHT_READ---
+        #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'dht-read-success' and self.isMyOwnKey(*args, **kwargs):
                 self.state = 'READY'
@@ -176,7 +174,7 @@ class NicknameHolder(automat.Automat):
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        # ---DHT_WRITE---
+        #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'dht-write-failed' and self.Attempts > 5:
                 self.state = 'READY'
@@ -196,7 +194,7 @@ class NicknameHolder(automat.Automat):
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        # ---DHT_ERASE---
+        #---DHT_ERASE---
         elif self.state == 'DHT_ERASE':
             if event == 'dht-erase-success' or event == 'dht-erase-failed':
                 self.state = 'DHT_READ'
@@ -282,14 +280,7 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'nickname_holder.doReportNicknameOwn : %s with %s'
-                % (
-                    self.key,
-                    args[0],
-                ),
-            )
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0]))
         for cb in self.result_callbacks:
             cb('my own', self.key)
 
@@ -316,14 +307,7 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'nickname_holder.doReportNicknameFailed : %s with %s'
-                % (
-                    self.key,
-                    args[0] if args else None,
-                ),
-            )
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameFailed : %s with %s' % (self.key, args[0] if args else None))
         for cb in self.result_callbacks:
             cb('failed', self.key)
 
@@ -359,12 +343,11 @@ class NicknameHolder(automat.Automat):
             self.automat('dht-erase-success')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
-
     lg.set_debug_level(24)
     settings.init()
     my_id.init()

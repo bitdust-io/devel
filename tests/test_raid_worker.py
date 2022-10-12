@@ -8,7 +8,6 @@ from twisted.internet.base import DelayedCall
 
 DelayedCall.debug = True
 
-
 from raid import raid_worker
 
 from logs import lg
@@ -19,6 +18,7 @@ from main import settings
 
 
 class TestRaidWorker(TestCase):
+
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')
@@ -48,9 +48,9 @@ class TestRaidWorker(TestCase):
             source_data = open('/tmp/source.txt', 'rb').read()
             reconstructed_data = open('/tmp/destination.txt', 'rb').read()
             if read_success:
-                final_result = source_data == reconstructed_data
+                final_result = (source_data == reconstructed_data)
             else:
-                final_result = source_data != reconstructed_data
+                final_result = (source_data != reconstructed_data)
             os.system('rm -rf /tmp/source.txt')
             os.system('rm -rf /tmp/destination.txt')
             os.system('rm -rf /tmp/raidtest')
@@ -89,7 +89,13 @@ class TestRaidWorker(TestCase):
                 0.5,
                 raid_worker.add_task,
                 'read',
-                ('/tmp/destination.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0'),  # @UndefinedVariable
+                (  # @UndefinedVariable
+                    '/tmp/destination.txt',
+                    target_ecc_map,
+                    'F12345678',
+                    '5',
+                    '/tmp/raidtest/master$alice@somehost.com/0',
+                ),
                 _read_done,
             )
             return True
@@ -109,45 +115,39 @@ class TestRaidWorker(TestCase):
             remote_fragments = {
                 'D': [
                     0,
-                ]
-                * dead_suppliers
-                + [
+                ] * dead_suppliers + [
                     1,
-                ]
-                * alive_suppliers,
+                ] * alive_suppliers,
                 'P': [
                     0,
-                ]
-                * dead_suppliers
-                + [
+                ] * dead_suppliers + [
                     1,
-                ]
-                * alive_suppliers,
+                ] * alive_suppliers,
             }
             local_fragments = {
                 'D': [
                     0,
-                ]
-                * dead_suppliers
-                + [
+                ] * dead_suppliers + [
                     1,
-                ]
-                * alive_suppliers,
+                ] * alive_suppliers,
                 'P': [
                     0,
-                ]
-                * dead_suppliers
-                + [
+                ] * dead_suppliers + [
                     1,
-                ]
-                * alive_suppliers,
+                ] * alive_suppliers,
             }
             if not try_rebuild:
                 reactor.callLater(
                     0.5,
                     raid_worker.add_task,
                     'read',
-                    ('/tmp/destination.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0'),  # @UndefinedVariable
+                    (  # @UndefinedVariable
+                        '/tmp/destination.txt',
+                        target_ecc_map,
+                        'F12345678',
+                        '5',
+                        '/tmp/raidtest/master$alice@somehost.com/0',
+                    ),
                     _read_done,
                 )
             else:
@@ -161,8 +161,7 @@ class TestRaidWorker(TestCase):
                         target_ecc_map,
                         [
                             1,
-                        ]
-                        * num_suppliers,
+                        ] * num_suppliers,
                         remote_fragments,
                         local_fragments,
                         '/tmp/raidtest',
@@ -181,7 +180,13 @@ class TestRaidWorker(TestCase):
             0.5,
             raid_worker.add_task,
             'make',
-            ('/tmp/source.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0/F12345678'),  # @UndefinedVariable
+            (  # @UndefinedVariable
+                '/tmp/source.txt',
+                target_ecc_map,
+                'F12345678',
+                '5',
+                '/tmp/raidtest/master$alice@somehost.com/0/F12345678',
+            ),
             _make_done,
         )
         return test_result
@@ -350,7 +355,7 @@ class TestRaidWorker(TestCase):
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
 
         def _task_failed(c, t, r):
-            final_result = r == (-1, -1) or r is None
+            final_result = (r == (-1, -1) or r is None)
             os.system('rm -rf /tmp/source1.txt')
             os.system('rm -rf /tmp/raidtest')
             reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
@@ -363,7 +368,13 @@ class TestRaidWorker(TestCase):
             0.5,
             raid_worker.add_task,
             'make',
-            ('/tmp/source1.txt', 'ecc/64x64', 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0/F12345678'),  # @UndefinedVariable
+            (  # @UndefinedVariable
+                '/tmp/source1.txt',
+                'ecc/64x64',
+                'F12345678',
+                '5',
+                '/tmp/raidtest/master$alice@somehost.com/0/F12345678',
+            ),
             _task_failed,
         )
         reactor.callLater(0.55, raid_worker.cancel_task, 'make', '/tmp/source1.txt')  # @UndefinedVariable

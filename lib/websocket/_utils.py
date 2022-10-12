@@ -306,6 +306,7 @@ except ImportError:
         8,
         8,
         8,
+
         # The second part is a transition table that maps a combination
         # of a state of the automaton and a character class to a state.
         0,
@@ -421,7 +422,7 @@ except ImportError:
     def _decode(state, codep, ch):
         tp = _UTF8D[ch]
 
-        codep = (ch & 0x3F) | (codep << 6) if (state != _UTF8_ACCEPT) else (0xFF >> tp) & ch
+        codep = (ch & 0x3f) | (codep << 6) if (state != _UTF8_ACCEPT) else (0xff >> tp) & ch
         state = _UTF8D[256 + state + tp]
 
         return state, codep

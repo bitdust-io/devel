@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: broadcaster_node.
 
@@ -41,21 +39,21 @@ EVENTS:
     * :red:`timer-1min`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import time
 import json
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -70,11 +68,11 @@ from transport import callback
 
 from p2p import p2p_service
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _BroadcasterNode = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -92,7 +90,7 @@ def A(event=None, *args, **kwargs):
     return _BroadcasterNode
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BroadcasterNode(automat.Automat):
@@ -119,13 +117,13 @@ class BroadcasterNode(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'BROADCASTERS?'
                 self.doInit(*args, **kwargs)
                 self.doStartBroadcastersLookup(*args, **kwargs)
-        # ---BROADCASTERS?---
+        #---BROADCASTERS?---
         elif self.state == 'BROADCASTERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -141,7 +139,7 @@ class BroadcasterNode(automat.Automat):
                 self.doStartBroadcastersLookup(*args, **kwargs)
             elif event == 'lookup-failed' and self.isAnyBroadcasters(*args, **kwargs):
                 self.state = 'BROADCASTING'
-        # ---OFFLINE---
+        #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -150,10 +148,10 @@ class BroadcasterNode(automat.Automat):
                 self.state = 'BROADCASTERS?'
                 self.doAddBroadcaster(*args, **kwargs)
                 self.doStartBroadcastersLookup(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        # ---BROADCASTING---
+        #---BROADCASTING---
         elif self.state == 'BROADCASTING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -185,7 +183,7 @@ class BroadcasterNode(automat.Automat):
                 return True
         if not self.last_success_action_time:
             return False
-        return time.time() - self.last_success_action_time > 5 * 60
+        return time.time() - self.last_success_action_time > 5*60
 
     def isAnyBroadcasters(self, *args, **kwargs):
         """
@@ -211,17 +209,13 @@ class BroadcasterNode(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
-
-        broadcasters_finder.A(
-            'start',
-            (
-                self.automat,
-                {
-                    'action': 'route',
-                },
-                list(self.connected_broadcasters),
-            ),
-        )
+        broadcasters_finder.A('start', (
+            self.automat,
+            {
+                'action': 'route',
+            },
+            list(self.connected_broadcasters),
+        ))
 
     def doAddBroadcaster(self, *args, **kwargs):
         """
@@ -261,7 +255,6 @@ class BroadcasterNode(automat.Automat):
         Action method.
         """
         from broadcast import broadcast_service
-
         msg, newpacket = args[0]
         msgid = msg['id']
         if _Debug:
@@ -271,10 +264,12 @@ class BroadcasterNode(automat.Automat):
         if msgid in self.messages_sent:
             if _Debug:
                 lg.out(_DebugLevel, '        resent skipped, %s was already sent to my broadcasters' % msgid)
-            #             if msgid not in self.messages_acked:
-            #                 p2p_service.SendAck(newpacket, '0')
-            #             else:
-            #                 p2p_service.SendAck(newpacket, str(self.messages_acked[msgid]))
+
+
+#             if msgid not in self.messages_acked:
+#                 p2p_service.SendAck(newpacket, '0')
+#             else:
+#                 p2p_service.SendAck(newpacket, str(self.messages_acked[msgid]))
             return
         # if some listeners connected - send to them
         for listener_idurl, scope in self.listeners.items():
@@ -299,7 +294,6 @@ class BroadcasterNode(automat.Automat):
         Action method.
         """
         from broadcast import broadcast_service
-
         msg, newpacket = args[0]
         msgid = msg['id']
         if _Debug:
@@ -343,7 +337,7 @@ class BroadcasterNode(automat.Automat):
         del _BroadcasterNode
         _BroadcasterNode = None
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def add_listener(self, listener_idurl, scope_as_string):
         try:
@@ -362,12 +356,11 @@ class BroadcasterNode(automat.Automat):
             return
         self.listeners.pop(listener_idurl)
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if newpacket.Command == commands.Broadcast():
             from broadcast import broadcast_service
-
             msg = broadcast_service.read_message_from_packet(newpacket)
             if not msg:
                 return False

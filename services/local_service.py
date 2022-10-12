@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: local_service.
 
@@ -49,24 +48,24 @@ EVENTS:
     * :red:`stop`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -74,7 +73,7 @@ from automats import automat
 
 from services import driver
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class LocalService(automat.Automat):
@@ -113,18 +112,16 @@ class LocalService(automat.Automat):
 
     def to_json(self):
         j = super().to_json()
-        j.update(
-            {
-                'name': self.service_name,
-                'enabled': self.enabled(),
-                'installed': self.installed(),
-                'config_path': self.config_path,
-                'depends': self.dependent_on(),
-            }
-        )
+        j.update({
+            'name': self.service_name,
+            'enabled': self.enabled(),
+            'installed': self.installed(),
+            'config_path': self.config_path,
+            'depends': self.dependent_on(),
+        })
         return j
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def dependent_on(self):
         return []
@@ -134,7 +131,6 @@ class LocalService(automat.Automat):
 
     def enabled(self):
         from main import config
-
         return config.conf().getBool(self.config_path)
 
     def start(self):
@@ -191,13 +187,12 @@ class LocalService(automat.Automat):
 
     def data_dir_path(self):
         from main import settings
-
         return settings.ServiceDir(self.service_name)
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def A(self, event, *args, **kwargs):
-        # ---ON---
+        #---ON---
         if self.state == 'ON':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -207,7 +202,7 @@ class LocalService(automat.Automat):
                 self.state = 'INFLUENCE'
                 self.doSetCallback(*args, **kwargs)
                 self.doStopDependentServices(*args, **kwargs)
-        # ---OFF---
+        #---OFF---
         elif self.state == 'OFF':
             if event == 'stop':
                 self.doSetCallback(*args, **kwargs)
@@ -221,7 +216,7 @@ class LocalService(automat.Automat):
                 self.NeedStop = False
                 self.doSetCallback(*args, **kwargs)
                 self.doStartService(*args, **kwargs)
-        # ---NOT_INSTALLED---
+        #---NOT_INSTALLED---
         elif self.state == 'NOT_INSTALLED':
             if event == 'stop':
                 self.doSetCallback(*args, **kwargs)
@@ -233,7 +228,7 @@ class LocalService(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---INFLUENCE---
+        #---INFLUENCE---
         elif self.state == 'INFLUENCE':
             if event == 'start':
                 self.doSetCallback(*args, **kwargs)
@@ -253,7 +248,7 @@ class LocalService(automat.Automat):
             elif event == 'depend-service-stopped' and self.isAllDependsStopped(*args, **kwargs) and not self.NeedStart:
                 self.state = 'STOPPING'
                 self.doStopService(*args, **kwargs)
-        # ---STARTING---
+        #---STARTING---
         elif self.state == 'STARTING':
             if event == 'stop':
                 self.doSetCallback(*args, **kwargs)
@@ -280,7 +275,7 @@ class LocalService(automat.Automat):
             elif event == 'service-started' and not self.NeedStop:
                 self.state = 'ON'
                 self.doNotifyStarted(*args, **kwargs)
-        # ---DEPENDS_OFF---
+        #---DEPENDS_OFF---
         elif self.state == 'DEPENDS_OFF':
             if event == 'stop':
                 self.doSetCallback(*args, **kwargs)
@@ -292,7 +287,7 @@ class LocalService(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---STOPPING---
+        #---STOPPING---
         elif self.state == 'STOPPING':
             if event == 'start':
                 self.doSetCallback(*args, **kwargs)
@@ -303,7 +298,7 @@ class LocalService(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -316,14 +311,7 @@ class LocalService(automat.Automat):
             if self.service_name in svc.dependent_on():
                 if svc.state != 'OFF' and svc.state != 'DEPENDS_OFF' and svc.state != 'NOT_INSTALLED':
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            '    dependent %r not stopped yet, %r will have to wait'
-                            % (
-                                svc,
-                                self,
-                            ),
-                        )
+                        lg.out(_DebugLevel, '    dependent %r not stopped yet, %r will have to wait' % (svc, self))
                     return False
         return True
 
@@ -362,13 +350,7 @@ class LocalService(automat.Automat):
         if result:
             self.automat('service-started')
         else:
-            lg.warn(
-                'failed to start %r, result from .start() method is %r'
-                % (
-                    self,
-                    result,
-                )
-            )
+            lg.warn('failed to start %r, result from .start() method is %r' % (self, result))
             self.automat('service-failed', Exception('service %r failed to start' % self))
 
     def doStopService(self, *args, **kwargs):
@@ -485,7 +467,7 @@ class LocalService(automat.Automat):
         return self.stop()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class SlowStartingLocalService(LocalService):
@@ -495,9 +477,7 @@ class SlowStartingLocalService(LocalService):
         if getattr(self, 'starting_deferred', None):
             raise Exception('service already starting')
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(
-            lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason'))
-        )
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         return self.start()
 
     def _do_stop(self):

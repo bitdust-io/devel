@@ -6,7 +6,7 @@ import tornado.web
 config = options.Get()
 config.read()
 hyper_path = config.hyper_path
-# hyper_path = "backup.db"
+#hyper_path = "backup.db"
 version = config.version
 
 if 'testnet' in version:
@@ -30,9 +30,9 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         # redraw chart
 
-        # if full_ledger == 1:
+        #if full_ledger == 1:
         #    conn = sqlite3.connect(ledger_path)
-        # else:
+        #else:
 
         conn = sqlite3.connect(hyper_path, timeout=60.0)
 
@@ -114,7 +114,7 @@ class MainHandler(tornado.web.RequestHandler):
 
         tx_count = 0
         for x in all:
-            if x[9] == 0:  # if reward is 0
+            if x[9] == 0:  #if reward is 0
                 tx_count = tx_count + 1
 
         transferred_total = 0
@@ -131,14 +131,14 @@ class MainHandler(tornado.web.RequestHandler):
 
         for x in all:
 
-            try:  # first run
+            try:  #first run
                 x_old
             except:
                 x_old = 'init'
 
             if x[0] != x_old:
                 color_cell = '#E8E8E8'
-                view.append('<tr><td></td></tr>')  # block separator
+                view.append('<tr><td></td></tr>')  #block separator
             else:
                 color_cell = 'white'
 
@@ -148,7 +148,7 @@ class MainHandler(tornado.web.RequestHandler):
                 b = b + 1
 
             if x_old != x[0]:
-                view.append('<td>{}</td>'.format(x[0]))  # block height
+                view.append('<td>{}</td>'.format(x[0]))  #block height
             else:
                 view.append('<td></td>')
 
@@ -159,7 +159,7 @@ class MainHandler(tornado.web.RequestHandler):
             view.append('<td>{}</td>'.format(x[5][:56]))
 
             if x_old != x[0]:
-                view.append('<td>{}</td>'.format(x[7]))  # block hash
+                view.append('<td>{}</td>'.format(x[7]))  #block hash
             else:
                 view.append('<td></td>')
 
@@ -213,14 +213,14 @@ class MainHandler(tornado.web.RequestHandler):
         html.append(''.join(plotter))
         html.append('</div>')
 
-        data_total = str(sys.getsizeof(str(all)) / 1024)
+        data_total = str(sys.getsizeof(str(all))/1024)
         html.append("<div class ='container-fluid'>")
         html.append("<table class='table table-responsive'>")
 
         html.append('<tr><th>Statistics for the last 500 blocks</th>')
         html.append('<tr><td>Size in KB: </td><td>{}</td>'.format(data_total))
         html.append('<tr><td>Transactions: </td><td>{}</td>'.format(tx_count))
-        html.append('<tr><td>Transactions per block: </td><td>{}</td>'.format(tx_count / 500))
+        html.append('<tr><td>Transactions per block: </td><td>{}</td>'.format(tx_count/500))
         html.append('<tr><td>Total BIS transferred: </td><td>{}</td>'.format(transferred_total))
 
         html.append('</table>')
@@ -251,17 +251,21 @@ class MainHandler(tornado.web.RequestHandler):
         html.append('</html>')
 
         self.write(''.join(html))
-        # self.render("ex.html", data=data)
+        #self.render("ex.html", data=data)
 
 
 def make_app():
 
-    return tornado.web.Application(
-        [
-            (r'/', MainHandler),
-            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static'}),
-        ]
-    )
+    return tornado.web.Application([
+        (r'/', MainHandler),
+        (
+            r'/static/(.*)',
+            tornado.web.StaticFileHandler,
+            {
+                'path': 'static',
+            },
+        ),
+    ])
 
 
 if __name__ == '__main__':

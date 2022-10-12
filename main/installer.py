@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: installer.
 
@@ -66,24 +65,24 @@ EVENTS:
     * :red:`restore-start`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import sys
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     pass
 except:
     sys.exit('Error initializing twisted.internet.reactor in installer.py')
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -101,11 +100,11 @@ from userid import id_restorer
 
 from main import initializer
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Installer = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def IsExist():
@@ -113,7 +112,7 @@ def IsExist():
     return _Installer is not None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -134,7 +133,7 @@ def A(event=None, *args, **kwargs):
     return _Installer
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class Installer(automat.Automat):
@@ -170,7 +169,7 @@ class Installer(automat.Automat):
         initializer.A('installer.state', newstate)
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'WHAT_TO_DO?'
@@ -185,7 +184,7 @@ class Installer(automat.Automat):
                 self.flagCmdLine = True
                 self.doInit(*args, **kwargs)
                 id_restorer.A('start', *args, **kwargs)
-        # ---WHAT_TO_DO?---
+        #---WHAT_TO_DO?---
         elif self.state == 'WHAT_TO_DO?':
             if event == 'register-selected':
                 self.state = 'INPUT_NAME'
@@ -193,7 +192,7 @@ class Installer(automat.Automat):
             elif event == 'recover-selected':
                 self.state = 'LOAD_KEY'
                 self.doUpdate(*args, **kwargs)
-        # ---INPUT_NAME---
+        #---INPUT_NAME---
         elif self.state == 'INPUT_NAME':
             if event == 'back':
                 self.state = 'WHAT_TO_DO?'
@@ -212,7 +211,7 @@ class Installer(automat.Automat):
             elif event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        # ---LOAD_KEY---
+        #---LOAD_KEY---
         elif self.state == 'LOAD_KEY':
             if event == 'back':
                 self.state = 'WHAT_TO_DO?'
@@ -232,7 +231,7 @@ class Installer(automat.Automat):
             elif event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        # ---REGISTER---
+        #---REGISTER---
         elif self.state == 'REGISTER':
             if event == 'print':
                 self.doPrint(*args, **kwargs)
@@ -248,7 +247,7 @@ class Installer(automat.Automat):
             elif (event == 'id_registrator.state' and args[0] in ['DONE', 'FAILED']) and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(*args, **kwargs)
-        # ---AUTHORIZED---
+        #---AUTHORIZED---
         elif self.state == 'AUTHORIZED':
             if event == 'next':
                 self.state = 'WIZARD'
@@ -256,7 +255,7 @@ class Installer(automat.Automat):
             elif event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        # ---RECOVER---
+        #---RECOVER---
         elif self.state == 'RECOVER':
             if event == 'print':
                 self.doPrint(*args, **kwargs)
@@ -271,20 +270,20 @@ class Installer(automat.Automat):
             elif (event == 'id_restorer.state' and args[0] == 'FAILED') and not self.flagCmdLine:
                 self.state = 'LOAD_KEY'
                 self.doUpdate(*args, **kwargs)
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             if event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        # ---WIZARD---
+        #---WIZARD---
         elif self.state == 'WIZARD':
             if event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'install_wizard.state' and args[0] == 'DONE':
+            elif (event == 'install_wizard.state' and args[0] == 'DONE'):
                 self.state = 'DONE'
                 self.doUpdate(*args, **kwargs)
-        # ---RESTORED---
+        #---RESTORED---
         elif self.state == 'RESTORED':
             if event == 'print':
                 self.doPrint(*args, **kwargs)
@@ -352,7 +351,7 @@ class Installer(automat.Automat):
         src = args[0]['keysrc']
         lg.out(2, 'installer.doReadKey length=%s' % len(src))
         # src = bpio.ReadBinaryFile(keyfn)
-        if len(src) > 1024 * 10:
+        if len(src) > 1024*10:
             self.doPrint(('file is too big for private key', 'red'))
             return
         try:

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -32,26 +31,25 @@ module:: my_id
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 import tempfile
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -70,7 +68,7 @@ from crypt import key
 from userid import identity
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _LocalIdentity = None
 _LocalIDURL = None
@@ -83,7 +81,7 @@ _ValidTransports = [
     'proxy',
 ]
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -103,7 +101,7 @@ def shutdown():
     forgetLocalIdentity()
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def isLocalIdentityExists():
@@ -199,7 +197,6 @@ def getGlobalID(key_alias=None):
     if key_alias == 'master' and _LocalID is not None:
         return strng.to_text('{}${}'.format(key_alias, _LocalID))
     from userid import global_id
-
     glob_id = global_id.UrlToGlobalID(getIDURL())
     if not glob_id:
         return glob_id
@@ -227,7 +224,7 @@ def getID():
     return getGlobalID()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def loadLocalIdentity():
@@ -350,7 +347,7 @@ def eraseLocalIdentity(do_backup=True):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getValidTransports():
@@ -386,8 +383,10 @@ def validateTransports(orderL):
         if _Debug:
             lg.out(_DebugLevel, 'my_id.validateTransports ERROR no valid transports, using default transports ' + str(_ValidTransports))
         transports = _ValidTransports
-    #    if len(transports) != len(orderL):
-    #        lg.out(1, 'my_id.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
+
+
+#    if len(transports) != len(orderL):
+#        lg.out(1, 'my_id.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
     return transports
 
 
@@ -430,7 +429,7 @@ def getOrderFromContacts(ident):
     return ident.getProtoOrder()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def buildProtoContacts(id_obj, skip_transports=[]):
@@ -441,7 +440,6 @@ def buildProtoContacts(id_obj, skip_transports=[]):
     Make calls to transport services to build a list of my contacts.
     """
     from services import driver
-
     # prepare contacts
     current_contats = id_obj.getContactsByProto()
     current_order = id_obj.getProtoOrder()
@@ -476,7 +474,6 @@ def buildProtoContacts(id_obj, skip_transports=[]):
         lg.warn('service_gateway() is not started, use my current contacts as a source')
     else:
         from transport import gateway
-
         # build contacts data according transports priorities
         new_order = current_order
         for proto in active_transports:
@@ -581,14 +578,7 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     # remember the current identity - full XML source code
     current_identity_xmlsrc = getLocalIdentity().serialize()
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r'
-            % (
-                len(current_identity_xmlsrc),
-                new_revision,
-            ),
-        )
+        lg.out(_DebugLevel, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (len(current_identity_xmlsrc), new_revision))
     # getting a copy of local identity to be modified or another object to be used
     lid = identity_object or identity.identity(xmlsrc=current_identity_xmlsrc)
     # create a full list of needed transport methods

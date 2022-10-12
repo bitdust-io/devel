@@ -19,7 +19,6 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Boston, MA  02110-1335  USA
 
 """
-
 """
 WebSocketApp provides higher level APIs.
 """
@@ -37,7 +36,6 @@ from ._core import WebSocket, getdefaulttimeout
 from ._exceptions import *
 from . import _logging
 
-
 __all__ = ['WebSocketApp']
 
 
@@ -48,7 +46,7 @@ class Dispatcher:
 
     def read(self, sock, read_callback, check_callback):
         while self.app.keep_running:
-            r, w, e = select.select((self.app.sock.sock,), (), (), self.ping_timeout)
+            r, w, e = select.select((self.app.sock.sock, ), (), (), self.ping_timeout)
             if r:
                 if not read_callback():
                     break
@@ -75,7 +73,7 @@ class SSLDispatcher:
                 sock,
             ]
 
-        r, w, e = select.select((sock,), (), (), self.ping_timeout)
+        r, w, e = select.select((sock, ), (), (), self.ping_timeout)
         return r
 
 
@@ -84,24 +82,7 @@ class WebSocketApp(object):
     Higher level of APIs are provided.
     The interface is like JavaScript WebSocket object.
     """
-
-    def __init__(
-        self,
-        url,
-        header=None,
-        on_open=None,
-        on_message=None,
-        on_error=None,
-        on_close=None,
-        on_ping=None,
-        on_pong=None,
-        on_cont_message=None,
-        keep_running=True,
-        get_mask_key=None,
-        cookie=None,
-        subprotocols=None,
-        on_data=None,
-    ):
+    def __init__(self, url, header=None, on_open=None, on_message=None, on_error=None, on_close=None, on_ping=None, on_pong=None, on_cont_message=None, keep_running=True, get_mask_key=None, cookie=None, subprotocols=None, on_data=None):
         """
         url: websocket url.
         header: custom header for websocket handshake.
@@ -261,14 +242,7 @@ class WebSocketApp(object):
             self.sock = None
 
         try:
-            self.sock = WebSocket(
-                self.get_mask_key,
-                sockopt=sockopt,
-                sslopt=sslopt,
-                fire_cont_frame=self.on_cont_message is not None,
-                skip_utf8_validation=skip_utf8_validation,
-                enable_multithread=True if ping_interval else False,
-            )
+            self.sock = WebSocket(self.get_mask_key, sockopt=sockopt, sslopt=sslopt, fire_cont_frame=self.on_cont_message is not None, skip_utf8_validation=skip_utf8_validation, enable_multithread=True if ping_interval else False)
             self.sock.settimeout(getdefaulttimeout())
             self.sock.connect(
                 self.url,
@@ -320,12 +294,12 @@ class WebSocketApp(object):
                 return True
 
             def check():
-                if ping_timeout:
+                if (ping_timeout):
                     has_timeout_expired = time.time() - self.last_ping_tm > ping_timeout
                     has_pong_not_arrived_after_last_ping = self.last_pong_tm - self.last_ping_tm < 0
                     has_pong_arrived_too_late = self.last_pong_tm - self.last_ping_tm > ping_timeout
 
-                    if self.last_ping_tm and has_timeout_expired and (has_pong_not_arrived_after_last_ping or has_pong_arrived_too_late):
+                    if (self.last_ping_tm and has_timeout_expired and (has_pong_not_arrived_after_last_ping or has_pong_arrived_too_late)):
                         raise WebSocketTimeoutException('ping/pong timed out')
                 return True
 
@@ -346,8 +320,8 @@ class WebSocketApp(object):
         return Dispatcher(self, timeout)
 
     def _get_close_args(self, data):
-        """this functions extracts the code, reason from the close body
-        if they exists, and if the self.on_close except three arguments"""
+        """ this functions extracts the code, reason from the close body
+        if they exists, and if the self.on_close except three arguments """
         # if the on_close callback is "old", just return empty list
         if sys.version_info < (3, 0):
             if not self.on_close or len(inspect.getargspec(self.on_close).args) != 3:
@@ -357,7 +331,7 @@ class WebSocketApp(object):
                 return []
 
         if data and len(data) >= 2:
-            code = 256 * six.byte2int(data[0:1]) + six.byte2int(data[1:2])
+            code = 256*six.byte2int(data[0:1]) + six.byte2int(data[1:2])
             reason = data[2:].decode('utf-8')
             return [code, reason]
 

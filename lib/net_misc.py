@@ -30,7 +30,7 @@
 Some network routines
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import six
@@ -39,7 +39,7 @@ import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse 
 import six.moves.urllib.parse  # @UnresolvedImport
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import re
@@ -50,7 +50,7 @@ import platform
 import mimetypes
 import subprocess
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -70,21 +70,21 @@ from twisted.web.http_headers import Headers
 
 from zope.interface import implementer
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _ConnectionDoneCallbackFunc = None
 _ConnectionFailedCallbackFunc = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _UserAgentString = 'BitDust-http-agent'
 _ProxySettings = {'host': '', 'port': '', 'ssl': 'False', 'username': '', 'password': ''}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -95,7 +95,7 @@ def shutdown():
     pass
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def SetConnectionDoneCallbackFunc(f):
@@ -142,7 +142,7 @@ def ConnectionFailed(param=None, proto=None, info=None):
     return param
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def normalize_address(host_port, default_port=80):
@@ -201,7 +201,7 @@ def pack_address_text(host_port, proto=None, default_port=80):
     return strng.to_text(pack_address(host_port, proto=proto, default_port=default_port))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def parse_url(url, defaultPort=None):
@@ -244,7 +244,7 @@ def parse_credentials(host):
     return host, username, password
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def detect_proxy_settings():
@@ -352,7 +352,7 @@ def proxy_is_on():
     return get_proxy_host() != ''
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def downloadPageTwisted(url, filename):
@@ -363,7 +363,7 @@ def downloadPageTwisted(url, filename):
     return downloadPage(url, filename, agent=_UserAgentString)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 class HTTPProgressDownloader(HTTPDownloader):
@@ -374,7 +374,6 @@ class HTTPProgressDownloader(HTTPDownloader):
     ugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=
     enigma2-plugins;only_with_tag=HEAD
     """
-
     def __init__(self, url, fileOrName, writeProgress=None, *args, **kwargs):
         HTTPDownloader.__init__(self, url, fileOrName, supportPartial=0, *args, **kwargs)
         # Save callback(s) locally
@@ -414,7 +413,6 @@ def downloadWithProgressTwisted(url, file, progress_func):
     """
     global _UserAgentString
     from twisted.internet import ssl
-
     scheme, host, port, path = parse_url(url)
     factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme == 'https':
@@ -425,7 +423,7 @@ def downloadWithProgressTwisted(url, file, progress_func):
     return factory.deferred
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName, certificateFileName):
@@ -435,7 +433,6 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
     """
     global _UserAgentString
     from twisted.internet import ssl
-
     scheme, host, port, path = parse_url(url)
     factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme != 'https':
@@ -445,7 +442,7 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
     return factory.deferred
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
@@ -493,7 +490,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     return factory.deferred
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # class ProxyClientFactory(client.HTTPClientFactory):
 #
@@ -539,15 +536,10 @@ def readResponse(response, timeout):
     #     print('Response headers:')
     #     print(list(response.headers.getAllRawHeaders()))
     if response.code != 200:
-        return fail(
-            Exception(
-                'Bad response from the server: [%d] %s'
-                % (
-                    response.code,
-                    response.phrase.strip(),
-                )
-            )
-        )
+        return fail(Exception('Bad response from the server: [%d] %s' % (
+            response.code,
+            response.phrase.strip(),
+        ), ))
     d = readBody(response)
     d.addTimeout(timeout=timeout, clock=reactor)
     d.addErrback(readBodyFailed)
@@ -585,13 +577,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
     d = agent.request(
         method=method,
         uri=url,
-        headers=Headers(
-            {
-                b'User-Agent': [
-                    _UserAgentString,
-                ]
-            }
-        ),
+        headers=Headers({b'User-Agent': [_UserAgentString]}),
     )
     #     d = getPage(url, agent=_UserAgentString, timeout=timeout)
     #     if timeout:
@@ -604,7 +590,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
     return d
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def downloadHTTP(url, fileOrName):
@@ -622,7 +608,7 @@ def downloadHTTP(url, fileOrName):
     return factory.deferred
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def IpIsLocal(ip):
@@ -650,7 +636,7 @@ def IpIsLocal(ip):
     return False
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def getLocalIp():
@@ -669,7 +655,7 @@ def getLocalIp():
     try:
         ipaddr = socket.gethostbyname(socket.gethostname())
         if not (ipaddr.startswith('127')):
-            # print('Can use Method 1: ' + ipaddr)
+            #print('Can use Method 1: ' + ipaddr)
             return ipaddr
     except:
         pass
@@ -685,7 +671,7 @@ def getLocalIp():
     try:
         s.connect(('google.com', 0))
         ipaddr = s.getsockname()[0]
-        # print('Can used Method 2: ' + ipaddr)
+        #print('Can used Method 2: ' + ipaddr)
         return ipaddr
     except:
         pass
@@ -702,8 +688,8 @@ def getLocalIp():
         data = p.communicate()
         sdata = data[0].split()
         ipaddr = sdata[sdata.index('src') + 1]
-        # netdev = sdata[ sdata.index('dev')+1 ]
-        # print('Can used Method 3: ' + ipaddr)
+        #netdev = sdata[ sdata.index('dev')+1 ]
+        #print('Can used Method 3: ' + ipaddr)
         return ipaddr
 
     elif os_str == 'WINDOWS':
@@ -720,13 +706,13 @@ def getLocalIp():
                 if sdata[0] == 'Gateway' and sdata[1] == 'Interface':
                     ipaddr = sdata[6]
                     break
-        # print('Can used Method 4: ' + ipaddr)
+        #print('Can used Method 4: ' + ipaddr)
         return ipaddr
 
     return '127.0.0.1'  # uh oh, we're in trouble, but don't want to return none
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def TestInternetConnectionOld(remote_host='www.google.com'):  # 74.125.113.99
@@ -748,7 +734,7 @@ def TestInternetConnectionOld(remote_host='www.google.com'):  # 74.125.113.99
     return result is None or result == 0
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
@@ -786,22 +772,18 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def TestInternetConnection(remote_hosts=None, timeout=10):
     if remote_hosts is None:
         remote_hosts = []
         from userid import known_servers
-
         for host, ports in known_servers.by_host().items():
-            remote_hosts.append(
-                'http://%s:%d'
-                % (
-                    host,
-                    ports[0],
-                )
-            )
+            remote_hosts.append('http://%s:%d' % (
+                host,
+                ports[0],
+            ))
     random.shuffle(remote_hosts)
     dl = []
     for host in remote_hosts[:5]:
@@ -809,7 +791,7 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
     return DeferredList(dl, fireOnOneCallback=True, fireOnOneErrback=False, consumeErrors=True)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
@@ -821,7 +803,6 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 
     http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
     """
-
     class StringReceiver(protocol.Protocol):
         buffer = ''
 
@@ -991,12 +972,10 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             boundary = None
             try:
                 import uuid
-
                 boundary = uuid.uuid4().hex
             except ImportError:
                 import random
                 import sha
-
                 bits = random.getrandbits(160)
                 boundary = sha.new(str(bits).encode()).hexdigest()
             return boundary
@@ -1031,7 +1010,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     return request
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 @implementer(iweb.IBodyProducer)
@@ -1057,19 +1036,15 @@ def http_post_data(url, data, connectTimeout=15):
     requested = agent.request(
         b'POST',
         url,
-        Headers(
-            {
-                'User-Agent': [
-                    'BitDust HTTP client',
-                ],
-            }
-        ),
+        Headers({
+            'User-Agent': ['BitDust HTTP client'],
+        }),
         body,
     )
     return requested
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getIfconfig(iface='en0'):
@@ -1103,7 +1078,6 @@ def getNetworkInterfaces():
         dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
         try:
             import ctypes
-
             buffer = ctypes.create_string_buffer(300)
             ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)  # @UndefinedVariable
             dirs.insert(0, buffer.value.decode('mbcs'))
@@ -1147,25 +1121,17 @@ def getNetworkInterfaces():
         try:
             # TODO: try to avoid socket connect to remote host
             return [
-                _f
-                for _f in [
-                    l
-                    for l in (
+                _f for _f in [
+                    l for l in (
                         [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith('127.')][:1],
                         # TODO: replace 8.8.8.8 with random seed node
                         [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]],
-                    )
-                    if l
-                ][0]
-                if _f
+                    ) if l
+                ][0] if _f
             ]
         except:
             eth0 = getIfconfig('eth0')
             en0 = getIfconfig('en0')
-            return [
-                _f
-                for _f in [
-                    en0 or eth0,
-                ]
-                if _f
-            ]
+            return [_f for _f in [
+                en0 or eth0,
+            ] if _f]

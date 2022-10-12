@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 3: customer-1 is able to send private message to customer-2
 
@@ -49,26 +48,26 @@ def test_brokers():
 
     prepare()
 
-    # --- SCENARIO 3: customer-1 send private message to customer-2
+    #--- SCENARIO 3: customer-1 send private message to customer-2
     scenarios.scenario3()
 
-    # --- SCENARIO 8: customer-3 receive all archived messages from message broker
+    #--- SCENARIO 8: customer-3 receive all archived messages from message broker
     scenarios.scenario8()
 
-    # --- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
+    #--- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
     scenarios.scenario18()
 
-    # --- SCENARIO 21: broker-1 was stopped and started again but disconnected from previous streams
+    #--- SCENARIO 21: broker-1 was stopped and started again but disconnected from previous streams
     scenarios.scenario21()
 
-    # --- SCENARIO 20: customer-3 stopped and started again but still connected to the group
+    #--- SCENARIO 20: customer-3 stopped and started again but still connected to the group
     scenarios.scenario20()
 
-    # --- SCENARIO 22: customer-1 group chat with customer-2 but broker-2 was restarted quickly
+    #--- SCENARIO 22: customer-1 group chat with customer-2 but broker-2 was restarted quickly
     scenarios.scenario22()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def prepare():

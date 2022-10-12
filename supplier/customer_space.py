@@ -22,32 +22,31 @@
 #
 #
 #
-
 """
 .. module:: customer_space.
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import time
 import base64
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -83,12 +82,12 @@ from userid import global_id
 from userid import id_url
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SupplierFileModifiedLatest = {}
 _SupplierFileModifiedNotifyTasks = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def register_customer_key(customer_public_key_id, customer_public_key):
@@ -114,7 +113,7 @@ def register_customer_key(customer_public_key_id, customer_public_key):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def verify_ownership(newpacket, raise_exception=False):
@@ -199,7 +198,7 @@ def verify_ownership(newpacket, raise_exception=False):
     raise Exception('scenario not implemented yet, received %r' % newpacket)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def make_filename(customerGlobID, filePath, keyAlias=None):
@@ -249,7 +248,7 @@ def make_valid_filename(customerIDURL, glob_path):
     return filename
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_idurl, authorized_idurl):
@@ -266,17 +265,14 @@ def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_id
                 current_task.cancel()
             _SupplierFileModifiedNotifyTasks.pop(task_id)
         _SupplierFileModifiedLatest[task_id] = time.time()
-        events.send(
-            'supplier-file-modified',
-            data=dict(
-                action=action,
-                remote_path=remote_path,
-                key_alias=key_alias,
-                authorized_idurl=authorized_idurl,
-                customer_idurl=customer_idurl,
-                supplier_idurl=my_id.getIDURL(),
-            ),
-        )
+        events.send('supplier-file-modified', data=dict(
+            action=action,
+            remote_path=remote_path,
+            key_alias=key_alias,
+            authorized_idurl=authorized_idurl,
+            customer_idurl=customer_idurl,
+            supplier_idurl=my_id.getIDURL(),
+        ))
         return
     new_delay = latest_event_time + 60 + 1 - time.time()
     if _Debug:
@@ -286,23 +282,31 @@ def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_id
             current_task.cancel()
         _SupplierFileModifiedNotifyTasks.pop(task_id)
     _SupplierFileModifiedNotifyTasks[task_id] = reactor.callLater(  # @UndefinedVariable
-        new_delay, do_notify_supplier_file_modified, key_alias, remote_path, action, customer_idurl, authorized_idurl
+        new_delay,
+        do_notify_supplier_file_modified,
+        key_alias,
+        remote_path,
+        action,
+        customer_idurl,
+        authorized_idurl,
     )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_data(newpacket):
     if id_url.is_the_same(newpacket.OwnerID, my_id.getIDURL()):
         # this Data belong to us, SKIP
         return False
-    #     if not contactsdb.is_customer(newpacket.OwnerID):
-    #         # SECURITY
-    #         # TODO: process files from another customer : glob_path['idurl']
-    #         lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
-    #         # p2p_service.SendFail(newpacket, 'not a customer')
-    #         return False
+
+
+#     if not contactsdb.is_customer(newpacket.OwnerID):
+#         # SECURITY
+#         # TODO: process files from another customer : glob_path['idurl']
+#         lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
+#         # p2p_service.SendFail(newpacket, 'not a customer')
+#         return False
     glob_path = global_id.ParseGlobalID(newpacket.PacketID)
     if not glob_path['path']:
         # backward compatible check
@@ -494,7 +498,7 @@ def on_retrieve(newpacket):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_list_files(newpacket):
@@ -506,9 +510,7 @@ def on_list_files(newpacket):
     except:
         if strng.to_text(newpacket.Payload) == settings.ListFilesFormat():
             json_query = {
-                'items': [
-                    '*',
-                ],
+                'items': ['*'],
             }
     if json_query is None:
         lg.exc('unrecognized ListFiles() query received')
@@ -539,7 +541,7 @@ def on_list_files(newpacket):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_delete_file(newpacket):
@@ -648,7 +650,7 @@ def on_delete_backup(newpacket):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_customer_accepted(evt):
@@ -734,7 +736,7 @@ def on_customer_terminated(evt):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_identity_url_changed(evt):
@@ -745,13 +747,7 @@ def on_identity_url_changed(evt):
         if old_idurl == customer_idurl:
             customer_idurl.refresh()
             contacts_changed = True
-            lg.info(
-                'found customer idurl rotated : %r -> %r'
-                % (
-                    evt.data['old_idurl'],
-                    evt.data['new_idurl'],
-                )
-            )
+            lg.info('found customer idurl rotated : %r -> %r' % (evt.data['old_idurl'], evt.data['new_idurl']))
     if contacts_changed:
         contactsdb.save_customers()
     # update meta info for that customer
@@ -764,13 +760,7 @@ def on_identity_url_changed(evt):
                 if latest_customer_idurl_bin != customer_idurl_bin:
                     all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
                     meta_info_changed = True
-                    lg.info(
-                        'found customer idurl rotated in customers meta info : %r -> %r'
-                        % (
-                            latest_customer_idurl_bin,
-                            customer_idurl_bin,
-                        )
-                    )
+                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (latest_customer_idurl_bin, customer_idurl_bin))
     if meta_info_changed:
         contactsdb.write_customers_meta_info_all(all_meta_info)
     # update customer idurl in "space" file
@@ -783,13 +773,7 @@ def on_identity_url_changed(evt):
                 if latest_customer_idurl_bin != customer_idurl_bin:
                     space_dict[latest_customer_idurl_bin] = space_dict.pop(customer_idurl_bin)
                     space_changed = True
-                    lg.info(
-                        'found customer idurl rotated in customer quotas dictionary : %r -> %r'
-                        % (
-                            latest_customer_idurl_bin,
-                            customer_idurl_bin,
-                        )
-                    )
+                    lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (latest_customer_idurl_bin, customer_idurl_bin))
     if space_changed:
         accounting.write_customers_quotas(space_dict, free_space)
     # rename customer folder where I store all his files
@@ -801,13 +785,7 @@ def on_identity_url_changed(evt):
     if os.path.isdir(old_owner_dir):
         try:
             bpio.move_dir_recursive(old_owner_dir, new_owner_dir)
-            lg.info(
-                'copied %r into %r'
-                % (
-                    old_owner_dir,
-                    new_owner_dir,
-                )
-            )
+            lg.info('copied %r into %r' % (old_owner_dir, new_owner_dir))
             if os.path.exists(old_owner_dir):
                 bpio._dir_remove(old_owner_dir)
                 lg.warn('removed %r' % old_owner_dir)

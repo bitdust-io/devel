@@ -14,7 +14,6 @@ from bismuthvoting.bip39 import BIP39
 
 __version__ = '0.0.4'
 
-
 FIELD_ORDER = 2**256
 
 
@@ -40,14 +39,14 @@ def string_to_int(s):
     for c in s:
         if not isinstance(c, int):
             c = ord(c)
-        result = 256 * result + c
+        result = 256*result + c
     return result
 
 
 def random_padding(data: bytes, block_size: int = 16, pad_with_zeros=False) -> bytes:
     padding_len = block_size - len(data) % block_size
     if pad_with_zeros:
-        padding = b'\x00' * padding_len
+        padding = b'\x00'*padding_len
     else:
         padding = get_random_bytes(padding_len)
     return data + padding

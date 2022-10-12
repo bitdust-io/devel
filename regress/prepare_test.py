@@ -2,7 +2,6 @@ import os
 import sys
 import json
 
-
 test_name = sys.argv[1]
 
 conf = json.loads(open(os.path.join('tests', test_name, 'conf.json')).read())
@@ -33,12 +32,12 @@ for container_name, container_info in conf['containers'].items():
     if container_volumes:
         container_volumes_src = ''
         for volume in container_volumes:
-            container_volumes_src +=  '\n      - %s' % volume
+            container_volumes_src += '\n      - %s' % volume
         container_src += '\n    volumes:%s' % container_volumes_src
     if container_links:
         container_links_src = ''
         for link in container_links:
-            container_links_src +=  '\n      - %s' % link
+            container_links_src += '\n      - %s' % link
         container_src += '\n    links:%s' % container_links_src
     all_containers_src += (container_src + '\n')
 

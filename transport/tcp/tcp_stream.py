@@ -19,24 +19,22 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 ..module:: tcp_stream
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
 from io import BytesIO
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import time
@@ -48,7 +46,7 @@ from twisted.internet import defer, interfaces
 
 from zope.interface import implementer
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -59,21 +57,21 @@ from main import settings
 from lib import misc
 from lib import strng
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 MIN_PROCESS_STREAMS_DELAY = 0.1
 MAX_PROCESS_STREAMS_DELAY = 5
 
 MAX_SIMULTANEOUS_OUTGOING_FILES = 20
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _LastFileID = None
 _ProcessStreamsDelay = 0.1
 _ProcessStreamsTask = None
 _StreamCounter = 0
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def start_process_streams():
@@ -93,7 +91,6 @@ def stop_process_streams():
 
 def process_streams():
     from transport.tcp import tcp_node
-
     global _ProcessStreamsDelay
     global _ProcessStreamsTask
     has_activity = False
@@ -111,15 +108,17 @@ def process_streams():
         MAX_PROCESS_STREAMS_DELAY,
     )
     # attenuation
-    _ProcessStreamsTask = reactor.callLater(_ProcessStreamsDelay, process_streams)  # @UndefinedVariable
+    _ProcessStreamsTask = reactor.callLater(  # @UndefinedVariable
+        _ProcessStreamsDelay,
+        process_streams,
+    )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def list_input_streams(sorted_by_time=True):
     from transport.tcp import tcp_node
-
     streams = []
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
@@ -132,7 +131,6 @@ def list_input_streams(sorted_by_time=True):
 
 def list_output_streams(sorted_by_time=True):
     from transport.tcp import tcp_node
-
     streams = []
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
@@ -145,7 +143,6 @@ def list_output_streams(sorted_by_time=True):
 
 def find_stream(file_id=None, transfer_id=None):
     from transport.tcp import tcp_node
-
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
             if connection.stream:
@@ -162,13 +159,13 @@ def find_stream(file_id=None, transfer_id=None):
     return None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def make_stream_id():
     global _StreamCounter
     _StreamCounter += 1
-    return random.randint(10, 99) * 1000000 + random.randint(10, 99) * 10000 + _StreamCounter % 10000
+    return random.randint(10, 99)*1000000 + random.randint(10, 99)*10000 + _StreamCounter % 10000
 
 
 def make_file_id():
@@ -176,7 +173,7 @@ def make_file_id():
     Generate a unique file ID for OutboxFile.
     """
     global _LastFileID
-    newid = int(str(int(time.time() * 100.0))[4:])
+    newid = int(str(int(time.time()*100.0))[4:])
     if _LastFileID is None:
         _LastFileID = newid
     elif _LastFileID >= newid:
@@ -186,10 +183,10 @@ def make_file_id():
     return _LastFileID
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
-class TCPFileStream:
+class TCPFileStream():
     def __init__(self, connection):
         self.stream_id = make_stream_id()  # not used at the moment, use file_id instead
         self.connection = connection
@@ -199,14 +196,14 @@ class TCPFileStream:
         self.sender = MultipleFilesSender(self.connection.transport)
 
     def close(self):
-        """ """
+        """
+        """
         self.sender.close()
         self.sender = None
         self.connection = None
 
     def abort_files(self, reason='connection closed'):
         from transport.tcp import tcp_connection
-
         inbox_file_ids_to_remove = [fid for fid in self.inboxFiles.keys()]
         outbox_file_ids_to_remove = [fid for fid in self.outboxFiles.keys()]
         if _Debug:
@@ -222,9 +219,9 @@ class TCPFileStream:
             self.outbox_file_done(file_id, 'failed', reason)
 
     def data_received(self, payload):
-        """ """
+        """
+        """
         from transport.tcp import tcp_connection
-
         inp = BytesIO(payload)
         try:
             file_id = int(struct.unpack('i', inp.read(4))[0])
@@ -236,7 +233,7 @@ class TCPFileStream:
         inp_data = inp.read()
         inp.close()
         if file_id not in self.inboxFiles:
-            if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
+            if len(self.inboxFiles) >= 2*MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop
                 # that session!
                 lg.warn('too many incoming files, close connection %s' % str(self.connection))
@@ -262,7 +259,7 @@ class TCPFileStream:
             return
         self.outboxFiles[file_id].ok_received = True
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id)
+            lg.args(_DebugLevel*2, file_id)
         if not self.outboxFiles[file_id].registration:
             self.outbox_file_done(file_id, 'finished')
 
@@ -283,7 +280,6 @@ class TCPFileStream:
 
     def create_inbox_file(self, file_id, file_size):
         from transport.tcp import tcp_interface
-
         infile = InboxFile(self, file_id, file_size)
         d = tcp_interface.interface_register_file_receiving(self.connection.getAddress(), self.connection.peer_idurl, infile.filename)
         d.addCallback(self.on_inbox_file_registered, file_id)
@@ -316,7 +312,6 @@ class TCPFileStream:
         keep_alive,
     ):
         from transport.tcp import tcp_interface
-
         file_id = make_file_id()
         outfile = OutboxFile(self, filename, file_id, filesize, description, result_defer, keep_alive)
         if keep_alive:
@@ -357,17 +352,15 @@ class TCPFileStream:
 
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):
         from transport.tcp import tcp_interface
-
         tcp_interface.interface_unregister_file_sending(transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
         from transport.tcp import tcp_interface
-
         tcp_interface.interface_unregister_file_receiving(transfer_id, status, bytes_received, error_message)
 
     def inbox_file_done(self, file_id, status, error_message=None):
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, status, error_message)
+            lg.args(_DebugLevel*2, file_id, status, error_message)
         if file_id not in self.inboxFiles:
             lg.warn('file_id=%r not exist' % file_id)
             return
@@ -383,7 +376,7 @@ class TCPFileStream:
 
     def outbox_file_done(self, file_id, status, error_message=None):
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, status, error_message)
+            lg.args(_DebugLevel*2, file_id, status, error_message)
         if file_id not in self.outboxFiles:
             lg.warn('file_id=%r not exist' % file_id)
             return
@@ -401,10 +394,10 @@ class TCPFileStream:
         del outfile
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
-class InboxFile:
+class InboxFile():
     def __init__(self, stream, file_id, file_size):
         self.typ = 'tcp-in'
         self.transfer_id = None
@@ -416,16 +409,13 @@ class InboxFile:
         self.bytes_received = 0
         self.started = time.time()
         self.last_block_time = time.time()
-        self.timeout = max(int(self.size / settings.SendingSpeedLimit()), 3)
+        self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 3)
         if _Debug:
             lg.out(_DebugLevel, '<<<TCP-IN %s with %d bytes write to %s' % (self.file_id, self.size, self.filename))
 
     def close(self):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                '<<<TCP-IN %s CLOSED with %s | %s' % (self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address),
-            )
+            lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED with %s | %s' % (self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
         if self.fin:
             os.close(self.fin)
             self.fin = None
@@ -447,10 +437,10 @@ class InboxFile:
         return time.time() - self.started > self.timeout
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
-class OutboxFile:
+class OutboxFile():
     def __init__(self, stream, filename, file_id, filesize, description='', result_defer=None, keep_alive=True):
         self.typ = 'tcp-out'
         self.transfer_id = None
@@ -466,17 +456,14 @@ class OutboxFile:
         self.bytes_sent = 0
         self.bytes_out = 0
         self.started = time.time()
-        self.timeout = max(int(self.size / settings.SendingSpeedLimit()), 6)
+        self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 6)
         self.fout = open(self.filename, 'rb')
         if _Debug:
             lg.out(_DebugLevel, '>>>TCP-OUT %s with %d bytes reading from %s' % (self.file_id, self.size, self.filename))
 
     def close(self):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                '>>>TCP-OUT %s CLOSED with %s | %s' % (self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address),
-            )
+            lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED with %s | %s' % (self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
         self.stop()
         if self.fout:
             self.fout.close()
@@ -512,7 +499,7 @@ class OutboxFile:
             self.stream.outbox_file_done(self.file_id, 'finished')
         else:
             if _Debug:
-                lg.args(_DebugLevel * 2, self.file_id)
+                lg.args(_DebugLevel*2, self.file_id)
 
     def transfer_failed(self, err):
         try:
@@ -525,7 +512,6 @@ class OutboxFile:
 
     def send_chunk(self, chunk):
         from transport.tcp import tcp_connection
-
         self.stream.connection.sendData(tcp_connection.CMD_DATA, chunk)
 
     def transform_data(self, data):
@@ -540,7 +526,7 @@ class OutboxFile:
         return datagram
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 @implementer(interfaces.IProducer)
@@ -562,13 +548,14 @@ class MultipleFilesSender:
         return file_id in self.active_files
 
     def startFileTransfer(self, file_id, file_object, writer, transform):
-        """ """
+        """
+        """
         if file_id in self.active_files:
             raise ValueError('file_id=%r already registered for transfer' % file_id)
         deferred = defer.Deferred()
         self.active_files[file_id] = (deferred, file_object, writer, transform)
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, file_object, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, file_id, file_object, [fid for fid in self.active_files.keys()])
         if not self.consumer.producerPaused:
             self.resumeProducing()
         return deferred
@@ -576,34 +563,28 @@ class MultipleFilesSender:
     def stopFileTransfer(self, file_id, reason='cancelled'):
         if file_id not in self.active_files:
             raise ValueError('file_id=%r is not registered for transfer' % file_id)
-        deferred, _, _, _ = self.active_files.pop(
-            file_id,
-            (
-                None,
-                None,
-                None,
-                None,
-            ),
-        )
+        deferred, _, _, _ = self.active_files.pop(file_id, (
+            None,
+            None,
+            None,
+            None,
+        ))
         if _Debug:
-            lg.args(_DebugLevel * 2, file_id, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, file_id, [fid for fid in self.active_files.keys()])
         if deferred:
             deferred.errback(Exception(reason))
 
     def resumeProducing(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, [fid for fid in self.active_files.keys()])
         files_to_be_removed = []
         for file_id in self.active_files.keys():
-            deferred, file_object, writer, transform = self.active_files.get(
-                file_id,
-                (
-                    None,
-                    None,
-                    None,
-                    None,
-                ),
-            )
+            deferred, file_object, writer, transform = self.active_files.get(file_id, (
+                None,
+                None,
+                None,
+                None,
+            ))
             if not file_object:
                 lg.warn('did not found file object for file_id=%r' % file_id)
                 files_to_be_removed.append(file_id)
@@ -632,8 +613,8 @@ class MultipleFilesSender:
 
     def pauseProducing(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, [fid for fid in self.active_files.keys()])
 
     def stopProducing(self):
         if _Debug:
-            lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
+            lg.args(_DebugLevel*2, [fid for fid in self.active_files.keys()])

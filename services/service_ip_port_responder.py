@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -55,7 +54,6 @@ class IPPortResponderService(LocalService):
         from main import settings
         from lib import udp
         from logs import lg
-
         if not udp.proto(settings.getUDPPort()):
             lg.warn('udp port %s is not opened yet' % settings.getUDPPort())
             return False
@@ -65,21 +63,18 @@ class IPPortResponderService(LocalService):
 
     def stop(self):
         from stun import stun_server
-
         stun_server.A('stop')
         stun_server.Destroy()
         return True
 
     def on_suspend(self, *args, **kwargs):
         from stun import stun_server
-
         stun_server.A('stop')
         return True
 
     def on_resume(self, *args, **kwargs):
         from stun import stun_server
         from main import settings
-
         udp_port = int(settings.getUDPPort())
         stun_server.A('start', udp_port)
         return True

@@ -28,12 +28,10 @@ import json
 from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
 
-
 try:
     buffer = buffer  # @UndefinedVariable
 except:
     buffer = memoryview
-
 
 PROTOCOL_VERSION = 1
 
@@ -49,7 +47,6 @@ class DataStore(DictMixin):
 
     @note: This provides an interface for a dict-like object
     """
-
     def keys(self):
         """
         Return a list of the keys in this data store.
@@ -79,7 +76,8 @@ class DataStore(DictMixin):
         """
 
     def getItem(self, key):
-        """ """
+        """
+        """
 
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         """
@@ -106,21 +104,23 @@ class DataStore(DictMixin):
         """
 
     def __iter__(self):
-        """ """
+        """
+        """
         return self
 
     def __next__(self):
-        """ """
+        """
+        """
 
     def __len__(self):
-        """ """
+        """
+        """
 
 
 class DictDataStore(DataStore):
     """
     A datastore using an in-memory Python dictionary.
     """
-
     def __init__(self):
         # Dictionary format:
         # { <key>: (<value>, <lastPublished>, <originallyPublished> <originalPublisherID>) }
@@ -197,7 +197,6 @@ class SQLiteVersionedJsonDataStore(DataStore):
     """
     SQLite database-based datastore.
     """
-
     def __init__(self, dbFile=':memory:'):
         """
         @param dbFile: The name of the file containing the SQLite database; if
@@ -207,13 +206,10 @@ class SQLiteVersionedJsonDataStore(DataStore):
         self.dbFile = dbFile
         createDB = not os.path.exists(dbFile)
         if _Debug:
-            print(
-                '[DHT DB] dbFile=%r   createDB=%r'
-                % (
-                    dbFile,
-                    createDB,
-                )
-            )
+            print('[DHT DB] dbFile=%r   createDB=%r' % (
+                dbFile,
+                createDB,
+            ))
         self._db = sqlite3.connect(dbFile)
         self._db.isolation_level = None
         self._db.text_factory = encoding.to_text
@@ -244,12 +240,9 @@ class SQLiteVersionedJsonDataStore(DataStore):
         return v['d']
 
     def __delitem__(self, key):
-        self._cursor.execute(
-            'DELETE FROM data WHERE key=:reqKey',
-            {
-                'reqKey': key,
-            },
-        )
+        self._cursor.execute('DELETE FROM data WHERE key=:reqKey', {
+            'reqKey': key,
+        })
 
     def create_table(self):
         self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
@@ -293,11 +286,13 @@ class SQLiteVersionedJsonDataStore(DataStore):
         return int(self._dbQuery(key, 'originallyPublished'))
 
     def expireSeconds(self, key):
-        """ """
+        """
+        """
         return int(self._dbQuery(key, 'expireSeconds'))
 
     def revision(self, key):
-        """ """
+        """
+        """
         try:
             return int(self._dbQuery(key, 'revision'))
         except KeyError:
@@ -312,43 +307,37 @@ class SQLiteVersionedJsonDataStore(DataStore):
         opID = originalPublisherID or None
         if self._cursor.fetchone() is None:
             self._cursor.execute(
-                'INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                (
+                'INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
                     key_hex,
-                    json.dumps(
-                        {
-                            'k': key_hex,
-                            'd': value,
-                            'v': PROTOCOL_VERSION,
-                        },
-                    ),
+                    json.dumps({
+                        'k': key_hex,
+                        'd': value,
+                        'v': PROTOCOL_VERSION,
+                    }),
                     lastPublished,
                     originallyPublished,
                     opID,
                     expireSeconds,
                     new_revision,
-                ),
+                )
             )
             if _Debug:
                 print('[DHT DB] %r setItem  stored new value for key [%s] with revision %d' % (self.dbFile, key, new_revision))
         else:
             self._cursor.execute(
-                'UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?',
-                (
-                    json.dumps(
-                        {
-                            'k': key_hex,
-                            'd': value,
-                            'v': PROTOCOL_VERSION,
-                        },
-                    ),
+                'UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
+                    json.dumps({
+                        'k': key_hex,
+                        'd': value,
+                        'v': PROTOCOL_VERSION,
+                    }),
                     lastPublished,
                     originallyPublished,
                     opID,
                     expireSeconds,
                     new_revision,
                     key_hex,
-                ),
+                )
             )
             if _Debug:
                 print('[DHT DB] %r setItem  updated existing value for key [%s] with revision %d' % (self.dbFile, key, new_revision))
@@ -356,12 +345,9 @@ class SQLiteVersionedJsonDataStore(DataStore):
     def getItem(self, key):
         key_hex = key
         key_hex = encoding.to_text(key)
-        self._cursor.execute(
-            'SELECT * FROM data WHERE key=:reqKey',
-            {
-                'reqKey': key_hex,
-            },
-        )
+        self._cursor.execute('SELECT * FROM data WHERE key=:reqKey', {
+            'reqKey': key_hex,
+        })
 
         row = self._cursor.fetchone()
         if not row:
@@ -420,14 +406,12 @@ class SQLiteVersionedJsonDataStore(DataStore):
             _k = row[0]
             _opID = row[4] or None
 
-            items.append(
-                dict(
-                    value=value,
-                    lastPublished=row[2],
-                    originallyPublished=row[3],
-                    originalPublisherID=_opID,
-                    expireSeconds=row[5],
-                    revision=row[6],
-                )
-            )
+            items.append(dict(
+                value=value,
+                lastPublished=row[2],
+                originallyPublished=row[3],
+                originalPublisherID=_opID,
+                expireSeconds=row[5],
+                revision=row[6],
+            ))
         return items

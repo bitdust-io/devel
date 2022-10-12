@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -54,7 +53,6 @@ class NetworkService(LocalService):
         from twisted.internet import task
         from main import events
         from p2p import network_connector
-
         network_connector.A('init')
         self.task = task.LoopingCall(self._do_check_network_interfaces)
         self.task.start(20, now=False)
@@ -65,7 +63,6 @@ class NetworkService(LocalService):
     def stop(self):
         from main import events
         from p2p import network_connector
-
         events.remove_subscriber(self._on_my_external_ip_changed, 'my-external-ip-changed')
         events.remove_subscriber(self._on_my_identity_rotate_complete, 'my-identity-rotate-complete')
         network_connector.Destroy()
@@ -76,23 +73,14 @@ class NetworkService(LocalService):
 
     def _on_my_external_ip_changed(self, evt):
         from logs import lg
-
         if evt.data['old'].strip():
-            lg.info(
-                'need to reconnect because my external IP changed %r -> %r'
-                % (
-                    evt.data['old'],
-                    evt.data['new'],
-                )
-            )
+            lg.info('need to reconnect because my external IP changed %r -> %r' % (evt.data['old'], evt.data['new']))
             from p2p import network_connector
-
             network_connector.A('reconnect')
 
     def _on_my_identity_rotate_complete(self, evt):
         from logs import lg
         from services import driver
-
         if driver.is_enabled('service_gateway'):
             lg.warn('my identity sources were rotated, need to restart service_gateway()')
             #             if driver.is_enabled('service_identity_propagate'):
@@ -117,7 +105,6 @@ class NetworkService(LocalService):
         from lib.net_misc import getNetworkInterfaces
         from p2p import network_connector
         from logs import lg
-
         known_interfaces = getNetworkInterfaces()
         if '127.0.0.1' in known_interfaces:
             known_interfaces.remove('127.0.0.1')

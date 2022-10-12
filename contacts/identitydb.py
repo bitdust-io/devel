@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: identitydb.
 
@@ -31,18 +30,18 @@ changing identities sources and maintain a several "index" dictionaries
 to speed up processes.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import os
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -55,7 +54,7 @@ from lib import nameurl
 from userid import identity
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # Dictionary cache of identities - lookup by primary url
 # global dictionary of identities in this file
@@ -70,7 +69,7 @@ _IPPort2IDURL = {}
 _LocalIPs = {}
 _IdentityCacheUpdatedCallbacks = []
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def cache():
@@ -88,7 +87,7 @@ def cache_contacts():
     return _Contact2IDURL
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -115,7 +114,7 @@ def shutdown():
         lg.out(_DebugLevel, 'identitydb.shutdown')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def clear(exclude_list=None):
@@ -371,13 +370,7 @@ def update(idurl, xml_src):
 
     new_idurl = newid.getIDURL(as_original=True)
     if idurl != new_idurl:
-        lg.warn(
-            'original IDURL is not matching, updated: %r -> %r'
-            % (
-                idurl,
-                new_idurl,
-            )
-        )
+        lg.warn('original IDURL is not matching, updated: %r -> %r' % (idurl, new_idurl))
         idurl = new_idurl
 
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
@@ -465,7 +458,7 @@ def get_last_modified_time(idurl):
     return _IdentityCacheModifiedTime.get(idurl, None)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def print_id(idurl):
@@ -503,7 +496,7 @@ def print_cache():
         print_id(key)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def AddCacheUpdatedCallback(cb):

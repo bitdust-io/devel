@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: webtraffic.
 
@@ -43,9 +42,9 @@ except:
 
 from twisted.web import server, resource
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-# (total bytes, finished packets, failed packets, total packets)
+#(total bytes, finished packets, failed packets, total packets)
 _InboxPacketsCount = 0
 _InboxByIDURL = {}
 _InboxByHost = {}
@@ -62,14 +61,13 @@ _WebListener = None
 
 _DefaultReloadTimeout = 600
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init(root=None, path='traffic', port=9997):
     global _WebListener
     if root is not None:
         from transport import callback
-
         callback.append_inbox_callback(inbox)
         callback.add_finish_file_sending_callback(outbox)
         root.putChild(path, TrafficPage())
@@ -83,11 +81,9 @@ def init(root=None, path='traffic', port=9997):
         _WebListener = reactor.listenTCP(port, site)
     except:
         from logs import lg
-
         lg.exc()
         return
     from transport import callback
-
     callback.append_inbox_callback(inbox)
     callback.add_finish_file_sending_callback(outbox)
 
@@ -257,7 +253,7 @@ def outbox(pkt_out, item, status, size, error_message):
     return False
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 class TrafficPage(resource.Resource):
@@ -351,7 +347,7 @@ class TrafficPage(resource.Resource):
         return out
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     init()

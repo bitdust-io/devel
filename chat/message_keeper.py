@@ -23,22 +23,21 @@
 #
 #
 #
-
 """
 .. module:: message_keeper
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -54,7 +53,7 @@ from chat import message_database
 
 from userid import global_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -78,7 +77,7 @@ def shutdown():
     message.clear_consumer_callbacks(consumer_callback_id='message_keeper')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_consume_user_messages(json_messages):
@@ -104,7 +103,7 @@ def on_consume_user_messages(json_messages):
     return False
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def cache_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
@@ -133,20 +132,14 @@ def cache_message(data, message_id, sender_id, recipient_id, message_type=None, 
 
     if message_type == 'group_message' or message_type == 'personal_message':
         if not my_keys.is_key_registered(recipient_id):
-            lg.err(
-                'failed to cache %r because recipient key %r was not registered'
-                % (
-                    message_type,
-                    recipient_id,
-                )
-            )
+            lg.err('failed to cache %r because recipient key %r was not registered' % (message_type, recipient_id))
             return False
         return store_message(data, message_id, sender_id, recipient_id, message_type, direction)
 
     raise Exception('unexpected message type: %r' % message_type)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def store_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
@@ -163,14 +156,5 @@ def store_message(data, message_id, sender_id, recipient_id, message_type=None, 
         return message_json
     api_web_socket.on_stream_message(message_json)
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'message_keeper.store_message [%s]:%s from %r to %r'
-            % (
-                message_type,
-                message_id,
-                sender_id,
-                recipient_id,
-            ),
-        )
+        lg.out(_DebugLevel, 'message_keeper.store_message [%s]:%s from %r to %r' % (message_type, message_id, sender_id, recipient_id))
     return message_json

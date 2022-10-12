@@ -14,7 +14,6 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-
 import six
 
 _Debug = False
@@ -27,7 +26,6 @@ class Contact(object):
     This class contains information on a single remote contact, and also
     provides a direct RPC API to the remote node which it represents
     """
-
     def __init__(self, id, ipAddress, udpPort, networkProtocol, firstComm=0):
         self.id = id
         self.address = ipAddress
@@ -72,7 +70,6 @@ class Contact(object):
         This happens via this contact's C{_networkProtocol} object (i.e. the
         host Node's C{_protocol} object).
         """
-
         def _sendRPC(*args, **kwargs):
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
 

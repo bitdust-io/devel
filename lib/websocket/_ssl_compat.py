@@ -26,7 +26,6 @@ try:
     from ssl import SSLError
     from ssl import SSLWantReadError
     from ssl import SSLWantWriteError
-
     if hasattr(ssl, 'SSLContext') and hasattr(ssl.SSLContext, 'check_hostname'):
         HAVE_CONTEXT_CHECK_HOSTNAME = True
     else:

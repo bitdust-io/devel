@@ -36,14 +36,10 @@ def main():
 
     # TEST
     import transport.gate
-
-    transport.gate.init(
-        [
-            'tcp',
-        ]
-    )
+    transport.gate.init([
+        'tcp',
+    ])
     import userid.propagate
-
     userid.propagate.SendServers()
     reactor.run()
 

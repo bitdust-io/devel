@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: supplier_finder.
 
@@ -40,16 +38,16 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -66,12 +64,12 @@ from contacts import contactsdb
 from userid import my_id
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SupplierFinder = None
 _SuppliersToHire = []
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def AddSupplierToHire(idurl):
@@ -92,7 +90,7 @@ def InsertSupplierToHire(idurl):
             lg.dbg(_DebugLevel, 'added %r as a FIRST supplier candidate' % idurl)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -133,7 +131,7 @@ class SupplierFinder(automat.Automat):
         self.target_idurl = None
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start' and not self.isSomeCandidatesListed(*args, **kwargs):
                 self.state = 'RANDOM_USER'
@@ -146,7 +144,7 @@ class SupplierFinder(automat.Automat):
                 self.doPopCandidate(*args, **kwargs)
                 self.Attempts = 1
                 self.doSendMyIdentity(*args, **kwargs)
-        # ---RANDOM_USER---
+        #---RANDOM_USER---
         elif self.state == 'RANDOM_USER':
             if event == 'users-not-found':
                 self.state = 'FAILED'
@@ -158,7 +156,7 @@ class SupplierFinder(automat.Automat):
                 self.doRememberUser(*args, **kwargs)
                 self.Attempts += 1
                 self.doSendMyIdentity(*args, **kwargs)
-        # ---ACK?---
+        #---ACK?---
         elif self.state == 'ACK?':
             if self.Attempts == 5 and (event == 'timer-10sec' or event == 'ping-failed'):
                 self.state = 'FAILED'
@@ -170,7 +168,7 @@ class SupplierFinder(automat.Automat):
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
                 self.doSupplierConnect(*args, **kwargs)
-        # ---SERVICE?---
+        #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'supplier-connected':
                 self.state = 'DONE'
@@ -186,10 +184,10 @@ class SupplierFinder(automat.Automat):
                 self.state = 'FAILED'
                 self.doDestroyMe(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
         return None
@@ -232,7 +230,6 @@ class SupplierFinder(automat.Automat):
         from customer import supplier_connector
         from customer import fire_hire
         from raid import eccmap
-
         position = self.family_position
         if position is None or position == -1:
             lg.warn('position for new supplier is unknown, will "guess"')
@@ -272,7 +269,6 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import supplier_connector
-
         if id_url.is_cached(self.target_idurl):
             sc = supplier_connector.by_idurl(self.target_idurl)
             if sc:
@@ -304,7 +300,6 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import fire_hire
-
         fire_hire.A('supplier-connected', *args, **kwargs)
 
     def doReportFailed(self, *args, **kwargs):
@@ -312,7 +307,6 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import fire_hire
-
         fire_hire.A('search-failed', *args, **kwargs)
 
     def doDestroyMe(self, *args, **kwargs):
@@ -320,7 +314,6 @@ class SupplierFinder(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         from customer import supplier_connector
-
         global _SupplierFinder
         del _SupplierFinder
         _SupplierFinder = None
@@ -331,7 +324,7 @@ class SupplierFinder(automat.Automat):
             self.target_idurl = None
         self.destroy()
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:

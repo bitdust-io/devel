@@ -45,23 +45,23 @@ import logging
 # compartibility with Python 2.6
 try:
     import hashlib
-
     sha_new = hashlib.sha1
     md5_new = hashlib.md5
 except ImportError:
     import sha
     import md5
-
     sha_new = sha.new
     md5_new = md5.new
 
 
 class Transport(object):
     def send(self, msg):
-        raise NotImplemented("abstact function 'send' must be implemented " 'in a subclass')
+        raise NotImplemented("abstact function 'send' must be implemented "
+                             'in a subclass', )
 
     def receive(self, preprocess=None):
-        raise NotImplemented("abstact function 'receive' must be implemented " 'in a subclass')
+        raise NotImplemented("abstact function 'receive' must be implemented "
+                             'in a subclass', )
 
     def authenticate(self, secret):
         remote_version = self.receive()
@@ -89,7 +89,6 @@ class CTransport(Transport):
     """
     Cached transport.
     """
-
     rcache = {}
 
     def hash(self, msg):
@@ -110,7 +109,7 @@ class CTransport(Transport):
         else:
             msg = msg[1:]
             hash1 = self.hash(msg)
-            self.rcache[hash1] = [r for r in map(preprocess or (lambda m: m), (msg,))][0]
+            self.rcache[hash1] = [r for r in map(preprocess or (lambda m: m), (msg, ))][0]
         return self.rcache[hash1]
 
 
@@ -122,7 +121,8 @@ class PipeTransport(Transport):
             self.r = r
             self.w = w
         else:
-            raise TypeError('Both arguments of PipeTransport constructor ' 'must be file objects')
+            raise TypeError('Both arguments of PipeTransport constructor '
+                            'must be file objects', )
 
     def send(self, msg):
         if not isinstance(msg, six.binary_type):
@@ -144,7 +144,7 @@ class PipeTransport(Transport):
         msg = self.r.read(msg_len)
         if isinstance(msg, six.binary_type):
             msg = msg.decode('latin1')
-        return [r for r in map(preprocess or (lambda m: m), (msg,))][0]
+        return [r for r in map(preprocess or (lambda m: m), (msg, ))][0]
 
     def close(self):
         self.w.close()

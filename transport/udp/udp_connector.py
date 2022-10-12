@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: udp_connector.
 
@@ -37,15 +35,15 @@ EVENTS:
     * :red:`start`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -53,20 +51,22 @@ from automats import automat
 
 from dht import dht_service
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _ConnectorsDict = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def connectors():
-    """ """
+    """
+
+    """
     global _ConnectorsDict
     return _ConnectorsDict
 
@@ -86,7 +86,7 @@ def get(peer_id):
     return None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class DHTUDPConnector(automat.Automat):
@@ -114,14 +114,14 @@ class DHTUDPConnector(automat.Automat):
         self.working_deferred = None
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'DHT_LOOP'
                 self.doInit(*args, **kwargs)
                 self.KeyPosition = 0
                 self.doDHTReadIncoming(*args, **kwargs)
-        # ---DHT_WRITE---
+        #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'dht-write-success':
                 self.state = 'DHT_READ'
@@ -133,7 +133,7 @@ class DHTUDPConnector(automat.Automat):
             elif event == 'abort':
                 self.state = 'ABORTED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---DHT_READ---
+        #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'dht-read-success':
                 self.state = 'DONE'
@@ -146,13 +146,13 @@ class DHTUDPConnector(automat.Automat):
             elif event == 'abort':
                 self.state = 'ABORTED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
-        # ---DHT_LOOP---
+        #---DHT_LOOP---
         elif self.state == 'DHT_LOOP':
             if event == 'dht-read-failed':
                 self.state = 'DHT_WRITE'
@@ -170,7 +170,7 @@ class DHTUDPConnector(automat.Automat):
             elif event == 'abort':
                 self.state = 'ABORTED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---ABORTED---
+        #---ABORTED---
         elif self.state == 'ABORTED':
             pass
         return None
@@ -223,7 +223,6 @@ class DHTUDPConnector(automat.Automat):
         Action method.
         """
         from transport.udp import udp_session
-
         peer_address = args[0]
         if self.node.my_address is None:
             if _Debug:
@@ -232,26 +231,12 @@ class DHTUDPConnector(automat.Automat):
         active_sessions = udp_session.get(peer_address)
         if active_sessions:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_connector.doStartNewSession SKIP because found existing by peer address %s : %s'
-                    % (
-                        peer_address,
-                        active_sessions,
-                    ),
-                )
+                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer address %s : %s' % (peer_address, active_sessions))
             return
         active_sessions = udp_session.get_by_peer_id(self.peer_id)
         if active_sessions:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_connector.doStartNewSession SKIP because found existing by peer id %s : %s'
-                    % (
-                        self.peer_id,
-                        active_sessions,
-                    ),
-                )
+                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer id %s : %s' % (self.peer_id, active_sessions))
             return
         s = udp_session.create(self.node, peer_address, self.peer_id)
         s.automat('init', (self.listen_port, self.my_id, self.my_address))
@@ -273,7 +258,6 @@ class DHTUDPConnector(automat.Automat):
         Action method.
         """
         from transport.udp import udp_session
-
         udp_session.report_and_remove_pending_outbox_files_to_host(self.peer_id, 'unable to establish connection')
 
     def doDestroyMe(self, *args, **kwargs):

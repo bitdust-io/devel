@@ -9,22 +9,19 @@ python3 cmd_hn_last_block_ts
 
 """
 
-
 import connections
 import json
 import socks
 
-
 __version__ = '0.0.1'
-
 
 ORIGIN_OF_TIME = 1534716000  # Real Origin: August 20
 POS_SLOT_TIME_MIN = 3  # Real world setting?
-POS_SLOT_TIME_SEC = POS_SLOT_TIME_MIN * 60
+POS_SLOT_TIME_SEC = POS_SLOT_TIME_MIN*60
 MAX_ROUND_SLOTS = 19  # Real world. 19+1 = 20 , 3x20 = 60 (round time)
 END_ROUND_SLOTS = 1
 # Round time in seconds
-ROUND_TIME_SEC = POS_SLOT_TIME_SEC * (MAX_ROUND_SLOTS + END_ROUND_SLOTS)
+ROUND_TIME_SEC = POS_SLOT_TIME_SEC*(MAX_ROUND_SLOTS + END_ROUND_SLOTS)
 
 
 def hn_last_block_ts():

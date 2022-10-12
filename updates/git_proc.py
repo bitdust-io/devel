@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: git_proc.
 
@@ -80,17 +79,20 @@ from main import events
 
 _CurrentProcess = None
 _FirstRunDelay = 1200
-_LoopInterval = 3600 * 6
+_LoopInterval = 3600*6
 _ShedulerTask = None
 
 #------------------------------------------------------------------------------
+
 
 def write2log(txt):
     out_file = open(settings.UpdateLogFilename(), 'a')
     out_file.write(strng.to_text(txt))
     out_file.close()
 
+
 #------------------------------------------------------------------------------
+
 
 def init():
     lg.out(4, 'git_proc.init')
@@ -107,6 +109,7 @@ def shutdown():
             _ShedulerTask.cancel()
             lg.out(4, '    loop stopped')
         _ShedulerTask = None
+
 
 #------------------------------------------------------------------------------
 
@@ -153,10 +156,12 @@ def loop(first_start=False):
     if delay < 0:
         lg.warn('delay=%s %s %s' % (str(delay), nexttime, time.time()))
         delay = 0
-    lg.out(6, 'git_proc.loop run_sync will start after %s minutes' % str(delay / 60.0))
+    lg.out(6, 'git_proc.loop run_sync will start after %s minutes' % str(delay/60.0))
     _ShedulerTask = reactor.callLater(delay, run_sync)  # @UndefinedVariable
 
+
 #------------------------------------------------------------------------------
+
 
 def sync(callback_func=None, update_method='rebase'):
     """
@@ -203,15 +208,18 @@ def sync(callback_func=None, update_method='rebase'):
                 response.count(b'Counting'):
             result = 'new-code'
         if update_method == 'reset':
-            run(['reset', '--hard', 'origin/master', ],
-                callback=lambda resp, err, ret: _reset_done(resp, err, ret, result))
+            run([
+                'reset',
+                '--hard',
+                'origin/master',
+            ], callback=lambda resp, err, ret: _reset_done(resp, err, ret, result))
         elif update_method == 'rebase':
-            run(['rebase', 'origin/master', '-v'],
-                callback=lambda resp, err, ret: _rebase_done(resp, err, ret, result))
+            run(['rebase', 'origin/master', '-v'], callback=lambda resp, err, ret: _rebase_done(resp, err, ret, result))
         else:
             raise Exception('invalid update method: %s' % update_method)
 
     run(['fetch', '--all', '-v'], callback=_fetch_done)
+
 
 #------------------------------------------------------------------------------
 
@@ -221,7 +229,9 @@ def run(cmdargs, base_dir=None, git_bin=None, env=None, callback=None):
         lg.out(_DebugLevel, 'git_proc.run')
     base_dir = base_dir or bpio.getExecutableDir()
     if bpio.Windows():
-        cmd = ['git', ] + cmdargs
+        cmd = [
+            'git',
+        ] + cmdargs
         if git_bin:
             git_exe = git_bin
         else:
@@ -240,10 +250,15 @@ def run(cmdargs, base_dir=None, git_bin=None, env=None, callback=None):
             return
         if _Debug:
             lg.out(_DebugLevel, '    found git in %s' % git_exe)
-        cmd = [git_exe, ] + cmdargs
+        cmd = [
+            git_exe,
+        ] + cmdargs
     else:
-        cmd = [git_bin or 'git', ] + cmdargs
+        cmd = [
+            git_bin or 'git',
+        ] + cmdargs
     execute(cmd, callback=callback, base_dir=base_dir, env=env)
+
 
 #------------------------------------------------------------------------------
 
@@ -261,22 +276,22 @@ def execute_in_shell(cmdargs, base_dir=None):
         cwd=bpio.portablePath(base_dir),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,)
+        stderr=subprocess.STDOUT,
+    )
     result = _CurrentProcess.communicate()
     out_data = result[0]
     err_data = result[1]
     write2log('STDOUT:\n%s\nSTDERR:\n%s\n' % (out_data, err_data))
     returncode = _CurrentProcess.returncode
     if _Debug:
-        lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s, stdout bytes: %d, stderr bytes: %d' % (
-            returncode, len(out_data), len(err_data)))
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s, stdout bytes: %d, stderr bytes: %d' % (returncode, len(out_data), len(err_data)))
     return (out_data, err_data, returncode)  # _CurrentProcess
+
 
 #------------------------------------------------------------------------------
 
 
 class GitProcessProtocol(protocol.ProcessProtocol):
-
     def __init__(self, callbacks=[]):
         self.callbacks = callbacks
         self.out = b''
@@ -311,18 +326,14 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
         from twisted.internet import _dumbwin32proc
         real_CreateProcess = _dumbwin32proc.win32process.CreateProcess  # @UndefinedVariable
 
-        def fake_createprocess(_appName, _commandLine, _processAttributes,
-                               _threadAttributes, _bInheritHandles, creationFlags,
-                               _newEnvironment, _currentDirectory, startupinfo):
+        def fake_createprocess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, creationFlags, _newEnvironment, _currentDirectory, startupinfo):
             import win32con  # @UnresolvedImport
             import subprocess
             flags = win32con.CREATE_NO_WINDOW
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             startupinfo.wShowWindow = subprocess.SW_HIDE
-            return real_CreateProcess(_appName, _commandLine,
-                                      _processAttributes, _threadAttributes,
-                                      _bInheritHandles, flags, _newEnvironment,
-                                      _currentDirectory, startupinfo)
+            return real_CreateProcess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, flags, _newEnvironment, _currentDirectory, startupinfo)
+
         setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
 
     if process_protocol is None:
@@ -332,7 +343,8 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
         ])
     try:
         _CurrentProcess = reactor.spawnProcess(  # @UndefinedVariable
-            process_protocol, executable, cmdargs, path=base_dir, env=env)
+            process_protocol, executable, cmdargs, path=base_dir, env=env
+        )
     except:
         lg.exc()
         return None
@@ -340,10 +352,10 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
         setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
     return _CurrentProcess
 
+
 #------------------------------------------------------------------------------
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     bpio.init()
     lg.set_debug_level(18)
 

@@ -23,47 +23,45 @@
 #
 #
 #
-
 """
 ..
 
 module:: config
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import re
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 
 from logs import lg
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Config = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(configDir):
@@ -85,7 +83,7 @@ def shutdown():
         _Config = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def conf():
@@ -93,7 +91,7 @@ def conf():
     return _Config
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BaseConfig(object):
@@ -132,7 +130,6 @@ class BaseConfig(object):
     def listAllEntries(self):
         try:
             from system import bpio
-
             l = []
             abspth = bpio.portablePath(os.path.abspath(self.getConfigDir()))
             for subpath in bpio.list_dir_recursive(abspth):
@@ -172,17 +169,12 @@ class BaseConfig(object):
         data = self.getData(entryPath)
         if data is None:
             return default
-        return (
-            True
-            if str(data).strip()
-            in [
-                'True',
-                'true',
-                '1',
-                'on',
-            ]
-            else False
-        )
+        return True if str(data).strip() in [
+            'True',
+            'true',
+            '1',
+            'on',
+        ] else False
 
     def setBool(self, entryPath, value):
         return self._set(entryPath, 'true' if value else 'false')
@@ -320,7 +312,7 @@ class BaseConfig(object):
         return False
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class DefaultsConfig(BaseConfig):
@@ -344,7 +336,7 @@ class DefaultsConfig(BaseConfig):
         return BaseConfig.getData(self, entryPath)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class NotifiableConfig(DefaultsConfig):
@@ -386,7 +378,7 @@ class NotifiableConfig(DefaultsConfig):
         return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class FixedTypesConfig(NotifiableConfig):
@@ -394,7 +386,6 @@ class FixedTypesConfig(NotifiableConfig):
         super(FixedTypesConfig, self).__init__(configDir)
         try:
             from main import config_types
-
             self._types = config_types.defaults()
             self._labels = config_types.labels()
         except:
@@ -418,7 +409,6 @@ class FixedTypesConfig(NotifiableConfig):
 
     def getTypeMetaInfo(self, entryPath):
         from main import config_types
-
         typ = self.getType(entryPath)
         if not typ:
             return {}
@@ -453,7 +443,6 @@ class FixedTypesConfig(NotifiableConfig):
         elif typ == config_types.TYPE_COMBO_BOX:
             if entryPath == 'services/customer/suppliers-number':
                 from raid import eccmap
-
                 return {
                     'possible_values': eccmap.SuppliersNumbers(),
                 }
@@ -463,7 +452,6 @@ class FixedTypesConfig(NotifiableConfig):
 
     def getValueOfType(self, entryPath):
         from main import config_types
-
         typ = self.getType(entryPath)
         value = None
         if not typ or typ in [
@@ -494,7 +482,6 @@ class FixedTypesConfig(NotifiableConfig):
             ]:
                 if value:
                     from system import bpio
-
                     if bpio.Windows():
                         if not value.endswith(u'/') and not value.endswith(u'\\'):
                             value = value + u'\\'
@@ -511,7 +498,6 @@ class FixedTypesConfig(NotifiableConfig):
 
     def setValueOfType(self, entryPath, value):
         from main import config_types
-
         typ = self.getType(entryPath)
         if not typ or typ in [
             config_types.TYPE_STRING,
@@ -554,7 +540,7 @@ class FixedTypesConfig(NotifiableConfig):
         return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class CachedConfig(FixedTypesConfig):
@@ -592,7 +578,7 @@ class CachedConfig(FixedTypesConfig):
         # TODO
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class DetailedConfig(CachedConfig):
@@ -605,13 +591,13 @@ class DetailedConfig(CachedConfig):
         super(DetailedConfig, self).__init__(configDir)
         try:
             from main import config_details
-
             self._load_details(config_details.raw())
         except:
             lg.exc()
 
     def _load_details(self, src):
-        """ """
+        """
+        """
         current_option = ''
         for line in src.splitlines():
             if not line.strip():
@@ -654,7 +640,7 @@ class DetailedConfig(CachedConfig):
         return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -662,10 +648,8 @@ def main():
     Read settings from 'config' file and prints values from your queries to stdout.
     """
     from logs import lg
-
     lg.set_debug_level(24)
     from main import settings
-
     settings.init()
     init(settings.ConfigDir())
     print(conf().listEntries(''))
@@ -704,7 +688,6 @@ def main():
 # print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x, sorted(conf().listAllEntries())))
 # s = conf().getData('details')
 # conf()._load_details(s)
-
 
 if __name__ == '__main__':
     main()

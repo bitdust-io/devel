@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: install_wizard.
 
@@ -51,7 +50,6 @@ EVENTS:
 
 from __future__ import absolute_import
 import sys
-
 try:
     pass
 except:
@@ -62,11 +60,11 @@ from automats import automat
 
 from main import installer
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _InstallWizard = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -110,30 +108,30 @@ class InstallWizard(automat.Automat):
         installer.A('install_wizard.state', newstate)
 
     def A(self, event, *args, **kwargs):
-        # ---READY---
+        #---READY---
         if self.state == 'READY':
             if event == 'next':
                 self.state = 'STORAGE'
             elif event == 'skip':
                 self.state = 'LAST_PAGE'
-        # ---STORAGE---
+        #---STORAGE---
         elif self.state == 'STORAGE':
             if event == 'next':
                 self.state = 'CONTACTS'
                 self.doSaveStorage(*args, **kwargs)
             elif event == 'back':
                 self.state = 'READY'
-        # ---CONTACTS---
+        #---CONTACTS---
         elif self.state == 'CONTACTS':
             if event == 'back':
                 self.state = 'STORAGE'
             elif event == 'next':
                 self.state = 'LAST_PAGE'
                 self.doSaveContacts(*args, **kwargs)
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---LAST_PAGE---
+        #---LAST_PAGE---
         elif self.state == 'LAST_PAGE':
             if event == 'next':
                 self.state = 'DONE'

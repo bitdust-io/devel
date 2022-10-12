@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: list_files_orator.
 
@@ -49,24 +48,24 @@ EVENTS:
     * :red:`timer-2sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import maybeDeferred, Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -86,11 +85,11 @@ from p2p import propagate
 from userid import my_id
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _ListFilesOrator = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def is_synchronized(customer_idurl=None):
@@ -140,7 +139,7 @@ def synchronize_files(customer_idurl=None):
     return ret
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -210,17 +209,13 @@ class ListFilesOrator(automat.Automat):
             if driver.is_on('service_backups'):
                 # TODO: rebuild using "list-files-orator-state-changed" event
                 from storage import backup_monitor
-
                 backup_monitor.A('list_files_orator.state', newstate)
         if newstate == 'SAW_FILES':
             lt_saw_files = self.last_time_saw_files.get(self.target_customer_idurl, -1)
             if lt_saw_files <= 0 or time.time() - lt_saw_files < 20:
-                events.send(
-                    'my-list-files-refreshed',
-                    data={
-                        'customer_idurl': self.target_customer_idurl,
-                    },
-                )
+                events.send('my-list-files-refreshed', data={
+                    'customer_idurl': self.target_customer_idurl,
+                })
             self.last_time_saw_files[self.target_customer_idurl] = time.time()
         if newstate == 'NO_FILES':
             self.last_time_saw_files[self.target_customer_idurl] = -1
@@ -235,31 +230,29 @@ class ListFilesOrator(automat.Automat):
                 self.result_defer = None
 
     def A(self, event, *args, **kwargs):
-        # ---NO_FILES---
+        #---NO_FILES---
         if self.state == 'NO_FILES':
             if event == 'need-files':
                 self.state = 'LOCAL_FILES'
                 self.doReadLocalFiles(*args, **kwargs)
             elif event == 'init':
                 pass
-        # ---LOCAL_FILES---
+        #---LOCAL_FILES---
         elif self.state == 'LOCAL_FILES':
             if event == 'local-files-done' and p2p_connector.A().state == 'CONNECTED':
                 self.state = 'REMOTE_FILES'
                 self.doRequestFilesAllSuppliers(*args, **kwargs)
             elif event == 'local-files-done' and p2p_connector.A().state != 'CONNECTED':
                 self.state = 'NO_FILES'
-        # ---REMOTE_FILES---
+        #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
             if event == 'supplier-connected':
                 self.doRequestFilesOneSupplier(*args, **kwargs)
             elif event == 'timer-20sec' and not self.isEnoughListFilesReceived(*args, **kwargs) and not self.isSomeConnecting(*args, **kwargs):
                 self.state = 'NO_FILES'
-            elif (event == 'timer-2sec' and self.isEnoughListFilesReceived(*args, **kwargs)) or (
-                event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs)
-            ):
+            elif (event == 'timer-2sec' and self.isEnoughListFilesReceived(*args, **kwargs)) or (event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs)):
                 self.state = 'SAW_FILES'
-        # ---SAW_FILES---
+        #---SAW_FILES---
         elif self.state == 'SAW_FILES':
             if event == 'need-files':
                 self.state = 'LOCAL_FILES'
@@ -276,7 +269,6 @@ class ListFilesOrator(automat.Automat):
         Condition method.
         """
         from customer import supplier_connector
-
         for one_supplier_connector in supplier_connector.connectors(customer_idurl=self.target_customer_idurl).values():
             if one_supplier_connector.state not in [
                 'CONNECTED',
@@ -296,7 +288,6 @@ class ListFilesOrator(automat.Automat):
 
     def doReadLocalFiles(self, *args, **kwargs):
         from storage import backup_matrix
-
         self.target_customer_idurl = kwargs.get('customer_idurl') or my_id.getIDURL()
         self.result_defer = kwargs.get('result_defer')
         self.critical_suppliers_number = 0
@@ -331,7 +322,6 @@ class ListFilesOrator(automat.Automat):
 
     def _do_request(self, x=None):
         from raid import eccmap
-
         self.received_lf_counter = 0
         self.requested_lf_packet_ids.clear()
         known_suppliers = contactsdb.suppliers(customer_idurl=self.target_customer_idurl)
@@ -339,7 +329,7 @@ class ListFilesOrator(automat.Automat):
             self.critical_suppliers_number = eccmap.GetCorrectableErrors(len(known_suppliers))
         except:
             lg.warn('number of known suppliers for customer %r is not standard' % self.target_customer_idurl)
-            self.critical_suppliers_number = int(float(len(known_suppliers)) * 0.75)
+            self.critical_suppliers_number = int(float(len(known_suppliers))*0.75)
         for idurl in known_suppliers:
             if idurl:
                 if online_status.isOnline(idurl):
@@ -369,7 +359,7 @@ class ListFilesOrator(automat.Automat):
             self.automat('supplier-connected', evt.data['supplier_idurl'])
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def IncomingListFiles(newpacket):
@@ -385,11 +375,4 @@ def IncomingListFiles(newpacket):
         A('inbox-files', newpacket)
     else:
         if _Debug:
-            lg.dbg(
-                _DebugLevel,
-                'received and ignored %r, currently target customer is %r'
-                % (
-                    newpacket,
-                    A().target_customer_idurl,
-                ),
-            )
+            lg.dbg(_DebugLevel, 'received and ignored %r, currently target customer is %r' % (newpacket, A().target_customer_idurl))

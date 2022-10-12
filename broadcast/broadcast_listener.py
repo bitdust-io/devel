@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: broadcast_listener.
 
@@ -40,20 +38,20 @@ EVENTS:
     * :red:`shutdown`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import json
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -64,11 +62,11 @@ from transport import callback
 from p2p import p2p_service
 from p2p import commands
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _BroadcastListener = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -86,7 +84,7 @@ def A(event=None, *args, **kwargs):
     return _BroadcastListener
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BroadcastListener(automat.Automat):
@@ -94,7 +92,6 @@ class BroadcastListener(automat.Automat):
     This class implements all the functionality of the ``broadcast_listener()``
     state machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
@@ -108,12 +105,12 @@ class BroadcastListener(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        # --- AT_STARTUP
+        #--- AT_STARTUP
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
                 self.doInit(*args, **kwargs)
-        # --- BROADCASTER?
+        #--- BROADCASTER?
         elif self.state == 'BROADCASTER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -123,7 +120,7 @@ class BroadcastListener(automat.Automat):
             elif event == 'broadcaster-connected':
                 self.state = 'LISTENING'
                 self.doSetBroadcaster(*args, **kwargs)
-        # --- LISTENING
+        #--- LISTENING
         elif self.state == 'LISTENING':
             if event == 'disconnect' or event == 'message-failed':
                 self.state = 'OFFLINE'
@@ -136,7 +133,7 @@ class BroadcastListener(automat.Automat):
                 self.doSendMessageToBroadcaster(*args, **kwargs)
             elif event == 'incoming-message':
                 self.doNotifyInputMessage(*args, **kwargs)
-        # --- OFFLINE
+        #--- OFFLINE
         elif self.state == 'OFFLINE':
             if event == 'connect':
                 self.state = 'BROADCASTER?'
@@ -144,7 +141,7 @@ class BroadcastListener(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # --- CLOSED
+        #--- CLOSED
         elif self.state == 'CLOSED':
             pass
         return None
@@ -161,21 +158,10 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
-
         scope = args[0]
         if not scope:
             scope = []
-        broadcasters_finder.A(
-            'start',
-            (
-                self.automat,
-                {
-                    'action': 'listen',
-                    'scopes': json.dumps(scope),
-                },
-                [],
-            ),
-        )
+        broadcasters_finder.A('start', (self.automat, {'action': 'listen', 'scopes': json.dumps(scope)}, []))
 
     def doSetBroadcaster(self, *args, **kwargs):
         """
@@ -194,7 +180,6 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         from broadcast import broadcast_service
-
         outpacket = broadcast_service.packet_for_broadcaster(self.broadcaster_idurl, *args, **kwargs)
         p2p_service.SendBroadcastMessage(outpacket)
 
@@ -217,12 +202,11 @@ class BroadcastListener(automat.Automat):
         del _BroadcastListener
         _BroadcastListener = None
 
-    # -----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if newpacket.Command == commands.Broadcast():
             from broadcast import broadcast_service
-
             msg = broadcast_service.read_message_from_packet(newpacket)
             if not msg:
                 lg.warn('not valid message in payload')

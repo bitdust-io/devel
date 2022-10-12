@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -65,7 +64,6 @@ class HTTPTransportService(LocalService):
         from transport import network_transport
         from transport import gateway
         from main.config import conf
-
         self.starting_deferred = Deferred()
         self.transport = network_transport.NetworkTransport('http', http_interface.GateInterface())
         self.transport.automat('init', (gateway.listener(), self._on_transport_state_changed))
@@ -76,7 +74,6 @@ class HTTPTransportService(LocalService):
 
     def stop(self):
         from main.config import conf
-
         conf().removeConfigNotifier('services/http-transport/enabled')
         conf().removeConfigNotifier('services/http-transport/receiving-enabled')
         t = self.transport
@@ -86,7 +83,6 @@ class HTTPTransportService(LocalService):
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from logs import lg
-
         lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
         if self.starting_deferred:
             if newstate in [
@@ -103,13 +99,11 @@ class HTTPTransportService(LocalService):
     def _on_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-
         lg.out(2, 'service_http_transport._on_enabled_disabled : %s->%s : %s' % (oldvalue, value, path))
         network_connector.A('reconnect')
 
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-
         lg.out(2, 'service_http_transport._on_receiving_enabled_disabled : %s->%s : %s' % (oldvalue, value, path))
         network_connector.A('reconnect')

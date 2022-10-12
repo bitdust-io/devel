@@ -24,8 +24,7 @@ from . import encoding  # @UnresolvedImport
 
 
 class Message(object):
-    """Base class for messages - all "unknown" messages use this class"""
-
+    """ Base class for messages - all "unknown" messages use this class """
     def __init__(self, rpcID, nodeID):
         self.id = encoding.to_text(rpcID)
         self.nodeID = encoding.to_text(nodeID)
@@ -38,7 +37,6 @@ class RequestMessage(Message):
     """
     Message containing an RPC request.
     """
-
     def __init__(self, nodeID, method, methodArgs, rpcID=None, layerID=0):
         if rpcID is None:
             hsh = hashlib.sha1()
@@ -57,7 +55,6 @@ class QuestionMessage(Message):
     """
     Message containing an RPC request from a node which do not want to be included in DHT layer.
     """
-
     def __init__(self, nodeID, method, methodArgs, rpcID=None, layerID=0):
         if rpcID is None:
             hsh = hashlib.sha1()
@@ -76,7 +73,6 @@ class ResponseMessage(Message):
     """
     Message containing the result from a successful RPC request.
     """
-
     def __init__(self, rpcID, nodeID, response, layerID=0):
         Message.__init__(self, rpcID, nodeID)
         self.response = response
@@ -90,7 +86,6 @@ class ErrorMessage(ResponseMessage):
     """
     Message containing the error from an unsuccessful RPC request.
     """
-
     def __init__(self, rpcID, nodeID, exceptionType, errorMessage, layerID=0):
         ResponseMessage.__init__(self, rpcID, nodeID, errorMessage, layerID=layerID)
         if isinstance(exceptionType, type):

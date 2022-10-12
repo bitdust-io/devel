@@ -12,7 +12,6 @@ from crypt import my_keys
 
 from userid import my_id
 
-
 _sample_private_key = """-----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQDP7lJ67hcSnWSFFzQs14brEBzovQfyoa7mkb+YkI9EJ/hEAsL7
 xWCYk2erXNmY7WyeO7ABAJfp1Wg7/62XSl3f9J9ZeV71IPy32rWWNshfwDobcjlO
@@ -77,6 +76,7 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
+
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')

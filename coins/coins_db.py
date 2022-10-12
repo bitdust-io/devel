@@ -23,40 +23,38 @@
 #
 #
 #
-
 """
 ..
 
 module:: coins_db
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import map
 import six
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -67,7 +65,7 @@ from main import settings
 from coins import coins_index
 from coins import coins_io
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if six.PY2:
     from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
@@ -76,11 +74,11 @@ else:
     from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
     from CodernityDB.index import IndexNotFoundException
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _LocalStorage = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -124,7 +122,7 @@ def shutdown():
     _LocalStorage = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def db(instance='current'):
@@ -132,7 +130,7 @@ def db(instance='current'):
     return _LocalStorage
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def rewrite_indexes(db_instance, source_db_instance):
@@ -144,7 +142,7 @@ def rewrite_indexes(db_instance, source_db_instance):
     existing_indexes = os.listdir(existing_location)
     for existing_index_file in existing_indexes:
         if existing_index_file != '00id.py':
-            index_name = existing_index_file[2 : existing_index_file.index('.')]
+            index_name = existing_index_file[2:existing_index_file.index('.')]
             existing_index_path = os.path.join(existing_location, existing_index_file)
             os.remove(existing_index_path)
             if _Debug:
@@ -161,7 +159,7 @@ def rewrite_indexes(db_instance, source_db_instance):
                     lg.out(_DebugLevel, '            also storage at %s' % stor_path)
     for source_index_file in source_indexes:
         if source_index_file != '00id.py':
-            index_name = source_index_file[2 : source_index_file.index('.')]
+            index_name = source_index_file[2:source_index_file.index('.')]
             destination_index_path = os.path.join(existing_location, source_index_file)
             source_index_path = os.path.join(source_location, source_index_file)
             if not bpio.WriteTextFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
@@ -210,7 +208,7 @@ def regenerate_indexes(temp_dir):
     return tmpdb
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def to_list(ret):
@@ -223,7 +221,7 @@ def to_list(ret):
         return ret[1]
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def get(index_name, key, with_doc=True, with_storage=True):
@@ -240,12 +238,9 @@ def get(index_name, key, with_doc=True, with_storage=True):
         DatabaseIsNotOpened,
     ):
         return iter(())
-    return (
-        r
-        for r in [
-            res,
-        ]
-    )
+    return (r for r in [
+        res,
+    ])
 
 
 def get_many(index_name, key=None, limit=-1, offset=0, start=None, end=None, with_doc=True, with_storage=True, **kwargs):
@@ -268,7 +263,7 @@ def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
         pass
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def insert(coin_json):
@@ -294,7 +289,7 @@ def exist(coin_json):
     return False
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def _clean_doc(doc):
@@ -303,7 +298,7 @@ def _clean_doc(doc):
     return doc
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def query_json(jdata):
@@ -351,7 +346,7 @@ def query_json(jdata):
     return result, None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _prev_hash = ''
 
@@ -359,7 +354,6 @@ _prev_hash = ''
 def _test_coin_worker(customer_idurl, duration, amount, price=1.0, trustee=None):
     global _prev_hash
     from coins import coins_miner
-
     storage_coin = coins_io.storage_contract_open(customer_idurl, duration, amount, price, trustee)
     storage_coin['miner']['prev'] = _prev_hash
     d = coins_miner.start_offline_job(storage_coin)
@@ -369,7 +363,6 @@ def _test_coin_worker(customer_idurl, duration, amount, price=1.0, trustee=None)
 def _test_coin_mined(coin_json, customer_idurl, duration, amount, price, trustee):
     global _prev_hash
     import json
-
     print('COIN MINED!!!')
     print(json.dumps(coin_json, indent=2))
     insert(coin_json)
@@ -390,8 +383,7 @@ def _test_query(inp):
 
 def _test():
     if len(sys.argv) < 2:
-        print(
-            """
+        print("""
         commands:
         work <idurl> <duration> <amount>
         get_all <index>
@@ -399,8 +391,7 @@ def _test():
         get <index> <key>
         indexes
         tmpdb <destination folder>
-        """
-        )
+        """)
         return
 
     if sys.argv[1] == 'work':
@@ -411,34 +402,28 @@ def _test():
 
     if sys.argv[1] == 'get_all':
         init()
-        _test_query(
-            {
-                'method': 'get_all',
-                'index': sys.argv[2],
-            }
-        )
+        _test_query({
+            'method': 'get_all',
+            'index': sys.argv[2],
+        })
         shutdown()
 
     if sys.argv[1] == 'get_many':
         init()
-        _test_query(
-            {
-                'method': 'get_many',
-                'index': sys.argv[2],
-                'key': sys.argv[3],
-            }
-        )
+        _test_query({
+            'method': 'get_many',
+            'index': sys.argv[2],
+            'key': sys.argv[3],
+        })
         shutdown()
 
     if sys.argv[1] == 'get':
         init()
-        _test_query(
-            {
-                'method': 'get',
-                'index': sys.argv[2],
-                'key': sys.argv[3],
-            }
-        )
+        _test_query({
+            'method': 'get',
+            'index': sys.argv[2],
+            'key': sys.argv[3],
+        })
         shutdown()
 
     if sys.argv[1] == 'indexes':

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -52,7 +51,6 @@ class BackupDBService(LocalService):
     def start(self):
         from storage import backup_fs
         from storage import index_synchronizer
-
         backup_fs.init()
         index_synchronizer.A('init')
         return True
@@ -60,14 +58,12 @@ class BackupDBService(LocalService):
     def stop(self):
         from storage import backup_fs
         from storage import index_synchronizer
-
         index_synchronizer.A('shutdown')
         backup_fs.shutdown()
         return True
 
     def health_check(self):
         from storage import index_synchronizer
-
         return index_synchronizer.A().state in [
             'IN_SYNC!',
             'SENDING',

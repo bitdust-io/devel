@@ -24,24 +24,23 @@
 #
 #
 #
-
 """
 ..
 
 module:: driver
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from six.moves import range
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 14
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -50,14 +49,13 @@ import importlib
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred, DeferredList, succeed  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -67,7 +65,7 @@ from main import config
 from main import events
 from main import listeners
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Services = {}
 _BootUpOrder = []
@@ -76,7 +74,7 @@ _DisabledServices = set()
 _StartingDeferred = None
 _StopingDeferred = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def services():
@@ -195,7 +193,6 @@ def request(service_name, service_request_payload, request, info):
         result = svc.request(service_request_payload, request, info)
     except RequireSubclass:
         from p2p import p2p_service
-
         lg.warn('service %s can not be requested remotely' % service_name)
         return p2p_service.SendFail(request, 'refused')
     except:
@@ -212,7 +209,6 @@ def cancel(service_name, service_cancel_payload, request, info):
         result = svc.cancel(service_cancel_payload, request, info)
     except RequireSubclass:
         from p2p import p2p_service
-
         lg.warn('service %s can not be cancelled remotely' % service_name)
         return p2p_service.SendFail(request, 'refused')
     except:
@@ -221,7 +217,7 @@ def cancel(service_name, service_cancel_payload, request, info):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -234,7 +230,7 @@ def init():
             continue
         if not filename.startswith('service_'):
             continue
-        name = str(filename[: filename.rfind('.')])
+        name = str(filename[:filename.rfind('.')])
         if name in loaded:
             continue
         if name in disabled_services():
@@ -290,7 +286,7 @@ def build_order():
     while progress and not fail:
         progress = False
         counter += 1
-        if counter > len(enabled_services()) * len(enabled_services()):
+        if counter > len(enabled_services())*len(enabled_services()):
             lg.warn('dependency recursion')
             fail = True
             break
@@ -301,14 +297,7 @@ def build_order():
             for depend_name in svc.dependent_on():
                 if depend_name not in order:
                     fail = True
-                    lg.warn(
-                        'dependency not satisfied: #%d:%s depend on %s'
-                        % (
-                            position,
-                            name,
-                            depend_name,
-                        )
-                    )
+                    lg.warn('dependency not satisfied: #%d:%s depend on %s' % (position, name, depend_name))
                     break
                 depend_position = order.index(depend_name)
                 if depend_position > depend_position_max:
@@ -409,7 +398,7 @@ def resume(service_name, *args, **kwargs):
     return None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def info(service_name):
@@ -422,7 +411,7 @@ def info(service_name):
     return svc.to_json()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def restart(service_name, wait_timeout=None):
@@ -449,33 +438,21 @@ def restart(service_name, wait_timeout=None):
             start_resp = {
                 'started': str(start_result),
             }
-        restart_result.callback(
-            [
-                stop_resp,
-                start_resp,
-            ]
-        )
+        restart_result.callback([
+            stop_resp,
+            start_resp,
+        ])
         return start_result
 
     def _on_failed(err):
-        lg.warn(
-            'failed service %s in driver.restart() : %r'
-            % (
-                service_name,
-                err,
-            )
-        )
+        lg.warn('failed service %s in driver.restart() : %r' % (service_name, err))
         restart_result.errback(str(err))
         return None
 
     def _do_start(stop_result=None, dependencies_results=None):
         if _Debug:
             lg.out(_DebugLevel, 'driver.restart._do_start : %s' % service_name)
-        start_defer = start(
-            services_list=[
-                service_name,
-            ]
-        )
+        start_defer = start(services_list=[service_name])
         start_defer.addCallback(_on_started, stop_result, dependencies_results)
         start_defer.addErrback(_on_failed)
         return start_defer
@@ -489,11 +466,7 @@ def restart(service_name, wait_timeout=None):
     def _do_stop(dependencies_results=None):
         if _Debug:
             lg.out(_DebugLevel, 'driver.restart._do_stop : %s' % service_name)
-        stop_defer = stop(
-            services_list=[
-                service_name,
-            ]
-        )
+        stop_defer = stop(services_list=[service_name])
         stop_defer.addCallback(_on_stopped, dependencies_results)
         stop_defer.addErrback(_on_failed)
         return stop_defer
@@ -537,7 +510,7 @@ def restart(service_name, wait_timeout=None):
     return restart_result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def start_single(service_name):
@@ -568,13 +541,7 @@ def start_single(service_name):
         return response
 
     def _on_failed(err, action):
-        lg.warn(
-            'failed to %s service %s in driver.start_single()'
-            % (
-                action,
-                service_name,
-            )
-        )
+        lg.warn('failed to %s service %s in driver.start_single()' % (action, service_name))
         return None
 
     _starting.addCallback(_on_started)
@@ -628,13 +595,7 @@ def stop_single(service_name):
         raise Exception('bad response: %r' % response)
 
     def _on_failed(err, action):
-        lg.warn(
-            'failed to %s service %s in driver.stop_single()'
-            % (
-                action,
-                service_name,
-            )
-        )
+        lg.warn('failed to %s service %s in driver.stop_single()' % (action, service_name))
         return None
 
     _starting.addCallback(_on_started)
@@ -661,7 +622,7 @@ def stop_single(service_name):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def health_check(services_list=[]):
@@ -687,7 +648,7 @@ def health_check(services_list=[]):
     return health_result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def get_network_configuration(services_list=[]):
@@ -726,7 +687,7 @@ def get_attached_dht_layers(services_list=[]):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def populate_services():
@@ -740,7 +701,7 @@ def populate_services():
         listeners.push_snapshot('service', snap_id=name, data=svc_data)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def do_finish_starting():
@@ -757,7 +718,7 @@ def do_finish_stoping():
     _StopingDeferred = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_service_callback(result, service_name):
@@ -858,7 +819,7 @@ def on_service_enabled_disabled(path, newvalue, oldvalue, result):
         lg.warn('%s not found: %s' % (svc_name, path))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class ServiceAlreadyExist(Exception):
@@ -881,12 +842,11 @@ class ServiceWasNotSuspended(Exception):
     pass
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
     from main import settings
-
     lg.set_debug_level(20)
     settings.init()
     init()

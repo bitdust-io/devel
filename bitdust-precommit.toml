@@ -1,6 +1,2 @@
-[tool.black]
-line-length = 160
-skip-string-normalization = true
-
 [tool.pycln]
 all = true

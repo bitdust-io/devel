@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 .. module:: restore_worker
 .. role:: red
@@ -71,24 +70,23 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 
 """
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from six.moves import range
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -97,7 +95,7 @@ except:
 
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from automats import automat
 
@@ -131,7 +129,7 @@ from userid import global_id
 from userid import id_url
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class RestoreWorker(automat.Automat):
@@ -143,9 +141,7 @@ class RestoreWorker(automat.Automat):
         'timer-5sec': (5.0, ['REQUESTED']),
     }
 
-    def __init__(
-        self, BackupID, OutputFile, KeyID=None, ecc_map=None, debug_level=_DebugLevel, log_events=False, log_transitions=_Debug, publish_events=False, **kwargs
-    ):
+    def __init__(self, BackupID, OutputFile, KeyID=None, ecc_map=None, debug_level=_DebugLevel, log_events=False, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `restore_worker()` state machine.
         """
@@ -179,15 +175,7 @@ class RestoreWorker(automat.Automat):
         self.blockRestoredCallback = None
         self.Attempts = 0
 
-        super(RestoreWorker, self).__init__(
-            name='restore_worker_%s' % self.version,
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(RestoreWorker, self).__init__(name='restore_worker_%s' % self.version, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
         events.send('restore-started', data=dict(backup_id=self.backup_id))
 
     def set_packet_in_callback(self, cb):
@@ -201,7 +189,10 @@ class RestoreWorker(automat.Automat):
         Method to catch the moment when `restore_worker()` state were changed.
         """
         if event != 'instant':
-            if newstate in ['REQUESTED', 'RECEIVING',] and oldstate not in [
+            if newstate in [
+                'REQUESTED',
+                'RECEIVING',
+            ] and oldstate not in [
                 'REQUESTED',
                 'RECEIVING',
             ]:
@@ -218,7 +209,7 @@ class RestoreWorker(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'REQUESTED'
@@ -227,7 +218,7 @@ class RestoreWorker(automat.Automat):
                 self.doScanExistingPackets(*args, **kwargs)
                 self.doRequestPackets(*args, **kwargs)
                 self.Attempts = 1
-        # ---REQUESTED---
+        #---REQUESTED---
         elif self.state == 'REQUESTED':
             if event == 'data-receiving-started':
                 self.state = 'RECEIVING'
@@ -239,9 +230,9 @@ class RestoreWorker(automat.Automat):
                 self.doScanExistingPackets(*args, **kwargs)
                 self.doRequestPackets(*args, **kwargs)
                 self.Attempts += 1
-            elif (event == 'abort' or (event == 'request-failed' and (not self.isStillCorrectable(*args, **kwargs) or self.Attempts >= 3))) or (
-                (event == 'instant' or event == 'request-finished') and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs)
-            ):
+            elif (event == 'abort' or
+                  (event == 'request-failed' and
+                   (not self.isStillCorrectable(*args, **kwargs) or self.Attempts >= 3))) or ((event == 'instant' or event == 'request-finished') and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs)):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(*args, **kwargs)
                 self.doRemoveTempFile(*args, **kwargs)
@@ -250,7 +241,7 @@ class RestoreWorker(automat.Automat):
             elif (event == 'instant' or event == 'request-finished') and self.isBlockFixable(*args, **kwargs):
                 self.state = 'RAID'
                 self.doReadRaid(*args, **kwargs)
-        # ---RECEIVING---
+        #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'data-receiving-stopped' and self.isStillCorrectable(*args, **kwargs):
                 self.state = 'REQUESTED'
@@ -258,9 +249,8 @@ class RestoreWorker(automat.Automat):
                 self.doRequestPackets(*args, **kwargs)
             elif event == 'data-received':
                 self.doSavePacket(*args, **kwargs)
-            elif (event == 'abort' or ((event == 'request-failed' or event == 'data-receiving-stopped') and not self.isStillCorrectable(*args, **kwargs))) or (
-                (event == 'instant' or event == 'request-finished') and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs)
-            ):
+            elif (event == 'abort' or ((event == 'request-failed' or event == 'data-receiving-stopped') and
+                                       not self.isStillCorrectable(*args, **kwargs))) or ((event == 'instant' or event == 'request-finished') and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs)):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(*args, **kwargs)
                 self.doRemoveTempFile(*args, **kwargs)
@@ -269,7 +259,7 @@ class RestoreWorker(automat.Automat):
             elif (event == 'instant' or event == 'request-finished') and self.isBlockFixable(*args, **kwargs):
                 self.state = 'RAID'
                 self.doReadRaid(*args, **kwargs)
-        # ---RAID---
+        #---RAID---
         elif self.state == 'RAID':
             if event == 'raid-done':
                 self.state = 'BLOCK'
@@ -282,7 +272,7 @@ class RestoreWorker(automat.Automat):
                 self.doRemoveTempFile(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---BLOCK---
+        #---BLOCK---
         elif self.state == 'BLOCK':
             if event == 'block-restored' and not self.isLastBlock(*args, **kwargs):
                 self.state = 'REQUESTED'
@@ -307,10 +297,10 @@ class RestoreWorker(automat.Automat):
                 self.doRemoveTempFile(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -330,14 +320,7 @@ class RestoreWorker(automat.Automat):
             return False
         result = bool(len(self.RequestFails) <= self.max_errors)
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'restore_worker.isStillCorrectable max_errors=%d, fails=%d'
-                % (
-                    self.max_errors,
-                    len(self.RequestFails),
-                ),
-            )
+            lg.out(_DebugLevel, 'restore_worker.isStillCorrectable max_errors=%d, fails=%d' % (self.max_errors, len(self.RequestFails)))
         return result
 
     def isBlockFixable(self, *args, **kwargs):
@@ -390,19 +373,12 @@ class RestoreWorker(automat.Automat):
                 known_ecc_map = None
                 if driver.is_on('service_shared_data'):
                     from access import shared_access_coordinator
-
                     active_share = shared_access_coordinator.get_active_share(self.key_id)
                     if active_share:
                         known_ecc_map = active_share.known_ecc_map
                 if known_ecc_map:
                     self.EccMap = eccmap.eccmap(known_ecc_map)
-                    lg.info(
-                        'ECC map %r recognized from active share %r'
-                        % (
-                            self.EccMap,
-                            active_share,
-                        )
-                    )
+                    lg.info('ECC map %r recognized from active share %r' % (self.EccMap, active_share))
                 else:
                     num_suppliers = len(self.known_suppliers)
                     if num_suppliers not in eccmap.GetPossibleSuppliersCount():
@@ -423,10 +399,10 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doStartNewBlock ' + str(self.block_number))
         self.OnHandData = [
             False,
-        ] * self.EccMap.datasegments
+        ]*self.EccMap.datasegments
         self.OnHandParity = [
             False,
-        ] * self.EccMap.paritysegments
+        ]*self.EccMap.paritysegments
         self.RequestFails = []
         self.block_requests = {}
         self.AlreadyRequestedCounts = {}
@@ -469,7 +445,7 @@ class RestoreWorker(automat.Automat):
             splitindex = blockbits.index(b':')
             lengthstring = blockbits[0:splitindex]
             datalength = int(lengthstring)  # real length before raidmake/ECC
-            blockdata = blockbits[splitindex + 1 : splitindex + 1 + datalength]  # remove padding from raidmake/ECC
+            blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]  # remove padding from raidmake/ECC
             newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)  # convert to object
         except:
             if _Debug:
@@ -482,13 +458,10 @@ class RestoreWorker(automat.Automat):
             lg.warn('block read/unserialize failed from %d bytes of data' % len(blockbits))
             self.automat('block-failed')
             return
-        self.automat(
-            'block-restored',
-            (
-                newblock,
-                filename,
-            ),
-        )
+        self.automat('block-restored', (
+            newblock,
+            filename,
+        ))
 
     def doRequestPackets(self, *args, **kwargs):
         """
@@ -556,7 +529,6 @@ class RestoreWorker(automat.Automat):
             return
         from storage import backup_matrix
         from storage import backup_rebuilder
-
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
                 if backup_rebuilder.A().currentBackupID == self.backup_id:
@@ -631,15 +603,12 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doReportFailed : %s' % reason)
         self.done_flag = True
         self.MyDeferred.callback(reason)
-        events.send(
-            'restore-failed',
-            data=dict(
-                backup_id=self.backup_id,
-                block_number=self.block_number,
-                args=args,
-                reason=reason,
-            ),
-        )
+        events.send('restore-failed', data=dict(
+            backup_id=self.backup_id,
+            block_number=self.block_number,
+            args=args,
+            reason=reason,
+        ))
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -661,25 +630,16 @@ class RestoreWorker(automat.Automat):
 
     def _do_block_rebuilding(self):
         from storage import backup_rebuilder
-
         backup_rebuilder.BlockBackup(self.backup_id)
         io_throttle.DeleteBackupRequests(self.backup_id)
 
     def _do_unblock_rebuilding(self):
         from storage import backup_rebuilder
-
         backup_rebuilder.UnBlockBackup(self.backup_id)
 
     def _do_check_run_requests(self):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'restore_worker._do_check_run_requests for %s at block %d'
-                % (
-                    self.backup_id,
-                    self.block_number,
-                ),
-            )
+            lg.out(_DebugLevel, 'restore_worker._do_check_run_requests for %s at block %d' % (self.backup_id, self.block_number))
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
             request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')
@@ -691,14 +651,7 @@ class RestoreWorker(automat.Automat):
                 continue
             if request_packet_id in self.block_requests:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        '        SKIP, request for packet %r already sent to IO queue for supplier %d'
-                        % (
-                            request_packet_id,
-                            SupplierNumber,
-                        ),
-                    )
+                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (request_packet_id, SupplierNumber))
                 continue
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
@@ -708,12 +661,10 @@ class RestoreWorker(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        SKIP, offline supplier: %s' % SupplierID)
                 continue
-            packetsToRequest.append(
-                (
-                    SupplierID,
-                    request_packet_id,
-                )
-            )
+            packetsToRequest.append((
+                SupplierID,
+                request_packet_id,
+            ))
         for SupplierNumber in range(self.EccMap.paritysegments):
             request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')
             if self.OnHandParity[SupplierNumber]:
@@ -724,14 +675,7 @@ class RestoreWorker(automat.Automat):
                 continue
             if request_packet_id in self.block_requests:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        '        SKIP, request for packet %r already sent to IO queue for supplier %d'
-                        % (
-                            request_packet_id,
-                            SupplierNumber,
-                        ),
-                    )
+                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (request_packet_id, SupplierNumber))
                 continue
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
@@ -741,12 +685,10 @@ class RestoreWorker(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        SKIP, offline supplier: %s' % SupplierID)
                 continue
-            packetsToRequest.append(
-                (
-                    SupplierID,
-                    request_packet_id,
-                )
-            )
+            packetsToRequest.append((
+                SupplierID,
+                request_packet_id,
+            ))
         requests_made = 0
         # already_requested = 0
         for SupplierID, packetID in packetsToRequest:
@@ -755,13 +697,7 @@ class RestoreWorker(automat.Automat):
                 # if packetID not in self.AlreadyRequestedCounts:
                 #     self.AlreadyRequestedCounts[packetID] = 0
                 # self.AlreadyRequestedCounts[packetID] += 1
-                lg.warn(
-                    'packet already in IO queue for supplier %s : %s'
-                    % (
-                        SupplierID,
-                        packetID,
-                    )
-                )
+                lg.warn('packet already in IO queue for supplier %s : %s' % (SupplierID, packetID))
                 continue
             self.block_requests[packetID] = None
             if io_throttle.QueueRequestFile(
@@ -779,14 +715,7 @@ class RestoreWorker(automat.Automat):
         del packetsToRequest
         if requests_made:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '        requested %d packets for block %d'
-                    % (
-                        requests_made,
-                        self.block_number,
-                    ),
-                )
+                lg.out(_DebugLevel, '        requested %d packets for block %d' % (requests_made, self.block_number))
             return
         current_block_requests_results = list(self.block_requests.values())
         if _Debug:
@@ -794,35 +723,15 @@ class RestoreWorker(automat.Automat):
         pending_count = current_block_requests_results.count(None)
         if pending_count > 0:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '        nothing for request, currently %d pending packets for block %d'
-                    % (
-                        pending_count,
-                        self.block_number,
-                    ),
-                )
+                lg.out(_DebugLevel, '        nothing for request, currently %d pending packets for block %d' % (pending_count, self.block_number))
             return
         failed_count = current_block_requests_results.count(False)
         if failed_count > self.max_errors:
-            lg.err(
-                'all requests finished and %d packets failed, not possible to read data for block %d'
-                % (
-                    failed_count,
-                    self.block_number,
-                )
-            )
+            lg.err('all requests finished and %d packets failed, not possible to read data for block %d' % (failed_count, self.block_number))
             reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                '        all requests finished for block %d : %r'
-                % (
-                    self.block_number,
-                    current_block_requests_results,
-                ),
-            )
+            lg.out(_DebugLevel, '        all requests finished for block %d : %r' % (self.block_number, current_block_requests_results))
         reactor.callLater(0, self.automat, 'request-finished', None)  # @UndefinedVariable
 
     def _on_block_restored(self, restored_blocks, filename):
@@ -853,13 +762,7 @@ class RestoreWorker(automat.Automat):
                     if resp['key_alias'] == req['key_alias'] and resp['user'] == req['user']:
                         if id_url.is_the_same(resp['idurl'], req['idurl']):
                             packet_id = req_packet_id
-                            lg.warn(
-                                'found matching packet request %r for rotated idurl %r'
-                                % (
-                                    packet_id,
-                                    resp['idurl'],
-                                )
-                            )
+                            lg.warn('found matching packet request %r for rotated idurl %r' % (packet_id, resp['idurl']))
                             break
         if packet_id not in self.block_requests:
             if _Debug:
@@ -877,22 +780,16 @@ class RestoreWorker(automat.Automat):
             self.block_requests[packet_id] = True
             if result == 'exist':
                 # reactor.callLater(0, self.automat, 'data-received', (None, packet_id, ))  # @UndefinedVariable
-                self.event(
-                    'data-received',
-                    (
-                        None,
-                        packet_id,
-                    ),
-                )
+                self.event('data-received', (
+                    None,
+                    packet_id,
+                ))
             else:
                 # reactor.callLater(0, self.automat, 'data-received', (NewPacketOrPacketID, packet_id, ))  # @UndefinedVariable
-                self.event(
-                    'data-received',
-                    (
-                        NewPacketOrPacketID,
-                        packet_id,
-                    ),
-                )
+                self.event('data-received', (
+                    NewPacketOrPacketID,
+                    packet_id,
+                ))
         else:
             self.block_requests[packet_id] = False
             self.RequestFails.append(packet_id)

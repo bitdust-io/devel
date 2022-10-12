@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -50,14 +49,12 @@ class SupplierService(LocalService):
 
     def installed(self):
         from userid import my_id
-
         if not my_id.isLocalIdentityReady():
             return False
         return True
 
     def attached_dht_layers(self):
         from dht import dht_records
-
         return [
             dht_records.LAYER_SUPPLIERS,
         ]
@@ -70,7 +67,6 @@ class SupplierService(LocalService):
         from storage import accounting
         from services import driver
         from supplier import customer_space
-
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(customer_space.on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(customer_space.on_customer_accepted, 'existing-customer-accepted')
@@ -80,15 +76,14 @@ class SupplierService(LocalService):
         space_dict, _ = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
             known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-            events.send(
-                'existing-customer-accepted',
-                data=dict(
-                    idurl=customer_idurl,
-                    allocated_bytes=space_dict.get(customer_idurl.to_bin()),
-                    ecc_map=known_customer_meta_info.get('ecc_map'),
-                    position=known_customer_meta_info.get('position'),
-                ),
-            )
+            # yapf: disable
+            events.send('existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=space_dict.get(customer_idurl.to_bin()),
+                ecc_map=known_customer_meta_info.get('ecc_map'),
+                position=known_customer_meta_info.get('position'),
+            ))
+            # yapf: enable
         if driver.is_on('service_entangled_dht'):
             self._do_connect_suppliers_dht_layer()
         else:
@@ -101,12 +96,10 @@ class SupplierService(LocalService):
         from main import events
         from services import driver
         from supplier import customer_space
-
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             from dht import dht_records
-
             dht_service.suspend(layer_id=dht_records.LAYER_SUPPLIERS)
         events.remove_subscriber(customer_space.on_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(customer_space.on_customer_accepted, 'new-customer-accepted')
@@ -127,7 +120,6 @@ class SupplierService(LocalService):
         from supplier import customer_space
         from userid import id_url
         from userid import global_id
-
         customer_idurl = newpacket.OwnerID
         customer_id = global_id.UrlToGlobalID(customer_idurl)
         bytes_for_customer = 0
@@ -175,25 +167,12 @@ class SupplierService(LocalService):
                 # external customer requesting access to data which belongs not to that customer
                 # this is "third" customer accessing data belongs to "second" customer
                 # TODO: for now just stop it
-                lg.warn(
-                    'under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s'
-                    % (
-                        key_id,
-                        customer_idurl,
-                        target_customer_idurl,
-                    )
-                )
+                lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (key_id, customer_idurl, target_customer_idurl))
                 p2p_service.SendFail(newpacket, 'under construction')
                 return False
             customer_space.register_customer_key(customer_public_key_id, customer_public_key)
             # do not create connection with that customer, only accept the request
-            lg.info(
-                'external customer %s requested access to shared data at %s'
-                % (
-                    customer_id,
-                    key_id,
-                )
-            )
+            lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id))
             return p2p_service.SendAck(newpacket, 'accepted')
         # key_id is not present in the request:
         # this is a request to connect new customer (or reconnect existing one) to that supplier
@@ -209,10 +188,10 @@ class SupplierService(LocalService):
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if customer_idurl not in current_customers and customer_idurl.to_bin() in list(space_dict.keys()):
+        if (customer_idurl not in current_customers and customer_idurl.to_bin() in list(space_dict.keys())):
             lg.warn('broken space file')
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if customer_idurl in current_customers and customer_idurl.to_bin() not in list(space_dict.keys()):
+        if (customer_idurl in current_customers and customer_idurl.to_bin() not in list(space_dict.keys())):
             # seems like customer's idurl was rotated, but space file still have the old idurl
             # need to find that old idurl value and replace with the new one
             for other_customer_idurl in space_dict.keys():
@@ -232,7 +211,6 @@ class SupplierService(LocalService):
             new_customer = True
         # lg.args(8, new_customer=new_customer, current_allocated_bytes=space_dict.get(customer_idurl.to_bin()))
         from supplier import local_tester
-
         if free_bytes <= bytes_for_customer:
             contactsdb.remove_customer_meta_info(customer_idurl)
             accounting.write_customers_quotas(space_dict, free_bytes)
@@ -251,49 +229,36 @@ class SupplierService(LocalService):
         free_bytes = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
         space_dict[customer_idurl.to_bin()] = bytes_for_customer
-        contactsdb.add_customer_meta_info(
-            customer_idurl,
-            {
-                'ecc_map': ecc_map,
-                'position': family_position,
-                'family_snapshot': family_snapshot,
-            },
-        )
+        contactsdb.add_customer_meta_info(customer_idurl, {
+            'ecc_map': ecc_map,
+            'position': family_position,
+            'family_snapshot': family_snapshot,
+        })
         accounting.write_customers_quotas(space_dict, free_bytes)
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
         customer_space.register_customer_key(customer_public_key_id, customer_public_key)
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
-            lg.info(
-                'NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer)
-            )
-            events.send(
-                'new-customer-accepted',
-                data=dict(
-                    idurl=customer_idurl,
-                    allocated_bytes=bytes_for_customer,
-                    ecc_map=ecc_map,
-                    position=family_position,
-                    family_snapshot=family_snapshot,
-                    key_id=customer_public_key_id,
-                ),
-            )
+            lg.info('NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
+            events.send('new-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                family_snapshot=family_snapshot,
+                key_id=customer_public_key_id,
+            ))
         else:
-            lg.info(
-                'OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer)
-            )
-            events.send(
-                'existing-customer-accepted',
-                data=dict(
-                    idurl=customer_idurl,
-                    allocated_bytes=bytes_for_customer,
-                    ecc_map=ecc_map,
-                    position=family_position,
-                    key_id=customer_public_key_id,
-                    family_snapshot=family_snapshot,
-                ),
-            )
+            lg.info('OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
+            events.send('existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                key_id=customer_public_key_id,
+                family_snapshot=family_snapshot,
+            ))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):
@@ -304,7 +269,6 @@ class SupplierService(LocalService):
         from contacts import contactsdb
         from storage import accounting
         from crypt import my_keys
-
         customer_idurl = newpacket.OwnerID
         try:
             customer_public_key = json_payload['customer_public_key']
@@ -339,7 +303,6 @@ class SupplierService(LocalService):
             my_keys.erase_key(customer_public_key_id)
         # TODO: erase customer's groups keys also
         from supplier import local_tester
-
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         lg.info('OLD CUSTOMER TERMINATED %r' % customer_idurl)
         events.send('existing-customer-terminated', data=dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
@@ -350,7 +313,6 @@ class SupplierService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from dht import known_nodes
-
         known_seeds = known_nodes.nodes()
         d = dht_service.open_layer(
             layer_id=dht_records.LAYER_SUPPLIERS,
@@ -364,7 +326,6 @@ class SupplierService(LocalService):
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from supplier import customer_space
-
         if newpacket.Command == commands.DeleteFile():
             return customer_space.on_delete_file(newpacket)
         elif newpacket.Command == commands.DeleteBackup():
@@ -382,7 +343,6 @@ class SupplierService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from userid import my_id
-
         lg.info('connected to DHT layer for suppliers: %r' % ok)
         if my_id.getIDURL():
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_SUPPLIERS)
@@ -390,7 +350,6 @@ class SupplierService(LocalService):
 
     def _on_dht_layer_connected(self, evt):
         from dht import dht_records
-
         if evt.data['layer_id'] == 0:
             self._do_connect_suppliers_dht_layer()
         elif evt.data['layer_id'] == dht_records.LAYER_SUPPLIERS:

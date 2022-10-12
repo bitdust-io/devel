@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: index_synchronizer.
 
@@ -80,22 +79,22 @@ EVENTS:
     * :red:`timer-5min`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import time
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -128,11 +127,11 @@ from services import driver
 
 from customer import supplier_connector
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _IndexSynchronizer = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def is_synchronized():
@@ -158,7 +157,7 @@ def is_synchronizing():
     ]
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -181,7 +180,7 @@ def A(event=None, *args, **kwargs):
     return _IndexSynchronizer
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class IndexSynchronizer(automat.Automat):
@@ -244,12 +243,12 @@ class IndexSynchronizer(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'NO_INFO'
                 self.doInit(*args, **kwargs)
-        # ---IN_SYNC!---
+        #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -262,7 +261,7 @@ class IndexSynchronizer(automat.Automat):
                 self.doSuppliersSendIndexFile(*args, **kwargs)
                 self.PushAgain = False
                 self.PullAgain = False
-        # ---REQUEST?---
+        #---REQUEST?---
         elif self.state == 'REQUEST?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -276,15 +275,13 @@ class IndexSynchronizer(automat.Automat):
                 self.PullAgain = False
             elif event == 'index-file-received':
                 self.doCheckVersion(*args, **kwargs)
-            elif (event == 'all-responded' or (event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs))) and not self.isVersionChanged(
-                *args, **kwargs
-            ):
+            elif (event == 'all-responded' or (event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs))) and not self.isVersionChanged(*args, **kwargs):
                 self.state = 'IN_SYNC!'
                 self.doCancelRequests(*args, **kwargs)
             elif event == 'timer-10sec' and not self.isSomeResponded(*args, **kwargs) and self.isAllTimedOut(*args, **kwargs):
                 self.state = 'NO_INFO'
                 self.doCancelRequests(*args, **kwargs)
-        # ---SENDING---
+        #---SENDING---
         elif self.state == 'SENDING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -305,7 +302,7 @@ class IndexSynchronizer(automat.Automat):
                 self.doCancelSendings(*args, **kwargs)
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
                 self.PullAgain = False
-        # ---NO_INFO---
+        #---NO_INFO---
         elif self.state == 'NO_INFO':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -315,7 +312,7 @@ class IndexSynchronizer(automat.Automat):
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
                 self.PushAgain = False
                 self.PullAgain = False
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -370,7 +367,6 @@ class IndexSynchronizer(automat.Automat):
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersRequestIndexFile')
         if driver.is_on('service_backups'):
             from storage import backup_fs
-
             self.current_local_revision = backup_fs.revision()
         else:
             self.current_local_revision = -1
@@ -451,17 +447,18 @@ class IndexSynchronizer(automat.Automat):
         Action method.
         """
 
-    #         packetID = global_id.MakeGlobalID(
-    #             customer=my_id.getGlobalID(key_alias='master'),
-    #             path=settings.BackupIndexFileName(),
-    #         )
-    #         from transport import packet_out
-    #         packetsToCancel = packet_out.search_by_packet_id(packetID)
-    #         for pkt_out in packetsToCancel:
-    #             if pkt_out.outpacket.Command == commands.Retrieve():
-    #                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
-    #                     pkt_out, pkt_out.remote_idurl, ))
-    #                 pkt_out.automat('cancel')
+
+#         packetID = global_id.MakeGlobalID(
+#             customer=my_id.getGlobalID(key_alias='master'),
+#             path=settings.BackupIndexFileName(),
+#         )
+#         from transport import packet_out
+#         packetsToCancel = packet_out.search_by_packet_id(packetID)
+#         for pkt_out in packetsToCancel:
+#             if pkt_out.outpacket.Command == commands.Retrieve():
+#                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
+#                     pkt_out, pkt_out.remote_idurl, ))
+#                 pkt_out.automat('cancel')
 
     def doCheckVersion(self, *args, **kwargs):
         """
@@ -489,7 +486,6 @@ class IndexSynchronizer(automat.Automat):
             return
         supplier_idurl = wrapped_packet.RemoteID
         from storage import backup_control
-
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
@@ -503,11 +499,7 @@ class IndexSynchronizer(automat.Automat):
                 ),
             )  # @UndefinedVariable
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d'
-                % (newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number),
-            )
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d' % (newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
@@ -517,11 +509,7 @@ class IndexSynchronizer(automat.Automat):
         supplier_idurl = newpacket.CreatorID
         self.requesting_suppliers.discard(supplier_idurl)
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d'
-                % (newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number),
-            )
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
@@ -535,10 +523,7 @@ class IndexSynchronizer(automat.Automat):
         else:
             lg.warn('did not found supplier connector for %r' % newpacket.OwnerID)
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (newpacket, len(self.sending_suppliers), self.sent_suppliers_number),
-            )
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
         if len(self.sending_suppliers) == 0:
             reactor.callLater(0, self.automat, 'all-acked')  # @UndefinedVariable
 
@@ -561,7 +546,7 @@ class IndexSynchronizer(automat.Automat):
                 creatorID=localID,
                 packetID=packetID,
                 remoteID=supplier_idurl,
-                response_timeout=60 * 2,
+                response_timeout=60*2,
                 callbacks={
                     commands.Data(): self._on_supplier_response,
                     commands.Fail(): self._on_supplier_fail,

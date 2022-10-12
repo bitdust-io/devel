@@ -20,8 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 #
-
-
 """
 .. module:: id_rotator
 .. role:: red
@@ -51,29 +49,28 @@ EVENTS:
     * :red:`run`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys as _s, os.path as _p
-
     _s.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(_s.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import random
 
 from twisted.internet.defer import Deferred, DeferredList, CancelledError  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -90,11 +87,11 @@ from userid import identity
 from userid import known_servers
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _IdRotator = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def check():
@@ -121,27 +118,18 @@ def run(preferred_servers={}, force=False):
     return result_defer
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class IdRotator(automat.Automat):
     """
     This class implements all the functionality of ``id_rotator()`` state machine.
     """
-
     def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=True, **kwargs):
         """
         Builds `id_rotator()` state machine.
         """
-        super(IdRotator, self).__init__(
-            name='id_rotator',
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(IdRotator, self).__init__(name='id_rotator', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def init(self):
         """
@@ -153,13 +141,13 @@ class IdRotator(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'run' or event == 'check':
                 self.state = 'ID_SERVERS?'
                 self.doInit(event, *args, **kwargs)
                 self.doPingMyIDServers(*args, **kwargs)
-        # ---ID_SERVERS?---
+        #---ID_SERVERS?---
         elif self.state == 'ID_SERVERS?':
             if event == 'ping-failed':
                 self.state = 'FAILED'
@@ -172,7 +160,7 @@ class IdRotator(automat.Automat):
             elif event == 'ping-done' and not self.isChecking(*args, **kwargs) and not self.isHealthy(*args, **kwargs):
                 self.state = 'NEW_SOURCE!'
                 self.doSelectNewIDServer(*args, **kwargs)
-        # ---NEW_SOURCE!---
+        #---NEW_SOURCE!---
         elif self.state == 'NEW_SOURCE!':
             if event == 'found-new-id-source':
                 self.state = 'MY_ID_ROTATE'
@@ -181,7 +169,7 @@ class IdRotator(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---MY_ID_ROTATE---
+        #---MY_ID_ROTATE---
         elif self.state == 'MY_ID_ROTATE':
             if event == 'my-id-updated':
                 self.state = 'SEND_ID'
@@ -189,7 +177,7 @@ class IdRotator(automat.Automat):
             elif event == 'need-more-sources':
                 self.state = 'NEW_SOURCE!'
                 self.doSelectNewIDServer(*args, **kwargs)
-        # ---SEND_ID---
+        #---SEND_ID---
         elif self.state == 'SEND_ID':
             if event == 'my-id-sent':
                 self.state = 'REQUEST_ID'
@@ -198,7 +186,7 @@ class IdRotator(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---REQUEST_ID---
+        #---REQUEST_ID---
         elif self.state == 'REQUEST_ID':
             if event == 'my-id-exist' and self.isMyIdentityValid(*args, **kwargs):
                 self.state = 'DONE'
@@ -208,10 +196,10 @@ class IdRotator(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -375,14 +363,7 @@ class IdRotator(automat.Automat):
             tcpport = int(tcpport)
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d'
-                    % (
-                        server_url,
-                        tcpport,
-                    ),
-                )
+                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d' % (server_url, tcpport))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_server_replied, host, pos)
             d.addErrback(_server_failed, host, pos)
@@ -406,12 +387,7 @@ class IdRotator(automat.Automat):
         new_sources = []
         new_idurl = strng.to_bin(args[0])
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                current_sources=current_sources,
-                alive_idurls=self.alive_idurls,
-                new_idurl=new_idurl,
-            )
+            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, new_idurl=new_idurl)
         # first get rid of "dead" sources
         for current_idurl in current_sources:
             if current_idurl not in self.alive_idurls:
@@ -429,16 +405,10 @@ class IdRotator(automat.Automat):
             lg.args(_DebugLevel, new_sources=new_sources, min_servers=min_servers, max_servers=max_servers)
         if len(new_sources) > max_servers:
             all_new_sources = list(new_sources)
-            new_sources = new_sources[max(0, len(new_sources) - max_servers) :]
-            lg.warn(
-                'skip %d identity sources, require maximum %d sources'
-                % (
-                    len(all_new_sources) - len(new_sources),
-                    max_servers,
-                )
-            )
+            new_sources = new_sources[max(0, len(new_sources) - max_servers):]
+            lg.warn('skip %d identity sources, require maximum %d sources' % (len(all_new_sources) - len(new_sources), max_servers))
         if len(new_sources) < min_servers:
-            additional_sources = self.possible_sources[: min_servers - len(new_sources)]
+            additional_sources = self.possible_sources[:min_servers - len(new_sources)]
             if additional_sources:
                 lg.warn('additional sources to be used: %r' % additional_sources)
                 new_sources.extend(additional_sources)
@@ -513,12 +483,10 @@ class IdRotator(automat.Automat):
         if event == 'ping-done':
             self.result_defer.callback((self._is_healthy(args[0]), False))
         elif event == 'my-id-exist':
-            self.result_defer.callback(
-                (
-                    True,
-                    self.rotated,
-                )
-            )
+            self.result_defer.callback((
+                True,
+                self.rotated,
+            ))
             # if self.rotated:
             #     events.send('my-identity-rotate-complete', data=dict())
 
@@ -587,7 +555,8 @@ class IdRotator(automat.Automat):
         return True
 
     def _do_check_ping_results(self, ping_results):
-        """ """
+        """
+        """
         self.alive_idurls = []
         my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         local_revision = my_id.getLocalIdentity().getRevisionValue()
@@ -656,13 +625,11 @@ class IdRotator(automat.Automat):
                 ),
                 proto='http',
             )
-            dlist.append(
-                net_misc.http_post_data(
-                    url=url,
-                    data=payload,
-                    connectTimeout=15,
-                )
-            )
+            dlist.append(net_misc.http_post_data(
+                url=url,
+                data=payload,
+                connectTimeout=15,
+            ))
             if _Debug:
                 lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
         return DeferredList(dlist, fireOnOneCallback=True)
@@ -700,24 +667,21 @@ class IdRotator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, err)
         from p2p import network_connector
-
         if network_connector.A().state != 'CONNECTED':
             self.automat('ping-failed', err)
         else:
             self.automat('ping-done', [])
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
     from system import bpio
-
     bpio.init()
     settings.init()
     lg.set_debug_level(20)
     from twisted.internet import reactor  # @UnresolvedImport
-
     ir = IdRotator()
     ir.addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='DONE')  # @UndefinedVariable
     ir.addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='FAILED')  # @UndefinedVariable
@@ -726,7 +690,7 @@ def main():
     settings.shutdown()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

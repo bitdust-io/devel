@@ -31,7 +31,7 @@ import threading
 from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait  # @UnresolvedImport
 from testsupport import dbg, warn  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=5, extract_suppliers=True, verbose=True):
@@ -137,8 +137,7 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
         observer_node = observer_id.split('@')[0]
         if _validate(observer_node):
             dbg(
-                'customer family [%s] [%s] info is correct for observer [%s] count=%d\n'
-                % (
+                'customer family [%s] [%s] info is correct for observer [%s] count=%d\n' % (
                     customer_node,
                     expected_ecc_map,
                     observer_node,
@@ -241,8 +240,7 @@ def share_info_v1(node: str, key_id, wait_state=None, validate_retries=90, delay
         assert response.json()['status'] == 'OK', response.json()
         # print('share/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
         dbg(
-            '  share/info/v1 [%s] attempt %d : state=%s'
-            % (
+            '  share/info/v1 [%s] attempt %d : state=%s' % (
                 node,
                 count,
                 response.json()['result']['state'],
@@ -310,8 +308,7 @@ def group_info_v1(node: str, group_key_id, wait_state=None, validate_retries=90,
         assert response.json()['status'] == 'OK', response.json()
         # print('group/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
         dbg(
-            '  group/info/v1 [%s] attempt %d : state=%s'
-            % (
+            '  group/info/v1 [%s] attempt %d : state=%s' % (
                 node,
                 count,
                 response.json()['result']['state'],
@@ -433,8 +430,7 @@ def file_sync_v1(node):
     response = request_get(node, 'file/sync/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'file/sync/v1 [%s] : %s\n'
-        % (
+        'file/sync/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -449,8 +445,7 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
         assert response.status_code == 200
         if verbose:
             dbg(
-                'file/list/all/v1 [%s] : %s\n'
-                % (
+                'file/list/all/v1 [%s] : %s\n' % (
                     node,
                     pprint.pformat(response.json()),
                 )
@@ -467,8 +462,7 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
         assert response.status_code == 200
         if verbose:
             dbg(
-                'file/list/all/v1 [%s] : %s\n'
-                % (
+                'file/list/all/v1 [%s] : %s\n' % (
                     node,
                     pprint.pformat(response.json()),
                 )
@@ -501,8 +495,7 @@ def file_create_v1(node, remote_path):
     response = request_post(node, 'file/create/v1', json={'remote_path': remote_path}, timeout=20)
     assert response.status_code == 200
     dbg(
-        'file/create/v1 [%s] remote_path=%s : %s\n'
-        % (
+        'file/create/v1 [%s] remote_path=%s : %s\n' % (
             node,
             remote_path,
             pprint.pformat(response.json()),
@@ -535,8 +528,7 @@ def file_upload_start_v1(
     )
     assert response.status_code == 200
     dbg(
-        'file/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n'
-        % (
+        'file/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n' % (
             customer,
             remote_path,
             local_path,
@@ -549,8 +541,7 @@ def file_upload_start_v1(
             response = request_get(customer, 'file/upload/v1', timeout=20)
             assert response.status_code == 200
             dbg(
-                'file/upload/v1 [%s] : %s\n'
-                % (
+                'file/upload/v1 [%s] : %s\n' % (
                     customer,
                     pprint.pformat(response.json()),
                 )
@@ -584,8 +575,7 @@ def file_download_start_v1(
         )
         assert response.status_code == 200
         dbg(
-            'file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n'
-            % (
+            'file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
                 customer,
                 remote_path,
                 destination,
@@ -600,9 +590,8 @@ def file_download_start_v1(
             # print('file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
             #     customer, remote_path, destination, 'ALREADY STARTED', ))
             break
-        if (response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading')) or (
-            response.json()['errors'][0].count('was not found in the catalog')
-        ):
+        if (response.json()['errors'][0].count('failed') and
+            response.json()['errors'][0].count('downloading')) or (response.json()['errors'][0].count('was not found in the catalog')):
             time.sleep(delay)
         else:
             assert False, response.json()
@@ -616,8 +605,7 @@ def file_download_start_v1(
             response = request_get(customer, 'file/download/v1', timeout=20)
             assert response.status_code == 200
             dbg(
-                'file/download/v1 [%s] : %s\n'
-                % (
+                'file/download/v1 [%s] : %s\n' % (
                     customer,
                     pprint.pformat(response.json()),
                 )
@@ -654,8 +642,7 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
             node = fallback_observer
         response = request_get(
             node,
-            'dht/value/get/v1?record_type=%s&key=%s'
-            % (
+            'dht/value/get/v1?record_type=%s&key=%s' % (
                 record_type,
                 key,
             ),
@@ -664,8 +651,7 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
         try:
             assert response.status_code == 200
             dbg(
-                'dht/value/get/v1 [%s] : %s\n'
-                % (
+                'dht/value/get/v1 [%s] : %s\n' % (
                     node,
                     pprint.pformat(response.json()),
                 )
@@ -682,8 +668,7 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
                     warn('first request failed, retry one more time')
                     response = request_get(
                         node,
-                        'dht/value/get/v1?record_type=%s&key=%s'
-                        % (
+                        'dht/value/get/v1?record_type=%s&key=%s' % (
                             record_type,
                             key,
                         ),
@@ -725,8 +710,7 @@ def dht_value_set_v1(
     )
     assert response.status_code == 200
     dbg(
-        'dht/value/set/v1 [%s] key=%s : %s\n'
-        % (
+        'dht/value/set/v1 [%s] key=%s : %s\n' % (
             node,
             key,
             pprint.pformat(response.json()),
@@ -749,8 +733,7 @@ def dht_db_dump_v1(node):
     except:
         return None
     dbg(
-        'dht/db/dump/v1 [%s] : %s\n'
-        % (
+        'dht/db/dump/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -779,8 +762,7 @@ def message_send_v1(node, recipient, data, timeout=30, expect_consumed=True):
 
 def message_send_group_v1(node, group_key_id, data, timeout=120):
     dbg(
-        'message/send/group/v1 [%s] group_key_id=%r data=%r'
-        % (
+        'message/send/group/v1 [%s] group_key_id=%r data=%r' % (
             node,
             group_key_id,
             data,
@@ -823,8 +805,7 @@ def message_history_v1(node, recipient_id, message_type='private_message', timeo
     response = request_get(node, f'message/history/v1?id={recipient_id}&message_type={message_type}', timeout=timeout)
     assert response.status_code == 200
     dbg(
-        'message/history/v1 [%s] recipient_id=%s : %s\n'
-        % (
+        'message/history/v1 [%s] recipient_id=%s : %s\n' % (
             node,
             recipient_id,
             pprint.pformat(response.json()),
@@ -838,8 +819,7 @@ def message_conversation_v1(node, message_types='private_message,group_message',
     response = request_get(node, f'message/conversation/v1?message_types={message_types}', timeout=timeout)
     assert response.status_code == 200
     dbg(
-        'message/conversation/v1 [%s] message_types=%s : %s\n'
-        % (
+        'message/conversation/v1 [%s] message_types=%s : %s\n' % (
             node,
             message_types,
             pprint.pformat(response.json()),
@@ -889,8 +869,7 @@ def service_start_v1(node, service_name, timeout=10):
     response = request_post(node, f'service/start/{service_name}/v1', json={}, timeout=timeout)
     assert response.status_code == 200
     dbg(
-        'service/start/%s/v1 [%s]: %s\n'
-        % (
+        'service/start/%s/v1 [%s]: %s\n' % (
             service_name,
             node,
             pprint.pformat(response.json()),
@@ -904,8 +883,7 @@ def service_stop_v1(node, service_name, timeout=10):
     response = request_post(node, f'service/stop/{service_name}/v1', json={}, timeout=timeout)
     assert response.status_code == 200
     dbg(
-        'service/stop/%s/v1 [%s]: %s\n'
-        % (
+        'service/stop/%s/v1 [%s]: %s\n' % (
             service_name,
             node,
             pprint.pformat(response.json()),
@@ -919,8 +897,7 @@ def service_health_v1(node, service_name, timeout=30):
     response = request_get(node, f'service/health/{service_name}/v1', timeout=timeout)
     assert response.status_code == 200
     dbg(
-        'service/health/%s/v1 [%s]: %s\n'
-        % (
+        'service/health/%s/v1 [%s]: %s\n' % (
             service_name,
             node,
             pprint.pformat(response.json()),
@@ -965,8 +942,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=90, delay=2, verbose=Fa
         assert response.status_code == 200
         if verbose:
             dbg(
-                'packet/list/v1 [%s] : %s\n'
-                % (
+                'packet/list/v1 [%s] : %s\n' % (
                     node,
                     pprint.pformat(response.json()),
                 )
@@ -990,8 +966,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=90, delay=2, verbose=Fa
         time.sleep(delay)
     else:
         warn(
-            'packet/list/v1 [%s] : %s\n'
-            % (
+            'packet/list/v1 [%s] : %s\n' % (
                 node,
                 pprint.pformat(response.json()),
             )
@@ -1008,8 +983,7 @@ def transfer_list_v1(node, wait_all_finish=False, attempts=90, delay=2, verbose=
         assert response.status_code == 200
         if verbose:
             dbg(
-                'transfer/list/v1 [%s] : %s\n'
-                % (
+                'transfer/list/v1 [%s] : %s\n' % (
                     node,
                     pprint.pformat(response.json()),
                 )
@@ -1038,8 +1012,7 @@ def identity_get_v1(node):
     response = request_get(node, 'identity/get/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'identity/get/v1 [%s] : %s\n'
-        % (
+        'identity/get/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1052,8 +1025,7 @@ def identity_rotate_v1(node):
     response = request_put(node, 'identity/rotate/v1', timeout=30)
     assert response.status_code == 200
     dbg(
-        'identity/rotate/v1 [%s] : %s\n'
-        % (
+        'identity/rotate/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1066,8 +1038,7 @@ def network_reconnect_v1(node):
     response = request_get(node, 'network/reconnect/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'network/reconnect/v1 [%s] : %s\n'
-        % (
+        'network/reconnect/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1080,8 +1051,7 @@ def network_info_v1(node):
     response = request_get(node, 'network/info/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'network/info/v1 [%s] : %s\n'
-        % (
+        'network/info/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1094,8 +1064,7 @@ def key_list_v1(node):
     response = request_get(node, 'key/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'key/list/v1 [%s] : %s\n'
-        % (
+        'key/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1108,8 +1077,7 @@ def automat_list_v1(node):
     response = request_get(node, 'automat/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'automat/list/v1 [%s] : %s\n'
-        % (
+        'automat/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1122,8 +1090,7 @@ def automat_info_v1(node, automat_index, expected_state=None):
     response = request_get(node, 'automat/info/v1?index=%d' % int(automat_index), timeout=20)
     assert response.status_code == 200
     dbg(
-        'automat/info/v1?index=%d [%s] : %s\n'
-        % (
+        'automat/info/v1?index=%d [%s] : %s\n' % (
             int(automat_index),
             node,
             pprint.pformat(response.json()),
@@ -1147,8 +1114,7 @@ def friend_add_v1(node, friend_idurl, friend_alias=''):
     )
     assert response.status_code == 200
     dbg(
-        'friend/add/v1 [%s] idurl=%r alias=%r : %s\n'
-        % (
+        'friend/add/v1 [%s] idurl=%r alias=%r : %s\n' % (
             node,
             friend_idurl,
             friend_alias,
@@ -1163,8 +1129,7 @@ def friend_list_v1(node, extract_idurls=False):
     response = request_get(node, 'friend/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'friend/list/v1 [%s] : %s\n'
-        % (
+        'friend/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1179,8 +1144,7 @@ def queue_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'queue/list/v1 [%s] : %s\n'
-        % (
+        'queue/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1195,8 +1159,7 @@ def queue_consumer_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/consumer/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'queue/consumer/list/v1 [%s] : %s\n'
-        % (
+        'queue/consumer/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1211,8 +1174,7 @@ def queue_producer_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/producer/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'queue/producer/list/v1 [%s] : %s\n'
-        % (
+        'queue/producer/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1227,8 +1189,7 @@ def queue_keeper_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/keeper/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'queue/keeper/list/v1 [%s] : %s\n'
-        % (
+        'queue/keeper/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1243,8 +1204,7 @@ def queue_peddler_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/peddler/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'queue/peddler/list/v1 [%s] : %s\n'
-        % (
+        'queue/peddler/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1255,7 +1215,7 @@ def queue_peddler_list_v1(node, extract_ids=False):
     return [f['queue_id'] for f in response.json()['result']]
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def wait_packets_finished(nodes, verbose=False):
@@ -1267,8 +1227,7 @@ def wait_packets_finished(nodes, verbose=False):
 
 def wait_service_state(nodes, service_name, state, verbose=False):
     dbg(
-        'wait service %r state to become %r on %d nodes'
-        % (
+        'wait service %r state to become %r on %d nodes' % (
             service_name,
             state,
             len(nodes),
@@ -1281,8 +1240,7 @@ def wait_service_state(nodes, service_name, state, verbose=False):
 
 def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppliers=2, verbose=False):
     dbg(
-        'wait min %d and max %d suppliers to be connected on %d nodes'
-        % (
+        'wait min %d and max %d suppliers to be connected on %d nodes' % (
             expected_min_suppliers,
             expected_max_suppliers,
             len(nodes),
@@ -1295,8 +1253,7 @@ def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppl
 
 def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=False):
     dbg(
-        'wait event "%s" to occur %d times on %d nodes'
-        % (
+        'wait event "%s" to occur %d times on %d nodes' % (
             event,
             expected_count,
             len(nodes),
@@ -1315,8 +1272,7 @@ def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=Fal
 
 def wait_specific_event(nodes, event, match_regex, expected_count=1, attempts=20, delay=5, verbose=False):
     dbg(
-        'wait event "%s" with "%s" to occur %d times on %d nodes'
-        % (
+        'wait event "%s" with "%s" to occur %d times on %d nodes' % (
             event,
             match_regex,
             expected_count,
@@ -1340,15 +1296,14 @@ def wait_specific_event(nodes, event, match_regex, expected_count=1, attempts=20
     dbg('')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def verify_message_sent_received(
     group_key_id, producer_id, consumers_ids, message_label='A', expected_results={}, expected_last_sequence_id={}, receive_timeout=31, polling_timeout=30
 ):
     sample_message = {
-        'random_message': 'MESSAGE_%s_%s'
-        % (
+        'random_message': 'MESSAGE_%s_%s' % (
             message_label,
             base64.b32encode(os.urandom(8)).decode(),
         ),
@@ -1400,27 +1355,22 @@ def verify_message_sent_received(
                     assert False, 'consumer %r did not received expected message %r' % (consumer_id, sample_message)
                 if consumer_results[consumer_id][0]['result'][0]['data'] != sample_message:
                     assert False, 'consumer %r received message %r, but expected is %r' % (
-                        consumer_id,
-                        consumer_results[consumer_id][0]['result'][0]['data'],
-                        sample_message,
+                        consumer_id, consumer_results[consumer_id][0]['result'][0]['data'], sample_message
                     )
             else:
-                assert consumer_results[consumer_id][0]['result'] == [], 'consumer %r received message while should not: %r' % (
-                    consumer_id,
-                    consumer_results[consumer_id],
-                )
+                assert consumer_results[consumer_id][0][
+                    'result'] == [], 'consumer %r received message while should not: %r' % (consumer_id, consumer_results[consumer_id])
             if consumer_id in expected_last_sequence_id:
                 consumer_last_sequence_id = group_info_v1(consumer_id, group_key_id)['result']['last_sequence_id']
-                assert consumer_last_sequence_id == expected_last_sequence_id[consumer_id], 'consumer %r last_sequence_id is %r but expected is %r' % (
-                    consumer_id,
-                    consumer_last_sequence_id,
-                    expected_last_sequence_id[consumer_id],
-                )
+                assert consumer_last_sequence_id == expected_last_sequence_id[consumer_id], \
+                    'consumer %r last_sequence_id is %r but expected is %r' % (
+                        consumer_id, consumer_last_sequence_id, expected_last_sequence_id[consumer_id],
+                    )
 
     return sample_message
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def verify_file_create_upload_start(

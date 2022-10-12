@@ -35,15 +35,12 @@ import tornado.websocket
 
 # Bismuth specific modules
 import modules.config as config
-
 # from modules.helpers import *
 from modules.sqlitebase import SqliteBase
 from modules.ledgerbase import LedgerBase
 from modules.node_interface import NodeInterface
 
-
 __version__ = '0.0.20'
-
 
 NODE_INTERFACE: NodeInterface = None
 
@@ -70,7 +67,7 @@ class ChannelHandler(tornado.websocket.WebSocketHandler):
         """
         global access_log
         global app_log
-        # client id could be remote_ip/port instead, but need to handle proxies/ports
+        #client id could be remote_ip/port instead, but need to handle proxies/ports
         ChannelHandler.client_id_counter += 1
         self.client_id = f'{ChannelHandler.client_id_counter}({self.request.remote_ip})'
         self.message_id = 0
@@ -183,7 +180,7 @@ if __name__ == '__main__':
         sys.exit()
     """
 
-    # TODO: print settings
+    # TODO: print settings
 
     if not os.path.isfile(CONFIG.mempool_path):
         print('mempool.db not found at {}'.format(CONFIG.mempool_path))
@@ -205,7 +202,7 @@ if __name__ == '__main__':
     # app_log.addHandler(ch)
     logfile = os.path.abspath('websocket_app.log')
     # Rotate log after reaching 512K, keep 5 old copies.
-    rotateHandler = RotatingFileHandler(logfile, 'a', 512 * 1024, 10)
+    rotateHandler = RotatingFileHandler(logfile, 'a', 512*1024, 10)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler.setFormatter(formatter)
     app_log.addHandler(rotateHandler)
@@ -213,7 +210,7 @@ if __name__ == '__main__':
     access_log = logging.getLogger('tornado.access')
     tornado.log.enable_pretty_logging()
     logfile2 = os.path.abspath('websocket_access.log')
-    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512 * 1024, 10)
+    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512*1024, 10)
     formatter2 = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler2.setFormatter(formatter2)
     access_log.addHandler(rotateHandler2)

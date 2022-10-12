@@ -19,27 +19,25 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: jsn.
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 import json
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def dict_keys_to_text(dct, encoding='utf-8', errors='strict'):
@@ -118,7 +116,7 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
     return _d
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def pack_dict(dct, encoding='utf-8', errors='strict'):
@@ -197,12 +195,10 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
     return _d
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
-def dumps(
-    obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', keys_to_text=False, values_to_text=False, empty_result='{}', **kw
-):
+def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', keys_to_text=False, values_to_text=False, empty_result='{}', **kw):
     """
     Calls `json.dumps()` with parameters.
     Always translates every byte string json value into text using encoding.
@@ -227,16 +223,13 @@ def dumps(
 
     try:
         if sys.version_info[0] < 3:
-            return json.dumps(
-                obj=obj, indent=indent, separators=separators, sort_keys=sort_keys, ensure_ascii=ensure_ascii, default=_to_text, encoding=encoding, **kw
-            )
+            return json.dumps(obj=obj, indent=indent, separators=separators, sort_keys=sort_keys, ensure_ascii=ensure_ascii, default=_to_text, encoding=encoding, **kw)
         else:
             return json.dumps(obj=obj, indent=indent, separators=separators, sort_keys=sort_keys, ensure_ascii=ensure_ascii, default=_to_text, **kw)
     except Exception as exc:
         if _Debug:
             import os
             import tempfile
-
             fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_dumps_', text=True)
             try:
                 os.write(fd, repr(obj))
@@ -249,7 +242,7 @@ def dumps(
         raise exc
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
@@ -276,7 +269,6 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
             try:
                 import os
                 import tempfile
-
                 fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
                 os.write(fd, s)
                 os.close(fd)
@@ -285,7 +277,7 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
         raise exc
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def loads_text(s, encoding='utf-8', **kw):
@@ -304,7 +296,6 @@ def loads_text(s, encoding='utf-8', **kw):
         if _Debug:
             import os
             import tempfile
-
             fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
             os.write(fd, s)
             os.close(fd)

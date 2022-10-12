@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: udp_session.
 
@@ -38,11 +36,11 @@ EVENTS:
     * :red:`timer-30sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -50,7 +48,7 @@ import time
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -60,17 +58,17 @@ from lib import udp
 
 from automats import automat
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 14
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 MIN_PROCESS_SESSIONS_DELAY = 0.001
 MAX_PROCESS_SESSIONS_DELAY = 1.0
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SessionsDict = {}
 _SessionsDictByPeerAddress = {}
@@ -81,7 +79,7 @@ _PendingOutboxFiles = []
 _ProcessSessionsTask = None
 _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def sessions():
@@ -104,7 +102,7 @@ def pending_outbox_files():
     return _PendingOutboxFiles
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def create(node, peer_address, peer_id=None):
@@ -168,7 +166,6 @@ def remove_pending_outbox_file(host, filename):
 
 def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
     from transport.udp import udp_interface
-
     global _PendingOutboxFiles
     i = 0
     while i < len(_PendingOutboxFiles):
@@ -213,7 +210,10 @@ def process_sessions(sessions_to_process=None):
                 MAX_PROCESS_SESSIONS_DELAY,
             )
         # attenuation
-        _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, process_sessions)  # @UndefinedVariable
+        _ProcessSessionsTask = reactor.callLater(  # @UndefinedVariable
+            _ProcessSessionsDelay,
+            process_sessions,
+        )
 
 
 def stop_process_sessions():
@@ -224,7 +224,7 @@ def stop_process_sessions():
         _ProcessSessionsTask = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class UDPSession(automat.Automat):
@@ -251,7 +251,6 @@ class UDPSession(automat.Automat):
 
     def __init__(self, node, peer_address, peer_id=None):
         from transport.udp import udp_file_queue
-
         self.node = node
         self.peer_address = peer_address
         self.peer_id = peer_id
@@ -298,7 +297,7 @@ class UDPSession(automat.Automat):
         return udp.send_command(self.node.listen_port, command, payload, self.peer_address)
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'PING'
@@ -311,7 +310,7 @@ class UDPSession(automat.Automat):
                 self.doClosePendingFiles(*args, **kwargs)
                 self.doNotifyDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---CONNECTED---
+        #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown' or (event == 'timer-10sec' and not self.isSessionActive(*args, **kwargs)):
                 self.state = 'CLOSED'
@@ -330,7 +329,7 @@ class UDPSession(automat.Automat):
                 self.doGreeting(*args, **kwargs)
             elif event == 'send-keep-alive' or event == 'timer-10sec':
                 self.doAlive(*args, **kwargs)
-        # ---PING---
+        #---PING---
         elif self.state == 'PING':
             if event == 'timer-1sec':
                 self.doStartRTT(*args, **kwargs)
@@ -352,7 +351,7 @@ class UDPSession(automat.Automat):
                 self.doClosePendingFiles(*args, **kwargs)
                 self.doNotifyDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---GREETING---
+        #---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec':
                 self.doStartRTT(*args, **kwargs)
@@ -378,7 +377,7 @@ class UDPSession(automat.Automat):
                 self.doAcceptGreeting(*args, **kwargs)
                 self.doFinishRTT(*args, **kwargs)
                 self.doAlive(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -388,35 +387,35 @@ class UDPSession(automat.Automat):
         Condition method.
         """
         command = args[0][0][0]
-        return command == udp.CMD_DATA or command == udp.CMD_ACK
+        return (command == udp.CMD_DATA or command == udp.CMD_ACK)
 
     def isPing(self, *args, **kwargs):
         """
         Condition method.
         """
         command = args[0][0][0]
-        return command == udp.CMD_PING
+        return (command == udp.CMD_PING)
 
     def isGreeting(self, *args, **kwargs):
         """
         Condition method.
         """
         command = args[0][0][0]
-        return command == udp.CMD_GREETING
+        return (command == udp.CMD_GREETING)
 
     def isAlive(self, *args, **kwargs):
         """
         Condition method.
         """
         command = args[0][0][0]
-        return command == udp.CMD_ALIVE
+        return (command == udp.CMD_ALIVE)
 
-    #    def isGreetingOrAlive(self, *args, **kwargs):
-    #        """
-    #        Condition method.
-    #        """
-    #        command = arg[0][0]
-    #        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
+#    def isGreetingOrAlive(self, *args, **kwargs):
+#        """
+#        Condition method.
+#        """
+#        command = arg[0][0]
+#        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
 
     def isSessionActive(self, *args, **kwargs):
         """
@@ -563,13 +562,12 @@ class UDPSession(automat.Automat):
             self.file_queue.on_received_data_packet(payload)
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
-
-    #        elif command == udp.CMD_PING:
-    #            pass
-    #        elif command == udp.CMD_ALIVE:
-    #            pass
-    #        elif command == udp.CMD_GREETING:
-    #            pass
+#        elif command == udp.CMD_PING:
+#            pass
+#        elif command == udp.CMD_ALIVE:
+#            pass
+#        elif command == udp.CMD_GREETING:
+#            pass
 
     def doNotifyConnected(self, *args, **kwargs):
         """
@@ -726,16 +724,18 @@ class UDPSession(automat.Automat):
         # print 'rtt finish', rtt_id_in, self.peer_id
         if rtt_id_in == '0' or rtt_id_in not in self.rtts:
             return
-        #             or rtt_id_in not in self.rtts:
-        #            for rtt_id in self.rtts.keys():
-        #                if self.rtts[rtt_id][1] == -1:
-        #                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
-        #                    del self.rtts[rtt_id]
-        #                        lg.out(_DebugLevel, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
-        #                        rtt_id, rtt))
-        #                    return
-        #            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
-        #            return
+
+
+#             or rtt_id_in not in self.rtts:
+#            for rtt_id in self.rtts.keys():
+#                if self.rtts[rtt_id][1] == -1:
+#                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
+#                    del self.rtts[rtt_id]
+#                        lg.out(_DebugLevel, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
+#                        rtt_id, rtt))
+#                    return
+#            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
+#            return
         self.rtts[rtt_id_in][1] = time.time()
         rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
         if _Debug:

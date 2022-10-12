@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: child_process.
 
@@ -42,14 +41,14 @@ except:
 
 from twisted.internet import protocol
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from system import bpio
 from system import nonblocking
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class ChildProcessProtocol(protocol.ProcessProtocol):
@@ -64,7 +63,7 @@ class ChildProcessProtocol(protocol.ProcessProtocol):
         lg.out(2, 'child process [%s] FINISHED' % self.name)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def run(child_name, params=[], base_dir='.', process_protocol=None):
@@ -91,18 +90,12 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
 
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
-
         real_CreateProcess = _dumbwin32proc.win32process.CreateProcess  # @UndefinedVariable
 
-        def fake_createprocess(
-            _appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, creationFlags, _newEnvironment, _currentDirectory, startupinfo
-        ):
+        def fake_createprocess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, creationFlags, _newEnvironment, _currentDirectory, startupinfo):
             import win32con  # @UnresolvedImport
-
             flags = win32con.CREATE_NO_WINDOW
-            return real_CreateProcess(
-                _appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, flags, _newEnvironment, _currentDirectory, startupinfo
-            )
+            return real_CreateProcess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, flags, _newEnvironment, _currentDirectory, startupinfo)
 
         setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
 
@@ -147,7 +140,7 @@ def kill_child(child_name):
     return killed
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def pipe(cmdargs):
@@ -161,7 +154,6 @@ def pipe(cmdargs):
     try:
         if bpio.Windows():
             import win32process  # @UnresolvedImport
-
             p = nonblocking.Popen(
                 cmdargs,
                 shell=True,
@@ -192,7 +184,6 @@ def detach(cmdargs):
     try:
         if bpio.Windows():
             import win32process  # @UnresolvedImport
-
             p = nonblocking.Popen(
                 cmdargs,
                 shell=False,

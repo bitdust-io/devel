@@ -30,10 +30,7 @@ REGNET_INDEX = 'static/index_reg.db'
 REGNET_PEERS = 'peers_reg.txt'
 REGNET_SUGGESTED_PEERS = 'peers_reg.txt'
 
-SQL_INDEX = [
-    'CREATE TABLE aliases (block_height INTEGER, address, alias)',
-    'CREATE TABLE tokens (block_height INTEGER, timestamp, token, address, recipient, txid, amount INTEGER)',
-]
+SQL_INDEX = ['CREATE TABLE aliases (block_height INTEGER, address, alias)', 'CREATE TABLE tokens (block_height INTEGER, timestamp, token, address, recipient, txid, amount INTEGER)']
 
 SQL_LEDGER = [
     'CREATE TABLE misc (block_height INTEGER, difficulty TEXT)',
@@ -49,14 +46,12 @@ SQL_LEDGER = [
     'INSERT INTO misc (difficulty, block_height) VALUES ({},1)'.format(REGNET_DIFF),
 ]
 
-
 FILES_TO_REMOVE = [REGNET_DB, REGNET_INDEX]
 
 HASHCOUNT = 10
 
 # Max number of tx to embed per block.
 TX_PER_BLOCK = 2
-
 
 # Do not edit below, it's fed by node.py
 
@@ -80,30 +75,20 @@ def generate_one_block(blockhash, mempool_txs, node, db_handler):
         if not blockhash:
             node.logger.app_log.warning('Bad blockhash')
             return
-        diff_hex = math.floor((REGNET_DIFF / 8) - 1)
+        diff_hex = math.floor((REGNET_DIFF/8) - 1)
         mining_condition = blockhash[0:diff_hex]
         while True:
             try_arr = [('%0x' % getrandbits(32)) for i in range(HASHCOUNT)]
             i = 0
             for i in range(100):
                 i += 1
-                seed = '%0x' % getrandbits(128 - 32)
+                seed = ('%0x' % getrandbits(128 - 32))
                 prefix = ADDRESS + seed
                 # print("node heavy", node.heavy)
                 if node.heavy:
-                    possibles = [
-                        nonce
-                        for nonce in try_arr
-                        if mining_condition
-                        in (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + blockhash).encode('utf-8')).digest(), 'big')))
-                    ]
+                    possibles = [nonce for nonce in try_arr if mining_condition in (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + blockhash).encode('utf-8')).digest(), 'big')))]
                 else:
-                    possibles = [
-                        nonce
-                        for nonce in try_arr
-                        if mining_condition
-                        in (mining.anneal3_regnet(mining.MMAP, int.from_bytes(sha224((prefix + nonce + blockhash).encode('utf-8')).digest(), 'big')))
-                    ]
+                    possibles = [nonce for nonce in try_arr if mining_condition in (mining.anneal3_regnet(mining.MMAP, int.from_bytes(sha224((prefix + nonce + blockhash).encode('utf-8')).digest(), 'big')))]
                 if possibles:
                     nonce = seed + possibles[0]
                     node.logger.app_log.warning('Generate got a block in {} tries len {}'.format(i, len(possibles)))
@@ -116,29 +101,13 @@ def generate_one_block(blockhash, mempool_txs, node, db_handler):
                     block_send = []
                     removal_signature = []
                     for mpdata in txs:
-                        transaction = (
-                            str(mpdata[0]),
-                            str(mpdata[1][:56]),
-                            str(mpdata[2][:56]),
-                            '%.8f' % float(mpdata[3]),
-                            str(mpdata[4]),
-                            str(mpdata[5]),
-                            str(mpdata[6]),
-                            str(mpdata[7]),
-                        )  # create tuple
+                        transaction = (str(mpdata[0]), str(mpdata[1][:56]), str(mpdata[2][:56]), '%.8f' % float(mpdata[3]), str(mpdata[4]), str(mpdata[5]), str(mpdata[6]), str(mpdata[7]))  # create tuple
                         # node.logger.app_log.warning transaction
                         block_send.append(transaction)  # append tuple to list for each run
                         removal_signature.append(str(mpdata[4]))  # for removal after successful mining
                     # claim reward
                     block_timestamp = '%.2f' % time.time()
-                    transaction_reward = (
-                        str(block_timestamp),
-                        str(ADDRESS[:56]),
-                        str(ADDRESS[:56]),
-                        '%.8f' % float(0),
-                        '0',
-                        str(nonce),
-                    )  # only this part is signed!
+                    transaction_reward = (str(block_timestamp), str(ADDRESS[:56]), str(ADDRESS[:56]), '%.8f' % float(0), '0', str(nonce))  # only this part is signed!
                     # node.logger.app_log.warning transaction_reward
 
                     hash = SHA.new(str(transaction_reward).encode('utf-8'))
@@ -148,18 +117,7 @@ def generate_one_block(blockhash, mempool_txs, node, db_handler):
 
                     if signer.verify(hash, signature):
                         node.logger.app_log.warning('Signature valid')
-                        block_send.append(
-                            (
-                                str(block_timestamp),
-                                str(ADDRESS[:56]),
-                                str(ADDRESS[:56]),
-                                '%.8f' % float(0),
-                                str(signature_enc.decode('utf-8')),
-                                str(PUBLIC_KEY_B64ENCODED.decode('utf-8')),
-                                '0',
-                                str(nonce),
-                            )
-                        )  # mining reward tx
+                        block_send.append((str(block_timestamp), str(ADDRESS[:56]), str(ADDRESS[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')), str(PUBLIC_KEY_B64ENCODED.decode('utf-8')), '0', str(nonce)))  # mining reward tx
                         node.logger.app_log.warning('Block to send: {}'.format(block_send))
                     # calc hash
 

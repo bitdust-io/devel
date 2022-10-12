@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: packetid.
 
@@ -60,11 +59,11 @@ import time
 import re
 import random
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _LastUniqueNumber = 0
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def UniqueID():
@@ -75,10 +74,10 @@ def UniqueID():
     """
     global _LastUniqueNumber
     if _LastUniqueNumber == 0:
-        _LastUniqueNumber = int(time.time() * 100.0)
+        _LastUniqueNumber = int(time.time()*100.0)
     _LastUniqueNumber += 1
     if _LastUniqueNumber > 100000000000000:
-        _LastUniqueNumber = int(time.time() * 100.0)
+        _LastUniqueNumber = int(time.time()*100.0)
     return str(int(random.getrandbits(8))) + str(_LastUniqueNumber)
 
 
@@ -117,7 +116,6 @@ def MakeBackupID(customer=None, path_id='0', version=None, normalize_key_alias=T
     if normalize_key_alias:
         if not customer:
             from userid import my_id
-
             customer = my_id.getGlobalID(key_alias=key_alias or 'master')
     if customer:
         if '$' not in customer and normalize_key_alias:
@@ -361,7 +359,6 @@ def IsGlobalPathCorrect(globPath, customer_id_mandatory=False):
     customerGlobalID, remotePath = SplitPacketID(globPath)
     if customer_id_mandatory:
         from userid import global_id
-
         return global_id.IsValidGlobalUser(customerGlobalID)
     if not remotePath:
         return False
@@ -409,12 +406,10 @@ def CustomerIDURL(backupID, as_field=True):
     user, _, _ = backupID.strip().rpartition(':')
     if not user:
         from userid import my_id
-
         if as_field:
             return my_id.getIDURL()
         return my_id.getIDURL().to_bin()
     from userid import global_id
-
     return global_id.GlobalUserToIDURL(user, as_field=as_field)
 
 
@@ -480,11 +475,9 @@ def LatestBackupID(backupID):
     if not backupID:
         return backupID
     from userid import global_id
-
     glob_id = global_id.ParseGlobalID(backupID, as_field=True)
     if not glob_id['idurl']:
         from logs import lg
-
         lg.err('invalid backupID: %r' % backupID)
         return backupID
     return global_id.MakeGlobalID(

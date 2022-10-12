@@ -23,14 +23,13 @@
 #
 #
 #
-
 """
 ..
 
 module:: terminal_chat
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import time
@@ -42,14 +41,13 @@ import threading
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import nameurl
 
@@ -57,15 +55,17 @@ from userid import global_id
 
 from chat import kbhit
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SimpleTerminalChat = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(do_send_message_func=None, do_search_user_func=None):
-    """ """
+    """
+
+    """
     global _SimpleTerminalChat
     _SimpleTerminalChat = SimpleTerminalChat(
         send_message_func=do_send_message_func,
@@ -74,7 +74,9 @@ def init(do_send_message_func=None, do_search_user_func=None):
 
 
 def shutdown():
-    """ """
+    """
+
+    """
     global _SimpleTerminalChat
     del _SimpleTerminalChat
     _SimpleTerminalChat = None
@@ -102,7 +104,7 @@ def on_incoming_message(msg):
     return msg
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class SimpleTerminalChat(object):
@@ -120,40 +122,32 @@ class SimpleTerminalChat(object):
         name = nameurl.GetName(sender)
         if sender not in self.users:
             self.users.append(sender)
-            self.history.append(
-                {
-                    'text': 'user %s was joined' % name,
-                    'name': '',
-                    'time': time.time(),
-                }
-            )
-        self.history.append(
-            {
-                'text': message,
-                'name': nameurl.GetName(sender),
-                'sender': sender,
+            self.history.append({
+                'text': 'user %s was joined' % name,
+                'name': '',
                 'time': time.time(),
-            }
-        )
+            })
+        self.history.append({
+            'text': message,
+            'name': nameurl.GetName(sender),
+            'sender': sender,
+            'time': time.time(),
+        })
 
     def on_nickname_search_result(self, results):
         if results['status'] != 'OK':
-            self.history.append(
-                {
-                    'text': 'search failed: %s' % results['errors'],
-                    'name': '',
-                    'time': time.time(),
-                }
-            )
+            self.history.append({
+                'text': 'search failed: %s' % results['errors'],
+                'name': '',
+                'time': time.time(),
+            })
             return None
         for r in results['result']:
-            self.history.append(
-                {
-                    'text': '%s' % (r['idurl'] if r['idurl'] else 'not found'),
-                    'name': '',
-                    'time': time.time(),
-                }
-            )
+            self.history.append({
+                'text': '%s' % (r['idurl'] if r['idurl'] else 'not found'),
+                'name': '',
+                'time': time.time(),
+            })
 
     def on_my_message(self, message):
         if message.startswith('!add '):
@@ -164,41 +158,33 @@ class SimpleTerminalChat(object):
             if idurl.strip() and idurl not in self.users:
                 self.users.append(idurl)
                 name = nameurl.GetName(idurl)
-                self.history.append(
-                    {
-                        'text': 'user "%s" was added to the channel' % name,
-                        'name': '',
-                        'time': time.time(),
-                    }
-                )
+                self.history.append({
+                    'text': 'user "%s" was added to the channel' % name,
+                    'name': '',
+                    'time': time.time(),
+                })
             return
         if message.startswith('!find ') or message.startswith('!search '):
             _, _, inp = message.partition(' ')
             if not self.search_user_func:
-                self.history.append(
-                    {
-                        'text': 'search failed, method not defined',
-                        'name': '',
-                        'time': time.time(),
-                    }
-                )
-                return
-            self.search_user_func(inp).addBoth(self.on_nickname_search_result)
-            self.history.append(
-                {
-                    'text': 'looking for "%s" ...' % inp,
+                self.history.append({
+                    'text': 'search failed, method not defined',
                     'name': '',
                     'time': time.time(),
-                }
-            )
-            return
-        self.history.append(
-            {
-                'text': message,
-                'name': 'you',
+                })
+                return
+            self.search_user_func(inp).addBoth(self.on_nickname_search_result)
+            self.history.append({
+                'text': 'looking for "%s" ...' % inp,
+                'name': '',
                 'time': time.time(),
-            }
-        )
+            })
+            return
+        self.history.append({
+            'text': message,
+            'name': 'you',
+            'time': time.time(),
+        })
         if self.send_message_func is not None:
             for to in self.users:
                 reactor.callFromThread(self.send_message_func, to, message)
@@ -223,10 +209,10 @@ class SimpleTerminalChat(object):
                 break
             time.sleep(0.05)
             if self.printed < len(self.history):
-                sys.stdout.write('\b' * (len(last_line) + 2))
+                sys.stdout.write('\b'*(len(last_line) + 2))
                 # sys.stdout.write('\n\r')
                 sys.stdout.flush()
-                for h in self.history[self.printed :]:
+                for h in self.history[self.printed:]:
                     out = ''
                     if h.get('time'):
                         out += '[%s] ' % time.strftime('%H:%M:%S', time.gmtime(h['time']))
@@ -292,7 +278,7 @@ class SimpleTerminalChat(object):
                         sys.stdout.flush()
                         self.quitnow = True
                         return
-                    sys.stdout.write('\b' * (len(msg)))
+                    sys.stdout.write('\b'*(len(msg)))
                     sys.stdout.flush()
                     self.on_my_message(msg)
                     continue
@@ -337,7 +323,7 @@ class SimpleTerminalChat(object):
         self.quitnow = 1
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     init()

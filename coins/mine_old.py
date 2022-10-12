@@ -20,7 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -28,32 +28,29 @@ from __future__ import print_function
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import time
 import random
 import string
 import hashlib
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 from userid import my_id
-
 
 from lib import utime
 
 from coins import coins_io
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -64,7 +61,7 @@ def shutdown():
     pass
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def build_starter(length=5):
@@ -90,7 +87,7 @@ def get_hash_difficulty(hexdigest, simplification=2):
     while True:
         ok = False
         for simpl in range(simplification):
-            if hexdigest.startswith(str(simpl) * difficulty):
+            if hexdigest.startswith(str(simpl)*difficulty):
                 ok = True
                 break
         if ok:
@@ -122,14 +119,12 @@ def work_with_known_difficulty(coin_json, difficulty, simplification=2, starter_
         if on > starter_limit:
             starter = build_starter(starter_length)
             on = 0
-    coin_json['miner'].update(
-        {
-            'hash': hexdigest,
-            'prev': prev_hash,
-            'starter': starter + str(on),
-            'mined': utime.utcnow_to_sec1970(),
-        }
-    )
+    coin_json['miner'].update({
+        'hash': hexdigest,
+        'prev': prev_hash,
+        'starter': starter + str(on),
+        'mined': utime.utcnow_to_sec1970(),
+    })
     return coin_json
 
 
@@ -151,7 +146,7 @@ def work_from_known_hash(coin_json, prev_hash, simplification=2, starter_length=
     )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class MininigCounter(object):
@@ -185,9 +180,7 @@ def _test():
                 'a': 'b',
             }
             while True:
-                coin = work_from_known_hash(
-                    data, hexhash, simplification=simplification, starter_length=starter_length, starter_limit=starter_limit, stop_marker=mc.marker
-                )
+                coin = work_from_known_hash(data, hexhash, simplification=simplification, starter_length=starter_length, starter_limit=starter_limit, stop_marker=mc.marker)
                 if not coin:
                     break
                 coins += 1

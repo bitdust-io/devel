@@ -20,15 +20,15 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _KnownServers = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def default_nodes():
@@ -37,7 +37,6 @@ def default_nodes():
     """
     from lib import strng
     from main import network_config
-
     network_info = network_config.read_network_config_file()
     identity_servers = {}
     for identity_server in network_info['service_identity_propagate']['known_servers']:

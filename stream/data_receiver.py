@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 .. module:: data_receiver
 .. role:: red
@@ -33,26 +32,26 @@ EVENTS:
     * :red:`shutdown`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 16
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from automats import automat
 
 from transport import callback
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _DataReceiver = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -76,25 +75,24 @@ def A(event=None, *args, **kwargs):
     return _DataReceiver
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class DataReceiver(automat.Automat):
     """
     This class implements all the functionality of ``data_receiver()`` state machine.
     """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
                 self.doInit(*args, **kwargs)
                 self.StreamsCounter = 0
-        # ---READY---
+        #---READY---
         elif self.state == 'READY':
             if event == 'input-stream-opened':
                 self.state = 'RECEIVING'
@@ -102,7 +100,7 @@ class DataReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSE'
                 self.doDestroyMe(*args, **kwargs)
-        # ---RECEIVING---
+        #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'input-stream-closed' and self.StreamsCounter > 1:
                 self.StreamsCounter -= 1
@@ -114,7 +112,7 @@ class DataReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSE'
                 self.doDestroyMe(*args, **kwargs)
-        # ---CLOSE---
+        #---CLOSE---
         elif self.state == 'CLOSE':
             pass
         return None
@@ -141,10 +139,7 @@ class DataReceiver(automat.Automat):
         self.event('input-stream-opened', pkt_in)
 
     def _on_finish_file_receiving(self, pkt_in, data):
-        self.event(
-            'input-stream-closed',
-            (
-                pkt_in,
-                data,
-            ),
-        )
+        self.event('input-stream-closed', (
+            pkt_in,
+            data,
+        ))

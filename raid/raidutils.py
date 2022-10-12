@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: raidutils.
 
@@ -64,4 +63,4 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_c
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i:i + n]

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# http_node.py
+#http_node.py
 #
 #
 #    Copyright BitDust, 2006
@@ -8,7 +8,6 @@
 #    All rights reserved.
 #
 #
-
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -32,7 +31,6 @@ from twisted.internet.defer import Deferred, succeed
 from twisted.web import server, resource
 from twisted.web.client import HTTPClientFactory
 
-
 import misc
 import dhnio
 import dhnnet
@@ -45,7 +43,6 @@ import tmpfile
 
 from logs import lg
 
-
 _Outbox = {}
 _Contacts = {}
 _ReceivingLoop = None
@@ -55,7 +52,7 @@ _PingDelayDict = {}
 _ConnectionsDict = {}
 _CurrentDelay = 5
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def send(idurl, filename):
@@ -64,7 +61,7 @@ def send(idurl, filename):
     if idurl not in _Outbox:
         _Outbox[idurl] = []
     _Outbox[idurl].append(filename)
-    # we want to keep only 10 last files.
+    #we want to keep only 10 last files.
     if len(_Outbox[idurl]) > 10:
         lostedfilename = _Outbox[idurl].pop(0)
         transport_control.sendStatusReport(
@@ -98,7 +95,7 @@ class SenderServer(resource.Resource):
             src64 = base64.b64encode(src)
             r += src64 + '\n'
             lg.out(12, 'http_node.SenderServer.render sent %s to %s' % (filename, idurl))
-            # TODO request.getPeer()
+            #TODO request.getPeer()
             transport_control.sendStatusReport(
                 request.getClient(),
                 filename,
@@ -194,7 +191,7 @@ def receive():
                     #                    lg.out(1, 'part64=[%s]' % part64)
                     decrease_receiving_delay(idurl)
                     continue
-                #                fd, filename = tempfile.mkstemp(".dhn-http-in")
+#                fd, filename = tempfile.mkstemp(".dhn-http-in")
                 fd, filename = tmpfile.make('http-in', extension='.http')
                 os.write(fd, part)
                 os.close(fd)
@@ -242,10 +239,11 @@ def receive():
             )
             conn = reactor.connectTCP(host, int(port), f)
 
-        #        f = HTTPClientFactory(url, method='POST', headers={
-        #            'User-Agent': 'BitDust transport_http',
-        #            'idurl': misc.getLocalID(), } )
-        #        conn = reactor.connectTCP(host, int(port), f)
+
+#        f = HTTPClientFactory(url, method='POST', headers={
+#            'User-Agent': 'BitDust transport_http',
+#            'idurl': misc.getLocalID(), } )
+#        conn = reactor.connectTCP(host, int(port), f)
 
         f.deferred.addCallback(success, idurl, host, port, conn)
         f.deferred.addErrback(fail, idurl, host, port, conn)
@@ -294,7 +292,7 @@ def increase_receiving_delay(idurl):
     if idurl not in _PingDelayDict:
         _PingDelayDict[idurl] = _CurrentDelay
     d = _PingDelayDict[idurl]
-    if d < settings.DefaultSendTimeOutHTTP() / 2:
+    if d < settings.DefaultSendTimeOutHTTP()/2:
         lg.out(14, 'http_node.increase_receiving_delay   %s for %s' % (str(d), idurl))
         _PingDelayDict[idurl] *= 2
 
@@ -379,16 +377,14 @@ def shutdown():
         _ServerListener = None
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def usage():
-    print(
-        '''usage:
+    print('''usage:
 http_node.py send [server_port] [to idurl] [filename]
 http_node.py receive
-'''
-    )
+''')
 
 
 def main():

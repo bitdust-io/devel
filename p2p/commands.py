@@ -43,12 +43,12 @@ These are the valid values for the command field of a packet:
     - Coin/Ack                  (for contracts publishing/management)
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 P2PCommandAcks = None
 RelayCommands = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -157,18 +157,16 @@ def init():
         Fail(),
     ]
     # pre-define a set of commands for filtering out routed traffic
-    RelayCommands = set(
-        [
-            RelayIn(),
-            RelayOut(),
-            RelayAck(),
-            RelayFail(),
-            Relay(),
-        ]
-    )
+    RelayCommands = set([
+        RelayIn(),
+        RelayOut(),
+        RelayAck(),
+        RelayFail(),
+        Relay(),
+    ])
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def IsCommand(com):
@@ -209,7 +207,7 @@ def IsRelay(com):
     return com in RelayCommands
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def Ack():

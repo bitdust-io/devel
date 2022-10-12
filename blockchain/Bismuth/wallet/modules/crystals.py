@@ -5,7 +5,6 @@ Copyright 2018, EggPool
 Copyright 2018, BismuthFoundation
 """
 
-
 import collections
 import importlib
 import importlib.machinery
@@ -26,7 +25,6 @@ class CrystalManager:
     """
     A simple plugin aka crystals manager
     """
-
     def __init__(
         self,
         app_log=None,
@@ -160,7 +158,7 @@ class CrystalManager:
                     'info': self.available_crystals[crystal_name]['info'],
                     'module': module,
                     'active': active,
-                    'icon': self.available_crystals[crystal_name]['about'].get('icon', False),
+                    'icon': self.available_crystals[crystal_name]['about'].get('icon', False)
                 }
                 if self.verbose:
                     self.app_log.info("Crystal '{}' loaded".format(crystal_name))
@@ -189,7 +187,7 @@ class CrystalManager:
             pass
 
     def get_handler(self, key):
-        """get a tornado handler from a single (full) name"""
+        """ get a tornado handler from a single (full) name"""
         crystal_info = self.loaded_crystals[key]
         handlers = []
         try:
@@ -217,13 +215,11 @@ class CrystalManager:
                     if hasattr(hook_class, 'static'):
                         static_path = path.join(base_path(), 'crystals/{}/static/'.format(key))
                         # print('need static', static_path)
-                        handlers.append(
-                            (
-                                r'/crystal/{}/static/(.*)'.format(name),
-                                StaticFileHandler,
-                                dict(path=static_path),
-                            )
-                        )
+                        handlers.append((
+                            r'/crystal/{}/static/(.*)'.format(name),
+                            StaticFileHandler,
+                            dict(path=static_path),
+                        ))
                     handlers.append((r'/crystal/{}/(.*)'.format(name), hook_class))
 
             except Exception as e:

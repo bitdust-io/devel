@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: supplier.
 
@@ -47,23 +45,23 @@ EVENTS:
     * :red:`timer-30sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import math
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -80,7 +78,6 @@ from lib import diskspace
 
 from contacts import contactsdb
 
-
 from p2p import commands
 from p2p import p2p_service
 from p2p import online_status
@@ -91,11 +88,11 @@ from userid import id_url
 from userid import global_id
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SuppliersConnectors = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def connectors(customer_idurl=None, as_dict=False):
@@ -158,7 +155,7 @@ def total_connectors():
     return count
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # def on_supplier_file_modified(event_info):
 #     if _Debug:
@@ -207,7 +204,7 @@ def total_connectors():
 #         lg.args(_DebugLevel, q=supplier_queue_id)
 #     return True
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class SupplierConnector(automat.Automat):
@@ -239,12 +236,10 @@ class SupplierConnector(automat.Automat):
         self.request_queue_packet_id = None
         self.callbacks = {}
         try:
-            st = bpio.ReadTextFile(
-                settings.SupplierServiceFilename(
-                    idurl=self.supplier_idurl,
-                    customer_idurl=self.customer_idurl,
-                )
-            ).strip()
+            st = bpio.ReadTextFile(settings.SupplierServiceFilename(
+                idurl=self.supplier_idurl,
+                customer_idurl=self.customer_idurl,
+            ), ).strip()
         except:
             st = 'DISCONNECTED'
         automat.Automat.__init__(
@@ -295,15 +290,12 @@ class SupplierConnector(automat.Automat):
         if newstate == 'CONNECTED':
             if not self._supplier_connected_event_sent:
                 self._supplier_connected_event_sent = True
-                events.send(
-                    'supplier-connected',
-                    data=dict(
-                        supplier_idurl=self.supplier_idurl,
-                        customer_idurl=self.customer_idurl,
-                        needed_bytes=self.needed_bytes,
-                        key_id=self.key_id,
-                    ),
-                )
+                events.send('supplier-connected', data=dict(
+                    supplier_idurl=self.supplier_idurl,
+                    customer_idurl=self.customer_idurl,
+                    needed_bytes=self.needed_bytes,
+                    key_id=self.key_id,
+                ))
         if newstate in [
             'DISCONNECTED',
             'NO_SERVICE',
@@ -321,24 +313,11 @@ class SupplierConnector(automat.Automat):
                 if cb in self.callbacks[name]:
                     self.callbacks[name].remove(cb)
                 else:
-                    lg.warn(
-                        'callback %r not registered in %r with name %s'
-                        % (
-                            cb,
-                            self,
-                            name,
-                        )
-                    )
+                    lg.warn('callback %r not registered in %r with name %s' % (cb, self, name))
             else:
                 self.callbacks.pop(name)
         else:
-            lg.warn(
-                'callback with name %s not registered in %r'
-                % (
-                    name,
-                    self,
-                )
-            )
+            lg.warn('callback with name %s not registered in %r' % (name, self))
 
     def do_calculate_needed_bytes(self):
         if self.needed_bytes is None:
@@ -351,13 +330,13 @@ class SupplierConnector(automat.Automat):
                 if known_ecc_map:
                     num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
             if num_suppliers > 0:
-                self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
+                self.needed_bytes = int(math.ceil(2.0*total_bytes_needed/float(num_suppliers)))
             else:
                 raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
                 # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
 
     def A(self, event, *args, **kwargs):
-        # ---NO_SERVICE---
+        #---NO_SERVICE---
         if self.state == 'NO_SERVICE':
             if event == 'connect':
                 self.state = 'REQUEST'
@@ -371,7 +350,7 @@ class SupplierConnector(automat.Automat):
             elif event == 'ack' and self.isServiceAccepted(*args, **kwargs):
                 self.state = 'CONNECTED'
                 self.doReportConnect(*args, **kwargs)
-        # ---CONNECTED---
+        #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'disconnect':
                 self.state = 'REFUSE'
@@ -384,10 +363,10 @@ class SupplierConnector(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        # ---DISCONNECTED---
+        #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -405,7 +384,7 @@ class SupplierConnector(automat.Automat):
             elif event == 'ack' and self.isServiceAccepted(*args, **kwargs):
                 self.state = 'CONNECTED'
                 self.doReportConnect(*args, **kwargs)
-        # ---REQUEST---
+        #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'disconnect':
                 self.GoDisconnect = True
@@ -425,7 +404,7 @@ class SupplierConnector(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.doCleanRequest(*args, **kwargs)
                 self.doReportDisconnect(*args, **kwargs)
-        # ---REFUSE---
+        #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -435,7 +414,7 @@ class SupplierConnector(automat.Automat):
                 self.state = 'NO_SERVICE'
                 self.doCleanRequest(*args, **kwargs)
                 self.doReportNoService(*args, **kwargs)
-        # ---QUEUE?---
+        #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'disconnect':
                 self.GoDisconnect = True
@@ -489,13 +468,11 @@ class SupplierConnector(automat.Automat):
             keep_alive=True,
             ping_retries=3,
         )
-        d.addCallback(
-            lambda ok: self._do_request_supplier_service(
-                ecc_map=ecc_map,
-                family_position=family_position,
-                family_snapshot=family_snapshot,
-            )
-        )
+        d.addCallback(lambda ok: self._do_request_supplier_service(
+            ecc_map=ecc_map,
+            family_position=family_position,
+            family_snapshot=family_snapshot,
+        ))
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='supplier_connector.doPingRequestService')
         d.addErrback(lambda err: self.automat('fail', err))
@@ -711,10 +688,7 @@ class SupplierConnector(automat.Automat):
         ]:
             if not (oldstate == 'PING?' and newstate == 'OFFLINE'):
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (self.supplier_idurl, oldstate, newstate),
-                    )
+                    lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (self.supplier_idurl, oldstate, newstate))
                 reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
 
     def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):

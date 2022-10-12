@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: encrypted.
 
@@ -55,26 +54,25 @@ RAIDREAD:
     generate the read requests to get fetch the packets.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import base64
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from lib import strng
 from lib import serialization
-
 
 from userid import my_id
 from userid import id_url
@@ -82,7 +80,7 @@ from userid import id_url
 from crypt import key
 from crypt import my_keys
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class Block(object):
@@ -104,7 +102,6 @@ class Block(object):
     Other                  could be be for professional timestamp company or other future features
     Signature              digital signature by Creator - verifiable by public key in creator identity
     """
-
     def __init__(
         self,
         CreatorID=None,
@@ -246,7 +243,7 @@ class Block(object):
         """
         SessionKey = self.SessionKey()
         ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData, session_key_type=self.SessionKeyType)
-        return ClearLongData[0 : self.Length]  # remove padding
+        return ClearLongData[0:self.Length]  # remove padding
 
     def Serialize(self):
         """
@@ -269,7 +266,7 @@ class Block(object):
         return serialization.DictToBytes(dct, encoding='utf-8')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def Unserialize(data, decrypt_key=None):

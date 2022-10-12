@@ -15,7 +15,6 @@ from twisted.web.server import Request, Site
 from twisted.web.client import getPage
 from twisted.trial import unittest
 
-
 from .resource import APIResource
 from .json_resource import JsonAPIResource
 from .methods import GET, PUT
@@ -312,7 +311,6 @@ class DecoratorsTest(unittest.TestCase):
 
 def test_suite():
     import unittest as ut
-
     suite = unittest.TestSuite()
     suite.addTest(ut.makeSuite(DecoratorsTest))
     suite.addTest(ut.makeSuite(APIResourceTest))

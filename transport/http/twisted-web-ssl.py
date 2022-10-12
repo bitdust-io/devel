@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 USERS = {'admin': 'admin', 'user': 'user', 'test': 'eW91IGFyZSBjcmF6eQo='}
-
 """
 Twisted SSL webserver with basic authentication using plain in-memory passwords.
 The first argument is the path of the directory to serve; if not provided then the current folder is used (".").

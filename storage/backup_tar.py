@@ -23,55 +23,53 @@
 #
 #
 #
-
 """
 .. module:: backup_tar.
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet import threads
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from system import bpio
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # Bytes Loop States:
 BYTES_LOOP_EMPTY = 0
 BYTES_LOOP_READY2READ = 1
 BYTES_LOOP_CLOSED = 2
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BytesLoop:
@@ -157,7 +155,7 @@ class BytesLoop:
         return BYTES_LOOP_EMPTY
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def backuptarfile_thread(filepath, arcname=None, compress=None):
@@ -174,7 +172,6 @@ def backuptarfile_thread(filepath, arcname=None, compress=None):
 
     def _run():
         from storage import tar_file
-
         ret = tar_file.writetar(
             sourcepath=filepath,
             arcname=arcname,
@@ -206,7 +203,6 @@ def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, 
 
     def _run():
         from storage import tar_file
-
         ret = tar_file.writetar(
             sourcepath=directorypath,
             arcname=arcname,
@@ -236,7 +232,6 @@ def extracttar_thread(tarfile, outdir):
 
     def _run():
         from storage import tar_file
-
         return tar_file.readtar(
             archivepath=tarfile,
             outputdir=outdir,
@@ -246,7 +241,7 @@ def extracttar_thread(tarfile, outdir):
     return threads.deferToThread(_run)  # @UndefinedVariable
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def test_in_thread():

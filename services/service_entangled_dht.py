@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -53,7 +52,6 @@ class EntangledDHTService(LocalService):
         import re
         from main import config
         from dht.entangled.kademlia import constants  # @UnresolvedImport
-
         known_dht_nodes_str = config.conf().getData('services/entangled-dht/known-nodes').strip()
         known_dht_nodes = []
         if known_dht_nodes_str:
@@ -65,15 +63,12 @@ class EntangledDHTService(LocalService):
                         dht_node_port = int(dht_node[1].strip())
                     except:
                         continue
-                    known_dht_nodes.append(
-                        {
-                            'host': dht_node_host,
-                            'udp_port': dht_node_port,
-                        }
-                    )
+                    known_dht_nodes.append({
+                        'host': dht_node_host,
+                        'udp_port': dht_node_port,
+                    })
         if not known_dht_nodes:
             from main import network_config
-
             default_network_config = network_config.read_network_config_file()
             known_dht_nodes = default_network_config['service_entangled_dht']['known_nodes']
         return {
@@ -94,7 +89,6 @@ class EntangledDHTService(LocalService):
         from dht import known_nodes
         from main import settings
         from main.config import conf
-
         conf().addConfigNotifier('services/entangled-dht/udp-port', self._on_udp_port_modified)
         known_seeds = known_nodes.nodes()
         dht_layers = list(dht_records.LAYERS_REGISTRY.keys())
@@ -103,13 +97,7 @@ class EntangledDHTService(LocalService):
             dht_dir_path=settings.ServiceDir('service_entangled_dht'),
             open_layers=dht_layers,
         )
-        lg.info(
-            'DHT known seed nodes are : %r   DHT layers are : %r'
-            % (
-                known_seeds,
-                dht_layers,
-            )
-        )
+        lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (known_seeds, dht_layers))
         self.starting_deferred = Deferred()
         d = dht_service.connect(
             seed_nodes=known_seeds,
@@ -124,7 +112,6 @@ class EntangledDHTService(LocalService):
         from dht import dht_records
         from dht import dht_service
         from main.config import conf
-
         for layer_id in dht_records.LAYERS_REGISTRY.keys():
             dht_service.close_layer(layer_id)
         dht_service.node().remove_rpc_callback('request')
@@ -136,13 +123,11 @@ class EntangledDHTService(LocalService):
 
     def on_suspend(self, *args, **kwargs):
         from dht import dht_service
-
         dht_service.disconnect()
         return True
 
     def on_resume(self, *args, **kwargs):
         from dht import dht_service
-
         dht_service.reconnect()
         return True
 
@@ -156,7 +141,6 @@ class EntangledDHTService(LocalService):
         from dht import known_nodes
         from main.config import conf
         from services import driver
-
         lg.info('DHT node connected    ID0=[%s] : %r' % (dht_service.node().layers[0], ok))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
@@ -172,24 +156,16 @@ class EntangledDHTService(LocalService):
         combined_services_attached_layers = set()
         count_combined = len(list(map(combined_services_attached_layers.update, all_services_attached_layers)))
         services_attached_layers = list(combined_services_attached_layers)
-        lg.info(
-            'combined attached DHT layers from %d services: %r'
-            % (
-                count_combined,
-                services_attached_layers,
-            )
-        )
+        lg.info('combined attached DHT layers from %d services: %r' % (count_combined, services_attached_layers))
         attached_layers = list(set(attached_layers + services_attached_layers))
         lg.info('DHT layers to be attached at startup: %r' % attached_layers)
         for layer_id in attached_layers:
-            dl.append(
-                dht_service.open_layer(
-                    layer_id=layer_id,
-                    seed_nodes=known_seeds,
-                    connect_now=True,
-                    attach=True,
-                )
-            )
+            dl.append(dht_service.open_layer(
+                layer_id=layer_id,
+                seed_nodes=known_seeds,
+                connect_now=True,
+                attach=True,
+            ))
         if dl:
             d = DeferredList(dl)
             d.addCallback(self._on_layers_attached)
@@ -206,7 +182,6 @@ class EntangledDHTService(LocalService):
 
     def _on_connect_failed(self, err):
         from logs import lg
-
         lg.err('DHT connect failed : %r' % err)
         if self.starting_deferred and not self.starting_deferred.called:
             self.starting_deferred.errback(err)
@@ -215,17 +190,14 @@ class EntangledDHTService(LocalService):
     def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-
         lg.info('DHT udp port modified %s->%s : %s' % (oldvalue, value, path))
         if network_connector.A():
             network_connector.A('reconnect')
 
     def _on_dht_rpc_store(self, key, value, originalPublisherID, age, expireSeconds, **kwargs):
         from dht import dht_service
-
         return dht_service.validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
 
     def _on_dht_rpc_request(self, key, **kwargs):
         from dht import dht_service
-
         return dht_service.validate_before_request(key, **kwargs)

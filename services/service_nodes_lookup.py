@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -55,7 +54,6 @@ class NodesLookupService(LocalService):
 
     def start(self):
         from p2p import lookup
-
         lookup.init(
             lookup_method=lookup.lookup_in_dht,
             observe_method=lookup.observe_dht_node,
@@ -66,6 +64,5 @@ class NodesLookupService(LocalService):
 
     def stop(self):
         from p2p import lookup
-
         lookup.shutdown()
         return True

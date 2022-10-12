@@ -52,7 +52,7 @@
 # we get too many errors at the same time.  We reduce this danger if
 # we fix the one we can fix fastest first.
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -60,29 +60,29 @@ import six
 from io import open
 from six.moves import range
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import logs.lg
 
 import raid.eccmap
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ReadBinaryFile(filename):
@@ -98,8 +98,8 @@ def ReadBinaryFile(filename):
 
 def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
     readsize = 1  # vary from 1 byte to 4 bytes
-    raidfiles = [''] * listlen  # just need a list of this size
-    raidreads = [''] * listlen
+    raidfiles = ['']*listlen  # just need a list of this size
+    raidreads = ['']*listlen
     for filenum in range(listlen):
         try:
             raidfiles[filenum] = open(inlist[filenum], 'rb')
@@ -123,14 +123,12 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
         while i < len(raidreads[0]):
             xor = 0
             for j in range(listlen):
-                b1 = ord(raidreads[j][i : i + 1])
+                b1 = ord(raidreads[j][i:i + 1])
                 xor = xor ^ b1
             if six.PY3:
-                out_byte = bytes(
-                    [
-                        xor,
-                    ]
-                )
+                out_byte = bytes([
+                    xor,
+                ])
             else:
                 out_byte = chr(xor)
             rebuildfile.write(out_byte)
@@ -175,7 +173,7 @@ def raidread(
         myeccmap = raid.eccmap.eccmap(eccmapname)
         GoodFiles = [
             '',
-        ] * (myeccmap.datasegments + myeccmap.paritysegments)
+        ]*(myeccmap.datasegments + myeccmap.paritysegments)
         MakingProgress = 1
         while MakingProgress == 1:
             MakingProgress = 0
@@ -236,7 +234,7 @@ def raidread(
 
 
 def main():
-    if len(sys.argv) < 3:
+    if (len(sys.argv) < 3):
         print('raidread needs an output filename and eccmap name')
         sys.exit(2)
 

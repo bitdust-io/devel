@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: weblog.
 
@@ -48,7 +47,7 @@ except:
 
 from twisted.web import server, resource
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 myweblistener = None
 default_level = 6
@@ -115,7 +114,7 @@ level2color = {
     23: '#D0D0D0',
 }
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(port=9999):
@@ -123,7 +122,6 @@ def init(port=9999):
     if myweblistener:
         return
     from logs import lg
-
     root = RootResource()
     site = server.Site(root)
     try:
@@ -142,7 +140,7 @@ def shutdown():
         myweblistener = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def log(level, s):
@@ -157,11 +155,11 @@ def log(level, s):
     numlines += 1
     lineindex += 1
     while numlines > maxlines:
-        logtext = logtext[logtext.find('\n') + 1 :]
+        logtext = logtext[logtext.find('\n') + 1:]
         numlines -= 1
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class LogPage(resource.Resource):
@@ -197,12 +195,12 @@ class LogPage(resource.Resource):
             line = all_lines[lineindex]
             t = line.split('|')
             try:
-                # lineindex = int(t[0])
+                #lineindex = int(t[0])
                 level = int(t[1])
                 timestr = t[2]
                 s = ''.join(t[3:])
             except:
-                # lineindex = 0
+                #lineindex = 0
                 level = 0
                 timestr = ''
                 s = line
@@ -210,7 +208,7 @@ class LogPage(resource.Resource):
                 continue
 
             s = s.strip().replace('#nl', '\n')
-            s = ('%6d' % lineindex) + ' ' + timestr + (' ' * level) + ' ' + s
+            s = ('%6d' % lineindex) + ' ' + timestr + (' '*level) + ' ' + s
 
             textcolor = level2color.get(level, '')
             color = ''
@@ -266,7 +264,7 @@ class LogPage(resource.Resource):
         return out + '</pre></body></html>'
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class RootResource(resource.Resource):
@@ -276,7 +274,7 @@ class RootResource(resource.Resource):
         self.putChild('', logpage)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     init(int(sys.argv[1]))

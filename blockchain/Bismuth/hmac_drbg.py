@@ -6,8 +6,8 @@ import hmac
 
 class DRBG(object):
     def __init__(self, seed):
-        self.key = b'\x00' * 64
-        self.val = b'\x01' * 64
+        self.key = b'\x00'*64
+        self.val = b'\x01'*64
         self.reseed(seed)
 
     def hmac(self, key, val):

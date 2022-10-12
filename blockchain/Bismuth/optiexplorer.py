@@ -32,7 +32,7 @@ except Exception as e:
 
 # load config
 
-# @app.route('/static/<filename>')
+#@app.route('/static/<filename>')
 # def server_static(filename):
 # return static_file(filename, root='static/')
 
@@ -74,23 +74,23 @@ def main():
     data_wcount = []
 
     for x in addresses:
-        s.execute('SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x,))
+        s.execute('SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x, ))
         shares_sum = s.fetchone()[0]
         if shares_sum == None:
             shares_sum = 0
             continue
         output_shares.append(shares_sum)
 
-        s.execute('SELECT timestamp FROM shares WHERE address = ? ORDER BY timestamp ASC LIMIT 1', (x,))
+        s.execute('SELECT timestamp FROM shares WHERE address = ? ORDER BY timestamp ASC LIMIT 1', (x, ))
         shares_timestamp = s.fetchone()[0]
         output_timestamps.append(float(shares_timestamp))
 
-        s.execute('SELECT * FROM shares WHERE address = ? ORDER BY timestamp DESC LIMIT 1', (x,))
+        s.execute('SELECT * FROM shares WHERE address = ? ORDER BY timestamp DESC LIMIT 1', (x, ))
         shares_last = s.fetchone()
-        # mrate = shares_last[4]
+        #mrate = shares_last[4]
         mname = shares_last[7]  # last worker
 
-        s.execute('SELECT DISTINCT name FROM shares WHERE address = ?', (x,))
+        s.execute('SELECT DISTINCT name FROM shares WHERE address = ?', (x, ))
         shares_names = s.fetchall()
 
         nrate = []
@@ -100,7 +100,7 @@ def main():
             names_last = s.fetchone()
             t1 = time.time()
             t2 = float(names_last[2])
-            t3 = (t1 - t2) / 60
+            t3 = (t1 - t2)/60
             if t3 < m_timeout:
                 nrate.append(int(names_last[4]))
                 ncount.append(int(names_last[6]))
@@ -140,7 +140,7 @@ def main():
     data_tHash = []
     data_twcount = []
 
-    for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address,) + (block_threshold,)):
+    for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address, ) + (block_threshold, )):
         data_block.append(row[0])
         data_reward.append(row[9])
         reward_list.append(float(row[9]))
@@ -152,14 +152,14 @@ def main():
     reward_total = sum(reward_list)
 
     try:
-        reward_per_share = reward_total / shares_total
+        reward_per_share = reward_total/shares_total
     except:
         reward_per_share = 0
 
     data_tShares.append(shares_total)
     data_rewardps.append(reward_per_share)
     data_tReward.append(reward_total)
-    data_tHash.append(format('%.2f' % (total_hash / 1000)))
+    data_tHash.append(format('%.2f' % (total_hash/1000)))
     data_twcount.append(worker_count)
 
     # payout view
@@ -170,7 +170,7 @@ def main():
         for x, y in zip(addresses, output_shares):
 
             try:
-                claim = y * reward_per_share
+                claim = y*reward_per_share
             except:
                 claim = 0
 
@@ -182,7 +182,7 @@ def main():
     data_blockheight = []
     data_ptime = []
 
-    for row in c.execute('SELECT * FROM transactions WHERE address = ? and openfield = ? ORDER BY timestamp DESC LIMIT 80', (address,) + ('pool',)):
+    for row in c.execute('SELECT * FROM transactions WHERE address = ? and openfield = ? ORDER BY timestamp DESC LIMIT 80', (address, ) + ('pool', )):
         data_paddress.append(row[3])
         data_bismuthreward.append(row[4])
         data_blockheight.append(row[0])
@@ -202,7 +202,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port=9080, debug=True)
+    #app.run(host='0.0.0.0', port=9080, debug=True)
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(9080)
     IOLoop.instance().start()

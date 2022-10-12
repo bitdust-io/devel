@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -54,7 +53,6 @@ class MessageBrokerService(LocalService):
 
     def attached_dht_layers(self):
         from dht import dht_records
-
         return [
             dht_records.LAYER_MESSAGE_BROKERS,
         ]
@@ -62,7 +60,6 @@ class MessageBrokerService(LocalService):
     def start(self):
         from main import events
         from stream import message_peddler
-
         message_peddler.A('start')
         self._do_connect_message_brokers_dht_layer()
         events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
@@ -74,7 +71,6 @@ class MessageBrokerService(LocalService):
         from dht import dht_records
         from main import events
         from stream import message_peddler
-
         events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
@@ -90,7 +86,6 @@ class MessageBrokerService(LocalService):
         from p2p import p2p_service
         from stream import message_peddler
         from userid import id_url
-
         result = Deferred()
         try:
             action = json_payload['action']
@@ -155,7 +150,6 @@ class MessageBrokerService(LocalService):
         from logs import lg
         from p2p import p2p_service
         from stream import message_peddler
-
         try:
             action = json_payload['action']
             queue_id = json_payload.get('queue_id', None)
@@ -187,7 +181,6 @@ class MessageBrokerService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from dht import known_nodes
-
         known_seeds = known_nodes.nodes()
         d = dht_service.open_layer(
             layer_id=dht_records.LAYER_MESSAGE_BROKERS,
@@ -203,7 +196,6 @@ class MessageBrokerService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from userid import my_id
-
         lg.info('connected to DHT layer for message brokers: %r' % ok)
         if my_id.getIDURL():
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_MESSAGE_BROKERS)
@@ -211,7 +203,6 @@ class MessageBrokerService(LocalService):
 
     def _on_dht_layer_connected(self, evt):
         from dht import dht_records
-
         if evt.data['layer_id'] == 0:
             self._do_connect_message_brokers_dht_layer()
         elif evt.data['layer_id'] == dht_records.LAYER_MESSAGE_BROKERS:
@@ -219,7 +210,6 @@ class MessageBrokerService(LocalService):
 
     def _on_my_identity_url_changed(self, evt):
         from stream import message_peddler
-
         message_peddler.A('stop')
         message_peddler.close_all_streams()
         message_peddler.check_rotate_queues()

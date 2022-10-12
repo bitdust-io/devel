@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
@@ -48,27 +47,27 @@ def test_customeridrotate():
 
     prepare()
 
-    # --- SCENARIO 10 begin: customer-rotated IDURL was rotated
+    #--- SCENARIO 10 begin: customer-rotated IDURL was rotated
     old_customer_rotated_file_info = scenarios.scenario10_begin()
 
-    # --- SCENARIO 11 begin: customer-1 talk to customer-rotated
+    #--- SCENARIO 11 begin: customer-1 talk to customer-rotated
     old_customer_1_info_s11 = scenarios.scenario11_begin()
 
-    # --- SCENARIO 9: ID server id-dead is dead
+    #--- SCENARIO 9: ID server id-dead is dead
     _, old_customer_rotated_info, _, _, old_customer_rotated_keys, _, new_customer_rotated_info, _, _ = scenarios.scenario9(
         target_nodes=[
             'customer-rotated',
-        ]
+        ],
     )
 
-    # --- SCENARIO 10 end: customer-rotated IDURL was rotated
+    #--- SCENARIO 10 end: customer-rotated IDURL was rotated
     scenarios.scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, old_customer_rotated_keys, new_customer_rotated_info)
 
-    # --- SCENARIO 11 end: customer-1 talk to customer-rotated
+    #--- SCENARIO 11 end: customer-1 talk to customer-rotated
     scenarios.scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_customer_1_info_s11)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def prepare():
@@ -80,8 +79,7 @@ def prepare():
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
     kw.wait_service_state(
-        scenarios.CUSTOMERS_IDS_1
-        + [
+        scenarios.CUSTOMERS_IDS_1 + [
             'customer-rotated',
         ],
         'service_message_history',

@@ -6,11 +6,9 @@ beware : module now shared by the wallet server.
 """
 
 import aiosqlite3
-
 # import aiosqlite as aiosqlite3
 import time
 import asyncio
-
 
 __version__ = '0.0.3'
 
@@ -19,7 +17,6 @@ class SqliteBase:
     """
     Generic Sqlite storage backend.
     """
-
     def __init__(self, verbose=False, db_path='./data/', db_name='posmempool.db', app_log=None, ram=False):
         self.db_path = db_path + db_name
         self.db_name = db_name

@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: identitycache.
 
@@ -32,17 +31,17 @@ dictionary. Other parts of BitDust call this to get an identity using an
 IDURL. So this is a local cache of user ID's.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 import time
@@ -50,14 +49,13 @@ import time
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred, DeferredList, CancelledError
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -72,13 +70,13 @@ from contacts import identitydb
 
 from p2p import p2p_stats
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _CachingTasks = {}
 _LastTimeCached = {}
 _OverriddenIdentities = {}
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
@@ -92,7 +90,7 @@ def shutdown():
         lg.out(_DebugLevel, 'identitycache.shutdown')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def caching():
@@ -110,7 +108,7 @@ def add_callback(idurl, ignore_errors=False):
     return defer_obj
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def get_one(idurl):
@@ -140,7 +138,7 @@ def start_multiple(idurl_list, timeout=10, try_other_sources=True):
     return DeferredList(dl, consumeErrors=True)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def Clear(excludeList=None):
@@ -380,7 +378,7 @@ def ReadOverriddenIdentityXMLSource(idurl):
     return _OverriddenIdentities.get(idurl, None)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getPageSuccess(src, idurl):
@@ -421,7 +419,7 @@ def scheduleForCaching(idurl, timeout=0):
     return pageRequestTwisted(idurl, timeout)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def last_time_cached(idurl):
@@ -511,13 +509,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
         if not try_other_sources:
             p2p_stats.count_identity_cache(idurl, 0)
             _LastTimeCached.pop(idurl, None)
-            lg.warn(
-                '[cache failed] %s : %s'
-                % (
-                    idurl,
-                    err.getErrorMessage(),
-                )
-            )
+            lg.warn('[cache failed] %s : %s' % (idurl, err.getErrorMessage()))
             defer_results = caching().pop(idurl, [])
             for result in defer_results:
                 if result and not result.called:
@@ -550,26 +542,13 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
             lg.args(_DebugLevel, idurl=idurl, latest_idurl=latest_idurl, latest_ident=latest_ident, sources=sources)
 
         if sources:
-            lg.warn(
-                '[cache failed] %s : %s  but will try %d more sources'
-                % (
-                    idurl,
-                    err.getErrorMessage(),
-                    len(sources),
-                )
-            )
+            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (idurl, err.getErrorMessage(), len(sources)))
             _next_source(None, idurl, sources, 0)
             return None
 
         p2p_stats.count_identity_cache(idurl, 0)
         _LastTimeCached.pop(idurl, None)
-        lg.warn(
-            '[cache failed] and also no other sources found %s : %s'
-            % (
-                idurl,
-                err.getErrorMessage(),
-            )
-        )
+        lg.warn('[cache failed] and also no other sources found %s : %s' % (idurl, err.getErrorMessage()))
         defer_results = caching().pop(idurl, [])
         if _Debug:
             lg.args(_DebugLevel, known=len(id_url.known().keys()), defer_results=len(defer_results))
@@ -600,7 +579,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
     return _start_one(idurl, ignore_errors=ignore_errors)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def SetLocalIPs(local_ips):
@@ -631,23 +610,20 @@ def SearchLocalIP(ip):
     return identitydb.search_local_ip(ip)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def _test():
     import logging
-
     logging.basicConfig(level=logging.DEBUG)
     from twisted.internet import reactor  # @UnresolvedImport
     from twisted.internet.defer import setDebugging
-
     setDebugging(True)
     # from twisted.python import log as twisted_log
     # twisted_log.startLogging(sys.stdout)
     lg.set_debug_level(20)
 
     from main import settings
-
     settings.init()
     settings.update_proxy_settings()
 
@@ -663,8 +639,7 @@ def _test():
     settings.shutdown()
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     _test()

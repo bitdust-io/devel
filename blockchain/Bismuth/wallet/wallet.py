@@ -124,7 +124,13 @@ class Application(tornado.web.Application):
                 tornado.web.StaticFileHandler,
                 dict(path=static_path),
             ),
-            (r'/common/(.*)', tornado.web.StaticFileHandler, {'path': common_path}),
+            (
+                r'/common/(.*)',
+                tornado.web.StaticFileHandler,
+                {
+                    'path': common_path,
+                },
+            ),
         ]
         # Parse crystals dir, import and plug handlers.
         self.crystals_manager = CrystalManager(init=options.crystals)
@@ -203,7 +209,6 @@ class TransactionsHandler(BaseHandler):
     def randhex(self, size):
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=size))
     """
-
     @write_protected
     async def send(self, params=None):
         _ = self.locale.translate
@@ -231,7 +236,7 @@ class TransactionsHandler(BaseHandler):
             self.settings['page_title'] = _('Send BIS: Confirmation')
             type = 'warning'  # Do not translate
             title = _('Please confirm this transaction')
-            message = _('Check this is what you intended to do and hit the "confirm" button')
+            message = _('Check this is what you intended to do and hit the "confirm" button', )
 
             if self.get_argument('data', '') == '' and self.bismuth.reject_empty_message_for(self.get_argument('recipient')):
                 await self.message(
@@ -281,7 +286,7 @@ class TransactionsHandler(BaseHandler):
             self.settings['page_title'] = _('Send BIS: Confirmation')
             type = 'warning'  # Do not translate
             title = _('Please confirm this transaction')
-            message = _('Check this is what you intended to do and hit the "confirm" button')
+            message = _('Check this is what you intended to do and hit the "confirm" button', )
             # self.bismuth_vars['recipient'] operation data amount
             decoded = BismuthUtil.read_url(self.get_argument('url'))
             if decoded.get('Error', False):
@@ -322,7 +327,7 @@ class TransactionsHandler(BaseHandler):
             self.settings['page_title'] = _('Send BIS: Confirmation')
             type = 'warning'  # Do not translate
             title = _('Please confirm this transaction')
-            message = _('Check this is what you intended to do and hit the "confirm" button')
+            message = _('Check this is what you intended to do and hit the "confirm" button', )
 
             self.bismuth_vars['params']['recipient'] = self.get_argument('recipient')
             self.bismuth_vars['params']['amount'] = self.get_argument('amount', '0.00000000')
@@ -392,20 +397,12 @@ class TransactionsHandler(BaseHandler):
         txid = self.bismuth.send(recipient, amount, operation, data, reply)
         # print("txidpop", txid)
         if txid:
-            message = (
-                _('Success:')
-                + ' '
-                + _('Transaction sent')
-                + '<br>'
-                + _('The transaction was submitted to the mempool.')
-                + '<br />'
-                + _('Txid is {}').format(_(txid))
-            )
+            message = (_('Success:') + ' ' + _('Transaction sent') + '<br>' + _('The transaction was submitted to the mempool.') + '<br />' + _('Txid is {}').format(_(txid)))
             color = 'success'
             title = _('Success')
 
         else:
-            message = _('There was an error submitting to the mempool, transaction was not sent.')
+            message = _('There was an error submitting to the mempool, transaction was not sent.', )
             message += '<br />'
             message += ','.join(reply)
             color = 'danger'
@@ -462,7 +459,7 @@ class TransactionsHandler(BaseHandler):
         else:
             self.message(
                 _('Error:'),
-                _('There was an error submitting to the mempool, transaction was not sent.'),
+                _('There was an error submitting to the mempool, transaction was not sent.', ),
                 'warning',
             )
 
@@ -571,7 +568,6 @@ class JsonHandler(BaseHandler):
 
 class WalletHandler(BaseHandler):
     """Wallet related routes"""
-
     async def load(self, params=None, post=False):
         _ = self.locale.translate
         if self.bismuth._wallet._locked:
@@ -992,7 +988,6 @@ class AboutHandler(BaseHandler):
 
 class TokensHandler(BaseHandler):
     """Handler for tokens related features"""
-
     async def list(self, params=None):
         self.render('tokens_list.html', bismuth=self.bismuth_vars)
 
@@ -1009,14 +1004,12 @@ class CrystalsHandler(BaseHandler):
         available_crystals = self.application.crystals_manager.get_available_crystals()
         # crystal_names = [name.split('_')[1] for name in available_crystals.keys()]
         # crystals = {name.split('_')[1]: name in loaded_crystals for name in available_crystals}
-        crystals = {
-            name.split('_')[1]: {
-                'active': name in loaded_crystals,
-                'fullname': name,
-                'about': available_crystals[name]['about'],
-            }
-            for name in available_crystals
+        crystals = {name.split('_')[1]: {
+            'active': name in loaded_crystals,
+            'fullname': name,
+            'about': available_crystals[name]['about'],
         }
+                    for name in available_crystals}
         if post:
             new_actives = {data['fullname']: bool(self.get_argument('active_' + data['fullname'], False)) for data in crystals.values()}
             # print("New actives", new_actives)
@@ -1030,14 +1023,12 @@ class CrystalsHandler(BaseHandler):
                     self.application.add_handlers(r'.*', handler)  # match any host
             loaded_crystals = self.application.crystals_manager.get_loaded_crystals()
             self.update_crystals()
-            crystals = {
-                name.split('_')[1]: {
-                    'active': name in loaded_crystals,
-                    'fullname': name,
-                    'about': available_crystals[name]['about'],
-                }
-                for name in available_crystals
+            crystals = {name.split('_')[1]: {
+                'active': name in loaded_crystals,
+                'fullname': name,
+                'about': available_crystals[name]['about'],
             }
+                        for name in available_crystals}
 
         self.render('crystals_list.html', bismuth=self.bismuth_vars, crystals=crystals)
 

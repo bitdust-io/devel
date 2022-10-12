@@ -24,8 +24,6 @@
 #
 #
 #
-
-
 """
 .. module:: broker_negotiator
 .. role:: red
@@ -70,16 +68,16 @@ EVENTS:
     * :red:`top-record-own`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import re
 import sys
@@ -91,7 +89,7 @@ except:
 
 from twisted.python.failure import Failure
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from automats import automat
 
@@ -107,14 +105,13 @@ from p2p import p2p_service_seeker
 
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class BrokerNegotiator(automat.Automat):
     """
     This class implements all the functionality of ``broker_negotiator()`` state machine.
     """
-
     fast = False
 
     def __init__(self, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
@@ -133,47 +130,32 @@ class BrokerNegotiator(automat.Automat):
         self.queue_id = None
         self.requestor_known_brokers = None
         self.connect_request = None
-        super(BrokerNegotiator, self).__init__(
-            name='broker_negotiator',
-            state='AT_STARTUP',
-            debug_level=debug_level or _DebugLevel,
-            log_events=log_events or _Debug,
-            log_transitions=log_transitions or _Debug,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(BrokerNegotiator,
+              self).__init__(name='broker_negotiator', state='AT_STARTUP', debug_level=debug_level or _DebugLevel, log_events=log_events or _Debug, log_transitions=log_transitions or _Debug, publish_events=publish_events, **kwargs)
 
     def __repr__(self):
         return '%s[%s:%s](%s)' % (
             self.id,
-            '?'
-            if self.my_position
-            in [
+            '?' if self.my_position in [
                 None,
                 -1,
-            ]
-            else self.my_position,
-            '?'
-            if self.desired_position
-            in [
+            ] else self.my_position,
+            '?' if self.desired_position in [
                 None,
                 -1,
-            ]
-            else self.desired_position,
+            ] else self.desired_position,
             self.state,
         )
 
     def to_json(self):
         j = super().to_json()
-        j.update(
-            {
-                'customer_id': self.customer_id,
-                'broker_id': self.my_broker_id,
-                'my_position': self.my_position,
-                'desired_position': self.desired_position,
-                'brokers': self.cooperated_brokers,
-            }
-        )
+        j.update({
+            'customer_id': self.customer_id,
+            'broker_id': self.my_broker_id,
+            'my_position': self.my_position,
+            'desired_position': self.desired_position,
+            'brokers': self.cooperated_brokers,
+        })
         return j
 
     def init(self):
@@ -197,12 +179,12 @@ class BrokerNegotiator(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'connect':
                 self.state = 'INIT'
                 self.doInit(*args, **kwargs)
-        # ---INIT---
+        #---INIT---
         elif self.state == 'INIT':
             if event == 'init-done' and self.isAlreadyCooperated(*args, **kwargs):
                 self.state = 'VERIFY_DEAL'
@@ -210,14 +192,9 @@ class BrokerNegotiator(automat.Automat):
             elif event == 'init-done' and not self.isAlreadyCooperated(*args, **kwargs):
                 self.state = 'VERIFY_DHT'
                 self.doVerifyDHTRecords(*args, **kwargs)
-        # ---VERIFY_DEAL---
+        #---VERIFY_DEAL---
         elif self.state == 'VERIFY_DEAL':
-            if (
-                event == 'request-invalid'
-                or event == 'my-top-record-busy-replace'
-                or event == 'my-top-record-empty-replace'
-                or event == 'my-top-record-own-replace'
-            ):
+            if event == 'request-invalid' or event == 'my-top-record-busy-replace' or event == 'my-top-record-empty-replace' or event == 'my-top-record-own-replace':
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doRefreshDHT(event, *args, **kwargs)
@@ -232,7 +209,7 @@ class BrokerNegotiator(automat.Automat):
             elif event == 'my-record-busy-replace' or event == 'my-record-empty-replace' or event == 'my-record-own-replace':
                 self.state = 'ROTATE?'
                 self.doRotateRequestCurBroker(*args, **kwargs)
-        # ---VERIFY_DHT---
+        #---VERIFY_DHT---
         elif self.state == 'VERIFY_DHT':
             if event == 'top-record-own' or event == 'top-record-empty':
                 self.state = 'ACCEPT'
@@ -248,7 +225,7 @@ class BrokerNegotiator(automat.Automat):
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---CURRENT?---
+        #---CURRENT?---
         elif self.state == 'CURRENT?':
             if event == 'broker-accepted':
                 self.state = 'ACCEPT'
@@ -261,7 +238,7 @@ class BrokerNegotiator(automat.Automat):
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---NEW?---
+        #---NEW?---
         elif self.state == 'NEW?':
             if event == 'hire-broker-ok':
                 self.state = 'ACCEPT'
@@ -271,7 +248,7 @@ class BrokerNegotiator(automat.Automat):
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---ROTATE?---
+        #---ROTATE?---
         elif self.state == 'ROTATE?':
             if event == 'broker-rotate-failed' or event == 'broker-rotate-timeout' or event == 'broker-rotate-accepted':
                 self.state = 'ACCEPT'
@@ -282,10 +259,10 @@ class BrokerNegotiator(automat.Automat):
                 self.doReject(event, *args, **kwargs)
                 self.doRefreshDHT(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---ACCEPT---
+        #---ACCEPT---
         elif self.state == 'ACCEPT':
             pass
-        # ---REJECT---
+        #---REJECT---
         elif self.state == 'REJECT':
             pass
         return None
@@ -366,16 +343,8 @@ class BrokerNegotiator(automat.Automat):
         # cooperation was done before with other brokers and my own position is known already to me
         if self.desired_position != self.my_position:
             # but the request was done to a wrong position
-            lg.warn(
-                'requester desired position %d mismatch, my current position is: %d'
-                % (
-                    self.desired_position,
-                    self.my_position,
-                )
-            )
-            self.automat(
-                'request-invalid', Exception('position mismatch, current position is: %d' % self.my_position), cooperated_brokers=self.cooperated_brokers
-            )
+            lg.warn('requester desired position %d mismatch, my current position is: %d' % (self.desired_position, self.my_position))
+            self.automat('request-invalid', Exception('position mismatch, current position is: %d' % self.my_position), cooperated_brokers=self.cooperated_brokers)
             return
         if not self.cooperated_brokers.get(self.my_position):
             # there is no broker present in the cooperation for my position
@@ -398,13 +367,7 @@ class BrokerNegotiator(automat.Automat):
         if self.requestor_known_brokers.get(self.my_position):
             if not id_url.is_the_same(self.requestor_known_brokers[self.my_position], self.my_broker_idurl):
                 # but there is a request to change the cooperation - it looks like a trigger for a brokers rotation
-                lg.warn(
-                    'received a request to change the cooperation, another broker %r going to replace me on position %d'
-                    % (
-                        self.requestor_known_brokers[self.my_position],
-                        self.my_position,
-                    )
-                )
+                lg.warn('received a request to change the cooperation, another broker %r going to replace me on position %d' % (self.requestor_known_brokers[self.my_position], self.my_position))
                 if not self.dht_brokers.get(self.my_position):
                     # there is no record in DHT for my position
                     # my info is not stored in DHT and another broker is going to replace me
@@ -418,12 +381,11 @@ class BrokerNegotiator(automat.Automat):
                 if not id_url.is_the_same(self.dht_brokers[self.my_position], self.my_broker_idurl):
                     # DHT record on my expected position is occupied by another broker
                     lg.warn(
-                        'DHT record on my expected position %d is occupied by another broker %r and also another broker is trying to replace me: %r'
-                        % (
+                        'DHT record on my expected position %d is occupied by another broker %r and also another broker is trying to replace me: %r' % (
                             self.my_position,
                             self.dht_brokers[self.my_position],
                             self.requestor_known_brokers[self.my_position],
-                        )
+                        ),
                     )
                     if self.my_position == 0:
                         self.automat('my-top-record-busy-replace')
@@ -448,13 +410,7 @@ class BrokerNegotiator(automat.Automat):
         # there is a record in DHT on my expected position
         if not id_url.is_the_same(self.dht_brokers[self.my_position], self.my_broker_idurl):
             # DHT record on my expected position is occupied by another broker
-            lg.warn(
-                'DHT record on my expected position %d is occupied by another broker: %r'
-                % (
-                    self.my_position,
-                    self.dht_brokers[self.my_position],
-                )
-            )
+            lg.warn('DHT record on my expected position %d is occupied by another broker: %r' % (self.my_position, self.dht_brokers[self.my_position]))
             if self.my_position == 0:
                 self.automat('my-top-record-busy')
             else:
@@ -502,7 +458,7 @@ class BrokerNegotiator(automat.Automat):
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
-            request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
             force_handshake=True,
             attempts=1,
         )
@@ -527,7 +483,7 @@ class BrokerNegotiator(automat.Automat):
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, None),
-            request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
             force_handshake=True,
             attempts=1,
         )
@@ -561,15 +517,7 @@ class BrokerNegotiator(automat.Automat):
         if preferred_brokers:
             preferred_brokers = [x for x in preferred_brokers if x not in exclude_brokers]
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                e=event,
-                my=self.my_position,
-                desired=self.desired_position,
-                target=target_pos,
-                exclude=exclude_brokers,
-                preferred=preferred_brokers,
-            )
+            lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, target=target_pos, exclude=exclude_brokers, preferred=preferred_brokers)
         if preferred_brokers:
             preferred_broker_idurl = id_url.field(preferred_brokers[0])
             if preferred_broker_idurl and id_url.is_not_in(preferred_broker_idurl, exclude_brokers, as_field=False):
@@ -577,7 +525,7 @@ class BrokerNegotiator(automat.Automat):
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
-                    request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+                    request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
                     exclude_nodes=list(exclude_brokers),
                     force_handshake=True,
                     attempts=1,
@@ -591,7 +539,7 @@ class BrokerNegotiator(automat.Automat):
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
-            request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            request_service_timeout=self.broker_negotiate_ack_timeout*(target_pos + 1),
             exclude_nodes=list(exclude_brokers),
             attempts=1,
             force_handshake=True,

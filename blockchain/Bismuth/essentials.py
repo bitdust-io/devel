@@ -11,7 +11,6 @@ import re
 import time
 
 import requests
-
 # from Crypto import Random
 from Cryptodome.PublicKey import RSA
 
@@ -23,11 +22,9 @@ from polysign.signer import SignerType
 from polysign.signerfactory import SignerFactory
 
 __version__ = '0.0.7'
-
 """
 0.0.7 : decrease checkpoint limit to 30 blocks at 1450000 (meaning max 59 blocks rollback)
 """
-
 """
 For temp. code compatibility, dup code moved to polysign module
 """
@@ -58,7 +55,7 @@ def format_raw_tx(raw: list) -> dict:
     try:
         transaction['pubkey'] = base64.b64decode(raw[6]).decode('utf-8')
     except:
-        transaction['pubkey'] = raw[6]  # support new pubkey schemes
+        transaction['pubkey'] = raw[6]  #support new pubkey schemes
     transaction['block_hash'] = raw[7]
     transaction['fee'] = raw[8]
     transaction['reward'] = raw[9]
@@ -68,7 +65,7 @@ def format_raw_tx(raw: list) -> dict:
 
 
 def percentage(percent, whole):
-    return Decimal(percent) * Decimal(whole) / 100
+    return Decimal(percent)*Decimal(whole)/100
 
 
 def replace_regex(string: str, replace: str) -> str:
@@ -86,7 +83,7 @@ def download_file(url: str, filename: str) -> None:
     """
     try:
         r = requests.get(url, stream=True)
-        total_size = int(r.headers.get('content-length')) / 1024
+        total_size = int(r.headers.get('content-length'))/1024
 
         with open(filename, 'wb') as fp:
             chunkno = 0
@@ -115,11 +112,11 @@ def most_common_dict(a_dict: dict):
 
 
 def percentage_in(individual, whole):
-    return (float(list(whole).count(individual) / float(len(whole)))) * 100
+    return (float(list(whole).count(individual)/float(len(whole))))*100
 
 
 def round_down(number, order):
-    return int(math.floor(number / order)) * order
+    return int(math.floor(number/order))*order
 
 
 def checkpoint_set(node):
@@ -139,14 +136,14 @@ def ledger_balance3(address, cache, db_handler):
         return cache[address]
     credit_ledger = Decimal(0)
 
-    db_handler.execute_param(db_handler.c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address,))
+    db_handler.execute_param(db_handler.c, 'SELECT amount, reward FROM transactions WHERE recipient = ?;', (address, ))
     entries = db_handler.c.fetchall()
 
     for entry in entries:
         credit_ledger += quantize_eight(entry[0]) + quantize_eight(entry[1])
 
     debit_ledger = Decimal(0)
-    db_handler.execute_param(db_handler.c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address,))
+    db_handler.execute_param(db_handler.c, 'SELECT amount, fee FROM transactions WHERE address = ?;', (address, ))
     entries = db_handler.c.fetchall()
 
     for entry in entries:
@@ -168,16 +165,9 @@ def sign_rsa(timestamp, address, recipient, amount, operation, openfield, key, p
         signature_enc = signer.sign_buffer_for_bis(buffer)
         # Extra: recheck - Raises if Error
         SignerFactory.verify_bis_signature(signature_enc, public_key_b64encoded, buffer, address)
-        full_tx = (
-            str(timestamp),
-            str(address),
-            str(recipient),
-            '%.8f' % float(amount),
-            str(signature_enc.decode('utf-8')),
-            str(public_key_b64encoded.decode('utf-8')),
-            str(operation),
-            str(openfield),
-        )
+        full_tx = str(timestamp), str(address), str(recipient), '%.8f' % float(amount), \
+                  str(signature_enc.decode('utf-8')), str(public_key_b64encoded.decode('utf-8')), \
+                  str(operation), str(openfield)
         return full_tx
     except:
         return False
@@ -302,12 +292,12 @@ def keys_load_new(keyfile='wallet.der'):
 
 def fee_calculate(openfield: str, operation: str = '', block: int = 0) -> Decimal:
     # block var will be removed after HF
-    fee = Decimal('0.01') + (Decimal(len(openfield)) / Decimal('100000'))  # 0.01 dust
+    fee = Decimal('0.01') + (Decimal(len(openfield))/Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':
         fee = Decimal(fee) + Decimal('10')
     if openfield.startswith('alias='):
         fee = Decimal(fee) + Decimal('1')
-    # if operation == "alias:register": #add in the future, careful about forking
+    #if operation == "alias:register": #add in the future, careful about forking
     #    fee = Decimal(fee) + Decimal("1")
     return quantize_eight(fee)
 

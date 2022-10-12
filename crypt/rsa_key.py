@@ -22,24 +22,23 @@
 #
 #
 #
-
 """
 .. module:: rsa_key.
 
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 _CryptoLog = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from Cryptodome.PublicKey import RSA
@@ -50,7 +49,7 @@ except:
     from Crypto.Signature import pkcs1_15  # @UnresolvedImport @Reimport
     from Crypto.Cipher import PKCS1_OAEP  # @UnresolvedImport @Reimport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -61,7 +60,7 @@ from system import local_fs
 from crypt import hashes
 from crypt import number
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class RSAKey(object):
@@ -186,12 +185,10 @@ class RSAKey(object):
             'active': self.active,
         }
         if self.isSigned():
-            key_dict.update(
-                {
-                    'signature': self.signed[0],
-                    'signature_pubkey': self.signed[1],
-                }
-            )
+            key_dict.update({
+                'signature': self.signed[0],
+                'signature_pubkey': self.signed[1],
+            })
         return key_dict
 
     def sign(self, message, as_digits=True):
@@ -237,13 +234,7 @@ class RSAKey(object):
             TypeError,
         ):
             # do not raise any exception... just return False
-            lg.exc(
-                'signature=%r message=%r'
-                % (
-                    signature,
-                    message,
-                )
-            )
+            lg.exc('signature=%r message=%r' % (signature, message))
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)

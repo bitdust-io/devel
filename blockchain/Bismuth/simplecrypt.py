@@ -1,4 +1,4 @@
-# locally stored to prevent an even of abandoned repository removal
+#locally stored to prevent an even of abandoned repository removal
 
 from Cryptodome.Cipher import AES
 from Cryptodome.Hash import SHA256, HMAC
@@ -17,7 +17,7 @@ HEADER = (PREFIX + b'\x00\x00', PREFIX + b'\x00\x01', PREFIX + b'\x00\x02')
 LATEST = 2  # index into SALT_LEN, EXPANSION_COUNT, HEADER
 
 # lengths here are in bits, but pcrypto uses block size in bytes
-HALF_BLOCK = AES.block_size * 8 // 2
+HALF_BLOCK = AES.block_size*8 // 2
 for salt_len in SALT_LEN:
     assert HALF_BLOCK <= salt_len  # we use a subset of the salt as nonce
 
@@ -42,7 +42,7 @@ def encrypt(password, data):
     _assert_encrypt_length(data)
     salt = bytes(_random_bytes(SALT_LEN[LATEST] // 8))
     hmac_key, cipher_key = _expand_keys(password, salt, EXPANSION_COUNT[LATEST])
-    counter = Counter.new(HALF_BLOCK, prefix=salt[: HALF_BLOCK // 8])
+    counter = Counter.new(HALF_BLOCK, prefix=salt[:HALF_BLOCK // 8])
     cipher = AES.new(cipher_key, AES.MODE_CTR, counter=counter)
     encrypted = cipher.encrypt(data)
     hmac = _hmac(hmac_key, HEADER[LATEST] + salt + encrypted)
@@ -66,14 +66,14 @@ def decrypt(password, data):
     version = _assert_header_version(data)
     _assert_decrypt_length(data, version)
     raw = data[HEADER_LEN:]
-    salt = raw[: SALT_LEN[version] // 8]
+    salt = raw[:SALT_LEN[version] // 8]
     hmac_key, cipher_key = _expand_keys(password, salt, EXPANSION_COUNT[version])
-    hmac = raw[-HASH.digest_size :]
-    hmac2 = _hmac(hmac_key, data[: -HASH.digest_size])
+    hmac = raw[-HASH.digest_size:]
+    hmac2 = _hmac(hmac_key, data[:-HASH.digest_size])
     _assert_hmac(hmac_key, hmac, hmac2)
-    counter = Counter.new(HALF_BLOCK, prefix=salt[: HALF_BLOCK // 8])
+    counter = Counter.new(HALF_BLOCK, prefix=salt[:HALF_BLOCK // 8])
     cipher = AES.new(cipher_key, AES.MODE_CTR, counter=counter)
-    return cipher.decrypt(raw[SALT_LEN[version] // 8 : -HASH.digest_size])
+    return cipher.decrypt(raw[SALT_LEN[version] // 8:-HASH.digest_size])
 
 
 class DecryptionException(Exception):
@@ -112,9 +112,7 @@ def _assert_header_version(data):
         try:
             return HEADER.index(data[:HEADER_LEN])
         except:
-            raise DecryptionException(
-                'The data appear to be encrypted with a more recent version of simple-crypt (bad header). ' + 'Please update the library and try again.'
-            )
+            raise DecryptionException('The data appear to be encrypted with a more recent version of simple-crypt (bad header). ' + 'Please update the library and try again.')
     else:
         raise DecryptionException('Missing header.')
 
@@ -136,7 +134,7 @@ def _expand_keys(password, salt, expansion_count):
     if not password:
         raise ValueError('Missing password.')
     key_len = AES_KEY_LEN // 8
-    keys = _pbkdf2(_str_to_bytes(password), salt, 2 * key_len, expansion_count)
+    keys = _pbkdf2(_str_to_bytes(password), salt, 2*key_len, expansion_count)
     return keys[:key_len], keys[key_len:]
 
 

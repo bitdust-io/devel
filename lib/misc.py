@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: misc.
 
@@ -33,14 +32,14 @@ TODO:
     Really need to do some refactoring here - too many things in one place.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 import six.moves.urllib.parse  # @UnresolvedImport
 from six.moves import range  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import re
@@ -57,14 +56,13 @@ import textwrap
 import functools
 import subprocess
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -76,7 +74,7 @@ from main import settings
 from lib import packetid
 from lib import strng
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # if we come up with more valid transports,
 # we'll need to add them here
@@ -87,7 +85,7 @@ from lib import strng
 # more stable transports must be higher
 _AttenuationFactor = 2.0
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
@@ -99,7 +97,7 @@ def init():
     lg.out(4, 'misc.init')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def readLocalIP():
@@ -139,7 +137,7 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     return bpio.WriteTextFile(path, data)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def cmp(a, b):
@@ -170,8 +168,8 @@ def TimeStructFromVersion(backupID):
             st_time = list(time.strptime(backupID[1:-2], '%Y%m%d%I%M%S'))
         else:
             i = backupID.rfind('M')
-            ampm = backupID[i - 1 : i + 1]
-            st_time = list(time.strptime(backupID[1 : i - 1], '%Y%m%d%I%M%S'))
+            ampm = backupID[i - 1:i + 1]
+            st_time = list(time.strptime(backupID[1:i - 1], '%Y%m%d%I%M%S'))
         if ampm == 'PM':
             st_time[3] += 12
         return tuple(st_time)
@@ -204,8 +202,8 @@ def modified_version(a):
             int_b = 0
         else:
             i = a.rfind('M')
-            int_a = int(a[1 : i - 1])
-            int_b = int(a[i + 1 :])
+            int_a = int(a[1:i - 1])
+            int_b = int(a[i + 1:])
     except:
         lg.exc()
         return -1
@@ -263,7 +261,7 @@ def sorted_versions(versions, reverse=False):
     return sorted_versions_list
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def DigitsOnly(inpt, includes=''):
@@ -305,7 +303,7 @@ def ToFloat(inpt, default=0.0):
         return default
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ValidKeyAlias(key_alias):
@@ -451,7 +449,7 @@ def ValidateBitCoinAddress(strAddr):
     return all((char in CHARS_OK for char in strAddr[1:]))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def RoundupFile(filename, stepsize):
@@ -465,7 +463,7 @@ def RoundupString(data, stepsize):
     addon = ''
     if mod > 0:
         increase = stepsize - mod
-        addon = ' ' * increase
+        addon = ' '*increase
     return data + addon
 
 
@@ -490,7 +488,7 @@ def Parity():
     return 'Parity'
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def pack_url_param(s):
@@ -522,7 +520,7 @@ def unpack_url_param(s, default=None):
         return default
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def rndstr(length):
@@ -579,23 +577,23 @@ def calculate_best_dimension(sz, maxsize=8):
         return cached
     try:
         w = math.sqrt(sz)
-        h = sz / w
+        h = sz/w
     except:
         lg.exc()
-    w = w * 1.4
-    h = h / 1.4
-    if int(w) * int(h) < sz and int(h) > 0:
+    w = w*1.4
+    h = h/1.4
+    if int(w)*int(h) < sz and int(h) > 0:
         w += 1.0
     if w > maxsize:
         w = float(maxsize)
-        h = sz / w
+        h = sz/w
     w = int(w)
     h = int(h)
     w = 1 if w == 0 else w
     h = 1 if h == 0 else h
-    if w * h < sz:
+    if w*h < sz:
         h += 1
-    if w * h - sz > h:
+    if w*h - sz > h:
         w -= 1
     return w, h
 
@@ -609,9 +607,9 @@ def calculate_padding(w, h):
     imgW = 64
     imgH = 64
     if w >= 4:
-        imgW = 4 * imgW / w
-        imgH = 4 * imgH / w
-    padding = 64 / w - 8
+        imgW = 4*imgW/w
+        imgH = 4*imgH/w
+    padding = 64/w - 8
     return imgW, imgH, padding
 
 
@@ -622,10 +620,10 @@ def getDeltaTime(tm):
     try:
         #        tm = time.mktime(time.strptime(self.backupID, "F%Y%m%d%I%M%S%p"))
         dt = round(time.time() - tm)
-        if dt > 2 * 60 * 60:
-            return round(dt / (60.0 * 60.0)), 'hours'
+        if dt > 2*60*60:
+            return round(dt/(60.0*60.0)), 'hours'
         if dt > 60:
-            return round(dt / 60.0), 'minutes'
+            return round(dt/60.0), 'minutes'
         return dt, 'seconds'
     except:
         return None, None
@@ -680,7 +678,7 @@ def percent2string(percent, precis=3):
 def value2percent(value, total, precis=3):
     if not total:
         return '0%'
-    return percent2string(100.0 * (float(value) / float(total)), precis)
+    return percent2string(100.0*(float(value)/float(total)), precis)
 
 
 def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
@@ -709,7 +707,7 @@ def seconds_to_time_left_string(seconds):
     years = s // 31104000
     if years > 1:
         return '%d years' % years
-    s = s - (years * 31104000)
+    s = s - (years*31104000)
     months = s // 2592000
     if years == 1:
         r = 'one year'
@@ -718,7 +716,7 @@ def seconds_to_time_left_string(seconds):
         return r
     if months > 1:
         return '%d months' % months
-    s = s - (months * 2592000)
+    s = s - (months*2592000)
     days = s // 86400
     if months == 1:
         r = 'one month'
@@ -727,16 +725,16 @@ def seconds_to_time_left_string(seconds):
         return r
     if days > 1:
         return '%d days' % days
-    s = s - (days * 86400)
+    s = s - (days*86400)
     hours = s // 3600
     if days == 1:
         r = 'one day'
         if hours > 0:
             r += ' and %d hours' % hours
         return r
-    s = s - (hours * 3600)
+    s = s - (hours*3600)
     minutes = s // 60
-    seconds = s - (minutes * 60)
+    seconds = s - (minutes*60)
     if hours >= 6:
         return '%d hours' % hours
     if hours >= 1:
@@ -815,7 +813,7 @@ def isEnglishString(s):
         return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getClipboardText():
@@ -826,7 +824,6 @@ def getClipboardText():
         try:
             import win32clipboard  # @UnresolvedImport
             import win32con  # @UnresolvedImport
-
             win32clipboard.OpenClipboard()
             d = win32clipboard.GetClipboardData(win32con.CF_TEXT)
             win32clipboard.CloseClipboard()
@@ -837,7 +834,6 @@ def getClipboardText():
     elif bpio.Linux():
         try:
             import wx
-
             # may crash, otherwise
             # this needs app.MainLoop() to be started
             if not wx.TheClipboard.IsOpened():  # @UndefinedVariable
@@ -865,7 +861,6 @@ def setClipboardText(txt):
         try:
             import win32clipboard  # @UnresolvedImport
             import win32con  # @UnresolvedImport
-
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardData(win32con.CF_TEXT, txt)
@@ -876,7 +871,6 @@ def setClipboardText(txt):
     elif bpio.Linux():
         try:
             import wx
-
             clipdata = wx.TextDataObject()  # @UndefinedVariable
             clipdata.SetText(txt)
             if wx.TheClipboard:  # @UndefinedVariable
@@ -897,7 +891,7 @@ def setClipboardText(txt):
             lg.exc()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def encode64(s):
@@ -931,7 +925,7 @@ def file_hash(path):
     return get_hash(src)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def time2daystring(tm=None):
@@ -980,7 +974,7 @@ def str2gmtime(time_string, format):
     return time.mktime(time.strptime(time_string, format))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ReadRepoLocation():
@@ -1007,7 +1001,7 @@ def ReadRepoLocation():
     return l[0], l[1]
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
@@ -1054,7 +1048,6 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             cmdargs.remove('daemon')
         if detach:
             from system import child_process
-
             cmdargs = [strng.to_text(a) for a in cmdargs]
             return child_process.detach(cmdargs)
         return os.execvpe(pypath, cmdargs, os.environ)
@@ -1120,14 +1113,13 @@ def ExplorePathInOS(filepath):
     except:
         try:
             import webbrowser
-
             webbrowser.open(filepath)
         except:
             lg.exc()
     return
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
@@ -1157,8 +1149,7 @@ def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
     return current_delay
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     lg.set_debug_level(10)

@@ -23,38 +23,36 @@
 #
 #
 #
-
 """
 ..
 
 module:: message_database
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import json
 import sqlite3
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -74,12 +72,12 @@ from userid import global_id
 from userid import id_url
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _HistoryDB = None
 _HistoryCursor = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 MESSAGE_TYPES = {
     'message': 1,
@@ -95,7 +93,7 @@ MESSAGE_TYPE_CODES = {
     4: 'personal_message',
 }
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(filepath=None):
@@ -128,7 +126,7 @@ def init(filepath=None):
             "payload_type" INTEGER,
             "payload_time" INTEGER,
             "payload_message_id" TEXT,
-            "payload_body" JSON)'''
+            "payload_body" JSON)''',
         )
         _HistoryCursor.execute('CREATE INDEX "sender local key id" on history(sender_local_key_id)')
         _HistoryCursor.execute('CREATE INDEX "recipient local key id" on history(recipient_local_key_id)')
@@ -139,16 +137,14 @@ def init(filepath=None):
             "payload_type" INTEGER,
             "started_time" INTEGER,
             "last_updated_time" INTEGER,
-            "last_message_id" TEXT)'''
+            "last_message_id" TEXT)''',
         )
         _HistoryCursor.execute('CREATE INDEX "conversation id" on conversations(conversation_id)')
 
-        _HistoryCursor.execute(
-            '''CREATE TABLE IF NOT EXISTS "keys" (
+        _HistoryCursor.execute('''CREATE TABLE IF NOT EXISTS "keys" (
             "key_id" TEXT,
             "local_key_id" INTEGER,
-            "public_key" TEXT)'''
-        )
+            "public_key" TEXT)''')
         _HistoryCursor.execute('CREATE INDEX "key id" on keys(key_id)')
         _HistoryCursor.execute('CREATE INDEX "local key id" on keys(local_key_id)')
         _HistoryCursor.execute('CREATE INDEX "public key" on keys(public_key)')
@@ -175,7 +171,7 @@ def shutdown():
     _HistoryCursor = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def db(instance='current'):
@@ -188,7 +184,7 @@ def cur(instance='current'):
     return _HistoryCursor
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def adapt_json(data):
@@ -199,7 +195,7 @@ def convert_json(blob):
     return json.loads(blob.decode())
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def get_conversation_id(
@@ -224,7 +220,7 @@ def get_conversation_id(
     return conversation_id
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def build_json_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None, direction=None, conversation_id=None):
@@ -330,7 +326,7 @@ def build_json_conversation(**record):
     return conv
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def insert_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None, direction=None):
@@ -365,13 +361,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
     else:
         sender_local_key_id = my_keys.get_local_key_id(sender)
     if sender_local_key_id is None or recipient_local_key_id is None:
-        lg.err(
-            'failed to store message because local_key_id is not found, sender=%r recipient=%r'
-            % (
-                sender_local_key_id,
-                recipient_local_key_id,
-            )
-        )
+        lg.err('failed to store message because local_key_id is not found, sender=%r recipient=%r' % (sender_local_key_id, recipient_local_key_id))
         return None
     cur().execute(
         '''INSERT INTO history (
@@ -384,8 +374,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
             payload_time,
             payload_message_id,
             payload_body
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-        (
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             sender_local_key_id,
             sender,
             recipient_local_key_id,
@@ -395,7 +384,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
             payload_time,
             payload_message_id,
             data,
-        ),
+        )
     )
     db().commit()
     conversation_id = update_conversation(sender_local_key_id, recipient_local_key_id, payload_type, payload_time, payload_message_id)
@@ -446,15 +435,13 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
     db().commit()
     if not found_conversation:
         listeners.push_snapshot(
-            'conversation',
-            snap_id=conversation_id,
-            data=build_json_conversation(
+            'conversation', snap_id=conversation_id, data=build_json_conversation(
                 conversation_id=conversation_id,
                 type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
                 started=payload_time,
                 last_updated=payload_time,
                 last_message_id=payload_message_id,
-            ),
+            )
         )
     return conversation_id
 
@@ -467,13 +454,7 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
         recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
         sender_local_key_id = my_keys.get_local_key_id(sender_id)
         if recipient_local_key_id is None or sender_local_key_id is None:
-            lg.warn(
-                'local_key_id was not found, recipient_local_key_id=%r sender_local_key_id=%r'
-                % (
-                    recipient_local_key_id,
-                    sender_local_key_id,
-                )
-            )
+            lg.warn('local_key_id was not found, recipient_local_key_id=%r sender_local_key_id=%r' % (recipient_local_key_id, sender_local_key_id))
             return []
         q += ' sender_local_key_id IN (?, ?) AND recipient_local_key_id IN (?, ?)'
         params += [
@@ -503,23 +484,13 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
             ]
     if message_types:
         if params:
-            q += ' AND payload_type IN (%s)' % (
-                ','.join(
-                    [
-                        '?',
-                    ]
-                    * len(message_types)
-                )
-            )
+            q += ' AND payload_type IN (%s)' % (','.join([
+                '?',
+            ]*len(message_types)))
         else:
-            q += ' payload_type IN (%s)' % (
-                ','.join(
-                    [
-                        '?',
-                    ]
-                    * len(message_types)
-                )
-            )
+            q += ' payload_type IN (%s)' % (','.join([
+                '?',
+            ]*len(message_types)))
         params.extend([MESSAGE_TYPES.get(mt, 1) for mt in message_types])
     if q:
         sql += ' WHERE %s' % q
@@ -579,14 +550,9 @@ def list_conversations(order_by_time=True, message_types=[], offset=None, limit=
     q = ''
     params = []
     if message_types:
-        q += ' payload_type IN (%s)' % (
-            ','.join(
-                [
-                    '?',
-                ]
-                * len(message_types)
-            )
-        )
+        q += ' payload_type IN (%s)' % (','.join([
+            '?',
+        ]*len(message_types)))
         params.extend([MESSAGE_TYPES.get(mt, 1) for mt in message_types])
     if q:
         sql += ' WHERE %s' % q
@@ -606,19 +572,17 @@ def list_conversations(order_by_time=True, message_types=[], offset=None, limit=
         lg.args(_DebugLevel, sql=sql, params=params)
     results = []
     for row in cur().execute(sql, params):
-        results.append(
-            dict(
-                conversation_id=row[0],
-                type=MESSAGE_TYPE_CODES.get(int(row[1]), 'private_message'),
-                started=row[2],
-                last_updated=row[3],
-                last_message_id=row[4],
-            )
-        )
+        results.append(dict(
+            conversation_id=row[0],
+            type=MESSAGE_TYPE_CODES.get(int(row[1]), 'private_message'),
+            started=row[2],
+            last_updated=row[3],
+            last_message_id=row[4],
+        ))
     return results
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def update_history_with_new_local_key_id(old_id, new_id):
@@ -680,14 +644,12 @@ def rebuild_conversations():
     cur().execute('SELECT count(name) FROM sqlite_master WHERE type="table" AND name="conversations"')
     if cur().fetchone()[0]:
         return
-    cur().execute(
-        '''CREATE TABLE IF NOT EXISTS "conversations" (
+    cur().execute('''CREATE TABLE IF NOT EXISTS "conversations" (
         "conversation_id" TEXT,
         "payload_type" INTEGER,
         "started_time" INTEGER,
         "last_updated_time" INTEGER,
-        "last_message_id" TEXT)'''
-    )
+        "last_message_id" TEXT)''')
     cur().execute('CREATE INDEX "conversation id" on conversations(conversation_id)')
     db().commit()
     for message_json in list(query_messages()):
@@ -710,7 +672,7 @@ def rebuild_conversations():
         )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
@@ -747,13 +709,7 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
                 lg.args(_DebugLevel, sql=sql, params=params)
         if local_key_id != new_local_key_id:
             changed = True
-            lg.warn(
-                'found new public key which is re-using already known key with different local key id: %r -> %r'
-                % (
-                    local_key_id,
-                    new_local_key_id,
-                )
-            )
+            lg.warn('found new public key which is re-using already known key with different local key id: %r -> %r' % (local_key_id, new_local_key_id))
             update_history_with_new_local_key_id(local_key_id, new_local_key_id)
             update_conversations_with_new_local_key_id(local_key_id, new_local_key_id)
             sql = 'UPDATE keys SET local_key_id=? WHERE public_key=?'
@@ -793,19 +749,17 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def fetch_conversations(order_by_time=True, message_types=[], offset=None, limit=None):
     conversations = []
-    for conv_record in list(
-        list_conversations(
-            order_by_time=order_by_time,
-            message_types=message_types,
-            offset=offset,
-            limit=limit,
-        )
-    ):
+    for conv_record in list(list_conversations(
+        order_by_time=order_by_time,
+        message_types=message_types,
+        offset=offset,
+        limit=limit,
+    ), ):
         conv = build_json_conversation(**conv_record)
         if conv:
             if conv['key_id']:
@@ -829,7 +783,6 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
     if recipient_id:
         if not recipient_id.count('@'):
             from contacts import contactsdb
-
             recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
             if not recipient_idurl:
                 lg.err('recipient %r was not found' % recipient_id)
@@ -866,10 +819,7 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
             continue
         snap_id = '{}/{}'.format(conversation_id, row[7])
         listeners.push_snapshot(
-            'message',
-            snap_id=snap_id,
-            created=row[6],
-            data=build_json_message(
+            'message', snap_id=snap_id, created=row[6], data=build_json_message(
                 sender=row[1],
                 recipient=row[3],
                 direction='in' if row[4] == 0 else 'out',
@@ -878,31 +828,26 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
                 message_time=row[6],
                 message_id=row[7],
                 data=json.loads(row[8]),
-            ),
+            )
         )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
     import pprint
-
     my_keys.init()
     init()
-    pprint.pprint(
-        list(
-            query_messages(
-                # sender_id='',
-                recipient_id='group_96b1fa942b556e2e0dbccdcc9eeed84a$veselibro@seed.bitdust.io',
-                # offset=2,
-                # limit=3,
-                message_types=[
-                    'group_message',
-                ],
-            )
-        )
-    )
+    pprint.pprint(list(query_messages(
+        # sender_id='',
+        recipient_id='group_96b1fa942b556e2e0dbccdcc9eeed84a$veselibro@seed.bitdust.io',
+        # offset=2,
+        # limit=3,
+        message_types=[
+            'group_message',
+        ],
+    )))
     # pprint.pprint(list(list_conversations(
     # message_types=['group_message', ]
     # )))

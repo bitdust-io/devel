@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# geth_service.py
+#geth_service.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
@@ -19,24 +19,21 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: geth_service
 
 """
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -48,14 +45,13 @@ except:
 
 from twisted.internet import protocol
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -65,8 +61,7 @@ from main import settings
 
 from updates import git_proc
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -83,7 +78,7 @@ def shutdown():
     lg.out(4, 'geth_service.shutdown')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def verify_local_install():
@@ -104,7 +99,7 @@ def verify_global_install():
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def clone(callback=None):
@@ -141,7 +136,7 @@ def deploy(callback=None):
     clone(callback=_clone)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def run(cmdargs, callback=None):
@@ -163,7 +158,7 @@ def run_geth_node():
     run(['--datadir="{}"'.format(geth_datadir), '--verbosity', '4', '--ipcdisable', '--port', '30300', '--rpcport', '8100', '--networkid', '1'])
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=None):
@@ -173,21 +168,15 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
     executable = cmdargs[0]
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
-
         real_CreateProcess = _dumbwin32proc.win32process.CreateProcess
 
-        def fake_createprocess(
-            _appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, creationFlags, _newEnvironment, _currentDirectory, startupinfo
-        ):
+        def fake_createprocess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, creationFlags, _newEnvironment, _currentDirectory, startupinfo):
             import win32con
             import subprocess
-
             flags = win32con.CREATE_NO_WINDOW
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             startupinfo.wShowWindow = subprocess.SW_HIDE
-            return real_CreateProcess(
-                _appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, flags, _newEnvironment, _currentDirectory, startupinfo
-            )
+            return real_CreateProcess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, flags, _newEnvironment, _currentDirectory, startupinfo)
 
         setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
 
@@ -203,40 +192,43 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
     return _CurrentProcess
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class GethProcessProtocol(protocol.ProcessProtocol):
     def __init__(self, callback):
-        """ """
+        """
+        """
         self.callback = callback
         self.out = ''
         self.err = ''
 
     def errReceived(self, inp):
-        """ """
+        """
+        """
         self.err += inp
         for line in inp.splitlines():
             if _Debug:
                 lg.out(_DebugLevel, '%s' % line)
 
     def outReceived(self, inp):
-        """ """
+        """
+        """
         self.out += inp
         for line in inp.splitlines():
             if _Debug:
                 lg.out(_DebugLevel, '%s' % line)
 
     def processEnded(self, reason):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(_DebugLevel, 'geth process FINISHED : %s' % reason.value.exitCode)
         if self.callback:
             self.callback(self.out, reason.value.exitCode)
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     bpio.init()

@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: id_server.
 
@@ -36,12 +34,12 @@ EVENTS:
     * :red:`stop`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import BytesIO
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -53,14 +51,13 @@ from twisted.internet.defer import Deferred, DeferredList
 from twisted.protocols import basic
 from twisted.web import server, resource, static
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -79,11 +76,11 @@ from main import settings
 from userid import identity
 from userid import known_servers
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _IdServer = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -110,7 +107,6 @@ class IdServer(automat.Automat):
     This class implements all the functionality of the ``id_server()`` state
     machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -123,12 +119,12 @@ class IdServer(automat.Automat):
         self.hostname = ''
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(*args, **kwargs)
-        # ---LISTEN---
+        #---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -140,7 +136,7 @@ class IdServer(automat.Automat):
                 self.state = 'DOWN'
                 self.Restart = False
                 self.doSetDown(*args, **kwargs)
-        # ---STOPPED---
+        #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'LISTEN'
@@ -148,10 +144,10 @@ class IdServer(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        # ---DOWN---
+        #---DOWN---
         elif self.state == 'DOWN':
             if event == 'server-down' and self.Restart:
                 self.state = 'LISTEN'
@@ -194,14 +190,7 @@ class IdServer(automat.Automat):
             lg.exc()
         try:
             self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))  # @UndefinedVariable
-            lg.out(
-                4,
-                '            have started web server at port %d   hostname=%s'
-                % (
-                    self.web_port,
-                    strng.to_text(self.hostname),
-                ),
-            )
+            lg.out(4, '            have started web server at port %d   hostname=%s' % (self.web_port, strng.to_text(self.hostname)))
         except:
             lg.out(4, 'id_server.set_up ERROR exception trying to listen on port ' + str(self.web_port))
             lg.exc()
@@ -243,7 +232,8 @@ class IdServer(automat.Automat):
             args[0][-1].callback(True)
 
     def _save_identity(self, inputfilename):
-        """ """
+        """
+        """
         lg.out(6, 'id_server._save_identity ' + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
             lg.warn('input file too big - ignoring ')
@@ -309,7 +299,7 @@ class IdServer(automat.Automat):
             bpio.WriteTextFile(localfilename, newxml)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class IdServerProtocol(basic.Int32StringReceiver):
@@ -328,7 +318,8 @@ class IdServerProtocol(basic.Int32StringReceiver):
                 lg.exc()
 
     def connectionMade(self):
-        """ """
+        """
+        """
 
     def stringReceived(self, data):
         try:
@@ -374,10 +365,11 @@ class IdServerProtocol(basic.Int32StringReceiver):
             self.fpath = None
 
     def connectionLost(self, reason):
-        """ """
+        """
+        """
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class IdServerFactory(ServerFactory):
@@ -387,7 +379,7 @@ class IdServerFactory(ServerFactory):
         return p
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class WebMainPage(resource.Resource):
@@ -417,7 +409,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 <div id="content">
 <h1 align=center>Identities on %(hostname)s</h1>
 ''' % {
-            'hostname': strng.to_text(A().hostname)
+            'hostname': strng.to_text(A().hostname),
         }
         src += '<table cellspacing=0 width=100% border=0><tr valign=top>\n'
         src += '<td width=152px nowrap>\n'
@@ -459,7 +451,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
         return strng.to_bin(src)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class WebRoot(resource.Resource):
@@ -482,7 +474,7 @@ class WebRoot(resource.Resource):
         return resource.NoResource('Not found')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -498,7 +490,12 @@ def main():
         tcp_port = settings.getIdServerTCPPort()
     lg.set_debug_level(20)
     lg.out(2, 'starting ID server ...')
-    reactor.addSystemEventTrigger('before', 'shutdown', A().automat, 'shutdown')  # @UndefinedVariable
+    reactor.addSystemEventTrigger(
+        'before',
+        'shutdown',  # @UndefinedVariable
+        A().automat,
+        'shutdown',
+    )
     reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
     reactor.callLater(0, A, 'start')  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
@@ -506,7 +503,7 @@ def main():
     lg.out(2, 'reactor stopped, EXIT')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

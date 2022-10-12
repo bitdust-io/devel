@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 1: user can search another user by nickname
 
@@ -81,12 +80,12 @@ import time
 import base64
 import threading
 
-from testsupport import health_check, start_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario
+from testsupport import (health_check, start_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario)
 from testsupport import dbg, msg
 
 import keywords as kw
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 PROXY_IDS = [
     'proxy-1',
@@ -158,14 +157,14 @@ ROTATED_NODES = [
     'proxy-rotated',
 ]
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 group_customers_1_rotated_messages = []
 group_customers_1_2_3_messages = []
 
 ssh_cmd_verbose = True
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def scenario1():
@@ -1076,17 +1075,8 @@ def scenario9(target_nodes):
     else:
         new_broker_info = {}
 
-    return (
-        old_proxy_info,
-        old_customer_info,
-        old_supplier_info,
-        old_broker_info,
-        old_customer_keys,
-        new_proxy_info,
-        new_customer_info,
-        new_supplier_info,
-        new_broker_info,
-    )
+    return old_proxy_info, old_customer_info, old_supplier_info, old_broker_info, old_customer_keys, \
+           new_proxy_info, new_customer_info, new_supplier_info, new_broker_info
     msg('\n[SCENARIO 9] : PASS\n\n')
 
 
@@ -1267,12 +1257,10 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     )
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=16, polling_timeout=15)
-    kw.wait_packets_finished(
-        [
-            'customer-1',
-            'customer-rotated',
-        ]
-    )
+    kw.wait_packets_finished([
+        'customer-1',
+        'customer-rotated',
+    ])
 
     assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
     assert len(kw.message_conversation_v1('customer-1')['result']) == 1
@@ -1315,11 +1303,9 @@ def scenario12_begin():
     kw.group_join_v1('customer-1', customer_1_group_key_id)
 
     kw.wait_packets_finished(
-        CUSTOMERS_IDS_12
-        + BROKERS_IDS
-        + [
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
             'broker-rotated',
-        ]
+        ],
     )
 
     customer_1_group_info_active = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
@@ -1361,11 +1347,9 @@ def scenario12_begin():
     # customer-2 joins the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
     kw.wait_packets_finished(
-        CUSTOMERS_IDS_12
-        + BROKERS_IDS
-        + [
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
             'broker-rotated',
-        ]
+        ],
     )
 
     assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['last_sequence_id'] == -1
@@ -1417,11 +1401,9 @@ def scenario12_begin():
 
     kw.group_join_v1('customer-1', customer_1_group2_key_id)
     kw.wait_packets_finished(
-        CUSTOMERS_IDS_12
-        + BROKERS_IDS
-        + [
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
             'broker-rotated',
-        ]
+        ],
     )
 
     # share second group key from customer-1 to customer-2
@@ -1434,11 +1416,9 @@ def scenario12_begin():
     # customer-2 also joins the second group
     kw.group_join_v1('customer-2', customer_1_group2_key_id)
     kw.wait_packets_finished(
-        CUSTOMERS_IDS_12
-        + BROKERS_IDS
-        + [
+        CUSTOMERS_IDS_12 + BROKERS_IDS + [
             'broker-rotated',
-        ]
+        ],
     )
 
     # sending few messages to the second group from customer-2
@@ -1529,11 +1509,9 @@ def scenario12_end(old_customer_1_info):
     if customer_2_group_info_before['state'] == 'DISCONNECTED':
         # should retry in case of broker rotation failed
         kw.group_join_v1('customer-2', customer_1_group_key_id)
-        kw.wait_packets_finished(
-            [
-                'customer-2',
-            ]
-        )
+        kw.wait_packets_finished([
+            'customer-2',
+        ])
         customer_2_group_info_before = kw.group_info_v1('customer-2', customer_1_group_key_id, wait_state='IN_SYNC!')['result']
 
     assert customer_2_group_info_before['state'] == 'IN_SYNC!'
@@ -1774,11 +1752,9 @@ def scenario13_end(old_customer_1_info):
         verify_from_local_path=old_customer_1_info['local_filepath'],
     )
     kw.wait_packets_finished(
-        CUSTOMERS_IDS_1
-        + SUPPLIERS_IDS_12
-        + [
+        CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12 + [
             'supplier-rotated',
-        ]
+        ],
     )
 
     # disable supplier-rotated so it will not affect other scenarios
@@ -1821,15 +1797,13 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     customer_1_supplier_idurls_before = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert len(customer_1_supplier_idurls_before) == 2
 
-    possible_suppliers = set(
-        [
-            'http://id-a:8084/supplier-1.xml',
-            'http://id-a:8084/supplier-2.xml',
-            'http://id-a:8084/supplier-3.xml',
-            'http://id-a:8084/supplier-4.xml',
-            'http://id-a:8084/supplier-5.xml',
-        ]
-    )
+    possible_suppliers = set([
+        'http://id-a:8084/supplier-1.xml',
+        'http://id-a:8084/supplier-2.xml',
+        'http://id-a:8084/supplier-3.xml',
+        'http://id-a:8084/supplier-4.xml',
+        'http://id-a:8084/supplier-5.xml',
+    ])
     possible_suppliers.discard(customer_1_supplier_idurls_before[0])
 
     response = request_post('customer-1', 'supplier/change/v1', json={'position': '0'})
@@ -1898,15 +1872,13 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
     customer_1_supplier_idurls_before = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert len(customer_1_supplier_idurls_before) == 2
 
-    possible_suppliers = set(
-        [
-            'http://id-a:8084/supplier-1.xml',
-            'http://id-a:8084/supplier-2.xml',
-            'http://id-a:8084/supplier-3.xml',
-            'http://id-a:8084/supplier-4.xml',
-            'http://id-a:8084/supplier-5.xml',
-        ]
-    )
+    possible_suppliers = set([
+        'http://id-a:8084/supplier-1.xml',
+        'http://id-a:8084/supplier-2.xml',
+        'http://id-a:8084/supplier-3.xml',
+        'http://id-a:8084/supplier-4.xml',
+        'http://id-a:8084/supplier-5.xml',
+    ])
     possible_suppliers.difference_update(set(customer_1_supplier_idurls_before))
     new_supplier_idurl = list(possible_suppliers)[0]
 

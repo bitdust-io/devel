@@ -1,4 +1,4 @@
-# this file is marginally dynamic, make sure you know what you run it against
+#this file is marginally dynamic, make sure you know what you run it against
 import sys
 
 sys.path.append('../')
@@ -38,9 +38,7 @@ def vacuum(cursor, name):
 def dupes_check_sigs(cursor, name):
     print(f'Testing {name} for sig duplicates')
 
-    cursor.execute(
-        "SELECT * FROM transactions WHERE signature IN (SELECT signature FROM transactions WHERE signature != '0' GROUP BY signature HAVING COUNT(*) >1)"
-    )
+    cursor.execute("SELECT * FROM transactions WHERE signature IN (SELECT signature FROM transactions WHERE signature != '0' GROUP BY signature HAVING COUNT(*) >1)")
     results = cursor.fetchall()
 
     dupes_allowed = [708334, 708335]
@@ -55,7 +53,7 @@ def dupes_check_rows_transactions(cursor, name):
     print(f'Testing {name} for transaction row duplicates')
 
     cursor.execute(
-        'SELECT block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield, COUNT(*) FROM transactions GROUP BY block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield HAVING COUNT(*) > 1'
+        'SELECT block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield, COUNT(*) FROM transactions GROUP BY block_height, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield HAVING COUNT(*) > 1',
     )
     result = cursor.fetchall()
     for entry in result:
@@ -76,17 +74,17 @@ def dupes_check_rows_misc(cursor, name):
 def balance_from_cursor(cursor, address):
     credit = Decimal('0')
     debit = Decimal('0')
-    for entry in cursor.execute('SELECT amount,reward FROM transactions WHERE recipient = ? ', (address,)):
+    for entry in cursor.execute('SELECT amount,reward FROM transactions WHERE recipient = ? ', (address, )):
         try:
-            # result = cursor.fetchall()
+            #result = cursor.fetchall()
             credit = credit + quantize_eight(entry[0]) + quantize_eight(entry[1])
-            # print (result)
+            #print (result)
             credit = 0 if credit is None else credit
         except Exception as e:
             credit = 0
-        # print (credit)
+        #print (credit)
 
-    for entry in cursor.execute('SELECT amount,fee FROM transactions WHERE address = ? ', (address,)):
+    for entry in cursor.execute('SELECT amount,fee FROM transactions WHERE address = ? ', (address, )):
         try:
             # result = cursor.fetchall()
             debit = debit + quantize_eight(entry[0]) + quantize_eight(entry[1])
@@ -109,7 +107,7 @@ def balance_differences():
         address = address[0]
         balance1 = balance_from_cursor(tar_obj.h, address)
         balance2 = balance_from_cursor(tar_obj.h2, address)
-        if balance1 == balance2:
+        if (balance1 == balance2):
             check = '  Ok'
         else:
             check = '> Ko'
@@ -120,7 +118,7 @@ def balance_differences():
 
         print(f'{check} {address} {balance1} {balance2}')
 
-        if Decimal(balance1) < 0 or Decimal(balance2) < 0:
+        if (Decimal(balance1) < 0 or Decimal(balance2) < 0):
             print(address, balance1, balance2)
 
     print(f'Done, {tar_obj.errors} errors.')
@@ -133,7 +131,6 @@ dupes_check_rows_misc(tar_obj.h, tar_obj.h_name)
 dupes_check_rows_misc(tar_obj.h2, tar_obj.h2_name)
 dupes_check_sigs(tar_obj.h, tar_obj.h_name)
 dupes_check_sigs(tar_obj.h2, tar_obj.h2_name)
-
 
 if tar_obj.errors > 0:
     print('There were errors, cannot continue')

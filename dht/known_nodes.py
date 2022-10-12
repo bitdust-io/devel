@@ -23,20 +23,19 @@
 #
 #
 #
-
 """
 ..
 
 module:: known_nodes
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
 import re
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def network_info():
@@ -45,7 +44,6 @@ def network_info():
     If file `~/.bitdust/metadata/networkconfig` exists - use it instead.
     """
     from main import network_config
-
     network_config = network_config.read_network_config_file()
     return network_config['service_entangled_dht']
 
@@ -55,15 +53,12 @@ def default_nodes():
     List of DHT nodes currently maintained : (host, UDP port number)
     """
     from lib import strng
-
     dht_seeds = []
     for dht_seed in network_info()['known_nodes']:
-        dht_seeds.append(
-            (
-                strng.to_bin(dht_seed['host']),
-                dht_seed['udp_port'],
-            )
-        )
+        dht_seeds.append((
+            strng.to_bin(dht_seed['host']),
+            dht_seed['udp_port'],
+        ))
     return dht_seeds
 
 
@@ -121,12 +116,10 @@ def nodes():
                 dht_node_port = int(dht_node[1].strip())
             except:
                 continue
-            overridden_dht_nodes.append(
-                (
-                    dht_node_host,
-                    dht_node_port,
-                )
-            )
+            overridden_dht_nodes.append((
+                dht_node_host,
+                dht_node_port,
+            ))
 
     if overridden_dht_nodes:
         return overridden_dht_nodes

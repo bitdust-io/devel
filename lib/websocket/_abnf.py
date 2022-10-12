@@ -44,7 +44,6 @@ try:
 
         def _mask(_m, _d):
             return XorMaskerSimple(_m).process(_d)
-
 except ImportError:
     # wsaccel is not available, we rely on python implementations.
     def _mask(_m, _d):
@@ -118,7 +117,7 @@ class ABNF(object):
     OPCODE_BINARY = 0x2
     OPCODE_CLOSE = 0x8
     OPCODE_PING = 0x9
-    OPCODE_PONG = 0xA
+    OPCODE_PONG = 0xa
 
     # available operation code value tuple
     OPCODES = (OPCODE_CONT, OPCODE_TEXT, OPCODE_BINARY, OPCODE_CLOSE, OPCODE_PING, OPCODE_PONG)
@@ -127,7 +126,7 @@ class ABNF(object):
     OPCODE_MAP = {OPCODE_CONT: 'cont', OPCODE_TEXT: 'text', OPCODE_BINARY: 'binary', OPCODE_CLOSE: 'close', OPCODE_PING: 'ping', OPCODE_PONG: 'pong'}
 
     # data length threshold.
-    LENGTH_7 = 0x7E
+    LENGTH_7 = 0x7e
     LENGTH_16 = 1 << 16
     LENGTH_63 = 1 << 63
 
@@ -170,7 +169,8 @@ class ABNF(object):
             if l > 2 and not skip_utf8_validation and not validate_utf8(self.data[2:]):
                 raise WebSocketProtocolException('Invalid close frame.')
 
-            code = 256 * six.byte2int(self.data[0:1]) + six.byte2int(self.data[1:2])
+            code = 256 * \
+                six.byte2int(self.data[0:1]) + six.byte2int(self.data[1:2])
             if not self._is_valid_close_status(code):
                 raise WebSocketProtocolException('Invalid close opcode.')
 
@@ -179,7 +179,9 @@ class ABNF(object):
         return code in VALID_CLOSE_STATUS or (3000 <= code < 5000)
 
     def __str__(self):
-        return 'fin=' + str(self.fin) + ' opcode=' + str(self.opcode) + ' data=' + str(self.data)
+        return 'fin=' + str(self.fin) \
+            + ' opcode=' + str(self.opcode) \
+            + ' data=' + str(self.data)
 
     @staticmethod
     def create_frame(data, opcode, fin=1):
@@ -216,11 +218,11 @@ class ABNF(object):
             frame_header += chr(self.mask << 7 | length)
             frame_header = six.b(frame_header)
         elif length < ABNF.LENGTH_16:
-            frame_header += chr(self.mask << 7 | 0x7E)
+            frame_header += chr(self.mask << 7 | 0x7e)
             frame_header = six.b(frame_header)
             frame_header += struct.pack('!H', length)
         else:
-            frame_header += chr(self.mask << 7 | 0x7F)
+            frame_header += chr(self.mask << 7 | 0x7f)
             frame_header = six.b(frame_header)
             frame_header += struct.pack('!Q', length)
 
@@ -261,7 +263,7 @@ class ABNF(object):
             _mask_key = mask_key[3] << 24 | mask_key[2] << 16 | mask_key[1] << 8 | mask_key[0]
 
             # We need data to be a multiple of four...
-            data += bytes(' ' * (4 - (len(data) % 4)), 'us-ascii')
+            data += bytes(' '*(4 - (len(data) % 4)), 'us-ascii')
             a = numpy.frombuffer(data, dtype='uint32')
             masked = numpy.bitwise_xor(a, [_mask_key]).astype('uint32')
             if len(data) > origlen:
@@ -305,14 +307,14 @@ class frame_buffer(object):
         rsv1 = b1 >> 6 & 1
         rsv2 = b1 >> 5 & 1
         rsv3 = b1 >> 4 & 1
-        opcode = b1 & 0xF
+        opcode = b1 & 0xf
         b2 = header[1]
 
         if six.PY2:
             b2 = ord(b2)
 
         has_mask = b2 >> 7 & 1
-        length_bits = b2 & 0x7F
+        length_bits = b2 & 0x7f
 
         self.header = (fin, rsv1, rsv2, rsv3, opcode, has_mask, length_bits)
 
@@ -326,11 +328,11 @@ class frame_buffer(object):
 
     def recv_length(self):
         bits = self.header[frame_buffer._HEADER_LENGTH_INDEX]
-        length_bits = bits & 0x7F
-        if length_bits == 0x7E:
+        length_bits = bits & 0x7f
+        if length_bits == 0x7e:
             v = self.recv_strict(2)
             self.length = struct.unpack('!H', v)[0]
-        elif length_bits == 0x7F:
+        elif length_bits == 0x7f:
             v = self.recv_strict(8)
             self.length = struct.unpack('!Q', v)[0]
         else:
@@ -406,7 +408,8 @@ class continuous_frame(object):
     def validate(self, frame):
         if not self.recving_frames and frame.opcode == ABNF.OPCODE_CONT:
             raise WebSocketProtocolException('Illegal frame')
-        if self.recving_frames and frame.opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
+        if self.recving_frames and \
+                frame.opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
             raise WebSocketProtocolException('Illegal frame')
 
     def add(self, frame):

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -55,13 +54,11 @@ class BackupsService(LocalService):
         from storage import backup_matrix
         from storage import backup_monitor
         from main.config import conf
-
         # from main import control
         from main import events
         from main import listeners
         from transport import callback
         from p2p import p2p_connector
-
         backup_control.init()
         backup_matrix.init()
         # backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
@@ -87,7 +84,6 @@ class BackupsService(LocalService):
         from p2p import p2p_connector
         from main import events
         from main.config import conf
-
         events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
@@ -100,7 +96,6 @@ class BackupsService(LocalService):
 
     def health_check(self):
         from storage import backup_monitor
-
         return backup_monitor.A().state in [
             'READY',
             'FIRE_HIRE',
@@ -111,7 +106,6 @@ class BackupsService(LocalService):
 
     def _on_key_erased(self, evt):
         from interface import api
-
         ret = api.files_list(
             remote_path='',
             key_id=evt.data['key_id'],
@@ -125,26 +119,22 @@ class BackupsService(LocalService):
     def _on_keep_local_copies_modified(self, path, value, oldvalue, result):
         from storage import backup_monitor
         from logs import lg
-
         lg.warn('restarting backup_monitor() machine')
         backup_monitor.A('restart')
 
     def _on_wait_suppliers_modified(self, path, value, oldvalue, result):
         from storage import backup_monitor
         from logs import lg
-
         lg.warn('restarting backup_monitor() machine')
         backup_monitor.A('restart')
 
     def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         from storage import backup_monitor
-
         backup_monitor.A('restart')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from storage import backup_control
         from p2p import commands
-
         if newpacket.Command == commands.Files():
             return backup_control.on_files_received(newpacket, info)
         return False
@@ -153,29 +143,16 @@ class BackupsService(LocalService):
         from logs import lg
         from lib import packetid
         from storage import backup_matrix
-
         backup_matrix.ReadLocalFiles()
         remote_files_ids = list(backup_matrix.remote_files().keys())
         for currentID in remote_files_ids:
             latestID = packetid.LatestBackupID(currentID)
             if latestID != currentID:
                 backup_matrix.remote_files()[latestID] = backup_matrix.remote_files().pop(currentID)
-                lg.info(
-                    'detected backup ID change in remote_files() after identity rotate : %r -> %r'
-                    % (
-                        currentID,
-                        latestID,
-                    )
-                )
+                lg.info('detected backup ID change in remote_files() after identity rotate : %r -> %r' % (currentID, latestID))
         remote_max_block_numbers_ids = list(backup_matrix.remote_max_block_numbers().keys())
         for currentID in remote_max_block_numbers_ids:
             latestID = packetid.LatestBackupID(currentID)
             if latestID != currentID:
                 backup_matrix.remote_max_block_numbers()[latestID] = backup_matrix.remote_max_block_numbers().pop(currentID)
-                lg.info(
-                    'detected backup ID change in remote_max_block_numbers() after identity rotate : %r -> %r'
-                    % (
-                        currentID,
-                        latestID,
-                    )
-                )
+                lg.info('detected backup ID change in remote_max_block_numbers() after identity rotate : %r -> %r' % (currentID, latestID))

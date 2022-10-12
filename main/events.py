@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: events.
 
@@ -33,11 +32,11 @@ Also you can subscribe to given event and receive notifications.
 TODO: need to store events on the local HDD
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
@@ -45,7 +44,7 @@ _DebugLevel = 12
 _EventLogFileEnabled = True
 _EventLogUseColors = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -57,24 +56,24 @@ except:
 
 from twisted.internet.defer import Deferred  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from lib import utime
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 MAX_PENDING_EVENTS_PER_CONSUMER = 100
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Subscribers = {}
 _ConsumersCallbacks = {}
 _EventQueuePerConsumer = {}
 _EventsCount = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def subscribers():
@@ -82,7 +81,7 @@ def subscribers():
     return _Subscribers
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -98,7 +97,7 @@ def shutdown():
     subscribers().clear()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class Event(object):
@@ -111,7 +110,7 @@ class Event(object):
         return '<Event({})>'.format(self.event_id)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def add_subscriber(subscriber_callback, event_id='*'):
@@ -149,7 +148,7 @@ def clear_subscribers(event_id='*'):
     return removed
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def dispatch(evt):
@@ -203,7 +202,7 @@ def send(event_id, data=None, created=None, fast=False):
     return evt
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def event_queue():
@@ -222,9 +221,7 @@ def consume_events(consumer_id):
     d = Deferred()
     consumers_callbacks()[consumer_id].append(d)
     if _Debug:
-        lg.out(
-            _DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (consumer_id, len(consumers_callbacks()[consumer_id]))
-        )
+        lg.out(_DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (consumer_id, len(consumers_callbacks()[consumer_id])))
     reactor.callLater(0, pop_event)  # @UndefinedVariable
     return d
 
@@ -233,19 +230,14 @@ def push_event(event_object):
     for consumer_id in consumers_callbacks().keys():
         if consumer_id not in event_queue():
             event_queue()[consumer_id] = []
-        event_queue()[consumer_id].append(
-            {
-                'type': 'event',
-                'id': event_object.event_id,
-                'data': event_object.data,
-                'time': event_object.created,
-            }
-        )
+        event_queue()[consumer_id].append({
+            'type': 'event',
+            'id': event_object.event_id,
+            'data': event_object.data,
+            'time': event_object.created,
+        })
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'events.push_event "%s" for consumer "%s", %d pending events' % (event_object.event_id, consumer_id, len(event_queue()[consumer_id])),
-            )
+            lg.out(_DebugLevel, 'events.push_event "%s" for consumer "%s", %d pending events' % (event_object.event_id, consumer_id, len(event_queue()[consumer_id])))
     reactor.callLater(0, pop_event)  # @UndefinedVariable
 
 
@@ -264,16 +256,11 @@ def pop_event():
         for consumer_callback in registered_callbacks:
             if not consumer_callback:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel, 'events.pop_event %d events waiting consuming by "%s", no callback yet' % (len(event_queue()[consumer_id]), consumer_id)
-                    )
+                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", no callback yet' % (len(event_queue()[consumer_id]), consumer_id))
                 continue
             if consumer_callback.called:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        'events.pop_event %d events waiting consuming by "%s", callback state is "called"' % (len(event_queue()[consumer_id]), consumer_id),
-                    )
+                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", callback state is "called"' % (len(event_queue()[consumer_id]), consumer_id))
                 continue
             consumer_callback.callback(pending_messages)
             event_queue()[consumer_id] = []
@@ -282,7 +269,7 @@ def pop_event():
         consumers_callbacks()[consumer_id] = []
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def count(event_id=None):

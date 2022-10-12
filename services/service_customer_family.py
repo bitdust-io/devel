@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -58,7 +57,6 @@ class CustomerFamilyService(LocalService):
         from supplier import family_member
         from transport import callback
         from userid import my_id
-
         callback.append_inbox_callback(self._on_inbox_packet_received)
         for customer_idurl in contactsdb.customers():
             if not customer_idurl:
@@ -94,7 +92,6 @@ class CustomerFamilyService(LocalService):
         from twisted.internet import reactor  # @UnresolvedImport
         from main import events
         from supplier import family_member
-
         events.remove_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
@@ -109,7 +106,6 @@ class CustomerFamilyService(LocalService):
         from userid import my_id
         from userid import id_url
         from supplier import family_member
-
         customer_idurl = evt.data['idurl']
         fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
@@ -135,7 +131,6 @@ class CustomerFamilyService(LocalService):
         from supplier import family_member
         from userid import id_url
         from userid import my_id
-
         customer_idurl = evt.data['idurl']
         if customer_idurl == my_id.getIDURL():
             lg.warn('skipping my own identity')
@@ -164,7 +159,6 @@ class CustomerFamilyService(LocalService):
         from logs import lg
         from supplier import family_member
         from userid import my_id
-
         customer_idurl = evt.data['idurl']
         if customer_idurl == my_id.getIDURL():
             lg.warn('skipping my own identity')
@@ -191,7 +185,6 @@ class CustomerFamilyService(LocalService):
         from supplier import family_member
         from userid import my_id
         from userid import id_url
-
         try:
             json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
             contacts_type = strng.to_text(json_payload['type'])
@@ -220,14 +213,7 @@ class CustomerFamilyService(LocalService):
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
-                lg.warn(
-                    'family_member() instance not found for incoming %s from %s for customer %r'
-                    % (
-                        newpacket,
-                        info,
-                        customer_idurl,
-                    )
-                )
+                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (newpacket, info, customer_idurl))
                 return False
             reactor.callLater(
                 0,
@@ -259,14 +245,7 @@ class CustomerFamilyService(LocalService):
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
-                lg.warn(
-                    'family_member() instance not found for incoming %s from %s for customer %r'
-                    % (
-                        newpacket,
-                        info,
-                        customer_idurl,
-                    )
-                )
+                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (newpacket, info, customer_idurl))
                 return False
             reactor.callLater(
                 0,
@@ -288,7 +267,6 @@ class CustomerFamilyService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, *args):
         from p2p import commands
-
         if newpacket.Command == commands.Contacts():
             return self._on_incoming_contacts_packet(newpacket, info)
         return False
@@ -298,16 +276,9 @@ class CustomerFamilyService(LocalService):
         from logs import lg
         from userid import id_url
         from supplier import family_member
-
         for customer_idurl, fm in family_member.families().items():
             if customer_idurl == id_url.field(evt.data['old_idurl']):
                 customer_idurl.refresh(replace_original=True)
                 fm.customer_idurl.refresh(replace_original=True)
-                lg.info(
-                    'found %r for customer with rotated identity and refreshed: %r'
-                    % (
-                        fm,
-                        customer_idurl,
-                    )
-                )
+                lg.info('found %r for customer with rotated identity and refreshed: %r' % (fm, customer_idurl))
                 reactor.callLater(0, fm.automat, 'family-refresh')  # @UndefinedVariable

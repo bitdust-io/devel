@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: bandwidth.
 
@@ -43,11 +42,11 @@ from __future__ import absolute_import
 import os
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -63,14 +62,14 @@ from main import settings
 
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 BandInDict = {}
 BandOutDict = {}
 CountTimeIn = 0
 CountTimeOut = 0
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -95,7 +94,9 @@ def init():
 
 
 def shutdown():
-    """ """
+    """
+
+    """
     lg.out(4, 'bandwidth.shutdown')
 
 
@@ -292,8 +293,8 @@ def IN(idurl, size):
     currentV = int(BandInDict.get(idurl, 0))
     newV = currentV + size
     BandInDict[idurl] = newV
-    curMB = int(currentV / (1024.0 * 1024.0))
-    newMB = int(newV / (1024.0 * 1024.0))
+    curMB = int(currentV/(1024.0*1024.0))
+    newMB = int(newV/(1024.0*1024.0))
     if curMB == 0 or curMB != newMB:
         saveIN()
 
@@ -316,8 +317,8 @@ def OUT(idurl, size):
     currentV = int(BandOutDict.get(idurl, 0))
     newV = currentV + size
     BandOutDict[idurl] = newV
-    curMB = int(currentV / (1024.0 * 1024.0))
-    newMB = int(newV / (1024.0 * 1024.0))
+    curMB = int(currentV/(1024.0*1024.0))
+    newMB = int(newV/(1024.0*1024.0))
     if curMB == 0 or curMB != newMB:
         saveOUT()
 

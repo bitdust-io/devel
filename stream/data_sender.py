@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: data_sender.
 
@@ -52,21 +51,21 @@ EVENTS:
     * :red:`timer-1sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -91,14 +90,14 @@ from stream import io_throttle
 
 from customer import list_files_orator
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 STAT_KEEP_LATEST_RESULTS_COUNT = 5
 
 _DataSender = None
 _ShutdownFlag = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -123,14 +122,13 @@ class DataSender(automat.Automat):
     """
     A class to manage process of sending data packets to remote suppliers.
     """
-
     timers = {
         'timer-1min': (60, ['READY']),
         'timer-1sec': (1.0, ['SENDING']),
     }
 
     def A(self, event, *args, **kwargs):
-        # ---READY---
+        #---READY---
         if self.state == 'READY':
             if event == 'new-data' or event == 'timer-1min':
                 self.state = 'SCAN_BLOCKS'
@@ -142,7 +140,7 @@ class DataSender(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---SCAN_BLOCKS---
+        #---SCAN_BLOCKS---
         elif self.state == 'SCAN_BLOCKS':
             if event == 'scan-done' and self.isQueueEmpty(*args, **kwargs):
                 self.state = 'READY'
@@ -156,7 +154,7 @@ class DataSender(automat.Automat):
             elif event == 'restart':
                 self.doCleanUpSendingQueue(*args, **kwargs)
                 self.doScanAndQueue(*args, **kwargs)
-        # ---SENDING---
+        #---SENDING---
         elif self.state == 'SENDING':
             if event == 'restart':
                 self.state = 'SCAN_BLOCKS'
@@ -169,12 +167,12 @@ class DataSender(automat.Automat):
             elif (event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data') and self.isQueueEmpty(*args, **kwargs):
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(*args, **kwargs)
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
                 self.doInit(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -183,19 +181,12 @@ class DataSender(automat.Automat):
         if not args or not args[0] or not isinstance(args[0], list) or not isinstance(args[0], tuple):
             is_empty = io_throttle.IsSendingQueueEmpty()
             if _Debug:
-                lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
+                lg.out(_DebugLevel*2, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
             return is_empty
         remoteID, _ = args[0]
         can_send_to = io_throttle.OkToSend(remoteID)
         if _Debug:
-            lg.out(
-                _DebugLevel * 2,
-                'data_sender.isQueueEmpty can_send_to=%s remoteID=%r'
-                % (
-                    can_send_to,
-                    remoteID,
-                ),
-            )
+            lg.out(_DebugLevel*2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID))
         return can_send_to
 
     def doInit(self, *args, **kwargs):
@@ -216,7 +207,6 @@ class DataSender(automat.Automat):
             return
         from storage import backup_matrix
         from storage import backup_fs
-
         backup_matrix.ReadLocalFiles()
         progress = 0
         # if _Debug:
@@ -233,11 +223,7 @@ class DataSender(automat.Automat):
                 continue
             known_backups = misc.sorted_backup_ids(list(backup_matrix.local_files().keys()), True)
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'data_sender.doScanAndQueue    found %d known suppliers for customer %r with %d backups'
-                    % (len(known_suppliers), customer_idurl, len(known_backups)),
-                )
+                lg.out(_DebugLevel, 'data_sender.doScanAndQueue    found %d known suppliers for customer %r with %d backups' % (len(known_suppliers), customer_idurl, len(known_backups)))
             for backupID in known_backups:
                 this_customer_idurl = packetid.CustomerIDURL(backupID)
                 if this_customer_idurl != customer_idurl:
@@ -251,24 +237,13 @@ class DataSender(automat.Automat):
                     continue
                 if item.key_id and customerGlobalID and customerGlobalID != item.key_id:
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog: %r ~ %r'
-                            % (
-                                backupID,
-                                customerGlobalID,
-                                item.key_id,
-                            ),
-                        )
+                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog: %r ~ %r' % (backupID, customerGlobalID, item.key_id))
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID, limit_per_supplier=None)
                 total_for_customer = sum([len(v) for v in packetsBySupplier.values()])
                 if total_for_customer:
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            'data_sender.doScanAndQueue    sending %r for customer %r with %d pieces' % (item.name(), customer_idurl, total_for_customer),
-                        )
+                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    sending %r for customer %r with %d pieces' % (item.name(), customer_idurl, total_for_customer))
                     for supplierNum in packetsBySupplier.keys():
                         # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
                         if supplierNum >= 0 and supplierNum < len(known_suppliers):
@@ -293,10 +268,7 @@ class DataSender(automat.Automat):
                             latest_progress = self.statistic.get(supplier_idurl, {}).get('latest', '')
                             if len(latest_progress) >= 3 and latest_progress.endswith('---'):
                                 if _Debug:
-                                    lg.out(
-                                        _DebugLevel + 2,
-                                        'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl,
-                                    )
+                                    lg.out(_DebugLevel + 2, 'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl)
                                 continue
                             if not io_throttle.OkToSend(supplier_idurl):
                                 if _Debug:
@@ -323,15 +295,7 @@ class DataSender(automat.Automat):
                             ):
                                 progress += 1
                                 if _Debug:
-                                    lg.out(
-                                        _DebugLevel,
-                                        'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d'
-                                        % (
-                                            item.name(),
-                                            packetID,
-                                            progress,
-                                        ),
-                                    )
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d' % (item.name(), packetID, progress))
                             else:
                                 if _Debug:
                                     lg.out(_DebugLevel, 'data_sender.doScanAndQueue    io_throttle.QueueSendFile FAILED %s' % packetID)
@@ -339,16 +303,17 @@ class DataSender(automat.Automat):
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue    progress=%s' % progress)
         self.automat('scan-done', progress)
 
-    #     def doPrintStats(self, *args, **kwargs):
-    #         """
-    #         """
-    #        if lg.is_debug(18):
-    #            transfers = transport_control.current_transfers()
-    #            bytes_stats = transport_control.current_bytes_transferred()
-    #            s = ''
-    #            for info in transfers:
-    #                s += '%s ' % (diskspace.MakeStringFromBytes(bytes_stats[info.transfer_id]).replace(' ', '').replace('bytes', 'b'))
-    #            lg.out(0, 'transfers: ' + s[:120])
+
+#     def doPrintStats(self, *args, **kwargs):
+#         """
+#         """
+#        if lg.is_debug(18):
+#            transfers = transport_control.current_transfers()
+#            bytes_stats = transport_control.current_bytes_transferred()
+#            s = ''
+#            for info in transfers:
+#                s += '%s ' % (diskspace.MakeStringFromBytes(bytes_stats[info.transfer_id]).replace(' ', '').replace('bytes', 'b'))
+#            lg.out(0, 'transfers: ' + s[:120])
 
     def doRemoveUnusedFiles(self, *args, **kwargs):
         """
@@ -365,9 +330,8 @@ class DataSender(automat.Automat):
         # ... user do not want to keep local backups
         if settings.getGeneralWaitSuppliers() is True:
             from customer import fire_hire
-
             # but he want to be sure - all suppliers are green for a long time
-            if len(online_status.listOfflineSuppliers()) > 0 or (time.time() - fire_hire.GetLastFireTime() < 24 * 60 * 60):
+            if len(online_status.listOfflineSuppliers()) > 0 or (time.time() - fire_hire.GetLastFireTime() < 24*60*60):
                 # some people are not there or we do not have stable team yet
                 # do not remove the files because we need it to rebuild
                 return
@@ -375,7 +339,6 @@ class DataSender(automat.Automat):
         from storage import backup_matrix
         from storage import restore_monitor
         from storage import backup_rebuilder
-
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doRemoveUnusedFiles')
         for backupID in misc.sorted_backup_ids(list(backup_matrix.local_files().keys())):
@@ -440,7 +403,6 @@ class DataSender(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, pid=packetID, i=itemInfo)
         from storage import backup_matrix
-
         backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
         backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, True, itemInfo)
         if ownerID not in self.statistic:
@@ -458,7 +420,6 @@ class DataSender(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, pid=packetID, i=itemInfo)
         from storage import backup_matrix
-
         backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
         backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, False, itemInfo)
         if remoteID not in self.statistic:

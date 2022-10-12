@@ -7,14 +7,12 @@ Copyright 2018, BismuthFoundation
 See https://github.com/bismuthfoundation/BismuthPlugins for compatible plugins and doc.
 """
 
-
 import importlib
 import importlib.util
 import importlib.machinery
 import os
 import logging
 import collections
-
 
 __version__ = '1.0.3'
 
@@ -23,7 +21,6 @@ class PluginManager:
     """
     A simple plugin manager
     """
-
     def __init__(self, app_log=None, main_module: str = '__init__', plugin_folder: str = './plugins', config=None, verbose: bool = True, init: bool = False):
         if app_log:
             self.app_log = app_log
@@ -63,7 +60,11 @@ class PluginManager:
                 location = os.path.join(self.plugin_folder, possible)
                 if os.path.isdir(location) and self.main_module + '.py' in os.listdir(location):
                     info = importlib.machinery.PathFinder().find_spec(self.main_module, [location])
-                    plugins[possible] = {'name': possible, 'info': info, 'autoload': True}  # Todo
+                    plugins[possible] = {
+                        'name': possible,
+                        'info': info,
+                        'autoload': True,  # Todo
+                    }
         except Exception as e:
             self.app_log.info("Can't list plugins from '{}'.".format(self.plugin_folder))
         # TODO: sort by name or priority, add json specs file.

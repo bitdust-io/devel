@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: keys_synchronizer
 .. role:: red
@@ -43,32 +42,32 @@ EVENTS:
     * :red:`sync`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in keys_synchronizer.py')
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred, DeferredList
 from twisted.python import failure
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -85,11 +84,11 @@ from raid import eccmap
 
 from access import key_ring
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _KeysSynchronizer = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def is_synchronized():
@@ -98,7 +97,7 @@ def is_synchronized():
     return A().state == 'IN_SYNC!'
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -121,7 +120,7 @@ def A(event=None, *args, **kwargs):
     return _KeysSynchronizer
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class KeysSynchronizer(automat.Automat):
@@ -148,13 +147,13 @@ class KeysSynchronizer(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'NO_INFO'
                 self.doInit(*args, **kwargs)
                 self.SyncAgain = False
-        # ---NO_INFO---
+        #---NO_INFO---
         elif self.state == 'NO_INFO':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -167,7 +166,7 @@ class KeysSynchronizer(automat.Automat):
                 self.SyncAgain = False
                 self.doSaveCallback(*args, **kwargs)
                 self.doCheckAndRun(*args, **kwargs)
-        # ---IN_SYNC!---
+        #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -180,7 +179,7 @@ class KeysSynchronizer(automat.Automat):
                 self.doSaveCallback(*args, **kwargs)
                 self.doPrepare(*args, **kwargs)
                 self.doRestoreKeys(*args, **kwargs)
-        # ---RESTORE---
+        #---RESTORE---
         elif self.state == 'RESTORE':
             if event == 'restore-ok':
                 self.state = 'BACKUP'
@@ -194,7 +193,7 @@ class KeysSynchronizer(automat.Automat):
             elif event == 'sync':
                 self.doSaveCallback(*args, **kwargs)
                 self.SyncAgain = True
-        # ---BACKUP---
+        #---BACKUP---
         elif self.state == 'BACKUP':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -208,7 +207,7 @@ class KeysSynchronizer(automat.Automat):
             elif event == 'sync':
                 self.doSaveCallback(*args, **kwargs)
                 self.SyncAgain = True
-        # ---CLEAN---
+        #---CLEAN---
         elif self.state == 'CLEAN':
             if event == 'clean-ok':
                 self.state = 'IN_SYNC!'
@@ -222,7 +221,7 @@ class KeysSynchronizer(automat.Automat):
             elif event == 'sync':
                 self.doSaveCallback(*args, **kwargs)
                 self.SyncAgain = True
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -245,7 +244,6 @@ class KeysSynchronizer(automat.Automat):
         Action method.
         """
         from customer import list_files_orator
-
         if list_files_orator.A().state in [
             'SAW_FILES',
             'NO_FILES',
@@ -300,9 +298,7 @@ class KeysSynchronizer(automat.Automat):
                     if _Debug:
                         lg.args(_DebugLevel, i=i)
         if _Debug:
-            lg.args(
-                _DebugLevel, stored_keys=len(self.stored_keys), not_stored_keys=list(self.not_stored_keys.keys()), unreliable_keys=len(self.unreliable_keys)
-            )
+            lg.args(_DebugLevel, stored_keys=len(self.stored_keys), not_stored_keys=list(self.not_stored_keys.keys()), unreliable_keys=len(self.unreliable_keys))
 
     def doRestoreKeys(self, *args, **kwargs):
         """
@@ -312,14 +308,7 @@ class KeysSynchronizer(automat.Automat):
         if is_any_private_key_unreliable and not self.stored_keys:
             if _Debug:
                 lg.args(_DebugLevel, unreliable_keys=self.unreliable_keys)
-            lg.err(
-                'not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d'
-                % (
-                    len(self.stored_keys),
-                    len(self.not_stored_keys),
-                    len(self.unreliable_keys),
-                )
-            )
+            lg.err('not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (len(self.stored_keys), len(self.not_stored_keys), len(self.unreliable_keys)))
             self.automat('error', Exception('not possible to restore any keys, all backup copies unreliable'))
             return
         keys_to_be_restored = []
@@ -338,12 +327,10 @@ class KeysSynchronizer(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        skip restoring already known latest key_id=%r' % latest_key_id)
                 continue
-            keys_to_be_restored.append(
-                (
-                    key_id,
-                    is_private,
-                )
-            )
+            keys_to_be_restored.append((
+                key_id,
+                is_private,
+            ))
 
         if _Debug:
             lg.args(_DebugLevel, keys_to_be_restored=len(keys_to_be_restored))
@@ -354,13 +341,7 @@ class KeysSynchronizer(automat.Automat):
             return None
 
         def _on_failed_one(err, pos, key_id):
-            lg.err(
-                'failed to restore key %r : %r'
-                % (
-                    key_id,
-                    err,
-                )
-            )
+            lg.err('failed to restore key %r : %r' % (key_id, err))
             _do_restore_one(pos + 1)
             return None
 
@@ -444,12 +425,7 @@ class KeysSynchronizer(automat.Automat):
             err_msg = err.getErrorMessage()
         else:
             err_msg = str(err)
-        events.send(
-            'my-keys-synchronize-failed',
-            data=dict(
-                error=err_msg,
-            ),
-        )
+        events.send('my-keys-synchronize-failed', data=dict(error=err_msg))
         self.result_callbacks = []
 
     def doDestroyMe(self, *args, **kwargs):

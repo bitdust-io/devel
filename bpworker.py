@@ -39,7 +39,6 @@ if ostype == 'Windows':
     else:
         try:
             import msvcrt
-
             msvcrt.setmode(1, os.O_BINARY)  # @UndefinedVariable
             msvcrt.setmode(2, os.O_BINARY)  # @UndefinedVariable
         except:
@@ -48,12 +47,10 @@ else:
     if six.PY3:
         sys.stdout = sys.stdout.buffer
 
-
 if __name__ == '__main__':
     try:
         sys.path.append(os.path.abspath(os.path.join('.', 'parallelp', 'pp')))
         from parallelp.pp.ppworker import _WorkerProcess
-
         wp = _WorkerProcess()
         wp.run()
     except Exception as exc:

@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: customers_rejector.
 
@@ -46,7 +44,7 @@ EVENTS:
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -65,16 +63,16 @@ from p2p import ratings
 
 from storage import accounting
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _CustomersRejector = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -107,7 +105,6 @@ class CustomersRejector(automat.Automat):
     This class implements all the functionality of the ``customers_rejector()``
     state machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -115,12 +112,12 @@ class CustomersRejector(automat.Automat):
         """
 
     def A(self, event, *args, **kwargs):
-        # ---READY---
+        #---READY---
         if self.state == 'READY':
             if event == 'start' or event == 'restart':
                 self.state = 'CAPACITY?'
                 self.doTestMyCapacity(*args, **kwargs)
-        # ---CAPACITY?---
+        #---CAPACITY?---
         elif self.state == 'CAPACITY?':
             if event == 'space-enough':
                 self.state = 'IDLE?'
@@ -128,7 +125,7 @@ class CustomersRejector(automat.Automat):
             elif event == 'space-overflow':
                 self.state = 'REJECT!'
                 self.doRemoveCustomers(*args, **kwargs)
-        # ---REJECT!---
+        #---REJECT!---
         elif self.state == 'REJECT!':
             if event == 'restart':
                 self.state = 'CAPACITY?'
@@ -136,7 +133,7 @@ class CustomersRejector(automat.Automat):
             elif event == 'customers-rejected':
                 self.state = 'READY'
                 self.doRestartLocalTester(*args, **kwargs)
-        # ---IDLE?---
+        #---IDLE?---
         elif self.state == 'IDLE?':
             if event == 'found-idle-customers':
                 self.state = 'REJECT!'
@@ -215,14 +212,8 @@ class CustomersRejector(automat.Automat):
                 lg.warn('last connected_time for customer %r is unknown, rejecting customer' % customer_idurl)
                 dead_customers.append(customer_idurl)
                 continue
-            if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
-                lg.warn(
-                    'customer %r connected last time %r seconds ago, rejecting customer'
-                    % (
-                        customer_idurl,
-                        utime.get_sec1970() - connected_time,
-                    )
-                )
+            if utime.get_sec1970() - connected_time > customer_idle_days*24*60*60:
+                lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (customer_idurl, utime.get_sec1970() - connected_time))
                 dead_customers.append(customer_idurl)
         if dead_customers:
             lg.warn('found idle customers: %r' % dead_customers)
@@ -245,5 +236,4 @@ class CustomersRejector(automat.Automat):
         Action method.
         """
         from supplier import local_tester
-
         local_tester.TestSpaceTime()

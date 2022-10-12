@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: backup_schedule.
 
@@ -41,14 +40,14 @@ from logs import lg
 import six
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SheduledTasks = {}
 _UsingGUI = False
 _GuiStatusClearPageData = None
 _GuiBackupUpdate = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(usingGui=False):
@@ -72,15 +71,15 @@ def shutdown():
 
 def loop():
     lg.out(8, 'backup_schedule.loop ')
-    # debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
+    #debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
     # run()
-    # debugWrite("in loop finished run, setting callLater")
+    #debugWrite("in loop finished run, setting callLater")
     # reactor.callLater(timeout(), loop)
 
 
 # will check all Shedules each 60 minutes
 def timeout():
-    return 60.0 * 60.0
+    return 60.0*60.0
 
 
 # def run():
@@ -120,7 +119,6 @@ def timeout():
 #    except:
 #        lg.exc()
 
-
 # def start_backup(dirName):
 #    global _SheduledTasks
 #    if _SheduledTasks.has_key(unicode(dirName)): # we're running now, no longer need the schedule
@@ -143,7 +141,6 @@ def timeout():
 #    global _GuiBackupUpdate
 #    if _UsingGUI:
 #        _GuiBackupUpdate()
-
 
 # def backup_done(backupID):
 #    lg.out(4, 'backup_schedule.backup_done ' + str(backupID))
@@ -183,7 +180,6 @@ def timeout():
 #        if _UsingGUI:
 #            _GuiBackupUpdate()
 
-
 # def backup_fail(backupID):
 #    lg.out(4, 'backup_schedule.backup_fail ' + str(backupID))
 #    global _UsingGUI
@@ -221,8 +217,8 @@ def next(dirName):
     if schedule is None:
         return None
 
-    #    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
-    #    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
+#    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
+#    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
 
     return schedule.next_time()
 
@@ -292,7 +288,6 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #        return d
 #    return d.get(k, d['0'])
 
-
 # def labels():
 #    return {'n': 'none',
 #            'h': 'hourly',
@@ -301,18 +296,16 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #            'm': 'monthly',
 #            'c': 'continuously'}
 
-
 # def default():
 #    return {'type': 'none',
 #            'interval': '1',
 #            'time': '',
 #            'details': '',}
 
-
 # def format():
 #    return '''
 # Schedule compact format:
-# [mode].[interval].[time].[details]
+#[mode].[interval].[time].[details]
 #
 # mode:
 #  n-none, h-hourly, d-daily, w-weekly, m-monthly
@@ -336,7 +329,6 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #                          every day in each 4th week in 18:45
 #  m.5.12:34.JanJul        5th Jan and 5th July at 12:34
 #'''
-
 
 # def unpack(s):
 #    try:
@@ -371,7 +363,6 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #            'time': str(sh_time),
 #            'details': sh_details_new.strip(),}
 
-
 # def split(t):
 #    typ = str(t[0])
 #    if typ in types().keys():
@@ -385,9 +376,7 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #        'interval':     str(t[2]),
 #        'details':      str(t[3]), }
 
-
-# -------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 
 # def main():
 #    nt = maths.shedule_next_daily(time.time()-60*60*24*2, 4, '12:00')
@@ -398,7 +387,6 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #    print 'monthly', time.asctime(time.localtime(nm))
 #    print unpack('weekly.4.18:45.MonTueWedThuFriSatSun')
 #    print unpack('h.1')
-
 
 if __name__ == '__main__':
     lg.set_debug_level(12)

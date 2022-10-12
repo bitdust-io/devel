@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: nickname_observer.
 
@@ -42,21 +40,21 @@ EVENTS:
     * :red:`stop`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -69,7 +67,7 @@ from userid import my_id
 from dht import dht_service
 from dht import dht_records
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def find_one(nickname, attempts=3, results_callback=None):
@@ -108,7 +106,7 @@ def stop_all():
             a.automat('stop')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class NicknameObserver(automat.Automat):
@@ -116,7 +114,6 @@ class NicknameObserver(automat.Automat):
     This class implements all the functionality of the ``nickname_observer()``
     state machine.
     """
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -129,7 +126,7 @@ class NicknameObserver(automat.Automat):
         self.result_callback = None
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'observe-many':
                 self.state = 'DHT_LOOP'
@@ -139,7 +136,7 @@ class NicknameObserver(automat.Automat):
                 self.state = 'DHT_FIND'
                 self.doInit(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        # ---DHT_LOOP---
+        #---DHT_LOOP---
         elif self.state == 'DHT_LOOP':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -160,7 +157,7 @@ class NicknameObserver(automat.Automat):
                 self.state = 'FINISHED'
                 self.doReportFinished(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---DHT_FIND---
+        #---DHT_FIND---
         elif self.state == 'DHT_FIND':
             if event == 'dht-read-success':
                 self.state = 'FOUND'
@@ -176,16 +173,16 @@ class NicknameObserver(automat.Automat):
                 self.state = 'NOT_FOUND'
                 self.doReportNicknameNotExist(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---FOUND---
+        #---FOUND---
         elif self.state == 'FOUND':
             pass
-        # ---STOPPED---
+        #---STOPPED---
         elif self.state == 'STOPPED':
             pass
-        # ---NOT_FOUND---
+        #---NOT_FOUND---
         elif self.state == 'NOT_FOUND':
             pass
-        # ---FINISHED---
+        #---FINISHED---
         elif self.state == 'FINISHED':
             pass
         return None
@@ -252,14 +249,7 @@ class NicknameObserver(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'nickname_observer.doReportNicknameExist : (%s, %s)'
-                % (
-                    self.key,
-                    args[0],
-                ),
-            )
+            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0]))
         if self.result_callback is not None:
             try:
                 key_info = dht_service.split_key(self.key)
@@ -325,7 +315,7 @@ class NicknameObserver(automat.Automat):
         self.dht_read_defer = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -333,7 +323,6 @@ def main():
         print('usage: nickname_observer.py <"many"|"one"> <nickname> <attempts>')
         return
     from twisted.internet import reactor  # @UnresolvedImport
-
     lg.set_debug_level(24)
     settings.init()
     my_id.init()

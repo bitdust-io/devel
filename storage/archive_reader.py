@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: archive_reader
 .. role:: red
@@ -39,24 +37,24 @@ EVENTS:
     * :red:`start`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -64,7 +62,6 @@ from automats import automat
 
 from lib import packetid
 from lib import serialization
-
 
 from system import tmpfile
 from system import local_fs
@@ -90,33 +87,24 @@ from storage import backup_tar
 from userid import global_id
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class ArchiveReader(automat.Automat):
     """
     This class implements all the functionality of ``archive_reader()`` state machine.
     """
-
     def __init__(self, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `archive_reader()` state machine.
         """
-        super(ArchiveReader, self).__init__(
-            name='archive_reader',
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(ArchiveReader, self).__init__(name='archive_reader', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start' and not self.isMyOwnArchive(*args, **kwargs):
                 self.state = 'DHT_READ?'
@@ -126,7 +114,7 @@ class ArchiveReader(automat.Automat):
                 self.state = 'LIST_FILES?'
                 self.doInit(*args, **kwargs)
                 self.doRequestMyListFiles(*args, **kwargs)
-        # ---DHT_READ?---
+        #---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-success':
                 self.state = 'LIST_FILES?'
@@ -135,7 +123,7 @@ class ArchiveReader(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---LIST_FILES?---
+        #---LIST_FILES?---
         elif self.state == 'LIST_FILES?':
             if event == 'list-files-collected':
                 self.state = 'RESTORE'
@@ -144,7 +132,7 @@ class ArchiveReader(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---RESTORE---
+        #---RESTORE---
         elif self.state == 'RESTORE':
             if event == 'extract-all-done':
                 self.state = 'DONE'
@@ -156,10 +144,10 @@ class ArchiveReader(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'restore-done':
                 self.doExtractArchive(*args, **kwargs)
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -335,12 +323,10 @@ class ArchiveReader(automat.Automat):
                 continue
             if self.end_sequence_id is not None and self.end_sequence_id < snapshot_sequence_id:
                 continue
-            snapshot_sequence_ids.append(
-                (
-                    snapshot_sequence_id,
-                    backup_id,
-                )
-            )
+            snapshot_sequence_ids.append((
+                snapshot_sequence_id,
+                backup_id,
+            ))
         snapshot_sequence_ids.sort(key=lambda item: int(item[0]))
         if _Debug:
             lg.args(_DebugLevel, snapshot_sequence_ids=snapshot_sequence_ids)
@@ -478,22 +464,9 @@ class ArchiveReader(automat.Automat):
         except:
             lg.exc()
         if result == 'done':
-            lg.info(
-                'archive %r restore success from %r'
-                % (
-                    backup_id,
-                    tarfilename,
-                )
-            )
+            lg.info('archive %r restore success from %r' % (backup_id, tarfilename))
         else:
-            lg.err(
-                'archive %r restore failed from %r with : %r'
-                % (
-                    backup_id,
-                    tarfilename,
-                    result,
-                )
-            )
+            lg.err('archive %r restore failed from %r with : %r' % (backup_id, tarfilename, result))
         if result != 'done':
             tmpfile.throw_out(tarfilename, 'restore ' + result)
             self.automat('restore-failed', backup_id=backup_id, tarfilename=tarfilename)
@@ -502,13 +475,7 @@ class ArchiveReader(automat.Automat):
         return
 
     def _on_restore_failed(self, err, backupID, outfd, tarfilename, backup_index):
-        lg.err(
-            'archive %r restore failed with : %r'
-            % (
-                backupID,
-                err,
-            )
-        )
+        lg.err('archive %r restore failed with : %r' % (backupID, err))
         try:
             os.close(outfd)
         except:
@@ -536,14 +503,6 @@ class ArchiveReader(automat.Automat):
                         continue
                 self.extracted_messages.append(archive_message)
         if _Debug:
-            lg.dbg(
-                _DebugLevel,
-                'archive snapshot %r extracted successfully to %r, extracted %d archive messages so far'
-                % (
-                    source_filename,
-                    output_location,
-                    len(self.extracted_messages),
-                ),
-            )
+            lg.dbg(_DebugLevel, 'archive snapshot %r extracted successfully to %r, extracted %d archive messages so far' % (source_filename, output_location, len(self.extracted_messages)))
         self._do_restore_next_backup(backup_index + 1)
         return retcode

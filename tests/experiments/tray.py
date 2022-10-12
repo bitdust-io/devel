@@ -153,6 +153,7 @@ class TaskBarApp(wx.Frame):
 
 
 class MyApp(wx.App):
+
     def OnInit(self):
         frame = TaskBarApp(None, -1, ' ')
         frame.Center(wx.BOTH)

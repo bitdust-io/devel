@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: schedule.
 
@@ -48,7 +47,7 @@ from logs import lg
 from lib import misc
 from lib import maths
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 all_types = {'0': 'none', '1': 'hourly', '2': 'daily', '3': 'weekly', '4': 'monthly', '5': 'continuously'}
 
@@ -130,7 +129,7 @@ class Schedule:
         elif type == 'monthly':
             d['interval'] = '1'
             d['daytime'] = '12:00:00'
-            # d['details'] = 'January February March April May June July August September October November December'
+            #d['details'] = 'January February March April May June July August September October November December'
             d['details'] = '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31'
             d['lasttime'] = ''
         return d
@@ -184,7 +183,7 @@ class Schedule:
         lasttime = self.lasttime
         if lasttime == '':
             # let it be one year ago (we can schedule 1 month maximum) and one day
-            lasttime = str(time.time() - 366 * 24 * 60 * 60)
+            lasttime = str(time.time() - 366*24*60*60)
 
         try:
             # turned off - return -1
@@ -357,7 +356,7 @@ class Schedule:
         return 'next execution expected at <b>%s</b>' % nextString
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def format():
@@ -402,13 +401,13 @@ def empty():
     return Schedule('none', '', '', '')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def from_compact_string(s):
     try:
         parts = s.split('.')
-        parts += [''] * (4 - len(parts))
+        parts += ['']*(4 - len(parts))
         (sh_type, sh_interval, sh_time, sh_details) = parts[0:4]
         sh_type = sh_type.lower()
         try:
@@ -435,8 +434,8 @@ def from_compact_string(s):
         lg.warn('incorrect schedule type: ' + s)
         return None
     sh_details_new = ''
-    for i in range(len(sh_details) / 3):
-        label = sh_details[i * 3 : i * 3 + 3]
+    for i in range(len(sh_details)/3):
+        label = sh_details[i*3:i*3 + 3]
         if sh_type == 'weekly' and not label in calendar.day_abbr:
             lg.warn('incorrect schedule details: ' + s)
             return None

@@ -23,13 +23,11 @@
 #
 #
 #
-
 """
 ..
 
 module:: config_types
 """
-
 
 TYPE_UNDEFINED = 0
 TYPE_BOOLEAN = 1
@@ -85,6 +83,7 @@ def defaults():
         'logs/stream-port': TYPE_PORT_NUMBER,
         'logs/traffic-enabled': TYPE_BOOLEAN,
         'logs/traffic-port': TYPE_PORT_NUMBER,
+
         # 'other/upnp-at-startup': TYPE_BOOLEAN,
         'paths/backups': TYPE_FOLDER_PATH,
         'paths/customers': TYPE_FOLDER_PATH,
@@ -192,8 +191,7 @@ def defaults():
         'services/proxy-transport/priority': TYPE_POSITIVE_INTEGER,
         'services/proxy-transport/my-original-identity': TYPE_TEXT,
         'services/proxy-transport/current-router': TYPE_STRING,
-        'services/proxy-transport/preferred-routers': TYPE_TEXT,
-        # 'services/proxy-transport/router-lifetime-seconds': TYPE_POSITIVE_INTEGER,
+        'services/proxy-transport/preferred-routers': TYPE_TEXT,  # 'services/proxy-transport/router-lifetime-seconds': TYPE_POSITIVE_INTEGER,
         'services/rebuilding/enabled': TYPE_BOOLEAN,
         'services/restores/enabled': TYPE_BOOLEAN,
         'services/shared-data/enabled': TYPE_BOOLEAN,

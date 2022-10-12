@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: backup_control.
 
@@ -33,25 +32,25 @@ list of path IDs to start backups in the future, as soon as some "Jobs"
 gets finished.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 from io import StringIO
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 import pprint
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -60,7 +59,7 @@ except:
 
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -99,7 +98,7 @@ from storage import backup
 
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 MAXIMUM_JOBS_STARTED = 1  # let's do only one backup at once for now
 
@@ -110,7 +109,7 @@ _LoadingFlag = False
 _TaskStartedCallbacks = {}
 _TaskFinishedCallbacks = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def jobs():
@@ -129,7 +128,7 @@ def tasks():
     return _Tasks
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -150,7 +149,7 @@ def shutdown():
         lg.out(_DebugLevel, 'backup_control.shutdown')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def Save(customer_idurl=None, key_alias='master', increase_revision=True):
@@ -172,11 +171,10 @@ def Save(customer_idurl=None, key_alias='master', increase_revision=True):
     if driver.is_on('service_backup_db'):
         # TODO: switch to event
         from storage import index_synchronizer
-
         index_synchronizer.A('push')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_files_received(newpacket, info):
@@ -197,14 +195,7 @@ def on_files_received(newpacket, info):
     if not contactsdb.is_supplier(newpacket.OwnerID):
         # ignore Files() if this is not my supplier
         if _Debug:
-            lg.dbg(
-                _DebugLevel,
-                'incoming %r received, but %r is not my supplier'
-                % (
-                    newpacket,
-                    newpacket.OwnerID,
-                ),
-            )
+            lg.dbg(_DebugLevel, 'incoming %r received, but %r is not my supplier' % (newpacket, newpacket.OwnerID))
         return False
     if _Debug:
         lg.args(_DebugLevel, 'service_backups._on_inbox_packet_received: %r for us from %s at %s' % (newpacket, newpacket.CreatorID, info))
@@ -215,7 +206,7 @@ def on_files_received(newpacket, info):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def IncomingSupplierListFiles(newpacket, list_files_global_id):
@@ -233,16 +224,9 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         return False
     from supplier import list_files
     from customer import list_files_orator
-
     target_key_id = my_keys.latest_key_id(list_files_global_id['key_id'])
     if not my_keys.is_key_private(target_key_id):
-        lg.warn(
-            'key %r not registered, not possible to decrypt ListFiles() packet from %r'
-            % (
-                target_key_id,
-                supplier_idurl,
-            )
-        )
+        lg.warn('key %r not registered, not possible to decrypt ListFiles() packet from %r' % (target_key_id, supplier_idurl))
         return False
     try:
         block = encrypted.Unserialize(
@@ -266,13 +250,8 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         backup_matrix.SaveLatestRawListFiles(supplier_idurl, list_files_raw)
     if _Debug:
         lg.args(
-            _DebugLevel,
-            supplier=nameurl.GetName(supplier_idurl),
-            customer=nameurl.GetName(customer_idurl),
-            backups2remove=len(backups2remove),
-            paths2remove=len(paths2remove),
-            files_changed=remote_files_changed,
-            missed_backups=len(missed_backups),
+            _DebugLevel, supplier=nameurl.GetName(supplier_idurl), customer=nameurl.GetName(customer_idurl), backups2remove=len(backups2remove), paths2remove=len(paths2remove), files_changed=remote_files_changed,
+            missed_backups=len(missed_backups)
         )
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
@@ -284,7 +263,6 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
             lg.out(_DebugLevel, '    also sent requests to remove %d paths' % len(paths2remove))
     if len(missed_backups) > 0:
         from storage import backup_rebuilder
-
         backup_rebuilder.AddBackupsToWork(missed_backups)
         backup_rebuilder.A('start')
         if _Debug:
@@ -339,17 +317,13 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None):
             backup_fs.SaveIndex(customer_idurl, key_alias)
             # control.request_update()
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'backup_control.IncomingSupplierBackupIndex updated to revision %d for %s of %s from %s'
-                    % (backup_fs.revision(customer_idurl, key_alias), customer_idurl, key_alias, newpacket.RemoteID),
-                )
+                lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d for %s of %s from %s' % (backup_fs.revision(customer_idurl, key_alias), customer_idurl, key_alias, newpacket.RemoteID))
     # else:
     #     lg.warn('failed to read catalog index from supplier')
     return supplier_revision
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def DeleteAllBackups():
@@ -398,7 +372,6 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         return True
     from stream import io_throttle
     from storage import backup_rebuilder
-
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.DeleteBackup ' + backupID)
     # if we requested for files for this backup - we do not need it anymore
@@ -437,7 +410,6 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     """
     from storage import backup_rebuilder
     from stream import io_throttle
-
     pathID = global_id.CanonicalID(pathID)
     # get the working item
     customer, remotePath = packetid.SplitPacketID(pathID)
@@ -485,7 +457,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def NewTaskNumber():
@@ -499,14 +471,13 @@ def NewTaskNumber():
     return _LastTaskNumber
 
 
-class Task:
+class Task():
     """
     A class to represent a ``Task`` - a path to be backed up as soon as other backups will be finished.
     All tasks are stored in the list, see ``tasks()`` method.
     As soon as task get executed it fires the result call back and removed from the list.
     When task executes a new backup job gets created.
     """
-
     def __init__(self, pathID, localPath=None, keyID=None):
         self.number = NewTaskNumber()  # index number for the task
         self.created = time.time()
@@ -527,20 +498,19 @@ class Task:
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)
-        events.send(
-            'backup-task-created',
-            data=dict(
-                number=self.number,
-                created=self.created,
-                backup_id=self.backupID,
-                key_id=self.keyID,
-                path_id=self.pathID,
-                customer_id=self.customerGlobID,
-                path=self.remotePath,
-                local_path=self.localPath,
-                remote_path=self.fullGlobPath,
-            ),
-        )
+        # yapf: disable
+        events.send('backup-task-created', data=dict(
+            number=self.number,
+            created=self.created,
+            backup_id=self.backupID,
+            key_id=self.keyID,
+            path_id=self.pathID,
+            customer_id=self.customerGlobID,
+            path=self.remotePath,
+            local_path=self.localPath,
+            remote_path=self.fullGlobPath,
+        ))
+        # yapf: enable
 
     def destroy(self, message=None):
         if _Debug:
@@ -548,21 +518,20 @@ class Task:
         if self.result_defer and not self.result_defer.called:
             self.result_defer.cancel()
             self.result_defer = None
-        events.send(
-            'backup-task-finished',
-            data=dict(
-                number=self.number,
-                created=self.created,
-                backup_id=self.backupID,
-                key_id=self.keyID,
-                path_id=self.pathID,
-                customer_id=self.customerGlobID,
-                path=self.remotePath,
-                local_path=self.localPath,
-                remote_path=self.fullGlobPath,
-                message=message,
-            ),
-        )
+        # yapf: disable
+        events.send('backup-task-finished', data=dict(
+            number=self.number,
+            created=self.created,
+            backup_id=self.backupID,
+            key_id=self.keyID,
+            path_id=self.pathID,
+            customer_id=self.customerGlobID,
+            path=self.remotePath,
+            local_path=self.localPath,
+            remote_path=self.fullGlobPath,
+            message=message,
+        ))
+        # yapf: enable
 
     def set_path_id(self, pathID):
         parts = global_id.NormalizeGlobalID(pathID)
@@ -652,7 +621,6 @@ class Task:
             compress_mode = 'bz2'  # 'none' # 'gz'
         arcname = os.path.basename(sourcePath)
         from storage import backup_tar
-
         if bpio.pathIsDir(self.localPath):
             backupPipe = backup_tar.backuptardir_thread(self.localPath, arcname=arcname, compress=compress_mode)
         else:
@@ -681,7 +649,6 @@ class Task:
                 if driver.is_on('service_backup_db'):
                     # TODO: switch to event
                     from storage import index_synchronizer
-
                     index_synchronizer.A('push')
         jobs()[self.backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)  # @UndefinedVariable
@@ -690,7 +657,7 @@ class Task:
         return None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def PutTask(pathID, localPath=None, keyID=None):
@@ -730,7 +697,6 @@ def RunTask():
     if len(jobs()) >= MAXIMUM_JOBS_STARTED:
         return False
     from customer import fire_hire
-
     if not fire_hire.IsAllHired():
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.RunTask some suppliers not hired yet, retry after 5 sec')
@@ -739,13 +705,10 @@ def RunTask():
     T = tasks().pop(0)
     message = T.run()
     if message:
-        events.send(
-            'backup-task-failed',
-            data=dict(
-                path_id=T.pathID,
-                message=message,
-            ),
-        )
+        events.send('backup-task-failed', data=dict(
+            path_id=T.pathID,
+            message=message,
+        ))
         T.result_defer.errback((T.pathID, message))
     else:
         #     events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))
@@ -786,7 +749,7 @@ def AbortPendingTask(pathID):
     return False
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def OnFoundFolderSize(pth, sz, arg):
@@ -822,7 +785,6 @@ def OnJobDone(backupID, result):
     Here we need to save the index data base.
     """
     from storage import backup_rebuilder
-
     # from customer import io_throttle
     lg.info('job done [%s] with result "%s", %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
@@ -859,7 +821,6 @@ def OnJobDone(backupID, result):
         # will be smarter to restart it once we finish all tasks
         # because user will probably leave BitDust working after starting a long running operations
         from storage import backup_monitor
-
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.OnJobDone restarting backup_monitor() machine because no tasks left')
         backup_monitor.A('restart')
@@ -906,7 +867,7 @@ def OnTaskFailedCallback(result):
     return result
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def AddTaskStartedCallback(pathID, callback):
@@ -954,7 +915,7 @@ def FireTaskFinishedCallbacks(remotePath, version, result):
     _TaskFinishedCallbacks.pop(remotePath, None)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def StartSingle(pathID, localPath=None, keyID=None):
@@ -962,7 +923,6 @@ def StartSingle(pathID, localPath=None, keyID=None):
     A high level method to start a backup of single file or folder.
     """
     from storage import backup_monitor
-
     t = PutTask(pathID=pathID, localPath=localPath, keyID=keyID)
     reactor.callLater(0, RunTask)  # @UndefinedVariable
     reactor.callLater(0, backup_monitor.A, 'restart')  # @UndefinedVariable
@@ -978,7 +938,6 @@ def StartRecursive(pathID, keyID=None):
     """
     pathID = global_id.CanonicalID(pathID)
     from storage import backup_monitor
-
     startedtasks = []
 
     def visitor(_pathID, path, info):
@@ -995,7 +954,7 @@ def StartRecursive(pathID, keyID=None):
     return startedtasks
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def IsBackupInProcess(backupID):
@@ -1075,9 +1034,9 @@ def GetRunningBackupObject(backupID):
     return jobs().get(backupID, None)
 
 
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def test():
@@ -1106,8 +1065,7 @@ def test2():
     reactor.run()  # @UndefinedVariable
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     bpio.init()

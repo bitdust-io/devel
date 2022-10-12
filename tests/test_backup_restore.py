@@ -7,7 +7,6 @@ from twisted.internet.base import DelayedCall
 
 DelayedCall.debug = True
 
-
 from logs import lg
 
 from automats import automat
@@ -28,7 +27,6 @@ from storage import backup
 from storage import restore_worker
 
 from userid import my_id
-
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -78,6 +76,7 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
+
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')

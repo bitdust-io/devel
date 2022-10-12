@@ -2,8 +2,10 @@ from setuptools import setup
 
 setup(
     **{
-        'author': 'Veselin Penev',
-        'author_email': 'bitdust.io@gmail.com',
+        'author':
+        'Veselin Penev',
+        'author_email':
+        'bitdust.io@gmail.com',
         'classifiers': [
             'Development Status :: 3 - Alpha',
             'Environment :: Console',
@@ -14,7 +16,8 @@ setup(
             'Intended Audience :: Information Technology',
             'Intended Audience :: Science/Research',
             'Intended Audience :: Telecommunications Industry',
-            'License :: OSI Approved :: GNU Affero General Public License ' 'v3 or later (AGPLv3+)',
+            'License :: OSI Approved :: GNU Affero General Public License '
+            'v3 or later (AGPLv3+)',
             'Natural Language :: English',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
@@ -34,11 +37,16 @@ setup(
             'Topic :: System :: System Shells',
             'Topic :: Utilities',
         ],
-        'description': 'BitDust is a decentralized on-line storage network for safe, ' 'independent and private communications.',
-        'include_package_data': True,
+        'description':
+        'BitDust is a decentralized on-line storage network for safe, '
+        'independent and private communications.',
+        'include_package_data':
+        True,
         'install_requires': ['twisted', 'service_identity', 'pycryptodomex', 'pyparsing', 'appdirs', 'psutil', 'cffi', 'six'],
-        'license': 'GNU Affero General Public License v3 or later (AGPLv3+)',
-        'long_description': '# BitDust\n'
+        'license':
+        'GNU Affero General Public License v3 or later (AGPLv3+)',
+        'long_description':
+        '# BitDust\n'
         '\n'
         '[bitdust.io](https://bitdust.io)\n'
         '\n'
@@ -254,7 +262,8 @@ setup(
         'if you have any questions or ideas.\n'
         'Welcome to the future!\n'
         '\n',
-        'name': 'bitdust',
+        'name':
+        'bitdust',
         'packages': [
             'access',
             'automats',
@@ -296,8 +305,11 @@ setup(
             'transport.udp',
         ],
         'tests_require': [],
-        'url': 'https://github.com/bitdust-io/public.git',
-        'version': '0.0.1',
-        'zip_safe': False,
+        'url':
+        'https://github.com/bitdust-io/public.git',
+        'version':
+        '0.0.1',
+        'zip_safe':
+        False,
     }
 )

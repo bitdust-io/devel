@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# __init__.py
+#__init__.py
 #
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
@@ -14,7 +14,6 @@
 #
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
-
 """
 Kademlia DHT implementation.
 

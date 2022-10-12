@@ -71,8 +71,7 @@ for i in sorted(list(parts.keys()), reverse=False):
     print('\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n' % (time.strftime('%Y-%m-%d', time.localtime(headcommit[0]))))
     for dt, commit in commits:
         print(
-            '* %s'
-            % (
+            '* %s' % (
                 # time.strftime('%c', time.localtime(dt)),
                 re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
             )

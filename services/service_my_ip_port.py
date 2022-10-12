@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -57,7 +56,6 @@ class MyIPPortService(LocalService):
         from stun import stun_client
         from main import settings
         from lib import misc
-
         stun_client.A('init', settings.getUDPPort())
         known_external_ip = misc.readExternalIP()
         if not known_external_ip or known_external_ip == '127.0.0.1':
@@ -66,7 +64,6 @@ class MyIPPortService(LocalService):
 
     def stop(self):
         from stun import stun_client
-
         stun_client.A('shutdown')
         return True
 
@@ -75,7 +72,6 @@ class MyIPPortService(LocalService):
 
     def on_resume(self, *args, **kwargs):
         from stun import stun_client
-
         if not stun_client.A() or stun_client.A().state in [
             'STOPPED',
         ]:
@@ -85,23 +81,14 @@ class MyIPPortService(LocalService):
 
     def _do_stun(self):
         from stun import stun_client
-
         stun_client.A().dropMyExternalAddress()
         stun_client.A('start', self._on_stun_result)
 
     def _on_stun_result(self, stun_result, nat_type, my_ip, details):
         from logs import lg
         from twisted.internet import reactor
-
         if stun_result != 'stun-success' or not my_ip or my_ip == '127.0.0.1':
             lg.warn('stun my external IP failed, retry after 10 seconds')
             reactor.callLater(10, self._do_stun)  # @UndefinedVariable
         else:
-            lg.info(
-                'stun success  nat_type=%r, my_ip=%r, details=%r'
-                % (
-                    nat_type,
-                    my_ip,
-                    details,
-                )
-            )
+            lg.info('stun success  nat_type=%r, my_ip=%r, details=%r' % (nat_type, my_ip, details))

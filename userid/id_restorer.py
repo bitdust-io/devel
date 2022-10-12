@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: id_restorer.
 
@@ -55,11 +54,11 @@ Needed for restoration of the user account information using its Private key and
     * do verification and restoration of his locally identity to be able to start the software
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -70,7 +69,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in identity_restorer.py')
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from automats import automat
 
@@ -96,13 +95,13 @@ from userid import identity
 from userid import my_id
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _IdRestorer = None
 _WorkingIDURL = ''
 _WorkingKey = ''
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -133,28 +132,18 @@ class IdRestorer(automat.Automat):
     """
 
     MESSAGES = {
-        'MSG_01': [
-            'requesting user identity from remote ID server',
-        ],
+        'MSG_01': ['requesting user identity from remote ID server'],
         'MSG_02': ['key verification failed!', 'red'],
-        'MSG_03': [
-            'downloading user identity from remote ID server',
-        ],
+        'MSG_03': ['downloading user identity from remote ID server'],
         'MSG_04': ['incorrect or non-existing IDURL provided', 'red'],
-        'MSG_05': [
-            'verifying user identity and private key',
-        ],
+        'MSG_05': ['verifying user identity and private key'],
         'MSG_06': ['your identity restored successfully!', 'green'],
-        'MSG_07': [
-            'checking network connectivity',
-        ],
+        'MSG_07': ['checking network connectivity'],
         'MSG_08': [
             'network connection failed',
             'red',
         ],
-        'MSG_09': [
-            'reading list of my suppliers from DHT',
-        ],
+        'MSG_09': ['reading list of my suppliers from DHT'],
     }
 
     def init(self):
@@ -170,11 +159,10 @@ class IdRestorer(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         from main import installer
-
         installer.A('id_restorer.state', newstate)
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'STUN_MY_IP'
@@ -182,7 +170,7 @@ class IdRestorer(automat.Automat):
                 self.doSetWorkingIDURL(*args, **kwargs)
                 self.doSetWorkingKey(*args, **kwargs)
                 self.doStunExternalIP(*args, **kwargs)
-        # ---STUN_MY_IP---
+        #---STUN_MY_IP---
         elif self.state == 'STUN_MY_IP':
             if event == 'stun-failed':
                 self.state = 'FAILED'
@@ -194,7 +182,7 @@ class IdRestorer(automat.Automat):
                 self.state = 'MY_ID'
                 self.doPrint(self.msg('MSG_01', *args, **kwargs))
                 self.doRequestMyIdentity(*args, **kwargs)
-        # ---MY_ID---
+        #---MY_ID---
         elif self.state == 'MY_ID':
             if event == 'my-id-received':
                 self.state = 'VERIFY'
@@ -206,7 +194,7 @@ class IdRestorer(automat.Automat):
                 self.doClearWorkingIDURL(*args, **kwargs)
                 self.doClearWorkingKey(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---VERIFY---
+        #---VERIFY---
         elif self.state == 'VERIFY':
             if event == 'restore-failed':
                 self.state = 'FAILED'
@@ -218,17 +206,17 @@ class IdRestorer(automat.Automat):
                 self.state = 'SUPPLIERS?'
                 self.doPrint(self.msg('MSG_09', *args, **kwargs))
                 self.doDHTReadMySuppliers(*args, **kwargs)
-        # ---SUPPLIERS?---
+        #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'suppliers-read-ok' or event == 'suppliers-read-failed':
                 self.state = 'RESTORED!'
                 self.doPrint(self.msg('MSG_06', *args, **kwargs))
                 self.doRestoreSave(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---RESTORED!---
+        #---RESTORED!---
         elif self.state == 'RESTORED!':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -389,7 +377,6 @@ class IdRestorer(automat.Automat):
 
     def doPrint(self, *args, **kwargs):
         from main import installer
-
         installer.A().event('print', args[0])
         self.last_message = args[0][0]
         lg.out(6, 'id_restorer.doPrint: %s' % str(args[0]))

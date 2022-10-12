@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -44,6 +43,7 @@ class BroadcastingService(LocalService):
     config_path = 'services/broadcasting/enabled'
 
     scope = []  # set to [idurl1,idurl2,...] to receive only messages broadcasted from certain nodes
+
     # TODO: need to be able dynamically add/remove scope after start of the service
     # for now let's just listen for all broadcast messages (global scope)
 
@@ -65,7 +65,6 @@ class BroadcastingService(LocalService):
         from broadcast import broadcast_service
         from main.config import conf
         from main import settings
-
         self.starting_deferred = Deferred()
         broadcasters_finder.A('init')
         if settings.enableBroadcastRouting():
@@ -83,7 +82,6 @@ class BroadcastingService(LocalService):
         from broadcast import broadcasters_finder
         from broadcast import broadcast_listener
         from main.config import conf
-
         broadcasters_finder.A('shutdown')
         if broadcaster_node.A() is not None:
             broadcaster_node.A().removeStateChangedCallback(self._on_broadcaster_node_switched)
@@ -98,7 +96,6 @@ class BroadcastingService(LocalService):
         from logs import lg
         from p2p import p2p_service
         from main import settings
-
         # words = newpacket.Payload.split(' ')
         try:
             mode = json_payload['action']
@@ -112,7 +109,6 @@ class BroadcastingService(LocalService):
             lg.out(8, 'service_broadcasting.request DENIED, broadcast routing disabled')
             return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
         from broadcast import broadcaster_node
-
         if not broadcaster_node.A():
             lg.out(8, 'service_broadcasting.request DENIED, broadcast routing disabled')
             return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
@@ -136,7 +132,6 @@ class BroadcastingService(LocalService):
 
     def health_check(self):
         from broadcast import broadcaster_node
-
         return broadcaster_node.A().state in [
             'BROADCASTING',
         ]
@@ -146,7 +141,6 @@ class BroadcastingService(LocalService):
         from broadcast import broadcaster_node
         from broadcast import broadcast_listener
         from broadcast import broadcast_service
-
         lg.out(2, 'service_broadcasting._on_broadcast_routing_enabled_disabled : %s->%s : %s' % (oldvalue, value, path))
         if not value:
             if broadcaster_node.A() is not None:
@@ -166,7 +160,6 @@ class BroadcastingService(LocalService):
         from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcast_listener
-
         if self.starting_deferred:
             if newstate in [
                 'LISTENING',
@@ -182,24 +175,15 @@ class BroadcastingService(LocalService):
         from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcaster_node
-
         if self.starting_deferred:
-            if (
-                newstate
-                in [
-                    'BROADCASTING',
-                ]
-                and newstate != oldstate
-            ):
+            if newstate in [
+                'BROADCASTING',
+            ] and newstate != oldstate:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-            elif (
-                newstate
-                in [
-                    'OFFLINE',
-                ]
-                and newstate != oldstate
-            ):
+            elif newstate in [
+                'OFFLINE',
+            ] and newstate != oldstate:
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
 
@@ -207,7 +191,6 @@ class BroadcastingService(LocalService):
 #         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
 #             reactor.callLater(60, broadcaster_node.A, 'reconnect')  # @UndefinedVariable
 #             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
-
 
 #     def cancel(self, json_payload, request, info):
 #         from logs import lg

@@ -41,7 +41,6 @@ __all__ = ['proxy_info', 'connect', 'read_headers']
 
 try:
     import socks
-
     ProxyConnectionError = socks.ProxyConnectionError
     HAS_PYSOCKS = True
 except:
@@ -182,7 +181,7 @@ def _open_socket(addrinfo_list, sockopt, timeout):
                 try:
                     eConnRefused = (errno.ECONNREFUSED, errno.WSAECONNREFUSED)
                 except:
-                    eConnRefused = (errno.ECONNREFUSED,)
+                    eConnRefused = (errno.ECONNREFUSED, )
                 if error.errno == errno.EINTR:
                     continue
                 elif error.errno in eConnRefused:
@@ -248,9 +247,12 @@ def _ssl_socket(sock, user_sslopt, hostname):
     sslopt.update(user_sslopt)
 
     certPath = os.environ.get('WEBSOCKET_CLIENT_CA_BUNDLE')
-    if certPath and os.path.isfile(certPath) and user_sslopt.get('ca_certs', None) is None and user_sslopt.get('ca_cert', None) is None:
+    if certPath and os.path.isfile(certPath) \
+            and user_sslopt.get('ca_certs', None) is None \
+            and user_sslopt.get('ca_cert', None) is None:
         sslopt['ca_certs'] = certPath
-    elif certPath and os.path.isdir(certPath) and user_sslopt.get('ca_cert_path', None) is None:
+    elif certPath and os.path.isdir(certPath) \
+            and user_sslopt.get('ca_cert_path', None) is None:
         sslopt['ca_cert_path'] = certPath
 
     check_hostname = sslopt['cert_reqs'] != ssl.CERT_NONE and sslopt.pop('check_hostname', True)

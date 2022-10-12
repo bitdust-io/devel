@@ -130,7 +130,6 @@ class Get:
                     print('mandatory_message file loaded')
             except Exception as e:
                 print('Error loading mandatory_message.json {}'.format(e))
-
         """
         if "regnet" in self.version:
             print("Regnet, forcing ram = False")

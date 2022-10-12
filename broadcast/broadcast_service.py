@@ -23,40 +23,38 @@
 #
 #
 #
-
 """
 .. module:: broadcast_service.
 
 @author: Veselin
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import range
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # This is used to be able to execute this module directly from command line.
 if __name__ == '__main__':
     import sys
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import random
 import string
 import json
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -69,7 +67,7 @@ from p2p import commands
 
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def prepare_broadcast_message(owner, payload):
@@ -90,14 +88,12 @@ def prepare_broadcast_message(owner, payload):
 
 def verfify_broadcast_message(jmsg):
     s = set(jmsg.keys())
-    s = s.intersection(
-        [
-            'owner',
-            'started',
-            'id',
-            'payload',
-        ]
-    )
+    s = s.intersection([
+        'owner',
+        'started',
+        'id',
+        'payload',
+    ])
     if len(s) != 4:
         return False
     return True
@@ -139,13 +135,12 @@ def packet_for_listener(listener_idurl, json_data):
     )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def send_broadcast_message(payload):
     from broadcast import broadcaster_node
     from broadcast import broadcast_listener
-
     msg = prepare_broadcast_message(my_id.getIDURL(), payload)
     if broadcaster_node.A():
         broadcaster_node.A('new-outbound-message', (msg, None))
@@ -159,22 +154,21 @@ def send_broadcast_message(payload):
     return msg
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_incoming_broadcast_message(json_msg):
     lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def _test():
-
     print(prepare_broadcast_message(my_id.getIDURL(), {'test': 'okidoki'}))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     _test()

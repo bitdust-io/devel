@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: supplier_contract_executor
 .. role:: red
@@ -46,24 +44,23 @@ EVENTS:
     * :red:`timer-30sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -81,11 +78,11 @@ from p2p import p2p_service
 from coins import coins_io
 from coins import contract_chain_node
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _ActiveSupplierContracts = dict()  # provides SupplierContractExecutor object by customer idurl
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def all_contracts():
@@ -128,7 +125,7 @@ def recheck_contract(customer_idurl):
     contract_executor.automat('recheck')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class SupplierContractExecutor(automat.Automat):
@@ -151,18 +148,18 @@ class SupplierContractExecutor(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of supplier_contract_executor() machine.
         """
-        self.current_duration = 60 * 60  # TODO: read from settings
+        self.current_duration = 60*60  # TODO: read from settings
 
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READ_CHAIN?'
                 self.doRequestCoins(*args, **kwargs)
-        # ---MY_COIN!---
+        #---MY_COIN!---
         elif self.state == 'MY_COIN!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -171,7 +168,7 @@ class SupplierContractExecutor(automat.Automat):
                 self.state = 'UNCLEAR'
             elif event == 'coin-sent':
                 self.state = 'CUSTOMER_COIN?'
-        # ---CUSTOMER_COIN?---
+        #---CUSTOMER_COIN?---
         elif self.state == 'CUSTOMER_COIN?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -182,7 +179,7 @@ class SupplierContractExecutor(automat.Automat):
             elif event == 'payment-timeout':
                 self.state = 'FINISHED'
                 self.doRemoveCustomer(*args, **kwargs)
-        # ---ACTIVE---
+        #---ACTIVE---
         elif self.state == 'ACTIVE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -190,15 +187,15 @@ class SupplierContractExecutor(automat.Automat):
             elif event == 'time-to-charge':
                 self.state = 'MY_COIN!'
                 self.doSendNextCoin(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        # ---FINISHED---
+        #---FINISHED---
         elif self.state == 'FINISHED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---UNCLEAR---
+        #---UNCLEAR---
         elif self.state == 'UNCLEAR':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -206,7 +203,7 @@ class SupplierContractExecutor(automat.Automat):
             elif event == 'recheck':
                 self.state = 'READ_CHAIN?'
                 self.doRequestCoins(*args, **kwargs)
-        # ---READ_CHAIN?---
+        #---READ_CHAIN?---
         elif self.state == 'READ_CHAIN?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -223,7 +220,7 @@ class SupplierContractExecutor(automat.Automat):
                 self.state = 'CUSTOMER_COIN?'
             elif event == 'chain-closed':
                 self.state = 'FINISHED'
-        # ---CUSTOMER_SIGN?---
+        #---CUSTOMER_SIGN?---
         elif self.state == 'CUSTOMER_SIGN?':
             if event == 'timer-30sec':
                 self.state = 'UNCLEAR'
@@ -266,7 +263,11 @@ class SupplierContractExecutor(automat.Automat):
         """
         Action method.
         """
-        contract_chain_node.get_coins_by_chain(chain='supplier_customer', provider_idurl=my_id.getIDURL(), consumer_idurl=self.customer_idurl,).addCallbacks(
+        contract_chain_node.get_coins_by_chain(
+            chain='supplier_customer',
+            provider_idurl=my_id.getIDURL(),
+            consumer_idurl=self.customer_idurl,
+        ).addCallbacks(
             self._on_query_result,
             self._on_query_failed,
         )
@@ -300,7 +301,9 @@ class SupplierContractExecutor(automat.Automat):
         Action method.
         """
         coin_json = args[0]
-        contract_chain_node.send_to_miner([coin_json,],).addCallbacks(
+        contract_chain_node.send_to_miner([
+            coin_json,
+        ], ).addCallbacks(
             self._on_coin_mined,
             self._on_coin_failed,
         )

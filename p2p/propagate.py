@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: propagate.
 
@@ -41,16 +40,16 @@ able to contact them in 2 or 3 hours then fetch copy of identity from
 their server.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
@@ -61,7 +60,7 @@ except:
 
 from twisted.internet.defer import DeferredList, Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -86,13 +85,13 @@ from transport import packet_out
 
 from dht import dht_records
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SlowSendIsWorking = False
 _PropagateCounter = 0
 _StartupPropagateList = set()
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -114,7 +113,7 @@ def startup_list():
     return _StartupPropagateList
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=False, wait_packets=False, response_timeout=10):
@@ -137,15 +136,7 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
             response_timeout=response_timeout,
         )
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes: %r'
-                % (
-                    len(x),
-                    len(selected_contacts),
-                    res,
-                ),
-            )
+            lg.out(_DebugLevel, 'propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes: %r' % (len(x), len(selected_contacts), res))
         if wait_packets:
             if not res:
                 result.callback([])
@@ -172,19 +163,15 @@ def fetch(list_ids, refresh_cache=False, timeout=10, try_other_sources=True):
             continue
         if identitycache.FromCache(url) and not refresh_cache:
             continue
-        dl.append(
-            identitycache.immediatelyCaching(
-                idurl=id_url.to_original(url),
-                timeout=timeout,
-                try_other_sources=try_other_sources,
-            )
-        )
+        dl.append(identitycache.immediatelyCaching(
+            idurl=id_url.to_original(url),
+            timeout=timeout,
+            try_other_sources=try_other_sources,
+        ))
     return DeferredList(dl, consumeErrors=True)
 
 
-def start(
-    ack_handler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True, include_startup=False, wait_packets=False, response_timeout=10
-):
+def start(ack_handler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True, include_startup=False, wait_packets=False, response_timeout=10):
     """
     Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
@@ -238,15 +225,13 @@ def single(idurl, ack_handler=None, wide=False, fail_handler=None):
     Do "propagate" for a single contact.
     """
     d = FetchSingle(idurl)
-    d.addCallback(
-        lambda x: SendToIDs(
-            [
-                idurl,
-            ],
-            ack_handler=ack_handler,
-            wide=wide,
-        )
-    )
+    d.addCallback(lambda x: SendToIDs(
+        [
+            idurl,
+        ],
+        ack_handler=ack_handler,
+        wide=wide,
+    ))
     if ack_handler:
         d.addErrback(fail_handler or ack_handler)
     return d
@@ -262,7 +247,9 @@ def update():
 
 
 def write_to_dht():
-    """ """
+    """
+
+    """
     if _Debug:
         lg.out(_DebugLevel, 'propagate.write_to_dht')
     LocalIdentity = my_id.getLocalIdentity()
@@ -272,7 +259,7 @@ def write_to_dht():
     )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def FetchSingle(idurl):
@@ -305,7 +292,7 @@ def FetchCustomers():
     return fetch(contactsdb.customers())
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def SendServers():
@@ -326,13 +313,11 @@ def SendServers():
             ),
             proto='http',
         )
-        dlist.append(
-            net_misc.http_post_data(
-                url=url,
-                data=payload,
-                connectTimeout=15,
-            )
-        )
+        dlist.append(net_misc.http_post_data(
+            url=url,
+            data=payload,
+            connectTimeout=15,
+        ))
         if _Debug:
             lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
     dl = DeferredList(dlist, consumeErrors=True)
@@ -538,14 +523,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
         )
         _PropagateCounter += 1
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                '        sending %r to %s'
-                % (
-                    p,
-                    nameurl.GetName(contact),
-                ),
-            )
+            lg.out(_DebugLevel, '        sending %r to %s' % (p, nameurl.GetName(contact)))
         res = gateway.outbox(
             p,
             wide,
@@ -576,12 +554,11 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     return DeferredList(wait_list, consumeErrors=True)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ping_suppliers(customer_idurl=None, timeout=20):
     from p2p import online_status
-
     l = []
     for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if supplier_idurl:
@@ -591,7 +568,6 @@ def ping_suppliers(customer_idurl=None, timeout=20):
 
 def ping_customers(timeout=20):
     from p2p import online_status
-
     l = []
     for customer_idurl in contactsdb.customers():
         if customer_idurl:
@@ -601,7 +577,6 @@ def ping_customers(timeout=20):
 
 def ping_nodes(idurl_list, timeout=15, channel='ping_nodes', keep_alive=True):
     from p2p import online_status
-
     l = []
     for idurl in idurl_list:
         if idurl:

@@ -15,7 +15,6 @@ LTIMEOUT = 45
 # Fixed header length
 SLEN = 10
 
-
 __version__ = '0.1.7'
 
 

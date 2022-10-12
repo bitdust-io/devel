@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: eccmap.
 
@@ -60,11 +59,11 @@ import os
 import re
 import traceback
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 __suppliers2eccmap = {
     2: 'ecc/2x2',
@@ -95,21 +94,7 @@ __eccmaps = {
     'ecc/2x2': [[1], [0]],
     'ecc/4x4': [[1, 2, 3], [0, 2], [0, 3], [0, 1]],
     'ecc/7x7': [[3, 4, 6], [0, 4, 5], [1, 5, 6], [0, 2, 6], [0, 1, 3], [1, 2, 4], [2, 3, 5]],
-    'ecc/13x13': [
-        [1, 4, 8, 12],
-        [5, 8, 9, 11],
-        [3, 7, 10, 11],
-        [0, 4, 6, 9],
-        [2, 3, 6, 12],
-        [0, 1, 6, 10],
-        [1, 3, 7, 9],
-        [2, 5, 8, 12],
-        [2, 4, 7, 11],
-        [0, 1, 3, 5, 12],
-        [6, 7, 8],
-        [2, 5, 9, 10],
-        [0, 4, 10, 11],
-    ],
+    'ecc/13x13': [[1, 4, 8, 12], [5, 8, 9, 11], [3, 7, 10, 11], [0, 4, 6, 9], [2, 3, 6, 12], [0, 1, 6, 10], [1, 3, 7, 9], [2, 5, 8, 12], [2, 4, 7, 11], [0, 1, 3, 5, 12], [6, 7, 8], [2, 5, 9, 10], [0, 4, 10, 11]],
     'ecc/18x18': [
         [5, 7, 11, 16, 17],
         [2, 9, 11, 13, 17],
@@ -246,11 +231,11 @@ __fire_hire_errors = {
     2: 1,
 }
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 CurrentMap = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -275,7 +260,7 @@ def shutdown():
     CurrentMap = None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def DefaultName():
@@ -283,7 +268,6 @@ def DefaultName():
     This is a wrapper for ``settings.DefaultEccMapName``.
     """
     from main import settings
-
     return settings.DefaultEccMapName()
 
 
@@ -292,7 +276,6 @@ def CurrentName():
     Should return a ecc map name from current suppliers number - taken from user settings.
     """
     from main import settings
-
     return GetEccMapName(settings.getSuppliersNumberDesired())
 
 
@@ -384,10 +367,10 @@ def GetFireHireErrors(suppliers_number):
 
 def GetCorrectablePercent(suppliers_number):
     global __correctable_errors
-    return 100.0 * (float(__correctable_errors[suppliers_number]) / float(suppliers_number))
+    return 100.0*(float(__correctable_errors[suppliers_number])/float(suppliers_number))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ReadTextFile(filename):
@@ -412,14 +395,13 @@ def ReadTextFile(filename):
     return ''
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class eccmap:
     """
     A class to do many operations with ecc map.
     """
-
     def __init__(self, filename='', suppliers_number=None):
         if filename != '':
             self.name = filename  # sometimes we will just want the name
@@ -576,8 +558,8 @@ class eccmap:
         """
         Case where each node has one parity and one data so same missing.
         """
-        DataSegs = [0] * self.datasegments
-        ParitySegs = [0] * self.datasegments
+        DataSegs = [0]*self.datasegments
+        ParitySegs = [0]*self.datasegments
         if len(NodeMap) != self.datasegments:
             raise Exception('eccmap.FixableNode not given NodeMap of correct length')
         if self.datasegments != self.paritysegments:
@@ -668,12 +650,12 @@ class eccmap:
         Segment, return the parity segment number and the map of data
         segments in that parity.
         """
-        # out(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
+        #out(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
         bestParityNum = -1
         bestParityMap = []
         if DataSegs[DataSegNum] == 1:
             # we have the data segment nothing to fix, unclear why this was called, don't expect this to happen
-            # out(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
+            #out(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
             return bestParityNum, bestParityMap
         for paritynum in range(0, self.paritysegments):
             # If parity is not missing (so we can use it) and contains the missing DataSegNum
@@ -692,7 +674,7 @@ class eccmap:
         return bestParityNum, bestParityMap
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -723,8 +705,8 @@ def main2():
     myecc.check()
 
     print('Do some checks for rebuilding a block')
-    dataSegments = [1] * 64
-    paritySegments = [1] * 64
+    dataSegments = [1]*64
+    paritySegments = [1]*64
     dataSegments[2] = 0  # making it so we're missing data segment 2
     parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 2)
     print(parityNum)  # as of the writing, the best parity was 7
@@ -735,7 +717,7 @@ def main2():
     print(parityMap)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

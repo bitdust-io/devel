@@ -28,13 +28,12 @@ from sys import getsizeof
 from itertools import chain
 from collections import deque
 from six.moves import map
-
 try:
     import reprlib
 except:
     pass
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def total_size(o, handlers={}, verbose=False):

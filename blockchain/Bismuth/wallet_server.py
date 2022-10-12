@@ -6,7 +6,6 @@ EggdraSyl - June 2018
 pip3 install -r requirements.txt
 """
 
-
 import asyncio
 import datetime
 import json
@@ -28,15 +27,12 @@ from tornado.tcpserver import TCPServer
 
 # Bismuth specific modules
 import modules.config as config
-
 # from modules.helpers import *
 from modules.sqlitebase import SqliteBase
 from modules.ledgerbase import LedgerBase
 from modules.node_interface import NodeInterface
 
-
 __version__ = '0.1.22'
-
 
 # Server
 # -----------------------------------------------------------------------------
@@ -44,7 +40,6 @@ __version__ = '0.1.22'
 
 class WalletServer(TCPServer):
     """Tornado asynchronous TCP server."""
-
     clients = set()
     status_dict = {'version': __version__}
     node_interface = None
@@ -99,9 +94,7 @@ class WalletServer(TCPServer):
         try:
             header = await tornado.gen.with_timeout(datetime.timedelta(seconds=35), stream.read_bytes(10), quiet_exceptions=tornado.iostream.StreamClosedError)
             data_len = int(header)
-            data = await tornado.gen.with_timeout(
-                datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError
-            )
+            data = await tornado.gen.with_timeout(datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError)
             data = json.loads(data.decode('utf-8'))
             return data
         except Exception as e:
@@ -156,7 +149,6 @@ class WalletServer(TCPServer):
         res = await self.node_interface.call_user(params)
         await self._send(res, stream, ip)
         return
-
         """
         if data == "mpclear":
             # TODO: only for admin
@@ -297,7 +289,7 @@ if __name__ == '__main__':
     # app_log.addHandler(ch)
     logfile = os.path.abspath('wallet_app.log')
     # Rotate log after reaching 512K, keep 5 old copies.
-    rotateHandler = RotatingFileHandler(logfile, 'a', 512 * 1024, 10)
+    rotateHandler = RotatingFileHandler(logfile, 'a', 512*1024, 10)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler.setFormatter(formatter)
     app_log.addHandler(rotateHandler)
@@ -305,7 +297,7 @@ if __name__ == '__main__':
     access_log = logging.getLogger('tornado.access')
     tornado.log.enable_pretty_logging()
     logfile2 = os.path.abspath('wallet_access.log')
-    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512 * 1024, 10)
+    rotateHandler2 = RotatingFileHandler(logfile2, 'a', 512*1024, 10)
     formatter2 = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     rotateHandler2.setFormatter(formatter2)
     access_log.addHandler(rotateHandler2)
@@ -313,7 +305,8 @@ if __name__ == '__main__':
     app_log.warning('Testnet: {}'.format(is_testnet))
     # fail safe
     if is_testnet and int(CONFIG.node_port) != 2829:
-        app_log.warning('Testnet is active, but node_port set to {} instead of 2829. ' 'Make sure!'.format(CONFIG.node_port))
+        app_log.warning('Testnet is active, but node_port set to {} instead of 2829. '
+                        'Make sure!'.format(CONFIG.node_port), )
         time.sleep(2)
 
     if os.name == 'posix':

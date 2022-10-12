@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: shutdowner.
 
@@ -53,12 +52,12 @@ EVENTS:
 from __future__ import absolute_import
 import six
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
@@ -69,7 +68,7 @@ except:
 
 from twisted.internet.defer import DeferredList
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -78,11 +77,11 @@ from automats import automat
 from main import initializer
 from main import settings
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Shutdowner = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def shutdown(x=None):
@@ -97,7 +96,6 @@ def shutdown(x=None):
     dl = []
     try:
         from services import driver
-
         # from main import control
         from main import events
         from main import listeners
@@ -110,13 +108,11 @@ def shutdown(x=None):
         from updates import git_proc
         from interface import api_rest_http_server
         from interface import api_web_socket
-
         # from interface import ftp_server
         from contacts import identitydb
         from crypt import my_keys
         from userid import id_url
         from userid import my_id
-
         my_keys.shutdown()
         my_id.shutdown()
         identitydb.shutdown()
@@ -160,7 +156,7 @@ def shutdown(x=None):
     return DeferredList(dl)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -180,7 +176,7 @@ def A(event=None, *args, **kwargs):
     return _Shutdowner
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class Shutdowner(automat.Automat):
@@ -201,13 +197,13 @@ class Shutdowner(automat.Automat):
         initializer.A('shutdowner.state', newstate)
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'INIT'
                 self.flagApp = False
                 self.flagReactor = False
-        # ---INIT---
+        #---INIT---
         elif self.state == 'INIT':
             if event == 'stop':
                 self.doSaveParam(*args, **kwargs)
@@ -222,7 +218,7 @@ class Shutdowner(automat.Automat):
                 self.doShutdown(*args, **kwargs)
             elif event == 'ready' and not self.flagReactor and not self.flagApp:
                 self.state = 'READY'
-        # ---READY---
+        #---READY---
         elif self.state == 'READY':
             if event == 'stop':
                 self.state = 'STOPPING'
@@ -232,7 +228,7 @@ class Shutdowner(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'block':
                 self.state = 'BLOCKED'
-        # ---BLOCKED---
+        #---BLOCKED---
         elif self.state == 'BLOCKED':
             if event == 'stop':
                 self.doSaveParam(*args, **kwargs)
@@ -247,10 +243,10 @@ class Shutdowner(automat.Automat):
             elif event == 'unblock' and self.flagReactor:
                 self.state = 'FINISHED'
                 self.doDestroyMe(*args, **kwargs)
-        # ---FINISHED---
+        #---FINISHED---
         elif self.state == 'FINISHED':
             pass
-        # ---STOPPING---
+        #---STOPPING---
         elif self.state == 'STOPPING':
             if event == 'reactor-stopped':
                 self.state = 'FINISHED'
@@ -291,16 +287,11 @@ class Shutdowner(automat.Automat):
         _Shutdowner = None
         self.destroy()
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'shutdowner.doDestroyMe %d machines left in memory:\n        %s'
-                % (len(automat.objects()), '\n        '.join(['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])),
-            )
+            lg.out(_DebugLevel, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (len(automat.objects()), '\n        '.join(['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])))
 
         if self.enableMemoryProfile:
             try:
                 from guppy import hpy  # @UnresolvedImport
-
                 hp = hpy()
                 hp.setrelheap()
                 if _Debug:
@@ -322,7 +313,6 @@ class Shutdowner(automat.Automat):
         def do_restart(param):
             from lib import misc
             from system import bpio
-
             settings.init()
             # appdata = settings.BaseDir()
             detach = False
@@ -330,8 +320,7 @@ class Shutdowner(automat.Automat):
                 detach = True
             misc.DoRestart(
                 param,
-                detach=detach,
-                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                detach=detach,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
                 # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             settings.shutdown()

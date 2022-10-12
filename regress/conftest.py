@@ -27,12 +27,12 @@ import asyncio
 import pprint
 import json
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import testsupport as tsup  # @UnresolvedImport
 from testsupport import info, warn
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 VERBOSE = False
 
@@ -51,7 +51,7 @@ for container in CONF['containers'].values():
         ALL_ROLES[role] = []
     ALL_ROLES[role].append(container['node'])
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def open_all_tunnels(event_loop):
@@ -125,7 +125,9 @@ def stop_all_nodes(event_loop, verbose=False):
     if verbose:
         info('customers: %r' % ALL_ROLES.get('customer', []))
     event_loop.run_until_complete(
-        asyncio.gather(*[tsup.stop_daemon_async(customer['name'], event_loop, skip_checks=True, verbose=verbose) for customer in ALL_ROLES.get('customer', [])])
+        asyncio.gather(
+            *[tsup.stop_daemon_async(customer['name'], event_loop, skip_checks=True, verbose=verbose) for customer in ALL_ROLES.get('customer', [])]
+        )
     )
     if verbose:
         info(f'ALL CUSTOMERS STOPPED\n')
@@ -133,7 +135,9 @@ def stop_all_nodes(event_loop, verbose=False):
     if verbose:
         info('message-brokers: %r' % ALL_ROLES.get('message-broker', []))
     event_loop.run_until_complete(
-        asyncio.gather(*[tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])])
+        asyncio.gather(
+            *[tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])]
+        )
     )
     if verbose:
         info(f'ALL MESSAGE BROKERS STOPPED\n')
@@ -226,7 +230,7 @@ def collect_coverage_all_nodes(event_loop, verbose=False):
         warn('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 @pytest.yield_fixture(scope='session')
@@ -236,7 +240,7 @@ def event_loop():
     loop.close()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 @pytest.yield_fixture(scope='session', autouse=True)
@@ -283,8 +287,7 @@ def global_wrapper(event_loop):
     # kill_all_nodes()
 
     print(
-        '\nTest suite %r completed in %5.3f seconds\n'
-        % (
+        '\nTest suite %r completed in %5.3f seconds\n' % (
             TEST_NAME,
             time.time() - _begin,
         )

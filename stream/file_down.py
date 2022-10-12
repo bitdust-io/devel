@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 
 .. raw:: html
@@ -50,28 +49,28 @@ EVENTS:
     * :red:`valid-data-received`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in file_down.py')
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -92,28 +91,14 @@ from transport import packet_out
 
 from stream import io_throttle
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class FileDown(automat.Automat):
     """
     This class implements all the functionality of ``file_down()`` state machine.
     """
-
-    def __init__(
-        self,
-        parent,
-        callOnReceived,
-        creatorID,
-        packetID,
-        ownerID,
-        remoteID,
-        debug_level=_DebugLevel,
-        log_events=_Debug,
-        log_transitions=_Debug,
-        publish_events=False,
-        **kwargs
-    ):
+    def __init__(self, parent, callOnReceived, creatorID, packetID, ownerID, remoteID, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `file_down()` state machine.
         """
@@ -133,30 +118,25 @@ class FileDown(automat.Automat):
         self.remoteID = remoteID
         self.requestTime = None
         self.fileReceivedTime = None
-        self.requestTimeout = max(30, 2 * int(settings.getBackupBlockSize() / settings.SendingSpeedLimit()))
+        self.requestTimeout = max(30, 2*int(settings.getBackupBlockSize()/settings.SendingSpeedLimit()))
         self.result = ''
         self.created = utime.get_sec1970()
         super(FileDown, self).__init__(
-            name='file_down_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
+            name='file_down_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions,
+            publish_events=publish_events, **kwargs
         )
 
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'IN_QUEUE'
                 self.doInit(*args, **kwargs)
                 self.doQueueAppend(*args, **kwargs)
-        # ---IN_QUEUE---
+        #---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
             if event == 'file-already-exists':
                 self.state = 'EXIST'
@@ -173,7 +153,7 @@ class FileDown(automat.Automat):
                 self.doReportStopped(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---STARTED---
+        #---STARTED---
         elif self.state == 'STARTED':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -190,7 +170,7 @@ class FileDown(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'retrieve-sent':
                 self.state = 'REQUESTED'
-        # ---REQUESTED---
+        #---REQUESTED---
         elif self.state == 'REQUESTED':
             if event == 'valid-data-received':
                 self.state = 'RECEIVED'
@@ -211,16 +191,16 @@ class FileDown(automat.Automat):
                 self.doReportStopped(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---EXIST---
+        #---EXIST---
         elif self.state == 'EXIST':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
-        # ---STOPPED---
+        #---STOPPED---
         elif self.state == 'STOPPED':
             pass
-        # ---RECEIVED---
+        #---RECEIVED---
         elif self.state == 'RECEIVED':
             pass
         return None
@@ -266,10 +246,8 @@ class FileDown(automat.Automat):
             self.remoteID,
             callbacks={
                 commands.Data(): self.parent.OnDataReceived,
-                commands.Fail(): self.parent.OnDataReceived,
-                # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
-            },
-            # response_timeout=10,
+                commands.Fail(): self.parent.OnDataReceived,  # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
+            },  # response_timeout=10,
         )
         self.requestTime = time.time()
 
@@ -281,14 +259,7 @@ class FileDown(automat.Automat):
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Retrieve():
                 if _Debug:
-                    lg.dbg(
-                        _DebugLevel,
-                        'sending "cancel" to %s addressed to %s because downloading cancelled'
-                        % (
-                            pkt_out,
-                            pkt_out.remote_idurl,
-                        ),
-                    )
+                    lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (pkt_out, pkt_out.remote_idurl))
                 pkt_out.automat('cancel')
 
     def doQueueNext(self, *args, **kwargs):

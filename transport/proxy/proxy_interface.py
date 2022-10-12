@@ -24,28 +24,27 @@
 #
 #
 #
-
 """
 .. module:: proxy_interface.
 
 This is a client side part of the PROXY transport plug-in.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import six
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import succeed, fail, Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -53,11 +52,11 @@ from main import settings
 
 from contacts import identitycache
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _GateProxy = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def proxy():
@@ -65,18 +64,18 @@ def proxy():
     return _GateProxy
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
-class GateInterface:
+class GateInterface():
     def init(self, xml_rpc_url_or_object):
-        """ """
+        """
+        """
         global _GateProxy
         if _Debug:
             lg.out(4, 'proxy_interface.init')
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-
         if isinstance(xml_rpc_url_or_object, six.string_types):
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
@@ -87,12 +86,12 @@ class GateInterface:
         return True
 
     def shutdown(self):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'proxy_interface.shutdown')
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-
         ret = self.disconnect()
         proxy_receiver.A('shutdown')
         proxy_sender.A('shutdown')
@@ -102,12 +101,12 @@ class GateInterface:
         return ret
 
     def connect(self, options):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'proxy_interface.connect %s' % str(options))
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-
         if settings.enablePROXYreceiving():
             proxy_receiver.A('start', options)
         else:
@@ -119,12 +118,12 @@ class GateInterface:
         return succeed(True)
 
     def disconnect(self):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'proxy_interface.disconnect')
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-
         if not proxy_receiver.A():
             lg.warn('proxy_receiver is not ready')
             interface_disconnected()
@@ -137,9 +136,9 @@ class GateInterface:
         return succeed(True)
 
     def build_contacts(self, id_obj):
-        """ """
+        """
+        """
         from transport.proxy import proxy_receiver
-
         # from userid import my_id
         # current_identity_contacts = my_id.getLocalIdentity().getContacts()
         if not proxy_receiver.GetRouterIdentity():
@@ -164,7 +163,6 @@ class GateInterface:
         Check if router is ready and his contacts exists in that identity.
         """
         from transport.proxy import proxy_receiver
-
         if not proxy_receiver.A() or not proxy_receiver.GetRouterIDURL() or not proxy_receiver.GetRouterIdentity():
             # if not yet found any node to route your traffic - do nothing
             if _Debug:
@@ -229,10 +227,10 @@ class GateInterface:
         return result
 
     def list_sessions(self):
-        """ """
+        """
+        """
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-
         result = []
         if proxy_receiver.A():
             result.append(proxy_receiver.A())
@@ -241,11 +239,12 @@ class GateInterface:
         return result
 
     def list_streams(self, sorted_by_time=True):
-        """ """
+        """
+        """
         return []
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def proxy_errback(x):
@@ -254,7 +253,7 @@ def proxy_errback(x):
     return None
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def interface_transport_initialized(xmlrpcurl):
@@ -288,89 +287,69 @@ def interface_disconnected(result=None):
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     if proxy():
-        return (
-            proxy()
-            .callRemote(
-                'register_file_sending',
-                'proxy',
-                host,
-                receiver_idurl,
-                filename,
-                size,
-                description,
-            )
-            .addErrback(proxy_errback)
-        )
+        return proxy().callRemote(
+            'register_file_sending',
+            'proxy',
+            host,
+            receiver_idurl,
+            filename,
+            size,
+            description,
+        ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     if proxy():
-        return (
-            proxy()
-            .callRemote(
-                'register_file_receiving',
-                'proxy',
-                host,
-                sender_idurl,
-                filename,
-                size,
-            )
-            .addErrback(proxy_errback)
-        )
+        return proxy().callRemote(
+            'register_file_receiving',
+            'proxy',
+            host,
+            sender_idurl,
+            filename,
+            size,
+        ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
     if proxy():
-        return (
-            proxy()
-            .callRemote(
-                'unregister_file_sending',
-                transfer_id,
-                status,
-                size,
-                error_message,
-            )
-            .addErrback(proxy_errback)
-        )
+        return proxy().callRemote(
+            'unregister_file_sending',
+            transfer_id,
+            status,
+            size,
+            error_message,
+        ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
     if proxy():
-        return (
-            proxy()
-            .callRemote(
-                'unregister_file_receiving',
-                transfer_id,
-                status,
-                size,
-                error_message,
-            )
-            .addErrback(proxy_errback)
-        )
+        return proxy().callRemote(
+            'unregister_file_receiving',
+            transfer_id,
+            status,
+            size,
+            error_message,
+        ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     if proxy():
-        return (
-            proxy()
-            .callRemote(
-                'cancelled_file_sending',
-                'proxy',
-                host,
-                filename,
-                size,
-                description,
-                error_message,
-            )
-            .addErrback(proxy_errback)
-        )
+        return proxy().callRemote(
+            'cancelled_file_sending',
+            'proxy',
+            host,
+            filename,
+            size,
+            description,
+            error_message,
+        ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)

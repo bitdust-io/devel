@@ -9,7 +9,6 @@ from logs import lg
 from main import settings
 from dht import dht_service
 
-
 parser = optparse.OptionParser()
 parser.add_option('-s', '--start', dest='start', type='int', help='start position', default=1)
 parser.add_option('-e', '--end', dest='end', type='int', help='end position', default=3)
@@ -40,7 +39,6 @@ def run():
 
     def errback(*args, **kwargs):
         import traceback
-
         traceback.print_exc()
 
     def callback_dfl(*args):

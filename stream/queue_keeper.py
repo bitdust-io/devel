@@ -24,8 +24,6 @@
 #
 #
 #
-
-
 """
 .. module:: queue_keeper
 .. role:: red
@@ -51,16 +49,16 @@ EVENTS:
     * :red:`shutdown`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -75,7 +73,7 @@ from twisted.python.failure import Failure
 from twisted.internet.defer import Deferred
 from twisted.internet.task import LoopingCall
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -102,15 +100,15 @@ from userid import id_url
 from userid import global_id
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _QueueKeepers = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-DHT_RECORD_REFRESH_INTERVAL = 10 * 60
+DHT_RECORD_REFRESH_INTERVAL = 10*60
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -130,7 +128,7 @@ def shutdown():
         lg.out(_DebugLevel, 'queue_keeper.shutdown')
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def queue_keepers():
@@ -153,7 +151,7 @@ def existing(customer_idurl):
     return customer_idurl in _QueueKeepers
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def check_create(customer_idurl, auto_create=True, event='init'):
@@ -201,7 +199,7 @@ def close(customer_idurl):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def read_state(customer_id, broker_id):
@@ -261,21 +259,14 @@ def write_state(customer_id, broker_id, json_value):
             lg.exc()
             return None
     if not local_fs.WriteTextFile(keeper_state_file_path, jsn.dumps(json_value)):
-        lg.err(
-            'failed writing queue_keeper state for customer %r of broker %r to %r'
-            % (
-                customer_id,
-                broker_id,
-                keeper_state_file_path,
-            )
-        )
+        lg.err('failed writing queue_keeper state for customer %r of broker %r to %r' % (customer_id, broker_id, keeper_state_file_path))
         return None
     if _Debug:
         lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
     return json_value
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(customer_idurl, event=None, *args, **kwargs):
@@ -302,14 +293,13 @@ def A(customer_idurl, event=None, *args, **kwargs):
     return _QueueKeepers[customer_idurl]
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class QueueKeeper(automat.Automat):
     """
     This class implements all the functionality of ``queue_keeper()`` state machine.
     """
-
     def __init__(self, customer_idurl, broker_idurl=None, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `queue_keeper()` state machine.
@@ -325,37 +315,27 @@ class QueueKeeper(automat.Automat):
         self.pending_connect_requests = []
         self.latest_dht_records = {}
         self.InSync = False
-        super(QueueKeeper, self).__init__(
-            name='queue_keeper_%s' % self.customer_id,
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs,
-        )
+        super(QueueKeeper, self).__init__(name='queue_keeper_%s' % self.customer_id, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def __repr__(self):
         return '%s[%d](%s)' % (self.id, self.known_position, self.state)
 
     def to_json(self):
         j = super().to_json()
-        j.update(
-            {
-                'customer_id': self.customer_id,
-                'broker_id': self.broker_id,
-                'position': self.known_position,
-                'brokers': self.cooperated_brokers,
-                'streams': self.known_streams,
-            }
-        )
+        j.update({
+            'customer_id': self.customer_id,
+            'broker_id': self.broker_id,
+            'position': self.known_position,
+            'brokers': self.cooperated_brokers,
+            'streams': self.known_streams,
+        })
         return j
 
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'DISCONNECTED'
@@ -369,7 +349,7 @@ class QueueKeeper(automat.Automat):
                 self.doReadState(*args, **kwargs)
                 self.doBuildVerifyRequest(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
-        # ---DISCONNECTED---
+        #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -378,7 +358,7 @@ class QueueKeeper(automat.Automat):
                 self.state = 'DHT_READ'
                 self.doBuildConnectRequest(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
-        # ---DHT_READ---
+        #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -397,7 +377,7 @@ class QueueKeeper(automat.Automat):
                 self.InSync = False
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
-        # ---COOPERATE?---
+        #---COOPERATE?---
         elif self.state == 'COOPERATE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -417,7 +397,7 @@ class QueueKeeper(automat.Automat):
                 self.InSync = False
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
-        # ---DHT_WRITE---
+        #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -443,7 +423,7 @@ class QueueKeeper(automat.Automat):
                 self.doWriteState(*args, **kwargs)
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
-        # ---CONNECTED---
+        #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -454,7 +434,7 @@ class QueueKeeper(automat.Automat):
                 self.state = 'DHT_READ'
                 self.doBuildConnectRequest(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -704,7 +684,7 @@ class QueueKeeper(automat.Automat):
         self.latest_dht_records.clear()
         self.destroy()
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def verify_broker(self, broker_idurl, position, known_brokers, known_streams):
         if not self.InSync or self.state != 'CONNECTED':
@@ -729,7 +709,7 @@ class QueueKeeper(automat.Automat):
                     pass
         return None
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _do_dht_write(self, desired_position, archive_folder_path, revision, retry, event=None, **kwargs):
         result = dht_relations.write_customer_message_broker(

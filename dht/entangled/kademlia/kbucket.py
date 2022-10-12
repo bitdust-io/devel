@@ -19,7 +19,6 @@ import six
 
 from . import constants  # @UnresolvedImport
 
-
 _Debug = False
 
 
@@ -30,8 +29,8 @@ class BucketFull(Exception):
 
 
 class KBucket(object):
-    """Description - later"""
-
+    """ Description - later
+    """
     def __init__(self, rangeMin, rangeMax):
         """
         @param rangeMin: The lower boundary for the range in the 160-bit ID

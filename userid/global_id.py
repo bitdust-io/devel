@@ -23,22 +23,21 @@
 #
 #
 #
-
 """
 .. module:: global_id.
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import re
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _FORMAT_GLOBAL_ID = '{key_alias}${username}@{host}'
 _FORMAT_GLOBAL_ID_USER = '{username}@{host}'
@@ -52,11 +51,11 @@ _REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_alias>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$
 _REGEX_GLOBAL_ID_QUEUE_ID = '^(?P<queue_alias>[a-z0-9-_]+)\&(?P<owner_id>[a-z0-9-_\@\.]+)\&(?P<supplier_id>[a-z0-9-_\@\.]+)$'
 _REGEX_GLOBAL_CUSTOMER_QUEUE_ID = '^(?P<queue_alias>[a-z0-9-_]+)\&(?P<customer_id>[a-z0-9-_\@\.]+)\&(?P<position>[0-9]+)$'
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _REGEX_OBJ_GLOBAL_ID_QUEUE_ID = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def idurl2glob(idurl):
@@ -73,7 +72,7 @@ def glob2idurl(glob_id, as_field=True):
     return GlobalUserToIDURL(glob_id, as_field=as_field)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def MakeGlobalKeyID(key_alias, user_id):
@@ -83,7 +82,7 @@ def MakeGlobalKeyID(key_alias, user_id):
     )
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def MakeGlobalID(
@@ -117,7 +116,6 @@ def MakeGlobalID(
                 _, _, key_alias = user_and_key.rpartition('!')
         if idurl:
             from lib import nameurl
-
             _, idhost, port, filename = nameurl.UrlParse(idurl)
             if port:
                 idhost += '_' + str(port)
@@ -189,7 +187,6 @@ def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
     if not inp:
         if as_field:
             from userid import id_url
-
             result['idurl'] = id_url.field(result['idurl'])
         return result
     inp = strng.to_text(inp)
@@ -230,7 +227,7 @@ def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
         result['idhost'] = idhost
         if result['idhost'].count('_'):
             _pos = result['idhost'].rfind('_')
-            port = result['idhost'][_pos + 1 :]
+            port = result['idhost'][_pos + 1:]
             try:
                 port = int(port)
             except:
@@ -248,7 +245,6 @@ def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
         if detect_version:
             try:
                 from lib import packetid
-
                 backupID, _, fileName = path.rpartition('/')
                 if packetid.IsPacketNameCorrect(fileName):
                     _, _, versionName = backupID.rpartition('/')
@@ -261,7 +257,6 @@ def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
         result['key_id'] = MakeGlobalKeyID(result['key_alias'], result['customer'])
     if as_field:
         from userid import id_url
-
         result['idurl'] = id_url.field(result['idurl'])
     return result
 
@@ -278,7 +273,6 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
         5. if no idhost : use idurl
     """
     from userid import my_id
-
     if isinstance(inp, dict):
         g = inp
     else:
@@ -287,7 +281,6 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
         g['idurl'] = my_id.getIDURL().to_bin()
     if as_field:
         from userid import id_url
-
         g['idurl'] = id_url.field(g['idurl'])
     if not g['customer']:
         g['customer'] = UrlToGlobalID(g['idurl'])
@@ -297,7 +290,6 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
         g['key_alias'] = 'master'
     if not g['idhost']:
         from lib import nameurl
-
         g['idhost'] = nameurl.GetHost(g['idurl'])
     if not g['key_id']:
         g['key_id'] = MakeGlobalKeyID(g['key_alias'], g['customer'])
@@ -315,7 +307,6 @@ def CanonicalID(inp, include_key=True):
 
 def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=None, key_alias=None):
     from lib import nameurl
-
     g = ParseGlobalID(packet_id, as_field=False)
     if key_id is not None:
         g['key_id'] = key_id
@@ -345,7 +336,7 @@ def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=N
     return MakeGlobalID(**g)
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def UrlToGlobalID(url, include_key=False):
@@ -353,7 +344,6 @@ def UrlToGlobalID(url, include_key=False):
         return url
     from lib import nameurl
     from userid import id_url
-
     if isinstance(url, id_url.ID_URL_FIELD):
         # small optimization
         return url.to_id()
@@ -380,7 +370,7 @@ def GlobalUserToIDURL(inp, as_field=True):
     if idhost.count('_'):
         # we can do that because domain names never use "_" symbol
         _pos = idhost.rfind('_')
-        port = idhost[_pos + 1 :]
+        port = idhost[_pos + 1:]
         try:
             port = int(port)
         except:
@@ -390,11 +380,10 @@ def GlobalUserToIDURL(inp, as_field=True):
     if not as_field:
         return strng.to_bin('http://{}/{}.xml'.format(idhost, user))
     from userid import id_url
-
     return id_url.field('http://{}/{}.xml'.format(idhost, user))
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def IsValidGlobalUser(inp):
@@ -424,7 +413,7 @@ def IsFullGlobalID(inp):
     return True
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def MakeGlobalQueueID(queue_alias, owner_id, supplier_id):
@@ -477,7 +466,7 @@ def GetGlobalQueueKeyID(queue_id):
     return key_id
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def latest_glob_id(glob_id):
