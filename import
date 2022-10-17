@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# The script can be used to make a static snapshot of the repository files.
+#
+# Usage:
+#
+#     git clone https://github.com/bitdust-io/devel.git bitdust
+#     mkdir bitdust_snapshot/
+#     cp bitdust/import bitdust_snapshot/
+#     cd bitdust_snapshot/
+#     ./import ../bitdust/
+
+tmppath="$1.tmp"
+curpath=`pwd`
+git pull
+cd "$1"
+sourcepath=`pwd`
+mkdir "$tmppath"
+git checkout-index -a -f --prefix="$tmppath/"
+cd "$tmppath"
+# rm -rf release/
+# rm -rf screenshots/
+# rm -rf scripts/
+# rm -rf deploy/
+# rm -rf dht/entangled_orig/
+# rm -rf devops/
+# rm -rf tests/dht/
+# rm -rf tests/e2e/
+# rm -rf tests/experiments/
+cp -r -v * "$curpath"
+rm -rf "$tmppath"
+
+cd "$curpath"
+# find . -type f -name "*.py" -exec sed -i '' -e 's/_Debug = True/_Debug = False/g' {} +
