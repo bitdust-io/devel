@@ -204,15 +204,15 @@ class Parser(object):
         else:
             data.append("key")
 
-        if data[1] == re.search('\s*', data[1], re.S | re.M).group(0):
+        if data[1] == re.search('\s*', data[1], re.S | re.M).group(0):  # @UndefinedVariable
             raise IndexCreatorFunctionException(
                 "Empty function body ",
                 len(re.split('\n', data[0])) + (len(re.split('\n', data[2])) if self.funcs_rev else 1) - 1)
-        if data[2] == re.search('\s*', data[2], re.S | re.M).group(0):
+        if data[2] == re.search('\s*', data[2], re.S | re.M).group(0):  # @UndefinedVariable
             raise IndexCreatorFunctionException(
                 "Empty function body ",
                 len(re.split('\n', data[0])) + (1 if self.funcs_rev else len(re.split('\n', data[1]))) - 1)
-        if data[0] == re.search('\s*', data[0], re.S | re.M).group(0):
+        if data[0] == re.search('\s*', data[0], re.S | re.M).group(0):  # @UndefinedVariable
             raise IndexCreatorValueException("You didn't set any properity or you set them not at the begining of the code\n")
 
         data = [re.split(

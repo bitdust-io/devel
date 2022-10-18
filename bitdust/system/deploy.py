@@ -65,9 +65,9 @@ def get_executable_location():
     Returns path to the folder from where current process was executed.
     """
     try:
-        source_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        source_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     except:
-        source_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        source_dir = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
     return source_dir
 
 

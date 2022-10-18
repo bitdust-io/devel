@@ -30,7 +30,7 @@ def cache1lvl(maxsize=100):
         def wrapper(key, *args, **kwargs):
             # print('rr_cache.1lvl.wrapper %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             try:
                 result = cache1lvl[key]
                 # print('rr_cache.1lvl.wrapper found result')
@@ -48,7 +48,7 @@ def cache1lvl(maxsize=100):
         def delete(key):
             # print('rr_cache.1lvl.delete %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             try:
                 del cache1lvl[key]
                 return True
@@ -72,7 +72,7 @@ def cache2lvl(maxsize=100):
             key = args[0]
             # print('rr_cache.2lvl.wrapper %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             try:
                 result = cache[key][args[1]]
                 # print('rr_cache.2lvl.wrapper found result')
@@ -101,7 +101,7 @@ def cache2lvl(maxsize=100):
         def delete(key, inner_key=None):
             # print('rr_cache.2lvl.delete %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             if inner_key:
                 try:
                     del cache[key][inner_key]

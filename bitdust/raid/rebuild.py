@@ -43,10 +43,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-import logs.lg
+import bitdust.logs.lg
 
-import raid.read
-import raid.eccmap
+import bitdust.raid.read
+import bitdust.raid.eccmap
 
 #------------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         customer, _, localPath = backupID.rpartition(':')
         if '$' not in customer:
             customer = 'master$' + customer
-        myeccmap = raid.eccmap.eccmap(eccMap)
+        myeccmap = bitdust.raid.eccmap.eccmap(eccMap)
         supplierCount = len(availableSuppliers)
         missingData = [0]*supplierCount
         missingParity = [0]*supplierCount
@@ -126,7 +126,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                                 if os.path.isfile(filename):
                                     rebuildFileList.append(filename)
                         # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
-                        raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName, threshold_control=threshold_control)
+                        bitdust.raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName, threshold_control=threshold_control)
                     if os.path.exists(dataFileName):
                         localData[supplierNum] = 1
                         madeProgress = True
@@ -157,7 +157,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                         if os.path.isfile(filename):
                             rebuildFileList.append(filename)
                     # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
-                    raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName, threshold_control=threshold_control)
+                    bitdust.raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName, threshold_control=threshold_control)
                     if os.path.exists(parityFileName):
                         # lg.out(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                         localParity[supplierNum] = 1
@@ -183,5 +183,5 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         )
 
     except:
-        logs.lg.exc()
+        bitdust.logs.lg.exc()
         return None

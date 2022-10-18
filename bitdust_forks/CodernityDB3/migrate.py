@@ -16,7 +16,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from CodernityDB3.database import Database
+from bitdust_forks.CodernityDB3.database import Database
 import shutil
 import os
 

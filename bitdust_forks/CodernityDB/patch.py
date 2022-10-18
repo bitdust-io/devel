@@ -17,7 +17,7 @@
 
 
 from __future__ import absolute_import
-from CodernityDB.misc import NONE
+from bitdust_forks.CodernityDB.misc import NONE
 
 
 def __patch(obj, name, new):

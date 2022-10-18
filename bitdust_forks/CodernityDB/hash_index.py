@@ -17,7 +17,7 @@
 
 
 from __future__ import absolute_import
-from CodernityDB.index import (Index,
+from bitdust_forks.CodernityDB.index import (Index,
                                IndexException,
                                DocIdNotFound,
                                ElemNotFound,
@@ -30,19 +30,19 @@ import io
 import struct
 import shutil
 
-from CodernityDB.storage import IU_Storage, DummyStorage
+from bitdust_forks.CodernityDB.storage import IU_Storage, DummyStorage
 
-from CodernityDB.env import cdb_environment
+from bitdust_forks.CodernityDB.env import cdb_environment
 import six
 
 if cdb_environment.get('rlock_obj'):
-    from CodernityDB import patch
+    from bitdust_forks.CodernityDB import patch
     patch.patch_cache_rr(cdb_environment['rlock_obj'])
 
-from CodernityDB.rr_cache import cache1lvl
+from bitdust_forks.CodernityDB.rr_cache import cache1lvl
 
 
-from CodernityDB.misc import random_hex_32
+from bitdust_forks.CodernityDB.misc import random_hex_32
 
 try:
     from CodernityDB import __version__

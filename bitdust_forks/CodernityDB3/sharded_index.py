@@ -17,7 +17,7 @@
 
 
 from __future__ import absolute_import
-from CodernityDB3.index import Index
+from bitdust_forks.CodernityDB3.index import Index
 from six.moves import range
 # from CodernityDB3.env import cdb_environment
 # import warnings

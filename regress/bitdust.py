@@ -30,12 +30,6 @@ import os
 
 def main():
     executable_path = os.getcwd()
-
-    try:
-        os.chdir(os.path.dirname(__file__))
-    except:
-        pass
-
     from bitdust.main.bpmain import main
     ret = main(executable_path)
     return ret

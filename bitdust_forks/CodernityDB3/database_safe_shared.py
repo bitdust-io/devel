@@ -18,8 +18,8 @@
 from __future__ import absolute_import
 import six
 
-from CodernityDB3.env import cdb_environment
-from CodernityDB3.database import PreconditionsException, RevConflict, Database
+from bitdust_forks.CodernityDB3.env import cdb_environment
+from bitdust_forks.CodernityDB3.database import PreconditionsException, RevConflict, Database
 # from database import Database
 
 from collections import defaultdict

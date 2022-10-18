@@ -78,9 +78,9 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-import logs.lg
+import bitdust.logs.lg
 
-import raid.eccmap
+import bitdust.raid.eccmap
 
 #------------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
         try:
             raidfiles[filenum] = open(inlist[filenum], 'rb')
         except:
-            logs.lg.exc()
+            bitdust.logs.lg.exc()
             for f in raidfiles:
                 try:
                     f.close()
@@ -170,7 +170,7 @@ def raidread(
         if _Debug:
             open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
 
-        myeccmap = raid.eccmap.eccmap(eccmapname)
+        myeccmap = bitdust.raid.eccmap.eccmap(eccmapname)
         GoodFiles = [
             '',
         ]*(myeccmap.datasegments + myeccmap.paritysegments)
@@ -229,7 +229,7 @@ def raidread(
         return GoodDSegs
 
     except:
-        logs.lg.exc()
+        bitdust.logs.lg.exc()
         return None
 
 

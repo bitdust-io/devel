@@ -71,10 +71,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-import logs.lg
+import bitdust.logs.lg
 
-import raid.eccmap
-import raid.raidutils
+import bitdust.raid.eccmap
+import bitdust.raid.raidutils
 
 #------------------------------------------------------------------------------
 
@@ -145,7 +145,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
             with open('/tmp/raid.log', 'a') as logfile:
                 logfile.write(u'make filename=%s eccmapname=%s blockNumber=%s\n' % (repr(filename), eccmapname, blockNumber))
         INTSIZE = 4
-        myeccmap = raid.eccmap.eccmap(eccmapname)
+        myeccmap = bitdust.raid.eccmap.eccmap(eccmapname)
         # any padding at end and block.Length fixes
         RoundupFile(filename, myeccmap.datasegments*INTSIZE)
         wholefile = ReadBinaryFileAsArray(filename)
@@ -155,7 +155,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
         # dict of data segments
         sds = {}
-        for seg_num, chunk in enumerate(raid.raidutils.chunks(wholefile, int(seglength/4))):
+        for seg_num, chunk in enumerate(bitdust.raid.raidutils.chunks(wholefile, int(seglength/4))):
             FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
             with open(FileName, mode='wb') as f:
                 chunk_to_write = copy.copy(chunk)
@@ -163,7 +163,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
                 sds[seg_num] = iter(chunk)
                 f.write(chunk_to_write)
 
-        psds_list = raid.raidutils.build_parity(
+        psds_list = bitdust.raid.raidutils.build_parity(
             sds,
             int(seglength/INTSIZE),
             myeccmap.datasegments,
@@ -183,7 +183,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
         return dataNum, parityNum
 
     except:
-        logs.lg.exc()
+        bitdust.logs.lg.exc()
         return -1, -1
 
 

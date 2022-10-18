@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-from CodernityDB.tree_index import TreeBasedIndex
+from bitdust_forks.CodernityDB.tree_index import TreeBasedIndex
 import struct
 import os
 

@@ -28,14 +28,14 @@ import codecs
 
 from .storage import IU_Storage
 
-from CodernityDB3.env import cdb_environment
-from CodernityDB3.index import TryReindexException
+from bitdust_forks.CodernityDB3.env import cdb_environment
+from bitdust_forks.CodernityDB3.index import TryReindexException
 
 if cdb_environment.get('rlock_obj'):
-    from CodernityDB3 import patch
+    from bitdust_forks.CodernityDB3 import patch
     patch.patch_cache_rr(cdb_environment['rlock_obj'])
 
-from CodernityDB3.rr_cache import cache1lvl, cache2lvl
+from bitdust_forks.CodernityDB3.rr_cache import cache1lvl, cache2lvl
 
 tree_buffer_size = io.DEFAULT_BUFFER_SIZE
 

@@ -16,16 +16,16 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from gevent.lock import RLock
+from gevent.lock import RLock  # @UnresolvedImport
 
-from CodernityDB3.env import cdb_environment
+from bitdust_forks.CodernityDB3.env import cdb_environment
 
 cdb_environment['mode'] = "gevent"
 cdb_environment['rlock_obj'] = RLock
 
 
 # from CodernityDB3.database import Database
-from CodernityDB3.database_safe_shared import SafeDatabase
+from bitdust_forks.CodernityDB3.database_safe_shared import SafeDatabase
 
 
 class GeventDatabase(SafeDatabase):

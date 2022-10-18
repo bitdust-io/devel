@@ -24,15 +24,15 @@ import codecs
 from inspect import getsource
 
 # for custom indexes
-from CodernityDB3.storage import Storage, IU_Storage
-from CodernityDB3.hash_index import (
+from bitdust_forks.CodernityDB3.storage import Storage, IU_Storage
+from bitdust_forks.CodernityDB3.hash_index import (
     HashIndex,
     IU_UniqueHashIndex,
     IU_HashIndex,
     UniqueHashIndex)
 # normal imports
 
-from CodernityDB3.index import (
+from bitdust_forks.CodernityDB3.index import (
     ElemNotFound,
     DocIdNotFound,
     IndexException,
@@ -42,9 +42,9 @@ from CodernityDB3.index import (
     IndexNotFoundException,
     IndexConflict)
 
-from CodernityDB3.misc import NONE
+from bitdust_forks.CodernityDB3.misc import NONE
 
-from CodernityDB3.env import cdb_environment
+from bitdust_forks.CodernityDB3.env import cdb_environment
 
 from random import randrange
 
@@ -483,11 +483,11 @@ class Database(object):
             if not os.path.exists(self.path):
                 self.initialize(self.path)
         if not 'id' in self.indexes_names and with_id_index:
-            import CodernityDB3.hash_index
+            import bitdust_forks.CodernityDB3.hash_index
             if not 'db_path' in index_kwargs:
                 index_kwargs['db_path'] = self.path
             index_kwargs['name'] = 'id'
-            id_ind = CodernityDB3.hash_index.UniqueHashIndex(**index_kwargs)
+            id_ind = bitdust_forks.CodernityDB3.hash_index.UniqueHashIndex(**index_kwargs)
             self.add_index(id_ind, create=False)
             # del CodernityDB3.index
         for index in self.indexes:

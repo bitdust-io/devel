@@ -16,8 +16,8 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from CodernityDB.env import cdb_environment
-from CodernityDB.database import PreconditionsException, RevConflict, Database
+from bitdust_forks.CodernityDB.env import cdb_environment
+from bitdust_forks.CodernityDB.database import PreconditionsException, RevConflict, Database
 # from database import Database
 
 from collections import defaultdict

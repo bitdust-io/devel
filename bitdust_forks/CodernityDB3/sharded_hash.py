@@ -19,9 +19,9 @@
 from __future__ import absolute_import
 import six
 
-from CodernityDB3.hash_index import UniqueHashIndex, HashIndex
-from CodernityDB3.sharded_index import ShardedIndex
-from CodernityDB3.index import IndexPreconditionsException
+from bitdust_forks.CodernityDB3.hash_index import UniqueHashIndex, HashIndex
+from bitdust_forks.CodernityDB3.sharded_index import ShardedIndex
+from bitdust_forks.CodernityDB3.index import IndexPreconditionsException
 
 from random import getrandbits
 import uuid

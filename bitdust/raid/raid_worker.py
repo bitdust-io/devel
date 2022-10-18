@@ -93,12 +93,12 @@ from bitdust.raid import rebuild
 #------------------------------------------------------------------------------
 
 _MODULES = (
-    'raid.read',
-    'raid.make',
-    'raid.rebuild',
-    'raid.eccmap',
-    'raid.raidutils',
-    'logs.lg',
+    'bitdust.raid.read',
+    'bitdust.raid.make',
+    'bitdust.raid.rebuild',
+    'bitdust.raid.eccmap',
+    'bitdust.raid.raidutils',
+    'bitdust.logs.lg',
     'os',
     'sys',
     'copy',

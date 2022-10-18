@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 from threading import RLock
 
-from CodernityDB.env import cdb_environment
+from bitdust_forks.CodernityDB.env import cdb_environment
 import six
 
 cdb_environment['mode'] = "threads"
@@ -30,7 +30,7 @@ from .database import Database
 from functools import wraps
 from types import FunctionType, MethodType
 
-from CodernityDB.database_safe_shared import th_safe_gen
+from bitdust_forks.CodernityDB.database_safe_shared import th_safe_gen
 
 
 class SuperLock(type):

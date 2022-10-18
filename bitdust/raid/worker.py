@@ -131,7 +131,7 @@ class Manager(object):
             except RuntimeError:
                 pass
 
-        multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)
+        multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)  # @UndefinedVariable
 
         from bitdust.system import bpio
         if bpio.Windows():

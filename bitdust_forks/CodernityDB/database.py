@@ -20,14 +20,14 @@ import io
 from inspect import getsource
 
 # for custom indexes
-from CodernityDB.storage import Storage, IU_Storage
-from CodernityDB.hash_index import (IU_UniqueHashIndex,
+from bitdust_forks.CodernityDB.storage import Storage, IU_Storage
+from bitdust_forks.CodernityDB.hash_index import (IU_UniqueHashIndex,
                                     IU_HashIndex,
                                     HashIndex,
                                     UniqueHashIndex)
 # normal imports
 
-from CodernityDB.index import (ElemNotFound,
+from bitdust_forks.CodernityDB.index import (ElemNotFound,
                                DocIdNotFound,
                                IndexException,
                                Index,
@@ -36,9 +36,9 @@ from CodernityDB.index import (ElemNotFound,
                                IndexNotFoundException,
                                IndexConflict)
 
-from CodernityDB.misc import NONE
+from bitdust_forks.CodernityDB.misc import NONE
 
-from CodernityDB.env import cdb_environment
+from bitdust_forks.CodernityDB.env import cdb_environment
 
 from random import randrange
 
@@ -476,11 +476,11 @@ class Database(object):
             if not os.path.exists(self.path):
                 self.initialize(self.path)
         if not 'id' in self.indexes_names and with_id_index:
-            import CodernityDB.hash_index
+            import bitdust_forks.CodernityDB.hash_index
             if not 'db_path' in index_kwargs:
                 index_kwargs['db_path'] = self.path
             index_kwargs['name'] = 'id'
-            id_ind = CodernityDB.hash_index.UniqueHashIndex(**index_kwargs)
+            id_ind = bitdust_forks.CodernityDB.hash_index.UniqueHashIndex(**index_kwargs)
             self.add_index(id_ind, create=False)
             # del CodernityDB.index
         for index in self.indexes:

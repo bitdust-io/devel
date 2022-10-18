@@ -23,7 +23,7 @@ import marshal
 import struct
 import shutil
 
-from CodernityDB3.storage import IU_Storage, DummyStorage
+from bitdust_forks.CodernityDB3.storage import IU_Storage, DummyStorage
 
 try:
     from CodernityDB3 import __version__
