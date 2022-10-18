@@ -5,9 +5,9 @@ import optparse
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 
-from logs import lg
-from main import settings
-from dht import dht_service
+from bitdust.logs import lg
+from bitdust.main import settings
+from bitdust.dht import dht_service
 
 parser = optparse.OptionParser()
 parser.add_option('-s', '--start', dest='start', type='int', help='start position', default=1)

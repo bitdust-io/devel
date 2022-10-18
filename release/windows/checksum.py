@@ -26,7 +26,7 @@ import sys
 from io import open
 
 sys.path.append(os.path.join('..', '..'))
-from lib import misc
+from bitdust.lib import misc
 
 
 def mkinfo(dirpath):

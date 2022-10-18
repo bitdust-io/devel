@@ -34,9 +34,9 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from logs import lg
-from system import bpio
-from transport import gateway
+from bitdust.logs import lg
+from bitdust.system import bpio
+from bitdust.transport import gateway
 
 #------------------------------------------------------------------------------
 
@@ -44,13 +44,13 @@ from transport import gateway
 def main():
     lg.set_debug_level(18)
     lg.life_begins()
-    from crypt import key
+    from bitdust.crypt import key
     key.InitMyKey()
-    from contacts import identitycache
+    from bitdust.contacts import identitycache
     identitycache.init()
-    from system import tmpfile
+    from bitdust.system import tmpfile
     tmpfile.init()
-    from services import driver
+    from bitdust.services import driver
 
     required_services = [
         'service_http_connections',
@@ -127,7 +127,7 @@ def main():
 #             # _try_connect()
 #
 #             def _send(c):
-#                 from transport.udp import udp_stream
+#                 from bitdust.transport.udp import udp_stream
 #                 for idurl in sys.argv[2:]:
 #                     print '_send', udp_stream.streams().keys()
 #                     p = signed.Packet(commands.Data(),

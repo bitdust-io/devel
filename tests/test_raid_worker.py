@@ -8,13 +8,13 @@ from twisted.internet.base import DelayedCall
 
 DelayedCall.debug = True
 
-from raid import raid_worker
+from bitdust.raid import raid_worker
 
-from logs import lg
+from bitdust.logs import lg
 
-from system import bpio
+from bitdust.system import bpio
 
-from main import settings
+from bitdust.main import settings
 
 
 class TestRaidWorker(TestCase):

@@ -36,7 +36,7 @@ def main():
     except:
         pass
 
-    from main.bpmain import main
+    from bitdust.main.bpmain import main
     ret = main(executable_path)
     return ret
 

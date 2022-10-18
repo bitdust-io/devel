@@ -40,8 +40,8 @@ def main():
         print('fail', x)
         reactor.stop()  # @UndefinedVariable
 
-    from lib import net_misc
-    from main import settings
+    from bitdust.lib import net_misc
+    from bitdust.main import settings
     settings.init()
     settings.update_proxy_settings()
     url = 'http://localhost:8084'

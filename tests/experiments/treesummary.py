@@ -26,9 +26,9 @@ import sys
 import os.path as _p
 
 sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
-from p2p import p2p_service
-from main import settings
-from lib import nameurl
+from bitdust.p2p import p2p_service
+from bitdust.main import settings
+from bitdust.lib import nameurl
 
 custdir = settings.getCustomersFilesDir()
 ownerdir = os.path.join(custdir, nameurl.UrlFilename('http://megafaq.ru/e_vps1004.xml'))

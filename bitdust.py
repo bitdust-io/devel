@@ -46,20 +46,20 @@ def main():
         pass
 
     try:
-        from main.bpmain import main
+        from bitdust.main.bpmain import main
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         from distutils.sysconfig import get_python_lib
         sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
         try:
-            from main.bpmain import main
+            from bitdust.main.bpmain import main
         except:
             print('ERROR! can not import working code.  Python Path:')
             print('\n'.join(sys.path))
             return 1
 
-    from main.bpmain import main
+    from bitdust.main.bpmain import main
 
     ret = main(executable_path)
 

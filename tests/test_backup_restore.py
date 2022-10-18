@@ -7,26 +7,26 @@ from twisted.internet.base import DelayedCall
 
 DelayedCall.debug = True
 
-from logs import lg
+from bitdust.logs import lg
 
-from automats import automat
+from bitdust.automats import automat
 
-from main import settings
+from bitdust.main import settings
 
-from system import bpio
-from system import local_fs
-from system import tmpfile
+from bitdust.system import bpio
+from bitdust.system import local_fs
+from bitdust.system import tmpfile
 
-from crypt import key
+from bitdust.crypt import key
 
-from raid import eccmap
-from raid import raid_worker
+from bitdust.raid import eccmap
+from bitdust.raid import raid_worker
 
-from storage import backup_tar
-from storage import backup
-from storage import restore_worker
+from bitdust.storage import backup_tar
+from bitdust.storage import backup
+from bitdust.storage import restore_worker
 
-from userid import my_id
+from bitdust.userid import my_id
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim

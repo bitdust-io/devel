@@ -32,6 +32,8 @@ import os
 import six
 import platform
 
+_Debug = False
+
 ostype = platform.uname()[0]
 if ostype == 'Windows':
     if six.PY3:
@@ -50,10 +52,10 @@ else:
 if __name__ == '__main__':
     try:
         sys.path.append(os.path.abspath(os.path.join('.', 'parallelp', 'pp')))
-        from parallelp.pp.ppworker import _WorkerProcess
+        from bitdust_forks.parallelp.pp.ppworker import _WorkerProcess
         wp = _WorkerProcess()
         wp.run()
     except Exception as exc:
-        pass
-        # import traceback
-        # open('/tmp/raid.log', 'a').write(traceback.format_exc())
+        if _Debug:
+            import traceback
+            open('/tmp/raid.log', 'a').write(traceback.format_exc())

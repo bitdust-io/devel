@@ -3,16 +3,16 @@ import tempfile
 import unittest
 from unittest import TestCase
 
-from main import settings
+from bitdust.main import settings
 
-from system import bpio
+from bitdust.system import bpio
 
-from logs import lg
+from bitdust.logs import lg
 
-from lib import strng
+from bitdust.lib import strng
 
-from userid import id_url
-from userid import identity
+from bitdust.userid import id_url
+from bitdust.userid import identity
 
 alice_bin = b'http://127.0.0.1:8084/alice.xml'
 alice_text = 'http://127.0.0.1:8084/alice.xml'

@@ -1,16 +1,16 @@
 from unittest import TestCase
 import os
 
-from logs import lg
+from bitdust.logs import lg
 
-from system import bpio
+from bitdust.system import bpio
 
-from main import settings
+from bitdust.main import settings
 
-from crypt import key
-from crypt import my_keys
+from bitdust.crypt import key
+from bitdust.crypt import my_keys
 
-from userid import my_id
+from bitdust.userid import my_id
 
 _sample_private_key = """-----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQDP7lJ67hcSnWSFFzQs14brEBzovQfyoa7mkb+YkI9EJ/hEAsL7

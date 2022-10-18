@@ -40,7 +40,7 @@ for filename in os.listdir(sys.argv[1]):
         # if len(words)==4 and words[0] == 'from' and words[2]=='import':
         #     if words[1] in ['lib', 'userid', 'transport', 'stun', 'dht']:
         #         line = 'import %s.%s as %s' % (words[1], words[3], words[3])
-        # line = line.replace('from lib import dhnio', 'import lib.dhnio as dhnio')
+        # line = line.replace('from bitdust.lib import dhnio', 'import lib.dhnio as dhnio')
         if len(words) == 4:
             if words[0] == 'import' and words[2] == 'as':
                 pkg, modl = words[1].split('.')

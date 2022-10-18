@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from crypt import rsa_key
-from crypt import cipher
+from bitdust.crypt import rsa_key
+from bitdust.crypt import cipher
 
 
 class Test(TestCase):

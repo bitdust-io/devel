@@ -32,7 +32,7 @@ except:
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-from interface import cmd_line_json
+from bitdust.interface import cmd_line_json
 
 #------------------------------------------------------------------------------
 

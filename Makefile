@@ -81,6 +81,8 @@ $(VENV_TEST): $(VENV_BASE) $(REQUIREMENTS_TEST)
 
 pyclean:
 	@find . -name *.pyc -delete
+	@find . -name __pycache__ -delete
+	@find . -name .DS_Store -delete
 	@rm -rfv *.egg-info build
 	@rm -rfv coverage.xml .coverage
 

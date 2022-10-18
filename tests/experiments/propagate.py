@@ -28,7 +28,7 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 sys.path.append(os.path.abspath('..'))
 
-from logs import lg
+from bitdust.logs import lg
 
 
 def main():
