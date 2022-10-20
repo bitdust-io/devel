@@ -28,7 +28,6 @@
 
 from __future__ import absolute_import
 import os
-import sys
 
 try:
     import locale
@@ -40,26 +39,26 @@ except:
 def main():
     executable_path = os.getcwd()
 
-    try:
-        os.chdir(os.path.dirname(__file__))
-    except:
-        pass
+    # try:
+    #     os.chdir(os.path.dirname(__file__))
+    # except:
+    #     pass
 
-    try:
-        from main.bpmain import main
-    except:
-        dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-        sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-        from distutils.sysconfig import get_python_lib
-        sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
-        try:
-            from main.bpmain import main
-        except:
-            print('ERROR! can not import working code.  Python Path:')
-            print('\n'.join(sys.path))
-            return 1
+    # try:
+    #     from bitdust.main.bpmain import main
+    # except:
+    #     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+    #     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+    #     from distutils.sysconfig import get_python_lib
+    #     sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
+    #     try:
+    #         from bitdust.main.bpmain import main
+    #     except:
+    #         print('ERROR! can not import working code.  Python Path:')
+    #         print('\n'.join(sys.path))
+    #         return 1
 
-    from main.bpmain import main
+    from bitdust.main.bpmain import main
 
     ret = main(executable_path)
 

@@ -24,18 +24,18 @@ from __future__ import absolute_import
 from twisted.internet import reactor  # @UnresolvedImport
 
 try:
-    from logs import lg
+    from bitdust.logs import lg
 except:
     import sys
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
-from logs import lg
+from bitdust.logs import lg
 
 #------------------------------------------------------------------------------
 
 
 def run_tests():
-    from interface import api
+    from bitdust.interface import api
     reactor.callLater(15, api.ping, 'http://p2p-id.ru/atg314.xml')
 
 
@@ -43,9 +43,9 @@ def run_tests():
 
 
 def main():
-    from interface import api
-    from main import bpmain
-    from system import bpio
+    from bitdust.interface import api
+    from bitdust.main import bpmain
+    from bitdust.system import bpio
     lg.open_log_file('test_api.log')
     lg.set_debug_level(20)
     lg.life_begins()

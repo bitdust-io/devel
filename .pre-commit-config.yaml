@@ -1,7 +1,6 @@
 exclude: |
   (?x)(
-      ^CodernityDB/|
-      ^CodernityDB3/|
+      ^bitdust_forks/|
       ^devops/|
       ^icons/|
       ^regress/|

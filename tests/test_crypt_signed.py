@@ -2,19 +2,19 @@ import os
 
 from unittest import TestCase
 
-from logs import lg
+from bitdust.logs import lg
 
-from system import bpio
+from bitdust.system import bpio
 
-from main import settings
+from bitdust.main import settings
 
-from crypt import key
-from crypt import signed
+from bitdust.crypt import key
+from bitdust.crypt import signed
 
-from contacts import identitycache
+from bitdust.contacts import identitycache
 
-from userid import identity
-from userid import my_id
+from bitdust.userid import identity
+from bitdust.userid import my_id
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim

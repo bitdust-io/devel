@@ -1,18 +1,19 @@
 import six
 import time
 import os
+import sys
 
 from unittest import TestCase
 
 if six.PY2:
-    from CodernityDB.database import Database
-    from CodernityDB.hash_index import HashIndex
-    from CodernityDB.tree_index import TreeBasedIndex
+    from bitdust_forks.CodernityDB.database import Database
+    from bitdust_forks.CodernityDB.hash_index import HashIndex
+    from bitdust_forks.CodernityDB.tree_index import TreeBasedIndex
 
 else:
-    from CodernityDB3.database import Database
-    from CodernityDB3.hash_index import HashIndex
-    from CodernityDB3.tree_index import TreeBasedIndex
+    from bitdust_forks.CodernityDB3.database import Database
+    from bitdust_forks.CodernityDB3.hash_index import HashIndex
+    from bitdust_forks.CodernityDB3.tree_index import TreeBasedIndex
 
 
 class WithXTreeIndex(TreeBasedIndex):
@@ -67,6 +68,7 @@ def create_test_db(db_name='codernity_test_db_0', with_x_hash_index=False, with_
 class TestCodernityDB(TestCase):
 
     def setUp(self):
+        sys.path.insert(0, 'bitdust_forks')
         pass
 
     def tearDown(self):

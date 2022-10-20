@@ -1,15 +1,15 @@
 from unittest import TestCase
 import os
 
-from logs import lg
+from bitdust.logs import lg
 
-from system import bpio
+from bitdust.system import bpio
 
-from main import settings
+from bitdust.main import settings
 
-from crypt import key
+from bitdust.crypt import key
 
-from userid import my_id
+from bitdust.userid import my_id
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -88,7 +88,7 @@ class Test(TestCase):
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def test_identity_valid(self):
-        from userid import identity
+        from bitdust.userid import identity
         some_identity = identity.identity(xmlsrc=_some_identity_xml)
         self.assertTrue(some_identity.isCorrect())
         self.assertTrue(some_identity.Valid())
@@ -96,7 +96,7 @@ class Test(TestCase):
         self.assertEqual(some_identity.getIDURL().to_id(), 'alice@127.0.0.1_8084')
 
     def test_identity_not_valid(self):
-        from userid import identity
+        from bitdust.userid import identity
         _broken_identity_xml = _some_identity_xml.replace('alice', 'bob')
         broken_identity = identity.identity(xmlsrc=_broken_identity_xml)
         self.assertTrue(broken_identity.isCorrect())

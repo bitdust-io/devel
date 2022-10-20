@@ -8,13 +8,13 @@ from twisted.internet.base import DelayedCall
 
 DelayedCall.debug = True
 
-from raid import raid_worker
+from bitdust.raid import raid_worker
 
-from logs import lg
+from bitdust.logs import lg
 
-from system import bpio
+from bitdust.system import bpio
 
-from main import settings
+from bitdust.main import settings
 
 
 class TestRaidWorker(TestCase):
@@ -43,7 +43,6 @@ class TestRaidWorker(TestCase):
             os.chdir(os.path.abspath(os.path.join(curdir, '..')))
 
         def _read_done(cmd, taskdata, result):
-            print('_read_done', cmd, taskdata, result)
             final_result = False
             source_data = open('/tmp/source.txt', 'rb').read()
             reconstructed_data = open('/tmp/destination.txt', 'rb').read()
@@ -58,14 +57,12 @@ class TestRaidWorker(TestCase):
             if final_result:
                 reactor.callLater(0.1, test_result.callback, True)  # @UndefinedVariable
             else:
-                print(source_data)
-                print(reconstructed_data)
                 if read_success:
                     reactor.callLater(0.1, test_result.errback, Exception('reconstructed data is not the same as source data'))  # @UndefinedVariable
                 else:
-                    reactor.callLater(
+                    reactor.callLater(  # @UndefinedVariable
                         0.1, test_result.errback, Exception('reconstructed data is the same as source data, but expect to fail the raid read')
-                    )  # @UndefinedVariable
+                    )
             return True
 
         def _rebuild_done(cmd, taskdata, result):
@@ -85,11 +82,11 @@ class TestRaidWorker(TestCase):
                     reactor.callLater(0.1, test_result.errback, Exception('rebuild expected to fail but new data was created'))  # @UndefinedVariable
                     return
             # try to read all fragments now
-            reactor.callLater(
+            reactor.callLater(  # @UndefinedVariable
                 0.5,
                 raid_worker.add_task,
                 'read',
-                (  # @UndefinedVariable
+                (
                     '/tmp/destination.txt',
                     target_ecc_map,
                     'F12345678',
@@ -137,11 +134,11 @@ class TestRaidWorker(TestCase):
                 ] * alive_suppliers,
             }
             if not try_rebuild:
-                reactor.callLater(
+                reactor.callLater(  # @UndefinedVariable
                     0.5,
                     raid_worker.add_task,
                     'read',
-                    (  # @UndefinedVariable
+                    (
                         '/tmp/destination.txt',
                         target_ecc_map,
                         'F12345678',
@@ -151,11 +148,11 @@ class TestRaidWorker(TestCase):
                     _read_done,
                 )
             else:
-                reactor.callLater(
+                reactor.callLater(  # @UndefinedVariable
                     0.5,
                     raid_worker.add_task,
                     'rebuild',
-                    (  # @UndefinedVariable
+                    (
                         'master$alice@somehost.com:0/F12345678',
                         '5',
                         target_ecc_map,
@@ -176,11 +173,11 @@ class TestRaidWorker(TestCase):
         os.system("mkdir -p '/tmp/raidtest/master$alice@somehost.com/0/F12345678'")
         open('/tmp/source.txt', 'wb').write(base64.b64encode(os.urandom(filesize)))
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
-        reactor.callLater(
+        reactor.callLater(  # @UndefinedVariable
             0.5,
             raid_worker.add_task,
             'make',
-            (  # @UndefinedVariable
+            (
                 '/tmp/source.txt',
                 target_ecc_map,
                 'F12345678',
@@ -364,11 +361,11 @@ class TestRaidWorker(TestCase):
             else:
                 reactor.callLater(0.1, test_result.errback, Exception('task expected to fail, but positive result was returned'))  # @UndefinedVariable
 
-        reactor.callLater(
+        reactor.callLater(  # @UndefinedVariable
             0.5,
             raid_worker.add_task,
             'make',
-            (  # @UndefinedVariable
+            (
                 '/tmp/source1.txt',
                 'ecc/64x64',
                 'F12345678',

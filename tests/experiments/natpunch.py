@@ -31,10 +31,10 @@ if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-from logs import lg
+from bitdust.logs import lg
 
-from system import bpio
-from lib import udp
+from bitdust.system import bpio
+from bitdust.lib import udp
 
 #------------------------------------------------------------------------------
 
