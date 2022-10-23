@@ -2776,6 +2776,9 @@ def scenario23(customer_1_file_info, customer_1_shared_file_info):
         verify_from_local_path=customer_1_file_info['local_filepath'],
     )
 
+    customer_1_share_info_after = kw.share_info_v1('customer-1', customer_1_shared_file_info['share_id'], wait_state='CONNECTED')
+    assert len(customer_1_share_info_after['result']['suppliers']) == 2
+
     # make sure we can still download the shared file on customer-1
     kw.verify_file_download_start(
         node='customer-1',

@@ -233,7 +233,7 @@ def collect_coverage_all_nodes(event_loop, verbose=False):
 #------------------------------------------------------------------------------
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.fixture(scope='session')
 def event_loop():
     loop = asyncio.get_event_loop()
     yield loop
@@ -243,7 +243,7 @@ def event_loop():
 #------------------------------------------------------------------------------
 
 
-@pytest.yield_fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def global_wrapper(event_loop):
     verbose = VERBOSE
     if verbose:
