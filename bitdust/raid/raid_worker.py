@@ -308,16 +308,20 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        ncpus = bpio.detect_number_of_cpu_cores()
-        if ncpus > 1:
-            # do not use all CPU cors at once
-            # need to keep at least one for all other operations
-            # even decided to use only half of CPUs at the moment
-            # TODO: make an option in the software settings
-            ncpus = int(ncpus/2.0)
-
         self.processor = ThreadedRaidProcessor()
 
+        # TODO: possible improvement in the future
+        # On Android it is not possible to run a separate sub-process: the only possible way is to use threads
+        # but on Windows and Linux we can use parallelp or multiprocessing libraries to utilize other CPU cores and
+        # gain more performance
+
+        # we do not want to use all CPU cores at once
+        # need to keep at least one for all other operations
+        # decided to use only half of CPUs at the moment
+        # TODO: make an option in the software settings
+        # ncpus = bpio.detect_number_of_cpu_cores()
+        # if ncpus > 1:
+        #     ncpus = int(ncpus/2.0)
         # if bpio.Android() or not config.conf().getBool('services/rebuilding/child-processes-enabled'):
         #     self.processor = ThreadedRaidProcessor()
         # else:
