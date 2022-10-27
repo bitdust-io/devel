@@ -5,24 +5,26 @@ pkill -f "dht_service"
 
 rm -rf /tmp/db*
 
-nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10000 -d /tmp/db0 -s "genesis" &
+export PYTHONPATH='.'
+
+nohup ~/.bitdust/venv/bin/python bitdust/dht/dht_service.py -p 10000 -d /tmp/db0 -s "genesis" &
 
 sleep 1
 
-nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10001 -d /tmp/db1 -s "localhost:10000" &
+nohup ~/.bitdust/venv/bin/python bitdust/dht/dht_service.py -p 10001 -d /tmp/db1 -s "localhost:10000" &
 
 sleep 1
 
-nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10002 -d /tmp/db2 -s "localhost:10000" &
+nohup ~/.bitdust/venv/bin/python bitdust/dht/dht_service.py -p 10002 -d /tmp/db2 -s "localhost:10000" &
 
 sleep 1
 
-nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10003 -d /tmp/db3 -s "localhost:10000" &
+nohup ~/.bitdust/venv/bin/python bitdust/dht/dht_service.py -p 10003 -d /tmp/db3 -s "localhost:10000" &
 
 sleep 1
 
-nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10004 -d /tmp/db4 -s "localhost:10000" &
+nohup ~/.bitdust/venv/bin/python bitdust/dht/dht_service.py -p 10004 -d /tmp/db4 -s "localhost:10000" &
 
 sleep 1
 
-nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10005 -d /tmp/db5 -s "localhost:10000" &
+nohup ~/.bitdust/venv/bin/python bitdust/dht/dht_service.py -p 10005 -d /tmp/db5 -s "localhost:10000" &
