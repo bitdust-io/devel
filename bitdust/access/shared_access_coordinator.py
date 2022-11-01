@@ -54,7 +54,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -620,8 +620,9 @@ class SharedAccessCoordinator(automat.Automat):
             callbacks={
                 commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
                 commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
+                None: lambda pkt_out: self._on_list_files_timeout(self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
             },
-            timeout=20,
+            timeout=15,
         )
         if _Debug:
             lg.args(_DebugLevel, supplier=kwargs['supplier_idurl'], pid=pkt_out.PacketID)
@@ -742,10 +743,7 @@ class SharedAccessCoordinator(automat.Automat):
                 key_id=self.key_id,
                 queue_subscribe=True,
             )
-        if sc.state in [
-            'CONNECTED',
-            'QUEUE?',
-        ]:
+        if sc.state in ['CONNECTED', 'QUEUE?']:
             self.automat('supplier-connected', supplier_idurl=supplier_idurl)
         else:
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
@@ -796,11 +794,13 @@ class SharedAccessCoordinator(automat.Automat):
             creatorID=my_id.getIDURL(),
             packetID=packetID,
             remoteID=supplier_idurl,
-            response_timeout=60*2,
+            response_timeout=15,
             payload=raw_payload,
             callbacks={
                 commands.Data(): self._on_index_file_response,
-                commands.Fail(): self._on_index_file_fail,
+                commands.Fail(): self._on_index_file_fail_received,
+                None: lambda pkt_out: self._on_index_file_request_failed(supplier_idurl, self.customer_idurl, packetID),
+                'failed': lambda pkt_out, errmsg: self._on_index_file_request_failed(supplier_idurl, self.customer_idurl, packetID),
             },
         )
         if _Debug:
@@ -887,6 +887,11 @@ class SharedAccessCoordinator(automat.Automat):
         self.automat('list-files-failed', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
         return None
 
+    def _on_list_files_timeout(self, customer_idurl, supplier_idurl, key_id):
+        lg.err('timeout requesting ListFiles() with %r for customer %r from supplier %r' % (key_id, customer_idurl, supplier_idurl))
+        self.automat('list-files-failed', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
+        return None
+
     def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_coordinator._on_key_transfer_success public key %r shared to supplier %r of customer %r, now will send ListFiles() again' % (key_id, supplier_idurl, customer_idurl))
@@ -907,7 +912,7 @@ class SharedAccessCoordinator(automat.Automat):
             lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_response %s from %r with rev: %s' % (newpacket, supplier_idurl, supplier_revision))
         self.automat('index-received', supplier_idurl=supplier_idurl)
 
-    def _on_index_file_fail(self, newpacket, info):
+    def _on_index_file_fail_received(self, newpacket, info):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket)
         supplier_idurl = newpacket.CreatorID
@@ -918,8 +923,14 @@ class SharedAccessCoordinator(automat.Automat):
             self.automat('key-not-registered', supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl, key_id=self.key_id)
             return None
         if _Debug:
-            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_fail %s from %r' % (newpacket, supplier_idurl))
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_fail_received %s from %r' % (newpacket, supplier_idurl))
         self.automat('index-missing', supplier_idurl=supplier_idurl)
+
+    def _on_index_file_request_failed(self, supplier_idurl, customer_idurl, packet_id):
+        if _Debug:
+            lg.args(_DebugLevel, s=supplier_idurl, c=customer_idurl, pid=packet_id)
+        self.received_index_file_revision[supplier_idurl] = None
+        self.automat('index-failed', supplier_idurl=supplier_idurl)
 
     def _on_send_index_file_ack(self, newpacket, info):
         supplier_idurl = newpacket.CreatorID
