@@ -59,9 +59,13 @@ def find_network_config_file():
 
 def read_network_config_file():
     networks_json_path = find_network_config_file()
-    network_info = serialization.BytesToDict(
-        local_fs.ReadBinaryFile(networks_json_path),
-        keys_to_text=True,
-        values_to_text=True,
-    )
-    return network_info
+    if os.path.isfile(networks_json_path):
+        network_info = serialization.BytesToDict(
+            local_fs.ReadBinaryFile(networks_json_path),
+            keys_to_text=True,
+            values_to_text=True,
+        )
+        if network_info:
+            return network_info
+    from bitdust.main.default_network import default_network_info  # @UnresolvedImport
+    return default_network_info()
