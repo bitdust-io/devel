@@ -12,12 +12,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: clean-up docker network
+      run: docker network prune -f
+
     - name: clean venv
       run: make clean venv
 
     - name: test_unit
       run: make test_unit
-    
+
     - name: regress_stop before
       run: make regress_stop
 
@@ -32,3 +35,6 @@ jobs:
 
     - name: regress_report
       run: make regress_report
+
+    - name: regress_stop after
+      run: make regress_stop
