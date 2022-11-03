@@ -239,7 +239,7 @@ class SupplierConnector(automat.Automat):
             st = bpio.ReadTextFile(settings.SupplierServiceFilename(
                 idurl=self.supplier_idurl,
                 customer_idurl=self.customer_idurl,
-            ), ).strip()
+            )).strip()
         except:
             st = 'DISCONNECTED'
         automat.Automat.__init__(
@@ -296,10 +296,7 @@ class SupplierConnector(automat.Automat):
                     needed_bytes=self.needed_bytes,
                     key_id=self.key_id,
                 ))
-        if newstate in [
-            'DISCONNECTED',
-            'NO_SERVICE',
-        ]:
+        if newstate in ['DISCONNECTED', 'NO_SERVICE']:
             self._supplier_connected_event_sent = False
 
     def set_callback(self, name, cb):

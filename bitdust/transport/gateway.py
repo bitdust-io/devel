@@ -69,7 +69,7 @@ from io import open
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 14
 
 _PacketLogFileEnabled = False
 
@@ -1206,10 +1206,10 @@ def main():
     lg.set_debug_level(options.debug)
     tmpfile.init()
     if True:
-        import lib.udp
-        lib.udp.listen(options.udpport)
-        import dht.dht_service
-        dht.dht_service.init(options.dhtport)
+        import bitdust.lib.udp
+        bitdust.lib.udp.listen(options.udpport)
+        import bitdust.dht.dht_service
+        bitdust.dht.dht_service.init(options.dhtport)
     reactor.addSystemEventTrigger('before', 'shutdown', shutdown)  # @UndefinedVariable
     init()
     start()

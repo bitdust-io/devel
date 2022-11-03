@@ -143,9 +143,6 @@ class Manager(object):
 
         self.processor = multiprocessing.Pool(ncpus)
 
-        #: implement queue per Manager instance
-        # self.queue = multiprocessing.Queue()
-
         self.tasks = OrderedDict({})
         self.task_id = 0
 

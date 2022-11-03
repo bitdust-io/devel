@@ -47,7 +47,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -394,18 +394,22 @@ def on_message_processed(processed_message):
 
 
 def on_consumer_notify(message_info):
-    payload = message_info['payload']
-    consumer_id = message_info['consumer_id']
-    queue_id = message_info['queue_id']
-    packet_id = packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID())
-    sequence_id = payload['sequence_id']
-    last_sequence_id = get_latest_sequence_id(queue_id)
-    producer_id = payload['producer_id']
+    try:
+        payload = message_info['payload']
+        consumer_id = message_info['consumer_id']
+        queue_id = message_info['queue_id']
+        packet_id = packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID())
+        sequence_id = payload['sequence_id']
+        last_sequence_id = get_latest_sequence_id(queue_id)
+        producer_id = payload['producer_id']
+    except:
+        lg.exc('invalid incoming message: %r' % message_info)
+        return True
     group_key_id = global_id.GetGlobalQueueKeyID(queue_id)
     _, group_creator_idurl = my_keys.split_key_id(group_key_id)
     qk = queue_keeper.check_create(customer_idurl=group_creator_idurl, auto_create=False)
     if not qk:
-        lg.exc(exc_value=Exception('not possible to notify consumer %r because queue keeper for %r do not exist' % (consumer_id, group_creator_idurl)))
+        lg.exc(exc_value=Exception('not possible to notify consumer %r because queue keeper for %r is not running' % (consumer_id, group_creator_idurl)))
         return True
     if _Debug:
         lg.args(_DebugLevel, p=producer_id, c=consumer_id, q=queue_id, s=sequence_id, l=last_sequence_id, qk=qk, b=qk.cooperated_brokers)

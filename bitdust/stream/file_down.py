@@ -246,8 +246,10 @@ class FileDown(automat.Automat):
             self.remoteID,
             callbacks={
                 commands.Data(): self.parent.OnDataReceived,
-                commands.Fail(): self.parent.OnDataReceived,  # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
-            },  # response_timeout=10,
+                commands.Fail(): self.parent.OnDataReceived,
+                # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
+            },
+            # response_timeout=10,
         )
         self.requestTime = time.time()
 

@@ -48,8 +48,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 16
+_Debug = True
+_DebugLevel = 12
 
 _PacketLogFileEnabled = False
 
@@ -287,8 +287,14 @@ def handle(newpacket, info):
         if _PacketLogFileEnabled:
             lg.out(
                 0,
-                '                \033[1;49;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
-                (newpacket.Command, newpacket.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID), info.transfer_id),
+                '                \033[1;49;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                    newpacket.Command,
+                    newpacket.PacketID,
+                    info.bytes_received,
+                    global_id.UrlToGlobalID(info.sender_idurl),
+                    global_id.UrlToGlobalID(newpacket.RemoteID),
+                    info.transfer_id,
+                ),
                 log_name='packet',
                 showtime=True,
             )
@@ -296,8 +302,14 @@ def handle(newpacket, info):
         if _PacketLogFileEnabled:
             lg.out(
                 0,
-                '                \033[0;49;93mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' %
-                (newpacket.Command, newpacket.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID), info.transfer_id),
+                '                \033[0;49;93mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                    newpacket.Command,
+                    newpacket.PacketID,
+                    info.bytes_received,
+                    global_id.UrlToGlobalID(info.sender_idurl),
+                    global_id.UrlToGlobalID(newpacket.RemoteID),
+                    info.transfer_id,
+                ),
                 log_name='packet',
                 showtime=True,
             )
@@ -487,12 +499,22 @@ class PacketIn(automat.Automat):
         from bitdust.transport import gateway
         self.status, self.bytes_received, self.error_message = args[0]
         if _PacketLogFileEnabled:
-            lg.out(0, '                \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
+            lg.out(
+                0,
+                '                \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (self.bytes_received, self.proto, self.host, self.transfer_id),
+                log_name='packet',
+                showtime=True,
+            )
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
         if newpacket is None:
             if _Debug:
-                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (self.proto.upper().ljust(5), self.status.ljust(8), self.host, os.path.basename(self.filename)))
+                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
+                    self.proto.upper().ljust(5),
+                    self.status.ljust(8),
+                    self.host,
+                    os.path.basename(self.filename),
+                ))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
                 fd, _ = tmpfile.make('error', extension='.inbox')
@@ -534,7 +556,12 @@ class PacketIn(automat.Automat):
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.warn('incoming packet failed %s with %s' % (self.transfer_id, status))
         if _PacketLogFileEnabled:
-            lg.out(0, '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (status, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
+            lg.out(
+                0,
+                '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (status, self.proto, self.host, self.transfer_id),
+                log_name='packet',
+                showtime=True,
+            )
 
     def doReportCacheFailed(self, *args, **kwargs):
         """
@@ -549,7 +576,12 @@ class PacketIn(automat.Automat):
             msg = 'unknown reason'
         lg.warn('cache failed : %s' % self.sender_idurl)
         if _PacketLogFileEnabled:
-            lg.out(0, '                \033[0;49;31mIN CACHE FAILED with "%s" for %s TID:%s\033[0m' % (msg, self.sender_idurl, self.transfer_id), log_name='packet', showtime=True)
+            lg.out(
+                0,
+                '                \033[0;49;31mIN CACHE FAILED with "%s" for %s TID:%s\033[0m' % (msg, self.sender_idurl, self.transfer_id),
+                log_name='packet',
+                showtime=True,
+            )
 
     def doDestroyMe(self, *args, **kwargs):
         """

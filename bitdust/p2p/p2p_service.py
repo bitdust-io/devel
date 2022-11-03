@@ -480,12 +480,8 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
         packetid.UniqueID(),
     )
     if not query_items:
-        query_items = [
-            '*',
-        ]
-    Payload = serialization.DictToBytes({
-        'items': query_items,
-    })
+        query_items = ['*']
+    Payload = serialization.DictToBytes({'items': query_items})
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendListFiles %r to %r of customer %r with query : %r' % (PacketID, nameurl.GetName(RemoteID), nameurl.GetName(customer_idurl), query_items))
     result = signed.Packet(
