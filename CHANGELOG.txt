@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+2022-11-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix to make shared_access_coordinator() more reliable
+* updated few timeout values in shared_access_coordinator() and index_synchronizer()
+* few minor fixes in dev scripts
+* small fix in the regression tests
+
+
+
 2022-10-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * moved source code into bitdust/ sub-folder and all external libs to bitdust_forks/ sub-folder

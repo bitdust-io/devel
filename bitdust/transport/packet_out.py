@@ -56,7 +56,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 _PacketLogFileEnabled = False
