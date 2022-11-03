@@ -10,7 +10,7 @@
 #     cd bitdust_snapshot/
 #     ./import ../bitdust/
 
-tmppath="$1.tmp"
+tmppath="$1.import"
 curpath=`pwd`
 git pull
 cd "$1"
