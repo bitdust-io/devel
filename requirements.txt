@@ -1,4 +1,4 @@
-# Twisted==20.3.0
+# Twisted==22.10.0
 # service_identity
 # pycryptodomex
 # pyparsing
@@ -26,6 +26,6 @@ PyHamcrest==2.0.2
 pyparsing==2.4.7
 service-identity==18.1.0
 six==1.16.0
-Twisted==20.3.0
+Twisted==22.10.0
 virtualenv==20.0.21
 zope.interface==5.2.0
