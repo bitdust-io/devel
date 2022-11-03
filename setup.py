@@ -21,8 +21,6 @@ setup(
             'Natural Language :: English',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
-            'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.6',
             'Topic :: Communications :: Chat',
@@ -245,7 +243,7 @@ setup(
         '\n'
         '* cygwin: [cygwin.com](https://cygwin.com/install.html)\n'
         '* git: [git-scm.com](https://git-scm.com/download/win)\n'
-        '* python2.7 or python3: '
+        '* python3: '
         '[python.org](http://python.org/download/releases)\n'
         '* twisted: '
         '[twistedmatrix.com](http://twistedmatrix.com)\n'

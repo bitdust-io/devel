@@ -3,7 +3,6 @@ Change Log
 
 2022-11-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
-* Bump twisted from 20.3.0 to 22.10.0
 * bug fix to make shared_access_coordinator() more reliable
 * updated few timeout values in shared_access_coordinator() and index_synchronizer()
 * few minor fixes in dev scripts
