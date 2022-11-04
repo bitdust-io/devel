@@ -86,7 +86,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 8
+_DebugLevel = 16
 
 #------------------------------------------------------------------------------
 
@@ -489,15 +489,7 @@ class IndexSynchronizer(automat.Automat):
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
-            reactor.callLater(
-                0,
-                self.automat,
-                'index-file-received',
-                (
-                    newpacket,
-                    supplier_revision,
-                ),
-            )  # @UndefinedVariable
+            reactor.callLater(0, self.automat, 'index-file-received', (newpacket, supplier_revision))  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d' % (newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:

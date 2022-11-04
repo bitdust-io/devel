@@ -127,7 +127,6 @@ def shutdown(x=None):
         listeners.shutdown()
         events.shutdown()
         tmpfile.shutdown()
-        # control.shutdown()
         try:
             weblog.shutdown()
         except:

@@ -695,8 +695,6 @@ class FireHire(automat.Automat):
             time.strftime('%d-%m-%Y %H:%M:%S'),
             my_id.getIDURL(),
         )
-        # from bitdust.main import control
-        # control.on_suppliers_changed(current_suppliers)
         if family_position < 0:
             lg.info('added new supplier, family position unknown: %s desired_suppliers=%d current_suppliers=%d' % (new_idurl, desired_suppliers, len(contactsdb.suppliers())))
             # yapf: disable
@@ -763,8 +761,6 @@ class FireHire(automat.Automat):
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()
-        # from bitdust.main import control
-        # control.on_suppliers_changed(current_suppliers)
         for position, supplier_idurl in removed_suppliers:
             events.send('supplier-modified', data=dict(
                 new_idurl=None,
