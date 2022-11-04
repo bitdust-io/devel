@@ -101,6 +101,7 @@ class P2PNotificationsService(LocalService):
                         resp['result'] = 'denied' if not p2p_queue.add_callback_method(
                             consumer_id=r_json.get('consumer_id'),
                             callback_method=r_json.get('method'),
+                            interested_queues_list=r_json.get('queues') or None,
                         ) else 'OK'
                     elif r_action == 'remove_callback':
                         resp['result'] = 'denied' if not p2p_queue.remove_callback_method(

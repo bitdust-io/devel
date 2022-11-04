@@ -347,7 +347,7 @@ def remove_consumer(consumer_id):
     if consumer_id not in consumer():
         raise Exception('consumer not exist')
     old_consumer = _Consumers.pop(consumer_id)
-    old_consumer.commands = []
+    old_consumer.commands = {}
     old_consumer.queues = []
     lg.info('existing consumer removed: %s' % str(consumer_id))
     return True
@@ -364,12 +364,12 @@ def is_callback_method_registered(consumer_id, callback_method):
     return True
 
 
-def add_callback_method(consumer_id, callback_method):
+def add_callback_method(consumer_id, callback_method, interested_queues_list=None):
     if consumer_id not in consumer():
         raise Exception('consumer not found')
     if callback_method in consumer(consumer_id).commands:
         raise Exception('callback method already exist')
-    consumer(consumer_id).commands.append(callback_method)
+    consumer(consumer_id).commands[callback_method] = interested_queues_list
     if _Debug:
         lg.args(_DebugLevel, c=consumer_id, cb=callback_method)
     return True
@@ -380,7 +380,7 @@ def remove_callback_method(consumer_id, callback_method):
         raise Exception('consumer not found')
     if callback_method not in consumer(consumer_id).commands:
         raise Exception('callback method not found')
-    consumer(consumer_id).commands.remove(callback_method)
+    consumer(consumer_id).commands.pop(callback_method)
     if _Debug:
         lg.args(_DebugLevel, c=consumer_id, cb=callback_method)
     return True
@@ -964,7 +964,15 @@ def do_consume(interested_consumers=None):
         if _message_id is None:
             # no new messages found for that consumer
             continue
-        for callback_method in consumer(_consumer_id).commands:
+        for callback_method, interested_queues_list in consumer(_consumer_id).commands.items():
+            if interested_queues_list:
+                matching = False
+                for interested_queue in interested_queues_list:
+                    if _queue_id.startswith(interested_queue):
+                        matching = True
+                        break
+                if not matching:
+                    continue
             do_notify(
                 callback_method,
                 _consumer_id,
@@ -1071,7 +1079,7 @@ class ConsumerInfo(object):
     def __init__(self, consumer_id):
         self.state = 'READY'
         self.consumer_id = consumer_id
-        self.commands = []
+        self.commands = {}
         self.queues = []
         self.consumed_messages = 0
         self.success_notifications = 0

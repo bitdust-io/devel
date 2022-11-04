@@ -4827,12 +4827,24 @@ def queue_consumers_list():
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
     from bitdust.stream import p2p_queue
-    return RESULT([{
-        'consumer_id': consumer_info.consumer_id,
-        'queues': consumer_info.queues,
-        'state': consumer_info.state,
-        'consumed': consumer_info.consumed_messages,
-    } for consumer_info in p2p_queue.consumer().values()])
+
+    def _cmd_name(c):
+        try:
+            return c.__name__
+        except:
+            return c
+
+    return RESULT(
+        [
+            {
+                'consumer_id': consumer_info.consumer_id,
+                'queues': consumer_info.queues,
+                'commands': ['%s: %s' % (_cmd_name(com), ','.join(q_lst) if q_lst else '*') for com, q_lst in consumer_info.commands.items()],
+                'state': consumer_info.state,
+                'consumed': consumer_info.consumed_messages,
+            } for consumer_info in p2p_queue.consumer().values()
+        ]
+    )
 
 
 def queue_producers_list():
