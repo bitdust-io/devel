@@ -1,8 +1,10 @@
 Change Log
 ==========
 
+
 2022-11-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* added file bitdust/main/default_network.py to simplify package distribution
 * bug fix to make shared_access_coordinator() more reliable
 * updated few timeout values in shared_access_coordinator() and index_synchronizer()
 * few minor fixes in dev scripts

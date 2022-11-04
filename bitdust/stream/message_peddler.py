@@ -395,22 +395,36 @@ def on_message_processed(processed_message):
 
 def on_consumer_notify(message_info):
     try:
-        payload = message_info['payload']
-        consumer_id = message_info['consumer_id']
         queue_id = message_info['queue_id']
+    except:
+        lg.exc('invalid incoming message: %r' % message_info)
+        return False
+    if not queue_id.startswith('group_'):
+        # ignore the message, it seems it is not a queue message but it is addressed to the same consumer
+        return False
+    try:
+        payload = message_info['payload']
+    except:
+        lg.exc('invalid incoming message: %r' % message_info)
+        return False
+    if 'sequence_id' not in payload:
+        # ignore the message, it seems it is not a queue message but it is addressed to the same consumer
+        return False
+    try:
+        consumer_id = message_info['consumer_id']
         packet_id = packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID())
         sequence_id = payload['sequence_id']
         last_sequence_id = get_latest_sequence_id(queue_id)
         producer_id = payload['producer_id']
     except:
         lg.exc('invalid incoming message: %r' % message_info)
-        return True
+        return False
     group_key_id = global_id.GetGlobalQueueKeyID(queue_id)
     _, group_creator_idurl = my_keys.split_key_id(group_key_id)
     qk = queue_keeper.check_create(customer_idurl=group_creator_idurl, auto_create=False)
     if not qk:
         lg.exc(exc_value=Exception('not possible to notify consumer %r because queue keeper for %r is not running' % (consumer_id, group_creator_idurl)))
-        return True
+        return False
     if _Debug:
         lg.args(_DebugLevel, p=producer_id, c=consumer_id, q=queue_id, s=sequence_id, l=last_sequence_id, qk=qk, b=qk.cooperated_brokers)
     ret = message.send_message(
@@ -926,7 +940,7 @@ def start_consumer(queue_id, consumer_id):
     if not p2p_queue.is_consumer_exists(consumer_id):
         p2p_queue.add_consumer(consumer_id)
     if not p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
-        p2p_queue.add_callback_method(consumer_id, on_consumer_notify)
+        p2p_queue.add_callback_method(consumer_id, on_consumer_notify, interested_queues_list=['group_'])
     if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.subscribe_consumer(consumer_id, queue_id)
     streams()[queue_id]['consumers'][consumer_id]['active'] = True
@@ -1574,9 +1588,9 @@ class MessagePeddler(automat.Automat):
                 )
                 qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True, event='skip-init')
                 # a small delay to avoid starting too many activities at once
-                reactor.callLater(
+                reactor.callLater(  # @UndefinedVariable
                     (self.total_keepers + 1)*1.0,
-                    qk.automat,  # @UndefinedVariable
+                    qk.automat,
                     event='restore',
                     desired_position=json_value['position'],
                     known_brokers=json_value['cooperated_brokers'],

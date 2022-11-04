@@ -699,9 +699,10 @@ def identity_create(username, preferred_servers=[], join_network=False):
         websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice", "join_network": 1} }');
     """
     from bitdust.lib import misc
-    from bitdust.userid import my_id
+    from bitdust.crypt import key
     from bitdust.userid import id_registrator
-    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+    from bitdust.userid import my_id
+    if my_id.isLocalIdentityReady() or (my_id.isLocalIdentityExists() and key.isMyKeyExists()):
         return ERROR('local identity already exist')
     try:
         username = strng.to_text(username)
@@ -783,10 +784,11 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "identity_recover", "kwargs": {"private_key_source": "http://some-host.com/alice.xml\n-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKC..."} }');
     """
-    from bitdust.userid import my_id
+    from bitdust.crypt import key
     from bitdust.userid import id_url
     from bitdust.userid import id_restorer
-    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+    from bitdust.userid import my_id
+    if my_id.isLocalIdentityReady() or (my_id.isLocalIdentityExists() and key.isMyKeyExists()):
         return ERROR('local identity already exist')
     if not private_key_source:
         return ERROR('must provide private key in order to recover your identity')
@@ -4825,12 +4827,24 @@ def queue_consumers_list():
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
     from bitdust.stream import p2p_queue
-    return RESULT([{
-        'consumer_id': consumer_info.consumer_id,
-        'queues': consumer_info.queues,
-        'state': consumer_info.state,
-        'consumed': consumer_info.consumed_messages,
-    } for consumer_info in p2p_queue.consumer().values()])
+
+    def _cmd_name(c):
+        try:
+            return c.__name__
+        except:
+            return c
+
+    return RESULT(
+        [
+            {
+                'consumer_id': consumer_info.consumer_id,
+                'queues': consumer_info.queues,
+                'commands': ['%s: %s' % (_cmd_name(com), ','.join(q_lst) if q_lst else '*') for com, q_lst in consumer_info.commands.items()],
+                'state': consumer_info.state,
+                'consumed': consumer_info.consumed_messages,
+            } for consumer_info in p2p_queue.consumer().values()
+        ]
+    )
 
 
 def queue_producers_list():
