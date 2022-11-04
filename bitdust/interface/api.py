@@ -699,9 +699,10 @@ def identity_create(username, preferred_servers=[], join_network=False):
         websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice", "join_network": 1} }');
     """
     from bitdust.lib import misc
-    from bitdust.userid import my_id
+    from bitdust.crypt import key
     from bitdust.userid import id_registrator
-    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+    from bitdust.userid import my_id
+    if my_id.isLocalIdentityReady() or (my_id.isLocalIdentityExists() and key.isMyKeyExists()):
         return ERROR('local identity already exist')
     try:
         username = strng.to_text(username)
@@ -783,10 +784,11 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "identity_recover", "kwargs": {"private_key_source": "http://some-host.com/alice.xml\n-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKC..."} }');
     """
-    from bitdust.userid import my_id
+    from bitdust.crypt import key
     from bitdust.userid import id_url
     from bitdust.userid import id_restorer
-    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+    from bitdust.userid import my_id
+    if my_id.isLocalIdentityReady() or (my_id.isLocalIdentityExists() and key.isMyKeyExists()):
         return ERROR('local identity already exist')
     if not private_key_source:
         return ERROR('must provide private key in order to recover your identity')

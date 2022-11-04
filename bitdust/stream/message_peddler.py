@@ -395,9 +395,23 @@ def on_message_processed(processed_message):
 
 def on_consumer_notify(message_info):
     try:
-        payload = message_info['payload']
-        consumer_id = message_info['consumer_id']
         queue_id = message_info['queue_id']
+    except:
+        lg.exc('invalid incoming message: %r' % message_info)
+        return True
+    if not queue_id.startswith('group_'):
+        # ignore the message, it seems it is not a queue message but it is addressed to the same consumer
+        return True
+    try:
+        payload = message_info['payload']
+    except:
+        lg.exc('invalid incoming message: %r' % message_info)
+        return True
+    if 'sequence_id' not in payload:
+        # ignore the message, it seems it is not a queue message but it is addressed to the same consumer
+        return True
+    try:
+        consumer_id = message_info['consumer_id']
         packet_id = packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID())
         sequence_id = payload['sequence_id']
         last_sequence_id = get_latest_sequence_id(queue_id)
@@ -1574,9 +1588,9 @@ class MessagePeddler(automat.Automat):
                 )
                 qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True, event='skip-init')
                 # a small delay to avoid starting too many activities at once
-                reactor.callLater(
+                reactor.callLater(  # @UndefinedVariable
                     (self.total_keepers + 1)*1.0,
-                    qk.automat,  # @UndefinedVariable
+                    qk.automat,
                     event='restore',
                     desired_position=json_value['position'],
                     known_brokers=json_value['cooperated_brokers'],
