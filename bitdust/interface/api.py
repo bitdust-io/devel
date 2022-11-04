@@ -1654,14 +1654,6 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     itemInfo = None
     if _Debug:
         lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
-
-
-#     if pathID is not None:
-#         existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
-#         if not existingItemInfo:
-#             return ERROR('failed reading already existing item from catalog: %r' % pathID)
-#         if existingItemInfo.key_id != keyID:
-#             return ERROR('another item with same remote path but different key already exist in catalog')
     if pathID is not None:
         if exist_ok:
             fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
@@ -1722,7 +1714,6 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         if not newPathID:
             return ERROR('remote path can not be assigned, failed to create new item %s' % path)
     backup_control.Save(customer_idurl, key_alias)
-    # control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and key_alias == 'master':
@@ -1998,7 +1989,6 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
         ), ), )
         backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
         backup_control.Save(customer_idurl, key_alias)
-        # control.request_update([('pathID', pathIDfull), ])
         if _Debug:
             lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return task_created_defer
@@ -2013,7 +2003,6 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1])))
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_control.Save(customer_idurl, key_alias)
-    # control.request_update([('pathID', pathIDfull), ])
     if _Debug:
         lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
@@ -2247,14 +2236,12 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
             lg.out(_DebugLevel, 'api.file_download_start._start_restore %s to %s, wait_result=%s' % (backupID, destination_path, wait_result))
         if wait_result:
             restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
-            # control.request_update([('pathID', knownPath), ])
             return ret
         restore_monitor.Start(
             backupID,
             destination_path,
             keyID=key_id,
         )
-        # control.request_update([('pathID', knownPath), ])
         ret.callback(
             OK(
                 {

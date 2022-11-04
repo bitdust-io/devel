@@ -304,12 +304,9 @@ class Installer(automat.Automat):
         """
 
     def doUpdate(self, *args, **kwargs):
-        # from bitdust.main import control
-        # control.request_update([{'state': self.state}, ])
         pass
 
     def doClearOutput(self, *args, **kwargs):
-        # lg.out(4, 'installer.doClearOutput')
         for state in self.output.keys():
             self.output[state] = {'data': [('', 'black')]}
 

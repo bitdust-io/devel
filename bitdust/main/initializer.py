@@ -240,13 +240,9 @@ class Initializer(automat.Automat):
         return bpio.isGUIpossible()
 
     def doUpdate(self, *args, **kwargs):
-        # from bitdust.main import control
-        # control.request_update()
         pass
 
     def doInitLocal(self, *args, **kwargs):
-        """
-        """
         self.flagGUI = args[0].strip() == 'show'
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
@@ -309,8 +305,6 @@ class Initializer(automat.Automat):
     def doShowGUI(self, *args, **kwargs):
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doShowGUI')
-        # from bitdust.main import control
-        # control.init()
         try:
             from bitdust.system.tray_icon import USE_TRAY_ICON
         except:

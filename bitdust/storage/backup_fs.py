@@ -64,7 +64,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -517,13 +517,7 @@ class FSItemInfo():
                 } for v in self.list_versions(sorted=True)],
             }
         e = strng.to_text(self.unicodename, encoding=encoding)
-        return '%s %d %d %s\n%s\n' % (
-            self.path_id,
-            self.type,
-            self.size,
-            self.pack_versions(),
-            e,
-        )
+        return '%s %d %d %s\n%s\n' % (self.path_id, self.type, self.size, self.pack_versions(), e)
 
     def unserialize(self, src, decoding='utf-8', from_json=False):
         if from_json:
@@ -533,11 +527,7 @@ class FSItemInfo():
                 self.type = src['t']
                 self.size = src['s']
                 self.key_id = my_keys.latest_key_id(strng.to_text(src['k'], encoding=decoding))
-                self.versions = {strng.to_text(v['n']): [
-                    v['b'],
-                    v['s'],
-                ]
-                                 for v in src['v']}
+                self.versions = {strng.to_text(v['n']): [v['b'], v['s']] for v in src['v']}
             except:
                 lg.exc()
                 raise KeyError('Incorrect item format:\n%s' % src)
@@ -808,6 +798,8 @@ def SetFile(item, customer_idurl=None):
 
     This is used when loading index from file. Should create all parent
     items in the index.
+
+    Returns two boolean flags: success or not, modified or not
     """
     key_alias = item.key_alias()
     iter = fs(customer_idurl, key_alias)
@@ -820,7 +812,8 @@ def SetFile(item, customer_idurl=None):
             if item.name() not in iter:
                 iter[item.name()] = id
                 iterID[id] = item
-            return True
+                return True, True
+            return True, False
         found = False
         for name in iter.keys():
             if name == 0:
@@ -833,8 +826,8 @@ def SetFile(item, customer_idurl=None):
                     break
                 continue
         if not found:
-            return False
-    return False
+            return False, False
+    return False, False
 
 
 def SetDir(item, customer_idurl=None):
@@ -850,13 +843,21 @@ def SetDir(item, customer_idurl=None):
         part = parts[j]
         id = misc.ToInt(part, part)
         if j == len(parts) - 1:
+            modified = False
             if itemname not in iter:
                 iter[itemname] = {}
+                modified = True
+            if iter[itemname].get(0) != int(id):
+                modified = True
             iter[itemname][0] = int(id)
             if id not in iterID:
                 iterID[id] = {}
+                modified = True
+            cur_item = iterID[id].get(INFO_KEY)
+            if not cur_item:
+                modified = True
             iterID[id][INFO_KEY] = item
-            return True
+            return True, modified
         found = False
         for name in iter.keys():
             if name == 0:
@@ -879,8 +880,8 @@ def SetDir(item, customer_idurl=None):
                 continue
             raise Exception('wrong data type in the index')
         if not found:
-            return False
-    return False
+            return False, False
+    return False, False
 
 
 #------------------------------------------------------------------------------
@@ -1332,10 +1333,7 @@ def TraverseByID(callback, iterID=None, base_path_id=''):
                     i[id],  # item
                 )
             else:
-                raise Exception('wrong item of type %r in the index: %r' % (
-                    type(i[id]),
-                    i[id],
-                ))
+                raise Exception('wrong item of type %r in the index: %r' % (type(i[id]), i[id]))
 
     startpth = '' if bpio.Windows() else '/'
     recursive_traverse(iterID, base_path_id, startpth, callback)
@@ -1879,6 +1877,7 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
         customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     total_count = 0
+    total_modified_count = 0
     updated_keys = []
     for key_alias in json_data.keys():
         if new_revision is not None:
@@ -1887,43 +1886,62 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
                 if _Debug:
                     lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>%d' % (customer_idurl, key_alias, cur_revision, new_revision))
                 continue
-        Clear(customer_idurl, key_alias)
+        # Clear(customer_idurl, key_alias)
         count = 0
+        count_modified = 0
+        modified_items = set()
+        known_items = set()
+        to_be_removed_items = set()
         for json_item in json_data[key_alias]['items']:
             item = FSItemInfo()
             item.unserialize(json_item, decoding=decoding, from_json=True)
+            known_items.add(item.path_id)
             if item.type == FILE:
-                if not SetFile(item, customer_idurl=customer_idurl):
+                success, modified = SetFile(item, customer_idurl=customer_idurl)
+                if not success:
                     lg.warn('Can not put FILE item into the tree: %s' % str(item))
                     raise ValueError('Can not put FILE item into the tree: %s' % str(item))
                 count += 1
+                if modified:
+                    count_modified += 1
+                    modified_items.add(item.path_id)
             elif item.type == DIR:
-                if not SetDir(item, customer_idurl=customer_idurl):
+                success, modified = SetDir(item, customer_idurl=customer_idurl)
+                if not success:
                     lg.warn('Can not put DIR item into the tree: %s' % str(item))
                     raise ValueError('Can not put DIR item into the tree: %s' % str(item))
                 count += 1
+                if modified:
+                    count_modified += 1
+                    modified_items.add(item.path_id)
             else:
                 raise ValueError('Incorrect entry type')
+
+        def _one_item(path_id, path, info):
+            if path_id not in known_items:
+                to_be_removed_items.add(path_id)
+
+        TraverseByID(_one_item, iterID=fsID(customer_idurl, key_alias))
+        if _Debug:
+            lg.dbg(_DebugLevel, 'from %d known items %d were modified and %d items marked to be removed' % (len(known_items), len(modified_items), len(to_be_removed_items)))
+        for path_id in to_be_removed_items:
+            DeleteByID(path_id, iter=fs(customer_idurl, key_alias), iterID=fsID(customer_idurl, key_alias))
+            count_modified += 1
+
         total_count += count
-        if count:
+        total_modified_count += count_modified
+        if count_modified:
             old_rev = None
             new_rev = None
             if new_revision is not None:
-                old_rev, new_rev = commit(
-                    new_revision_number=new_revision,
-                    customer_idurl=customer_idurl,
-                    key_alias=key_alias,
-                )
-            Scan(
-                customer_idurl=customer_idurl,
-                key_alias=key_alias,
-            )
+                old_rev, new_rev = commit(new_revision_number=new_revision, customer_idurl=customer_idurl, key_alias=key_alias)
+            Scan(customer_idurl=customer_idurl, key_alias=key_alias)
             updated_keys.append(key_alias)
             if _Debug:
-                lg.args(_DebugLevel, count=count, customer=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
+                lg.args(_DebugLevel, count=count, modified=count_modified, c=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d updated items, loaded data for %d keys' % (total_count, len(updated_keys)))
-    return total_count, updated_keys
+        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d total items and %d modified, loaded data for %d keys' % (total_count, total_modified_count, len(updated_keys)))
+    return total_count, total_modified_count, updated_keys
 
 
 #------------------------------------------------------------------------------
@@ -1958,12 +1976,10 @@ def SaveIndex(customer_idurl=None, key_alias='master', encoding='utf-8'):
 
 def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
     total_count = 0
+    total_modified_count = 0
     updated_customers_keys = []
     try:
-        json_data = jsn.loads(
-            text_data,
-            encoding=encoding,
-        )
+        json_data = jsn.loads(text_data, encoding=encoding)
     except:
         lg.exc()
         return 0, []
@@ -1978,7 +1994,7 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
             identitycache.immediatelyCaching(customer_idurl, try_other_sources=False, ignore_errors=True)
             continue
         try:
-            count, updated_keys = Unserialize(
+            count, modified_count, updated_keys = Unserialize(
                 json_data[customer_id],
                 customer_idurl=customer_idurl,
                 new_revision=new_revision,
@@ -1988,13 +2004,11 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
             lg.exc()
             continue
         total_count += count
+        total_modified_count += modified_count
         if updated_keys:
             for key_alias in updated_keys:
                 Calculate(iterID=fsID(customer_idurl, key_alias))
-                updated_customers_keys.append((
-                    customer_idurl,
-                    key_alias,
-                ))
+                updated_customers_keys.append((customer_idurl, key_alias))
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.ReadIndex %d items loaded for %d keys' % (total_count, len(updated_customers_keys)))
     return total_count, updated_customers_keys
@@ -2100,7 +2114,7 @@ def _test():
     json_data = json.loads(inpt.read())
     inpt.close()
     for customer_id in json_data.keys():
-        count = Unserialize(json_data[customer_id])
+        count, modified_count, updated_keys = Unserialize(json_data[customer_id])
         # customer_id = 'test01@bitrex.ai'
         # customer_idurl = global_id.GlobalUserToIDURL(customer_id)
         # count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))

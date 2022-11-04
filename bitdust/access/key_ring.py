@@ -745,7 +745,6 @@ def on_files_received(newpacket, info):
     if not my_keys.is_valid_key_id(incoming_key_id):
         lg.warn('ignore, invalid key id in packet %s' % newpacket)
         return False
-    # if trusted_customer_idurl == my_id.getIDURL():
     if list_files_global_id['key_alias'] == 'master':
         if _Debug:
             lg.dbg(_DebugLevel, 'ignore %s packet which seems to came from my own supplier' % newpacket)
@@ -771,36 +770,7 @@ def on_files_received(newpacket, info):
     except:
         lg.exc()
         return False
-
-
-#     if block.CreatorID == trusted_customer_idurl:
-#         # this is a trusted guy sending some shared files to me
-#         return False
-#         try:
-#             json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
-#         except:
-#             lg.exc()
-#             return False
-#         count, updated_keys = backup_fs.Unserialize(
-#             json_data=json_data,
-#             customer_idurl=trusted_customer_idurl,
-#         )
-#         p2p_service.SendAck(newpacket)
-#         if not updated_keys:
-#             lg.warn('no files were imported during file sharing')
-#         else:
-#             for key_alias in updated_keys:
-#                 backup_fs.SaveIndex(trusted_customer_idurl, key_alias)
-#             # backup_control.Save()
-#             lg.info('imported %d shared files from %s, key_id=%s' % (
-#                 count, trusted_customer_idurl, incoming_key_id, ))
-#         events.send('shared-list-files-received', data=dict(
-#             customer_idurl=trusted_customer_idurl,
-#             new_items=count,
-#         ))
-#         return True
-
-# otherwise this must be an external supplier sending us a files he stores for trusted customer
+    # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
     try:
         supplier_raw_list_files = list_files.UnpackListFiles(raw_files, settings.ListFilesFormat())

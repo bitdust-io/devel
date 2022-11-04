@@ -40,7 +40,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -315,7 +315,6 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None):
         # backup_fs.Calculate()
         for customer_idurl, key_alias in updated_customers_keys:
             backup_fs.SaveIndex(customer_idurl, key_alias)
-            # control.request_update()
             if _Debug:
                 lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d for %s of %s from %s' % (backup_fs.revision(customer_idurl, key_alias), customer_idurl, key_alias, newpacket.RemoteID))
     # else:
@@ -345,7 +344,6 @@ def DeleteAllBackups():
     # save the index
     Save()
     # refresh the GUI
-    # control.request_update()
 
 
 def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True):
@@ -399,7 +397,6 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # in some cases we want to save the DB later
     if saveDB:
         Save()
-        # control.request_update([('backupID', backupID), ])
     return True
 
 
@@ -453,7 +450,6 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # save the index if needed
     if saveDB:
         Save()
-        # control.request_update()
     return True
 
 
@@ -810,7 +806,6 @@ def OnJobDone(backupID, result):
         backup_fs.ScanID(remotePath)
         backup_fs.Calculate()
         Save()
-        # control.request_update([('pathID', remotePath), ])
         # TODO: check used space, if we have over use - stop all tasks immediately
         # backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':

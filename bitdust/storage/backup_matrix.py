@@ -57,7 +57,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -333,11 +333,11 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
         filesz = -1
     if auto_create:
         if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
-            if _Debug:
-                lg.out(_DebugLevel, '        AUTO CREATE FILE "%s" in the index' % pth)
             if pth.strip('/') not in [
                 settings.BackupIndexFileName(),
             ]:
+                if _Debug:
+                    lg.out(_DebugLevel, '        AUTO CREATE FILE "%s" in the index' % pth)
                 item = backup_fs.FSItemInfo(
                     name=pth.strip('/'),
                     path_id=pth.strip('/'),
@@ -345,8 +345,9 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
                 item.size = filesz
-                backup_fs.SetFile(item, customer_idurl=customer_idurl)
-                modified = True
+                success, _modified = backup_fs.SetFile(item, customer_idurl=customer_idurl)
+                if _modified:
+                    modified = True
     if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
         # remote supplier have some file - but we don't have it in the index
         if pth.strip('/') in [
@@ -361,8 +362,9 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                 key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
             )
             item.size = filesz
-            backup_fs.SetFile(item, customer_idurl=customer_idurl)
-            modified = True
+            success, _modified = backup_fs.SetFile(item, customer_idurl=customer_idurl)
+            if _modified:
+                modified = True
         else:
             if is_in_sync:
                 # so we have some modifications in the index - it is not empty!
@@ -404,8 +406,9 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
                     typ=backup_fs.DIR,
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
-                backup_fs.SetDir(item, customer_idurl=customer_idurl)
-                modified = True
+                success, _modified = backup_fs.SetDir(item, customer_idurl=customer_idurl)
+                if _modified:
+                    modified = True
     if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
         if is_in_sync:
             if customer_idurl == my_id.getIDURL():
