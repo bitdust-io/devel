@@ -1701,6 +1701,15 @@ def scenario13_begin():
     # make sure supplier-rotated was hired by customer-1
     old_customer_1_suppliers_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert 'http://id-dead:8084/supplier-rotated.xml' in old_customer_1_suppliers_idurls
+    kw.supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=[
+            'customer-1@id-a_8084',
+        ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+        accepted_mistakes=0,
+    )
 
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
 

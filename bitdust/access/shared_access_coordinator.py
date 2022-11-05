@@ -408,10 +408,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
         super(SharedAccessCoordinator, self).__init__(
-            name='%s$%s' % (
-                self.key_alias,
-                self.glob_id['customer'],
-            ),
+            name='%s$%s' % (self.key_alias, self.glob_id['customer']),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
@@ -470,11 +467,7 @@ class SharedAccessCoordinator(automat.Automat):
         elif newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
             lg.info('share disconnected : %s' % self.key_id)
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
-        elif newstate in [
-            'DHT_LOOKUP',
-            'SUPPLIERS?',
-            'CLOSED',
-        ] and oldstate != 'AT_STARTUP':
+        elif newstate in ['DHT_LOOKUP', 'SUPPLIERS?', 'CLOSED'] and oldstate != 'AT_STARTUP':
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
 
     def A(self, event, *args, **kwargs):

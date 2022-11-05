@@ -609,7 +609,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
-    oldfiles = ClearSupplierRemoteInfo(supplier_num, customer_idurl=customer_idurl)
+    oldfiles = 0
+    # oldfiles = ClearSupplierRemoteInfo(supplier_num, customer_idurl=customer_idurl)
     newfiles = 0
     remote_files_changed = False
     current_key_alias = 'master'
@@ -640,6 +641,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             current_key_alias = process_line_key(line)
             if _Debug:
                 lg.out(_DebugLevel, '    %s %s/%s' % (typ, current_query, current_key_alias))
+            oldfiles += ClearSupplierRemoteInfo(supplier_num, customer_idurl=customer_idurl, key_alias=current_key_alias)
             continue
 
         if typ == 'D':
@@ -1256,7 +1258,7 @@ def ClearRemoteInfo():
     remote_max_block_numbers().clear()
 
 
-def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
+def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None, key_alias=None):
     """
     Clear only "single column" in the "remote" matrix corresponding to given
     supplier.
@@ -1264,9 +1266,11 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
     if not customer_idurl:
         customer_idurl = my_id.getIDURL()
     files = 0
+    backups = 0
     for backupID in remote_files().keys():
-        _customer_idurl = packetid.CustomerIDURL(backupID)
-        if _customer_idurl == customer_idurl:
+        _key_alias, _customer_idurl = packetid.KeyAliasCustomer(backupID)
+        if _customer_idurl == customer_idurl and (key_alias is None or _key_alias == key_alias):
+            backups += 1
             for blockNum in remote_files()[backupID].keys():
                 try:
                     if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
@@ -1281,7 +1285,7 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
                 except:
                     pass
     if _Debug:
-        lg.args(_DebugLevel, files_cleaned=files, supplier_pos=supplierNum, c=customer_idurl)
+        lg.args(_DebugLevel, files_cleaned=files, backups_cleaned=backups, supplier_pos=supplierNum, c=customer_idurl)
     return files
 
 

@@ -189,7 +189,7 @@ def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, valida
     return None
 
 
-def share_create_v1(customer: str, key_size=1024):
+def share_create_v1(customer: str, key_size=1024, expected_reliable=100):
     response = request_post(
         customer,
         'share/create/v1',
@@ -203,6 +203,7 @@ def share_create_v1(customer: str, key_size=1024):
     assert response.json()['status'] == 'OK', response.json()
     packet_list_v1(customer, wait_all_finish=True)
     transfer_list_v1(customer, wait_all_finish=True)
+    file_list_all_v1(customer, reliable_shares=False, expected_reliable=expected_reliable)
     return response.json()['result']['key_id']
 
 
