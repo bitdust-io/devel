@@ -1010,45 +1010,6 @@ def cmd_file(opts, args, overDict, executablePath):
 #------------------------------------------------------------------------------
 
 
-def cmd_integrate(opts, args, overDict):
-    """
-    This is a helper to make a "system-wide" command called for fast access
-    BitDust.
-
-    Run:
-        python bitdust.py alias > /usr/local/bin/bitdust
-        chmod +x /usr/local/bin/bitdust
-
-    This will create an executable file /usr/local/bin/bitdust with such content:
-        #!/bin/sh
-        python [path to `bitdust` folder]/bitdust.py "$@"
-    """
-    def print_text(msg, nl='\n'):
-        sys.stdout.write(msg + nl)
-        sys.stdout.flush()
-
-    from bitdust.system import bpio
-    if bpio.Windows():
-        # TODO:
-        # src = u"""@echo off
-        # C:\Users\veselin\BITDUS~2\venv\Scripts\python.exe C:\Users\veselin\BITDUS~2\src\bitdust.py %*
-        # """
-        # print_text('this feature is not yet available in OS Windows.')
-        return 0
-    curpath = bpio.getExecutableDir()
-    # cmdpath = '/usr/local/bin/bitdust'
-    src = '#!/bin/sh\n'
-    src += '# This is a short shell script to create an alias in OS for BitDust software.\n'
-    src += '# NOTICE: BitDust software do not require root permissions to run, please start as normal user.\n\n'
-    # src += "cd %s\n" % curpath
-    src += 'python %s/bitdust.py "$@"\n\n' % curpath
-    print_text(src)
-    return 0
-
-
-#------------------------------------------------------------------------------
-
-
 def option_name_to_path(name, default=''):
     path = default
     if name in [
@@ -1847,10 +1808,6 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         # print_text('repository: %s' % repo)
         # print_text('location:   %s' % location)
         return 0
-
-    #---integrate---
-    elif cmd == 'integrate' or cmd == 'alias' or cmd == 'shell':
-        return cmd_integrate(opts, args, overDict)
 
     return 2
 
