@@ -65,9 +65,7 @@ from bitdust.userid import global_id
 
 def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_items=[]):
     if not query_items:
-        query_items = [
-            '*',
-        ]
+        query_items = ['*']
     key_id = my_keys.latest_key_id(key_id)
     parts = global_id.NormalizeGlobalID(key_id)
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getIDURL():
@@ -123,6 +121,8 @@ def process_query_item(query_path, key_alias, ownerdir):
     ret += 'Q%s\n' % query_path
     if query_path == '*':
         for one_key_alias in os.listdir(ownerdir):
+            if key_alias and one_key_alias != key_alias:
+                continue
             if not misc.ValidKeyAlias(strng.to_text(one_key_alias)):
                 continue
             key_alias_dir = os.path.join(ownerdir, one_key_alias)

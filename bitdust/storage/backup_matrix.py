@@ -571,6 +571,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     Read ListFiles packet for given supplier and build a "remote" matrix. All
     lines are something like that:
 
+      Q*
       Kmaster
       Findex 5456
       D0 -1
@@ -587,9 +588,10 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
 
     First character can be:
 
+      "Q" for selection query
       "K" for keys
-      "F" for files
       "D" for folders
+      "F" for files
       "V" for stored data
     """
     global _ListFilesQueryCallbacks
