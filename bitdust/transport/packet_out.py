@@ -485,12 +485,9 @@ class PacketOut(automat.Automat):
         self.response_info = None
         self.timeout = None
         if self.response_timeout:
-            self.timers['response-timeout'] = (
-                self.response_timeout,
-                [
-                    'RESPONSE?',
-                ],
-            )
+            self.timers['response-timeout'] = (self.response_timeout, [
+                'RESPONSE?',
+            ])
 
     def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')

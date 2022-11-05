@@ -33,7 +33,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -785,7 +785,7 @@ def on_files_received(newpacket, info):
         lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl))
         return False
     if _Debug:
-        lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl, trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)
+        lg.args(_DebugLevel, sz=len(supplier_raw_list_files), s=external_supplier_idurl, pos=supplier_pos, known_pos=known_supplier_pos, pid=newpacket.PacketID)
     if supplier_pos >= 0:
         if known_supplier_pos != supplier_pos:
             lg.err('known external supplier %r position %d is not matching with received list files position %d for customer %s' % (external_supplier_idurl, known_supplier_pos, supplier_pos, trusted_customer_idurl))
@@ -798,7 +798,7 @@ def on_files_received(newpacket, info):
         list_files_text_body=supplier_raw_list_files,
         customer_idurl=trusted_customer_idurl,
         is_in_sync=True,
-        auto_create=True,
+        auto_create=False,
     )
     if remote_files_changed:
         backup_matrix.SaveLatestRawListFiles(

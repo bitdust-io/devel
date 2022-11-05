@@ -63,12 +63,6 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import os
-import sys
-
-try:
-    from twisted.internet import reactor  # @UnresolvedImport
-except:
-    sys.exit('Error initializing twisted.internet.reactor in backup_matrix.py')
 
 #------------------------------------------------------------------------------
 
@@ -106,8 +100,6 @@ _BackupStatusNotifyCallback = None
 _StatusCallBackForGuiBackup = None
 _LocalFilesNotifyCallback = None
 _UpdatedBackupIDs = set()
-_RepaintingTask = None
-_RepaintingTaskDelay = 2.0
 _ListFilesQueryCallbacks = {}
 
 #------------------------------------------------------------------------------
@@ -123,7 +115,6 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.init')
-    # RepaintingProcess(True)
     ReadLocalFiles()
     ReadLatestRawListFiles()
 
@@ -134,7 +125,6 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.shutdown')
-    # RepaintingProcess(False)
 
 
 #------------------------------------------------------------------------------
@@ -549,10 +539,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
                 'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
             }
-        for dataORparity in [
-            'Data',
-            'Parity',
-        ]:
+        for dataORparity in ['Data', 'Parity']:
             # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
             bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
             remote_files()[backupID][blockNum][dataORparity[0]][supplier_num] = bit
@@ -564,13 +551,18 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         remote_max_block_numbers()[backupID] = maxBlockNum
     if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
         found_backups.add(backupID)
-    if item_version_info[0] != maxBlockNum or item_version_info[1] != versionSize:
-        # lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
-        #     backupID, maxBlockNum, versionSize, ))
+    if item_version_info[0] != maxBlockNum or (item_version_info[1] in [None, -1, 0] and versionSize > 0):
+        if _Debug:
+            lg.out(_DebugLevel, '            updating version %s info, maxBlockNum %r->%r, size %r->%r' % (
+                backupID,
+                item_version_info[0],
+                maxBlockNum,
+                item_version_info[1],
+                versionSize,
+            ))
         item.set_version_info(versionName, maxBlockNum, versionSize)
         modified = True
     # mark this backup to be repainted
-    # RepaintBackup(backupID)
     return modified, backups2remove, paths2remove, found_backups, newfiles
 
 
@@ -611,7 +603,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
         else:
             is_in_sync = False
     if _Debug:
-        lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files [%d] : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (supplier_num, len(list_files_text_body), is_in_sync, backup_fs.revision(), customer_idurl))
+        lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files [%d] : %d bytes, is_in_sync=%s, rev:%d, c=%s' % (supplier_num, len(list_files_text_body), is_in_sync, backup_fs.revision(), customer_idurl))
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
@@ -635,19 +627,23 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
         # also don't consider the identity a backup
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
-        if _Debug:
-            lg.out(_DebugLevel, '    %s %s' % (typ, line))
 
         if typ == 'Q':
             current_query = line.strip()
+            if _Debug:
+                lg.out(_DebugLevel, '    %s %s' % (typ, current_query))
             continue
 
         if typ == 'K':
             current_key_alias = process_line_key(line)
+            if _Debug:
+                lg.out(_DebugLevel, '    %s %s/%s' % (typ, current_query, current_key_alias))
             continue
 
         if typ == 'D':
             if current_key_alias == 'master' and not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+                if _Debug:
+                    lg.out(_DebugLevel, '    %s %s/%s/%s IGNORED' % (typ, current_query, current_key_alias, line))
                 continue
             modified, _paths2remove = process_line_dir(
                 line,
@@ -660,10 +656,14 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             remote_files_changed = remote_files_changed or modified
             if modified:
                 updated_keys.append(current_key_alias)
+            if _Debug:
+                lg.out(_DebugLevel, '    %s %s/%s/%s %s' % (typ, current_query, current_key_alias, line, 'MODIFIED' if modified else 'IN_SYNC'))
             continue
 
         if typ == 'F':
             if current_key_alias == 'master' and not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+                if _Debug:
+                    lg.out(_DebugLevel, '    %s %s/%s/%s IGNORED' % (typ, current_query, current_key_alias, line))
                 continue
             modified, _paths2remove = process_line_file(
                 line,
@@ -676,10 +676,14 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             remote_files_changed = remote_files_changed or modified
             if modified:
                 updated_keys.append(current_key_alias)
+            if _Debug:
+                lg.out(_DebugLevel, '    %s %s/%s/%s %s' % (typ, current_query, current_key_alias, line, 'MODIFIED' if modified else 'IN_SYNC'))
             continue
 
         if typ == 'V':
             if current_key_alias == 'master' and not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+                if _Debug:
+                    lg.out(_DebugLevel, '    %s %s/%s/%s IGNORED' % (typ, current_query, current_key_alias, line))
                 continue
             modified, _backups2remove, _paths2remove, found_backups, _newfiles = process_line_version(
                 line,
@@ -698,6 +702,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 query_results.add((customer_idurl, current_query))
             if modified:
                 updated_keys.append(current_key_alias)
+            if _Debug:
+                lg.out(_DebugLevel, '    %s %s/%s/%s %s' % (typ, current_query, current_key_alias, line, 'MODIFIED' if modified else 'IN_SYNC'))
             continue
 
         raise Exception('unexpected line received: %r' % line)
@@ -876,7 +882,6 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, item
     # but we uploaded N+1 block - remember that
     maxBlockNum = max(remote_max_block_numbers().get(backupID, -1), blockNum)
     remote_max_block_numbers()[backupID] = maxBlockNum
-    # RepaintBackup(backupID)
     full_remote_path = global_id.MakeGlobalID(path=itemInfo['name'], key_id=itemInfo['key_id'])
     full_remote_path_id = global_id.MakeGlobalID(path=itemInfo['path_id'], key_id=itemInfo['key_id'])
     _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
@@ -953,7 +958,6 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         local_backup_size()[backupID] += os.path.getsize(localDest)
     except:
         lg.exc()
-    # RepaintBackup(backupID)
 
 
 def LocalBlockReport(backupID, blockNumber, result):
@@ -1016,8 +1020,6 @@ def LocalBlockReport(backupID, blockNumber, result):
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:
         local_max_block_numbers()[backupID] = blockNum
-    # if repaint_flag:
-    #     RepaintBackup(backupID)
 
 
 #------------------------------------------------------------------------------
@@ -1210,48 +1212,6 @@ def ScanBlocksToSend(backupID, limit_per_supplier=None):
 #------------------------------------------------------------------------------
 
 
-def RepaintBackup(backupID):
-    """
-    Mark given backup to be "repainted" in the GUI during the next "frame".
-    """
-    global _UpdatedBackupIDs
-    _UpdatedBackupIDs.add(backupID)
-
-
-def RepaintingProcess(on_off):
-    """
-    This method is called in loop to repaint the GUI.
-    """
-    global _UpdatedBackupIDs
-    global _BackupStatusNotifyCallback
-    global _RepaintingTask
-    global _RepaintingTaskDelay
-    if on_off is False:
-        _RepaintingTaskDelay = 2.0
-        if _RepaintingTask is not None:
-            if _RepaintingTask.active():
-                _RepaintingTask.cancel()
-            _RepaintingTask = None
-            _UpdatedBackupIDs.clear()
-            return
-    # TODO:
-    # Need to optimize that - do not call in loop!
-    # Just make a single call and pass _UpdatedBackupIDs as param.
-    for backupID in _UpdatedBackupIDs:
-        if _BackupStatusNotifyCallback is not None:
-            _BackupStatusNotifyCallback(backupID)
-    minDelay = 2.0
-    from bitdust.storage import backup_control
-    if backup_control.HasRunningBackup():
-        minDelay = 8.0
-    _RepaintingTaskDelay = misc.LoopAttenuation(_RepaintingTaskDelay, len(_UpdatedBackupIDs) > 0, minDelay, 8.0)
-    _UpdatedBackupIDs.clear()
-    _RepaintingTask = reactor.callLater(_RepaintingTaskDelay, RepaintingProcess, True)  # @UndefinedVariable
-
-
-#------------------------------------------------------------------------------
-
-
 def EraseBackupRemoteInfo(backupID):
     """
     Clear info only for given backup from "remote" matrix.
@@ -1319,7 +1279,7 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
                 except:
                     pass
     if _Debug:
-        lg.args(_DebugLevel, files_cleaned=files, supplier_pos=supplierNum, customer=customer_idurl)
+        lg.args(_DebugLevel, files_cleaned=files, supplier_pos=supplierNum, c=customer_idurl)
     return files
 
 
