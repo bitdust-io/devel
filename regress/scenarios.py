@@ -751,7 +751,7 @@ def scenario8():
     assert 'customer-1@id-a_8084' in customer_1_broker_keepers
     assert customer_1_active_queue_id in kw.queue_peddler_list_v1(customer_1_active_broker_name, extract_ids=True)
 
-    # customer-3 must also see all message that was sent to the group when he was not present yet
+    # customer-3 must also see all messages that were sent to the group
     assert kw.group_info_v1('customer-3', customer_1_group_key_id)['result']['last_sequence_id'] == 10
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 11
     assert len(kw.message_conversation_v1('customer-3')['result']) == 1

@@ -435,6 +435,7 @@ class ProxyReceiver(automat.Automat):
         packet_out.create(
             newpacket,
             wide=True,
+            callbacks={},
             # callbacks={
             #     commands.Ack(): self._on_request_service_ack,
             #     commands.Fail(): self._on_request_service_fail,

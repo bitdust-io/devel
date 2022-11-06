@@ -245,7 +245,6 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         list_files_text_body=list_files_raw,
         customer_idurl=None,
         is_in_sync=None,
-        auto_create=False,
     )
     list_files_orator.IncomingListFiles(newpacket)
     if remote_files_changed:

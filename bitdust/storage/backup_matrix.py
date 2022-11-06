@@ -566,7 +566,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     return modified, backups2remove, paths2remove, found_backups, newfiles
 
 
-def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=None, is_in_sync=None, auto_create=False):
+def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=None, is_in_sync=None):
     """
     Read ListFiles packet for given supplier and build a "remote" matrix. All
     lines are something like that:
@@ -674,7 +674,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
-                auto_create=auto_create,
+                auto_create=True,
             )
             paths2remove.update(_paths2remove)
             remote_files_changed = remote_files_changed or modified
@@ -695,7 +695,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
-                auto_create=auto_create,
+                auto_create=True,
             )
             backups2remove.update(_backups2remove)
             paths2remove.update(_paths2remove)
@@ -780,7 +780,6 @@ def ReadLatestRawListFiles(customer_idurl=None):
                         list_files_text_body=listFileText,
                         customer_idurl=customer_idurl,
                         is_in_sync=False,
-                        auto_create=False,
                     )
 
 

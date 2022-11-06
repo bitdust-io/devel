@@ -317,16 +317,9 @@ class ArchiveWriter(automat.Automat):
                 failed_supliers += 1
                 lg.warn('unknown supplier supplier_num=%d' % supplier_num)
                 continue
-            for dataORparity in (
-                'Data',
-                'Parity',
-            ):
+            for dataORparity in ('Data', 'Parity'):
                 packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
-                packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
-                    block_num,
-                    supplier_num,
-                    dataORparity,
-                ))
+                packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (block_num, supplier_num, dataORparity))
                 if not os.path.isfile(packet_filename):
                     lg.err('%s is not a file' % packet_filename)
                     continue
