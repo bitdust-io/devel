@@ -120,8 +120,13 @@ def process_query_item(query_path, key_alias, ownerdir):
     ret = ''
     ret += 'Q%s\n' % query_path
     if query_path == '*':
+        if key_alias == 'master':
+            key_alias_dir = os.path.join(ownerdir, key_alias)
+            ret += TreeSummary(key_alias_dir, key_alias=key_alias)
         for one_key_alias in os.listdir(ownerdir):
-            if key_alias and one_key_alias != key_alias:
+            if one_key_alias == 'master':
+                continue
+            if key_alias and key_alias != 'master' and one_key_alias != key_alias:
                 continue
             if not misc.ValidKeyAlias(strng.to_text(one_key_alias)):
                 continue

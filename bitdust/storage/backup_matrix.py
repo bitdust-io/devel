@@ -1268,7 +1268,7 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None, key_alias=None):
     backups = 0
     for backupID in remote_files().keys():
         _key_alias, _customer_idurl = packetid.KeyAliasCustomer(backupID)
-        if _customer_idurl == customer_idurl and (key_alias is None or _key_alias == key_alias):
+        if _customer_idurl == customer_idurl and (key_alias is None or key_alias == 'master' or _key_alias == key_alias):
             backups += 1
             for blockNum in remote_files()[backupID].keys():
                 try:
