@@ -156,6 +156,8 @@ def Save(customer_idurl=None, key_alias='master', increase_revision=True):
     """
     Save index data base to local file and notify "index_synchronizer()" state machine.
     """
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, k=key_alias, increase_revision=increase_revision)
     global _LoadingFlag
     if _LoadingFlag:
         return False
@@ -198,7 +200,7 @@ def on_files_received(newpacket, info):
             lg.dbg(_DebugLevel, 'incoming %r received, but %r is not my supplier' % (newpacket, newpacket.OwnerID))
         return False
     if _Debug:
-        lg.args(_DebugLevel, 'service_backups._on_inbox_packet_received: %r for us from %s at %s' % (newpacket, newpacket.CreatorID, info))
+        lg.dbg(_DebugLevel, '%r for us from %s' % (newpacket, newpacket.CreatorID))
     if IncomingSupplierListFiles(newpacket, list_files_global_id):
         p2p_service.SendAck(newpacket)
     else:
@@ -243,16 +245,12 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         list_files_text_body=list_files_raw,
         customer_idurl=None,
         is_in_sync=None,
-        auto_create=False,
     )
     list_files_orator.IncomingListFiles(newpacket)
     if remote_files_changed:
         backup_matrix.SaveLatestRawListFiles(supplier_idurl, list_files_raw)
     if _Debug:
-        lg.args(
-            _DebugLevel, supplier=nameurl.GetName(supplier_idurl), customer=nameurl.GetName(customer_idurl), backups2remove=len(backups2remove), paths2remove=len(paths2remove), files_changed=remote_files_changed,
-            missed_backups=len(missed_backups)
-        )
+        lg.args(_DebugLevel, s=nameurl.GetName(supplier_idurl), c=nameurl.GetName(customer_idurl), backups2remove=len(backups2remove), paths2remove=len(paths2remove), files_changed=remote_files_changed, missed_backups=len(missed_backups))
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
         if _Debug:
@@ -807,7 +805,6 @@ def OnJobDone(backupID, result):
         backup_fs.Calculate()
         Save()
         # TODO: check used space, if we have over use - stop all tasks immediately
-        # backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':
         DeleteBackup(backupID)
     if len(tasks()) == 0:

@@ -29,7 +29,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -65,9 +65,7 @@ from bitdust.userid import global_id
 
 def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_items=[]):
     if not query_items:
-        query_items = [
-            '*',
-        ]
+        query_items = ['*']
     key_id = my_keys.latest_key_id(key_id)
     parts = global_id.NormalizeGlobalID(key_id)
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getIDURL():
@@ -122,13 +120,20 @@ def process_query_item(query_path, key_alias, ownerdir):
     ret = ''
     ret += 'Q%s\n' % query_path
     if query_path == '*':
+        if key_alias == 'master':
+            key_alias_dir = os.path.join(ownerdir, key_alias)
+            ret += TreeSummary(key_alias_dir, key_alias=key_alias)
         for one_key_alias in os.listdir(ownerdir):
+            if one_key_alias == 'master':
+                continue
+            if key_alias and key_alias != 'master' and one_key_alias != key_alias:
+                continue
             if not misc.ValidKeyAlias(strng.to_text(one_key_alias)):
                 continue
             key_alias_dir = os.path.join(ownerdir, one_key_alias)
             ret += TreeSummary(key_alias_dir, key_alias=one_key_alias)
         if _Debug:
-            lg.args(_DebugLevel, ownerdir=ownerdir, query_path=query_path, result_bytes=len(ret))
+            lg.args(_DebugLevel, o=ownerdir, q=query_path, k=key_alias, result_bytes=len(ret))
         return ret
     # TODO: more validations to be added
     clean_path = query_path.replace('.', '').replace('~', '').replace(':', '').replace('\\', '/').lstrip('/')
@@ -141,7 +146,7 @@ def process_query_item(query_path, key_alias, ownerdir):
     if os.path.isdir(local_path):
         ret += TreeSummary(local_path, key_alias=key_alias)
     if _Debug:
-        lg.args(_DebugLevel, ownerdir=ownerdir, query_path=query_path, local_path=local_path, result_bytes=len(ret))
+        lg.args(_DebugLevel, o=ownerdir, q=query_path, k=key_alias, p=local_path, result_bytes=len(ret))
     return ret
 
 

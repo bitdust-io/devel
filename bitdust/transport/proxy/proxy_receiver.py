@@ -435,10 +435,12 @@ class ProxyReceiver(automat.Automat):
         packet_out.create(
             newpacket,
             wide=True,
-            callbacks={
-                commands.Ack(): self._on_request_service_ack,
-                commands.Fail(): self._on_request_service_fail,
-            },
+            callbacks={},
+            # callbacks={
+            #     commands.Ack(): self._on_request_service_ack,
+            #     commands.Fail(): self._on_request_service_fail,
+            # },
+            response_timeout=15,
         )
 
     def doProcessInboxPacket(self, *args, **kwargs):
@@ -797,9 +799,10 @@ class ProxyReceiver(automat.Automat):
             callbacks={
                 commands.Ack(): self._on_request_service_ack,
                 commands.Fail(): self._on_request_service_fail,
+                # 'timeout': lambda pkt_out, err: self.automat('request-timeout', pkt_out),
                 None: lambda pkt_out: self.automat('request-timeout', pkt_out),
             },
-            response_timeout=30,
+            response_timeout=15,
         )
         self.request_service_packet_id.append(newpacket.PacketID)
 

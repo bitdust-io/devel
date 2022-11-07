@@ -66,7 +66,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -486,11 +486,7 @@ class BackupRebuilder(automat.Automat):
                             # if supplier is not alive - we can't request from him
                             if not io_throttle.HasPacketInRequestQueue(supplierID, PacketID):
                                 customer, remotePath = packetid.SplitPacketID(PacketID)
-                                filename = os.path.join(
-                                    settings.getLocalBackupsDir(),
-                                    customer,
-                                    remotePath,
-                                )
+                                filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
                                         self._file_received,
@@ -515,11 +511,7 @@ class BackupRebuilder(automat.Automat):
                         if availableSuppliers[supplierNum]:
                             if not io_throttle.HasPacketInRequestQueue(supplierID, PacketID):
                                 customer, remotePath = packetid.SplitPacketID(PacketID)
-                                filename = os.path.join(
-                                    settings.getLocalBackupsDir(),
-                                    customer,
-                                    remotePath,
-                                )
+                                filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
                                         self._file_received,
@@ -551,13 +543,7 @@ class BackupRebuilder(automat.Automat):
                 self.automat('no-requests')
 
     def _file_received(self, newpacket, state):
-        if state in [
-            'in queue',
-            'shutdown',
-            'exist',
-            'failed',
-            'cancelled',
-        ]:
+        if state in ['in queue', 'shutdown', 'exist', 'failed', 'cancelled']:
             return
         if state != 'received':
             lg.warn('incorrect state [%s] for packet %s' % (str(state), str(newpacket)))

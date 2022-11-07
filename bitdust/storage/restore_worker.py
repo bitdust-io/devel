@@ -78,7 +78,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -189,20 +189,11 @@ class RestoreWorker(automat.Automat):
         Method to catch the moment when `restore_worker()` state were changed.
         """
         if event != 'instant':
-            if newstate in [
-                'REQUESTED',
-                'RECEIVING',
-            ] and oldstate not in [
-                'REQUESTED',
-                'RECEIVING',
-            ]:
+            if newstate in ['REQUESTED', 'RECEIVING'] and oldstate not in ['REQUESTED', 'RECEIVING']:
                 reactor.callLater(0.01, self.automat, 'instant')  # @UndefinedVariable
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
-        if event == 'data-received' and curstate in [
-            'REQUESTED',
-            'RECEIVING',
-        ]:
+        if event == 'data-received' and curstate in ['REQUESTED', 'RECEIVING']:
             reactor.callLater(0.01, self.automat, 'instant')  # @UndefinedVariable
 
     def A(self, event, *args, **kwargs):
@@ -397,12 +388,8 @@ class RestoreWorker(automat.Automat):
         self.block_number += 1
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.doStartNewBlock ' + str(self.block_number))
-        self.OnHandData = [
-            False,
-        ]*self.EccMap.datasegments
-        self.OnHandParity = [
-            False,
-        ]*self.EccMap.paritysegments
+        self.OnHandData = [False]*self.EccMap.datasegments
+        self.OnHandParity = [False]*self.EccMap.paritysegments
         self.RequestFails = []
         self.block_requests = {}
         self.AlreadyRequestedCounts = {}
@@ -458,10 +445,7 @@ class RestoreWorker(automat.Automat):
             lg.warn('block read/unserialize failed from %d bytes of data' % len(blockbits))
             self.automat('block-failed')
             return
-        self.automat('block-restored', (
-            newblock,
-            filename,
-        ))
+        self.automat('block-restored', (newblock, filename))
 
     def doRequestPackets(self, *args, **kwargs):
         """
@@ -540,10 +524,7 @@ class RestoreWorker(automat.Automat):
             supplierIDURL = contactsdb.supplier(supplierNum, customer_idurl=self.customer_idurl)
             if not supplierIDURL:
                 continue
-            for dataORparity in [
-                'Data',
-                'Parity',
-            ]:
+            for dataORparity in ['Data', 'Parity']:
                 packetID = packetid.MakePacketID(self.backup_id, self.block_number, supplierNum, dataORparity)
                 customer, remotePath = packetid.SplitPacketID(packetID)
                 filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
@@ -661,10 +642,7 @@ class RestoreWorker(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        SKIP, offline supplier: %s' % SupplierID)
                 continue
-            packetsToRequest.append((
-                SupplierID,
-                request_packet_id,
-            ))
+            packetsToRequest.append((SupplierID, request_packet_id))
         for SupplierNumber in range(self.EccMap.paritysegments):
             request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')
             if self.OnHandParity[SupplierNumber]:
@@ -685,10 +663,7 @@ class RestoreWorker(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        SKIP, offline supplier: %s' % SupplierID)
                 continue
-            packetsToRequest.append((
-                SupplierID,
-                request_packet_id,
-            ))
+            packetsToRequest.append((SupplierID, request_packet_id))
         requests_made = 0
         # already_requested = 0
         for SupplierID, packetID in packetsToRequest:
@@ -773,23 +748,14 @@ class RestoreWorker(automat.Automat):
                 raise Exception('packet is still in IO queue, but already unregistered')
             lg.warn('packet already in the request queue: %r' % packet_id)
             return
-        if result in [
-            'received',
-            'exist',
-        ]:
+        if result in ['received', 'exist']:
             self.block_requests[packet_id] = True
             if result == 'exist':
                 # reactor.callLater(0, self.automat, 'data-received', (None, packet_id, ))  # @UndefinedVariable
-                self.event('data-received', (
-                    None,
-                    packet_id,
-                ))
+                self.event('data-received', (None, packet_id))
             else:
                 # reactor.callLater(0, self.automat, 'data-received', (NewPacketOrPacketID, packet_id, ))  # @UndefinedVariable
-                self.event('data-received', (
-                    NewPacketOrPacketID,
-                    packet_id,
-                ))
+                self.event('data-received', (NewPacketOrPacketID, packet_id))
         else:
             self.block_requests[packet_id] = False
             self.RequestFails.append(packet_id)

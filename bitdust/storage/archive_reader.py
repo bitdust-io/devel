@@ -94,7 +94,7 @@ class ArchiveReader(automat.Automat):
     """
     This class implements all the functionality of ``archive_reader()`` state machine.
     """
-    def __init__(self, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `archive_reader()` state machine.
         """
@@ -285,7 +285,7 @@ class ArchiveReader(automat.Automat):
             )
             self.requested_list_files[supplier_pos] = None if outpacket else False
         if _Debug:
-            lg.args(_DebugLevel, requested=self.requested_list_files)
+            lg.args(_DebugLevel, queue_alias=self.queue_alias, requested=self.requested_list_files)
         self.request_list_files_timer = reactor.callLater(30, self._on_request_list_files_timeout)  # @UndefinedVariable
 
     def _do_select_archive_snapshots(self):

@@ -413,6 +413,21 @@ def CustomerIDURL(backupID, as_field=True):
     return global_id.GlobalUserToIDURL(user, as_field=as_field)
 
 
+def KeyAliasCustomer(backupID, as_field=True):
+    """
+    A wrapper for ``Split()`` method to get key alias and customer idurl from backup ID.
+    """
+    user, _, _ = backupID.strip().rpartition(':')
+    if not user:
+        from bitdust.userid import my_id
+        if as_field:
+            return 'master', my_id.getIDURL()
+        return 'master', my_id.getIDURL().to_bin()
+    key_alias, _, user = user.strip().partition('$')
+    from bitdust.userid import global_id
+    return key_alias, global_id.GlobalUserToIDURL(user, as_field=as_field)
+
+
 def RemotePath(backupID):
     """
     A wrapper for ``Split()`` method to get only remote_path from backup ID.

@@ -113,7 +113,8 @@ def init():
     This is the mechanism for sending and requesting files to drive
     backups.
     """
-    lg.out(4, 'io_throttle.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'io_throttle.init')
     throttle()
     callback.add_queue_item_status_callback(OutboxStatus)
     callback.add_finish_file_sending_callback(FileSendingFinished)
@@ -123,7 +124,8 @@ def shutdown():
     """
     To stop program correctly - need to call this before shut down.
     """
-    lg.out(4, 'io_throttle.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'io_throttle.shutdown')
     callback.remove_finish_file_sending_callback(FileSendingFinished)
     callback.remove_queue_item_status_callback(OutboxStatus)
     throttle().DeleteBackupRequests('')

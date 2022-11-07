@@ -751,7 +751,7 @@ def scenario8():
     assert 'customer-1@id-a_8084' in customer_1_broker_keepers
     assert customer_1_active_queue_id in kw.queue_peddler_list_v1(customer_1_active_broker_name, extract_ids=True)
 
-    # customer-3 must also see all message that was sent to the group when he was not present yet
+    # customer-3 must also see all messages that were sent to the group
     assert kw.group_info_v1('customer-3', customer_1_group_key_id)['result']['last_sequence_id'] == 10
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 11
     assert len(kw.message_conversation_v1('customer-3')['result']) == 1
@@ -1701,6 +1701,15 @@ def scenario13_begin():
     # make sure supplier-rotated was hired by customer-1
     old_customer_1_suppliers_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert 'http://id-dead:8084/supplier-rotated.xml' in old_customer_1_suppliers_idurls
+    kw.supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=[
+            'customer-1@id-a_8084',
+        ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+        accepted_mistakes=0,
+    )
 
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
 
@@ -1843,6 +1852,9 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 
+    customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+    assert customer_1_supplier_idurls_after != customer_1_supplier_idurls_before
+
     kw.file_sync_v1('customer-1')
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
@@ -1856,6 +1868,7 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     )
 
     # make sure we can still download the file shared by customer-2 back on customer-1
+    kw.share_info_v1('customer-1', customer_1_shared_file_info['share_id'], wait_state='CONNECTED')
     kw.verify_file_download_start(
         node='customer-1',
         remote_path=customer_1_shared_file_info['remote_path'],
@@ -1908,6 +1921,9 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 
+    customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+    assert customer_1_supplier_idurls_after != customer_1_supplier_idurls_before
+
     kw.file_sync_v1('customer-1')
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
@@ -1921,6 +1937,7 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
     )
 
     # make sure we can still download the file shared by customer-2 back on customer-1
+    kw.share_info_v1('customer-1', customer_1_shared_file_info['share_id'], wait_state='CONNECTED')
     kw.verify_file_download_start(
         node='customer-1',
         remote_path=customer_1_shared_file_info['remote_path'],

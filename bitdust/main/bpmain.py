@@ -681,6 +681,39 @@ def main(executable_path=None, start_reactor=True):
         from bitdust.system import deploy
         return deploy.run(args)
 
+    #---integrate---
+    if cmd == 'integrate' or cmd == 'alias' or cmd == 'shell':
+        """
+        This is a helper command to make a "system-wide" command called "bitdust" for fast access to the app.
+
+        Run:
+            python3 bitdust.py alias > /usr/local/bin/bitdust
+            chmod +x /usr/local/bin/bitdust
+
+        This will create an executable file /usr/local/bin/bitdust with such content:
+            #!/bin/sh
+            python3 [path to `bitdust` folder]/bitdust.py "$@"
+        """
+        from bitdust.system import bpio
+        if bpio.Windows():
+            # TODO:
+            # src = u"""@echo off
+            # C:\Users\veselin\BITDUS~2\venv\Scripts\python.exe C:\Users\veselin\BITDUS~2\src\bitdust.py %*
+            # """
+            print_text('this feature is not yet available for Windows')
+            return 0
+        python_path = os.path.abspath(os.path.join(os.path.expanduser('~'), '.bitdust', 'venv', 'bin', 'python'))
+        curpath = os.path.abspath(os.path.join(bpio.getExecutableDir(), '..'))
+        src = '#!/bin/sh\n'
+        src += '# This is a very short shell script to help you create an alias "bitdust" in your OS for the BitDust software.\n'
+        src += '# NOTICE: BitDust do not require root permissions to run, please always start it as normal user.\n'
+        src += '# Run:\n'
+        src += '#     python3 bitdust.py alias > /usr/local/bin/bitdust\n'
+        src += '#     chmod +x /usr/local/bin/bitdust\n'
+        src += '%s %s/bitdust.py "$@"\n' % (python_path, curpath)
+        print_text(src)
+        return 0
+
     if opts.appdir:
         appdata = opts.appdir
         AppDataDir = appdata

@@ -451,10 +451,7 @@ class FSItemInfo():
         self.versions[version] = [-1, -1]
 
     def set_version_info(self, version, maxblocknum, sizebytes):
-        self.versions[version] = [
-            maxblocknum,
-            sizebytes,
-        ]
+        self.versions[version] = [maxblocknum, sizebytes]
 
     def get_version_info(self, version):
         return self.versions.get(version, [-1, -1])
@@ -1984,7 +1981,7 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
         lg.exc()
         return 0, []
     if _Debug:
-        lg.args(_DebugLevel, json_data=json_data)
+        lg.args(_DebugLevel, new_revision=new_revision, json_data=json_data)
     if not json_data:
         return 0, []
     for customer_id in json_data.keys():
@@ -2029,7 +2026,6 @@ def LoadIndex(index_file_path):
     inpt.close()
     count, _ = ReadIndex(raw_data, new_revision=new_revision)
     if not count:
-        lg.warn('catalog index reading failed')
         return False
     return count
 
@@ -2038,8 +2034,11 @@ def LoadAllIndexes():
     index_dir_path = os.path.join(settings.ServiceDir('service_backups'), 'index')
     if not os.path.isdir(index_dir_path):
         os.makedirs(index_dir_path)
-    for index_filename in os.listdir(index_dir_path):
-        index_file_path = os.path.join(index_dir_path, index_filename)
+    for key_id in os.listdir(index_dir_path):
+        if my_keys.latest_key_id(key_id) != key_id:
+            lg.warn('ignore old index file for rotated identity: %r' % key_id)
+            continue
+        index_file_path = os.path.join(index_dir_path, key_id)
         LoadIndex(index_file_path)
 
 
