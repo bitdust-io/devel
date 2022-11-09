@@ -221,10 +221,10 @@ class KeysStorageService(LocalService):
 
     def _on_identity_url_changed(self, evt):
         from bitdust.crypt import my_keys
-        from bitdust.storage import backup_control
+        # from bitdust.storage import backup_control
         my_keys.check_rename_my_keys()
         self._do_synchronize_keys()
-        backup_control.Save()
+        # backup_control.Save()
         return None
 
     def _on_index_synchronizer_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):

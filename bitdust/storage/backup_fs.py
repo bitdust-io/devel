@@ -616,7 +616,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
         iterID = fsID(key_alias=key_alias)
     resultID = ''
     parentKeyID = None
-    # build all tree, skip the last part
+    # build whole tree, skip the last part
     for i in range(len(parts) - 1):
         name = parts[i]
         if not name:
@@ -624,8 +624,6 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
         p = '/'.join(parts[:i + 1])
         if bpio.Linux() or bpio.Mac():
             p = '/' + p
-        # if not bpio.pathIsDir(p):
-        #     raise Exception('Directory not exist: %s' % str(p))
         if name not in iter:
             # made a new ID for this folder, ID starts from 0. new folders will get the last ID +1
             # or it may find a free place in the middle, if some folders or files were removed before
@@ -688,8 +686,6 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None, force_pa
         p = '/'.join(parts[:i + 1])
         if bpio.Linux() or bpio.Mac():
             p = '/' + p
-        # if not bpio.pathIsDir(p):
-        #     raise Exception('Directory not exist: %s' % str(p))
         if name not in iter:
             id = 0
             if force_path_id_parts:
@@ -728,7 +724,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
         if not os.access(path, os.R_OK):
             return c
         for localname in bpio.list_dir_safe(path):
-            p = os.path.join(path, localname)  # .encode("utf-8")
+            p = os.path.join(path, localname)
             name = strng.to_text(localname)
             if bpio.pathIsDir(p):
                 if name not in iter:
@@ -1883,7 +1879,6 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
                 if _Debug:
                     lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>%d' % (customer_idurl, key_alias, cur_revision, new_revision))
                 continue
-        # Clear(customer_idurl, key_alias)
         count = 0
         count_modified = 0
         modified_items = set()

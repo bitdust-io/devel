@@ -154,7 +154,7 @@ def shutdown():
 
 def Save(customer_idurl=None, key_alias='master', increase_revision=True):
     """
-    Save index data base to local file and notify "index_synchronizer()" state machine.
+    Save index data base to local file and notify "index_synchronizer()" or "shared_access_coordinator()" state machines.
     """
     if _Debug:
         lg.args(_DebugLevel, c=customer_idurl, k=key_alias, increase_revision=increase_revision)
@@ -170,10 +170,15 @@ def Save(customer_idurl=None, key_alias='master', increase_revision=True):
             key_alias=key_alias,
         )
     backup_fs.SaveIndex(customer_idurl, key_alias)
-    if driver.is_on('service_backup_db'):
-        # TODO: switch to event
-        from bitdust.storage import index_synchronizer
-        index_synchronizer.A('push')
+    if increase_revision:
+        if key_alias == 'master':
+            if driver.is_on('service_backup_db'):
+                from bitdust.storage import index_synchronizer
+                index_synchronizer.A('push')
+        else:
+            if driver.is_on('service_shared_data'):
+                from bitdust.access import shared_access_coordinator
+                shared_access_coordinator.on_index_file_updated(customer_idurl, key_alias)
 
 
 #------------------------------------------------------------------------------
