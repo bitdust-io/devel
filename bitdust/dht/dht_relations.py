@@ -177,8 +177,6 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         return None
 
     customer_idurl_bin = id_url.to_bin(customer_idurl)
-    #     if customer_idurl_bin in rotated_idurls:
-    #         rotated_idurls.remove(customer_idurl_bin)
     d = dht_records.get_suppliers(customer_idurl_bin, return_details=True, use_cache=use_cache)
     d.addCallback(_do_verify, customer_idurl_bin)
     d.addErrback(_on_error)

@@ -64,6 +64,10 @@ import base64
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 from bitdust.logs import lg
 
 from bitdust.automats import automat
@@ -219,6 +223,27 @@ def open_known_shares():
 #------------------------------------------------------------------------------
 
 
+def on_index_file_updated(customer_idurl, key_alias):
+    key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
+    if _Debug:
+        lg.args(_DebugLevel, k=key_id)
+    if not my_keys.is_key_registered(key_id):
+        return
+    if not my_keys.is_active(key_id):
+        return
+    active_share = get_active_share(key_id)
+    if not active_share:
+        lg.warn('index file was updated and key is active, but share %s is not known' % key_id)
+        return
+    if active_share.state == 'DISCONNECTED':
+        active_share.automat('restart')
+        return
+    if active_share.state != 'CONNECTED':
+        active_share.to_be_restarted = True
+        return
+    active_share.automat('restart')
+
+
 def on_supplier_file_modified(evt):
     key_id = global_id.MakeGlobalID(idurl=evt.data['customer_idurl'], key_alias=evt.data['key_alias'])
     if _Debug:
@@ -235,26 +260,33 @@ def on_supplier_file_modified(evt):
         active_share.automat('restart')
         return
     if active_share.state != 'CONNECTED':
+        active_share.to_be_restarted = True
         return
-    if evt.data['remote_path'] == settings.BackupIndexFileName():
+    remote_path = evt.data['remote_path']
+    if remote_path == settings.BackupIndexFileName():
         active_share.automat('restart')
     else:
-        supplier_idurl = evt.data['supplier_idurl']
-        sc = supplier_connector.by_idurl(
-            supplier_idurl,
-            customer_idurl=active_share.customer_idurl,
-        )
-        if sc is not None and sc.state == 'CONNECTED':
-            p2p_service.SendListFiles(
-                target_supplier=supplier_idurl,
+        remote_path, _, _ = remote_path.rpartition('/')
+        iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(active_share.customer_idurl, active_share.key_alias))
+        if not iter_path:
+            active_share.automat('restart')
+        else:
+            supplier_idurl = evt.data['supplier_idurl']
+            sc = supplier_connector.by_idurl(
+                supplier_idurl,
                 customer_idurl=active_share.customer_idurl,
-                key_id=active_share.key_id,
-                timeout=20,
-                callbacks={
-                    commands.Files(): lambda r, i: on_list_files_response(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                    commands.Fail(): lambda r, i: on_list_files_failed(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                },
             )
+            if sc is not None and sc.state == 'CONNECTED':
+                p2p_service.SendListFiles(
+                    target_supplier=supplier_idurl,
+                    customer_idurl=active_share.customer_idurl,
+                    key_id=active_share.key_id,
+                    timeout=15,
+                    callbacks={
+                        commands.Files(): lambda r, i: on_list_files_response(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
+                        commands.Fail(): lambda r, i: on_list_files_failed(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
+                    },
+                )
 
 
 def on_key_registered(evt):
@@ -407,6 +439,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.last_time_in_sync = -1
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
+        self.to_be_restarted = False
         super(SharedAccessCoordinator, self).__init__(
             name='%s$%s' % (self.key_alias, self.glob_id['customer']),
             state='AT_STARTUP',
@@ -464,9 +497,15 @@ class SharedAccessCoordinator(automat.Automat):
         if newstate == 'CONNECTED':
             lg.info('share connected : %s' % self.key_id)
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
+            if self.to_be_restarted:
+                self.to_be_restarted = False
+                reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         elif newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
             lg.info('share disconnected : %s' % self.key_id)
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
+            if self.to_be_restarted:
+                self.to_be_restarted = False
+                reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         elif newstate in ['DHT_LOOKUP', 'SUPPLIERS?', 'CLOSED'] and oldstate != 'AT_STARTUP':
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
 
@@ -533,6 +572,7 @@ class SharedAccessCoordinator(automat.Automat):
         elif self.state == 'CLOSED':
             pass
         return None
+
 
 #     def isEnoughSuppliersConnected(self, *args, **kwargs):
 #         """
@@ -679,12 +719,6 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.dht_lookup_use_cache = True
-        #         for packet_id in self.outgoing_list_files_packets_ids:
-        #             packetsToCancel = packet_out.search_by_packet_id(packet_id)
-        #             for pkt_out in packetsToCancel:
-        #                 if pkt_out.outpacket.Command == commands.ListFiles():
-        #                     lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
-        #                     pkt_out.automat('cancel')
         events.send('share-connected', data=dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
@@ -700,12 +734,6 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.dht_lookup_use_cache = False
-        #         for packet_id in self.outgoing_list_files_packets_ids:
-        #             packetsToCancel = packet_out.search_by_packet_id(packet_id)
-        #             for pkt_out in packetsToCancel:
-        #                 if pkt_out.outpacket.Command == commands.ListFiles():
-        #                     lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
-        #                     pkt_out.automat('cancel')
         events.send('share-disconnected', data=dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
@@ -720,7 +748,6 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        # self.outgoing_list_files_packets_ids = []
         self.result_defer = None
         self.destroy()
 
@@ -741,25 +768,6 @@ class SharedAccessCoordinator(automat.Automat):
         else:
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
             sc.automat('connect')
-
-
-#     def _do_check_supplier_connectors(self):
-#         connected_count = 0
-#         for supplier_idurl in self.known_suppliers_list:
-#             if not id_url.is_cached(supplier_idurl):
-#                 continue
-#             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-#             if sc is None or sc.state != 'CONNECTED':
-#                 continue
-#             connected_count += 1
-#         critical_suppliers_number = 1
-#         if self.known_ecc_map:
-#             from bitdust.raid import eccmap
-#             critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
-#         if _Debug:
-#             lg.args(_DebugLevel, connected_count=connected_count, critical_suppliers_number=critical_suppliers_number)
-#         if connected_count >= critical_suppliers_number:
-#             self.automat('all-suppliers-connected')
 
     def _do_retrieve_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(

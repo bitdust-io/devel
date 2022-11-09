@@ -1284,7 +1284,7 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None, key_alias=None):
                 except:
                     pass
     if _Debug:
-        lg.args(_DebugLevel, files_cleaned=files, backups_cleaned=backups, supplier_pos=supplierNum, c=customer_idurl)
+        lg.args(_DebugLevel, files_cleaned=files, backups_cleaned=backups, supplier_pos=supplierNum, c=customer_idurl, k=key_alias)
     return files
 
 
