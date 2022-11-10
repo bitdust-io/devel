@@ -807,6 +807,17 @@ class SharedAccessCoordinator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, pid=packetID, supplier=supplier_idurl)
 
+    def _do_process_index_file(self, wrapped_packet, supplier_idurl):
+        if not wrapped_packet or not wrapped_packet.Valid():
+            lg.err('incoming Data() is not valid from supplier %r' % supplier_idurl)
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+            return
+        supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet, key_id=self.key_id)
+        self.received_index_file_revision[supplier_idurl] = supplier_revision
+        if _Debug:
+            lg.dbg(_DebugLevel, 'received %s from %r with rev: %s' % (wrapped_packet, supplier_idurl, supplier_revision))
+        self.automat('index-received', supplier_idurl=supplier_idurl)
+
     def _do_send_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
@@ -900,18 +911,21 @@ class SharedAccessCoordinator(automat.Automat):
 
     def _on_index_file_response(self, newpacket, info):
         wrapped_packet = signed.Unserialize(newpacket.Payload)
-        supplier_idurl = wrapped_packet.RemoteID
+        supplier_idurl = wrapped_packet.RemoteID if wrapped_packet else newpacket.CreatorID
         if _Debug:
             lg.args(_DebugLevel, sz=len(newpacket.Payload), s=supplier_idurl, i=info)
-        if not wrapped_packet or not wrapped_packet.Valid():
-            lg.err('incoming Data() is not valid from supplier %r' % supplier_idurl)
+        if not wrapped_packet:
+            lg.err('incoming Data() is not valid %r' % newpacket)
             self.automat('supplier-failed', supplier_idurl=supplier_idurl)
             return
-        supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet, key_id=self.key_id)
-        self.received_index_file_revision[supplier_idurl] = supplier_revision
-        if _Debug:
-            lg.out(_DebugLevel, 'shared_access_coordinator._on_index_file_response %s from %r with rev: %s' % (newpacket, supplier_idurl, supplier_revision))
-        self.automat('index-received', supplier_idurl=supplier_idurl)
+        if not identitycache.HasKey(wrapped_packet.CreatorID):
+            if _Debug:
+                lg.dbg(_DebugLevel, ' will cache remote identity %s before processing incoming packet %s' % (wrapped_packet.CreatorID, wrapped_packet))
+            d = identitycache.immediatelyCaching(wrapped_packet.CreatorID)
+            d.addCallback(lambda _: self._do_process_index_file(wrapped_packet, supplier_idurl))
+            d.addErrback(lambda err: lg.err('failed caching remote %s identity: %s' % (wrapped_packet.CreatorID, str(err))) and self.automat('supplier-failed', supplier_idurl=supplier_idurl))
+            return
+        self._do_process_index_file(wrapped_packet, supplier_idurl)
 
     def _on_index_file_fail_received(self, newpacket, info):
         if _Debug:
