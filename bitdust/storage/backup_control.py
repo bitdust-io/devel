@@ -223,7 +223,6 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     list of our files stored on his machine.
     """
     supplier_idurl = newpacket.OwnerID
-    # incoming_key_id = newpacket.PacketID.strip().split(':')[0]
     customer_idurl = list_files_global_id['idurl']
     num = contactsdb.supplier_position(supplier_idurl, customer_idurl=customer_idurl)
     if num < -1:
@@ -276,7 +275,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     return True
 
 
-def IncomingSupplierBackupIndex(newpacket, key_id=None):
+def IncomingSupplierBackupIndex(newpacket, key_id=None, deleted_path_ids=[]):
     """
     Called by ``p2p.p2p_service`` when a remote copy of our local index data
     base ( in the "Data" packet ) is received from one of our suppliers.
@@ -310,8 +309,8 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None):
     #                 newpacket.RemoteID, supplier_revision, backup_fs.revision(), ))
     #         return supplier_revision
     if _Debug:
-        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, sz=len(text_data), inp=len(newpacket.Payload))
-    count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision)
+        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, sz=len(text_data), inp=len(newpacket.Payload), deleted=len(deleted_path_ids))
+    count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision, deleted_path_ids=deleted_path_ids)
     if updated_customers_keys:
         # backup_fs.commit(supplier_revision)
         # backup_fs.Scan()
@@ -379,7 +378,6 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     io_throttle.DeleteBackupRequests(backupID)
     io_throttle.DeleteBackupSendings(backupID)
     # remove interests in transport_control
-    # callback.delete_backup_interest(backupID)
     # mark it as being deleted in the db, well... just remove it from the index now
     if not backup_fs.DeleteBackupID(backupID):
         return False
@@ -432,7 +430,6 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
         io_throttle.DeleteBackupRequests(backupID)
         io_throttle.DeleteBackupSendings(backupID)
         # remove interests in transport_control
-        # callback.delete_backup_interest(backupID)
         # remove local files for this backupID
         if removeLocalFilesToo:
             backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
@@ -802,7 +799,6 @@ def OnJobDone(backupID, result):
                         backup_rebuilder.RemoveBackupToWork(backupID)
                         # io_throttle.DeleteBackupRequests(backupID)
                         # io_throttle.DeleteBackupSendings(backupID)
-                        # callback.delete_backup_interest(backupID)
                         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)

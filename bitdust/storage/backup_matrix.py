@@ -293,7 +293,46 @@ def process_line_key(line):
     return line.strip()
 
 
-def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_sync=None, auto_create=False):
+def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sync=None, ignored_path_ids=[], auto_create=False):
+    paths2remove = set()
+    modified = False
+    try:
+        pth = line.split(' ')[0]
+    except:
+        pth = line
+    path_id = pth.strip('/')
+    if auto_create:
+        if path_id != settings.BackupIndexFileName() and path_id not in ignored_path_ids:
+            if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
+                if _Debug:
+                    lg.out(_DebugLevel, '        AUTO CREATE DIR "%s" in the index' % pth)
+                item = backup_fs.FSItemInfo(
+                    name=path_id,
+                    path_id=path_id,
+                    typ=backup_fs.DIR,
+                    key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
+                )
+                success, _modified = backup_fs.SetDir(item, customer_idurl=customer_idurl)
+                if _modified:
+                    modified = True
+    if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
+        if is_in_sync:
+            if customer_idurl == my_id.getIDURL():
+                paths2remove.add(packetid.MakeBackupID(
+                    customer=global_id.UrlToGlobalID(customer_idurl),
+                    path_id=pth,
+                    key_alias=current_key_alias,
+                    version=None,
+                ))
+                if _Debug:
+                    lg.out(_DebugLevel, '        DIR "%s" to be removed, not found in the index' % pth)
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, '        DIR "%s" skip removing, index not in sync' % pth)
+    return modified, paths2remove
+
+
+def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_sync=None, ignored_path_ids=[], auto_create=False):
     """
     if we don't have this path in the index at the moment we have several possible scenarios:
        1. this is old file and we need to remove it and all its backups
@@ -321,16 +360,15 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
     except:
         pth = line
         filesz = -1
+    path_id = pth.strip('/')
     if auto_create:
-        if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
-            if pth.strip('/') not in [
-                settings.BackupIndexFileName(),
-            ]:
+        if path_id != settings.BackupIndexFileName() and path_id not in ignored_path_ids:
+            if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
                 if _Debug:
                     lg.out(_DebugLevel, '        AUTO CREATE FILE "%s" in the index' % pth)
                 item = backup_fs.FSItemInfo(
-                    name=pth.strip('/'),
-                    path_id=pth.strip('/'),
+                    name=path_id,
+                    path_id=path_id,
                     typ=backup_fs.FILE,
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
@@ -340,14 +378,12 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                     modified = True
     if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
         # remote supplier have some file - but we don't have it in the index
-        if pth.strip('/') in [
-            settings.BackupIndexFileName(),
-        ]:
+        if path_id == settings.BackupIndexFileName():
             # this is the index file saved on remote supplier
             # must remember its size and put it in the backup_fs
             item = backup_fs.FSItemInfo(
-                name=pth.strip('/'),
-                path_id=pth.strip('/'),
+                name=path_id,
+                path_id=path_id,
                 typ=backup_fs.FILE,
                 key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
             )
@@ -376,47 +412,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
     return modified, paths2remove
 
 
-def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sync=None, auto_create=False):
-    paths2remove = set()
-    modified = False
-    try:
-        pth = line.split(' ')[0]
-    except:
-        pth = line
-    if auto_create:
-        if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
-            if _Debug:
-                lg.out(_DebugLevel, '        AUTO CREATE DIR "%s" in the index' % pth)
-            if pth.strip('/') not in [
-                settings.BackupIndexFileName(),
-            ]:
-                item = backup_fs.FSItemInfo(
-                    name=pth.strip('/'),
-                    path_id=pth.strip('/'),
-                    typ=backup_fs.DIR,
-                    key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
-                )
-                success, _modified = backup_fs.SetDir(item, customer_idurl=customer_idurl)
-                if _modified:
-                    modified = True
-    if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
-        if is_in_sync:
-            if customer_idurl == my_id.getIDURL():
-                paths2remove.add(packetid.MakeBackupID(
-                    customer=global_id.UrlToGlobalID(customer_idurl),
-                    path_id=pth,
-                    key_alias=current_key_alias,
-                    version=None,
-                ))
-                if _Debug:
-                    lg.out(_DebugLevel, '        DIR "%s" to be removed, not found in the index' % pth)
-        else:
-            if _Debug:
-                lg.out(_DebugLevel, '        DIR "%s" skip removing, index not in sync' % pth)
-    return modified, paths2remove
-
-
-def process_line_version(line, supplier_num, current_key_alias=None, customer_idurl=None, is_in_sync=None, auto_create=False):
+def process_line_version(line, supplier_num, current_key_alias=None, customer_idurl=None, is_in_sync=None, ignored_path_ids=[], auto_create=False):
     backups2remove = set()
     paths2remove = set()
     found_backups = set()
@@ -445,6 +441,18 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         versionSize = int(words[3])
     except:
         lg.err('incorrect line (digits format): [%s]' % line)
+        return modified, backups2remove, paths2remove, found_backups, newfiles
+    if remotePath in ignored_path_ids:
+        # this mean supplier have old files and we do not need those files
+        backups2remove.add(backupID)
+        paths2remove.add(packetid.MakeBackupID(
+            customer=global_id.UrlToGlobalID(customer_idurl),
+            path_id=remotePath,
+            key_alias=current_key_alias,
+            version=None,
+        ))
+        if _Debug:
+            lg.out(_DebugLevel, '        VERSION "%s" to be removed, ignoring path %s because it was deleted' % (backupID, remotePath))
         return modified, backups2remove, paths2remove, found_backups, newfiles
     if lineSupplierNum != supplier_num:
         # this mean supplier have old files and we do not need those files
@@ -610,11 +618,11 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     paths2remove = set()
     missed_backups = set(remote_files().keys())
     oldfiles = 0
-    # oldfiles = ClearSupplierRemoteInfo(supplier_num, customer_idurl=customer_idurl)
     newfiles = 0
     remote_files_changed = False
     current_key_alias = 'master'
     current_query = None
+    current_ignored_path_ids = set()
     query_results = set()
     updated_keys = []
     inpt = BytesIO(strng.to_bin(list_files_text_body))
@@ -639,6 +647,11 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
 
         if typ == 'K':
             current_key_alias = process_line_key(line)
+            current_ignored_path_ids.clear()
+            if current_key_alias != 'master':
+                if driver.is_on('service_shared_data'):
+                    from bitdust.access import shared_access_coordinator
+                    current_ignored_path_ids.update(shared_access_coordinator.get_deleted_path_ids(customer_idurl, current_key_alias))
             if _Debug:
                 lg.out(_DebugLevel, '    %s %s/%s' % (typ, current_query, current_key_alias))
             oldfiles += ClearSupplierRemoteInfo(supplier_num, customer_idurl=customer_idurl, key_alias=current_key_alias)
@@ -654,6 +667,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
+                ignored_path_ids=current_ignored_path_ids,
                 auto_create=False,
             )
             paths2remove.update(_paths2remove)
@@ -674,6 +688,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
+                ignored_path_ids=current_ignored_path_ids,
                 auto_create=True,
             )
             paths2remove.update(_paths2remove)
@@ -695,6 +710,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
+                ignored_path_ids=current_ignored_path_ids,
                 auto_create=True,
             )
             backups2remove.update(_backups2remove)

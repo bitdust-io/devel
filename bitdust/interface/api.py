@@ -1637,7 +1637,6 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     from bitdust.storage import backup_fs
     from bitdust.storage import backup_control
     from bitdust.system import bpio
-    # from bitdust.main import control
     from bitdust.main import listeners
     from bitdust.crypt import my_keys
     from bitdust.userid import id_url
@@ -1801,6 +1800,10 @@ def file_delete(remote_path):
     backup_fs.DeleteByID(pathID, iter=backup_fs.fs(customer_idurl, key_alias), iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    if key_alias != 'master':
+        if driver.is_on('service_shared_data'):
+            from bitdust.access import shared_access_coordinator
+            shared_access_coordinator.on_file_deleted(customer_idurl, key_alias, pathID)
     backup_control.Save(customer_idurl, key_alias)
     backup_monitor.A('restart')
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
@@ -1915,7 +1918,6 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     from bitdust.storage import backup_fs
     from bitdust.storage import backup_control
     from bitdust.lib import packetid
-    # from bitdust.main import control
     from bitdust.userid import global_id
     from bitdust.crypt import my_keys
     if not bpio.pathExist(local_path):
@@ -1941,19 +1943,17 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
         if not driver.is_on('service_shared_data'):
             return ERROR('service_shared_data() is not started')
 
-    def _restart_active_share(result):
-        if _Debug:
-            lg.args(_DebugLevel, result=result, key_id=keyID, path=path, pathID=pathID)
-        if key_alias != 'master':
-            from bitdust.access import shared_access_coordinator
-            active_share = shared_access_coordinator.get_active_share(keyID)
-            if not active_share:
-                active_share = shared_access_coordinator.SharedAccessCoordinator(
-                    key_id=keyID,
-                    publish_events=publish_events,
-                )
-            active_share.automat('restart')
-        return result
+
+#     def _restart_active_share(result):
+#         if _Debug:
+#             lg.args(_DebugLevel, result=result, key_id=keyID, path=path, pathID=pathID)
+#         if key_alias != 'master':
+#             from bitdust.access import shared_access_coordinator
+#             active_share = shared_access_coordinator.get_active_share(keyID)
+#             if not active_share:
+#                 active_share = shared_access_coordinator.SharedAccessCoordinator(key_id=keyID, publish_events=publish_events)
+#             active_share.automat('restart')
+#         return result
 
     if wait_result:
         task_created_defer = Deferred()
@@ -1962,8 +1962,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             localPath=local_path,
             keyID=keyID,
         )
-        if key_alias != 'master':
-            tsk.result_defer.addCallback(_restart_active_share)
+        # if key_alias != 'master':
+        #     tsk.result_defer.addCallback(_restart_active_share)
         tsk.result_defer.addCallback(
             lambda result: task_created_defer.callback(
                 OK(
@@ -1998,8 +1998,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
         localPath=local_path,
         keyID=keyID,
     )
-    if key_alias != 'master':
-        tsk.result_defer.addCallback(_restart_active_share)
+    # if key_alias != 'master':
+    #     tsk.result_defer.addCallback(_restart_active_share)
     tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1])))
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_control.Save(customer_idurl, key_alias)

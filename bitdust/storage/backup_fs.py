@@ -1356,15 +1356,9 @@ def TraverseByIDSorted(callback, iterID=None):
             if id == INFO_KEY:
                 continue
             if isinstance(i[id], dict):
-                dirs.append((
-                    id,
-                    ResolvePath(path, i[id][INFO_KEY].name()),
-                ))
+                dirs.append((id, ResolvePath(path, i[id][INFO_KEY].name())))
             elif isinstance(i[id], FSItemInfo):
-                files.append((
-                    id,
-                    ResolvePath(path, i[id].name()),
-                ))
+                files.append((id, ResolvePath(path, i[id].name())))
             else:
                 raise Exception('wrong item type in the index')
         dirs.sort(key=lambda e: e[1])
@@ -1862,7 +1856,7 @@ def Serialize(customer_idurl, key_alias=None, encoding='utf-8', filter_cb=None):
     return result
 
 
-def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf-8'):
+def Unserialize(json_data, customer_idurl=None, new_revision=None, deleted_path_ids=[], decoding='utf-8'):
     """
     Read index from ``StringIO`` object.
     """
@@ -1884,9 +1878,12 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
         modified_items = set()
         known_items = set()
         to_be_removed_items = set()
+        to_be_removed_items.update(deleted_path_ids)
         for json_item in json_data[key_alias]['items']:
             item = FSItemInfo()
             item.unserialize(json_item, decoding=decoding, from_json=True)
+            if item.path_id in deleted_path_ids:
+                continue
             known_items.add(item.path_id)
             if item.type == FILE:
                 success, modified = SetFile(item, customer_idurl=customer_idurl)
@@ -1966,7 +1963,7 @@ def SaveIndex(customer_idurl=None, key_alias='master', encoding='utf-8'):
     return bpio.WriteTextFile(index_file_path, src)
 
 
-def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
+def ReadIndex(text_data, new_revision=None, deleted_path_ids=[], encoding='utf-8'):
     total_count = 0
     total_modified_count = 0
     updated_customers_keys = []
@@ -1976,7 +1973,7 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
         lg.exc()
         return 0, []
     if _Debug:
-        lg.args(_DebugLevel, new_revision=new_revision, json_data=json_data)
+        lg.args(_DebugLevel, new_revision=new_revision, sz=len(text_data), deleted=deleted_path_ids)
     if not json_data:
         return 0, []
     for customer_id in json_data.keys():
@@ -1990,6 +1987,7 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
                 json_data[customer_id],
                 customer_idurl=customer_idurl,
                 new_revision=new_revision,
+                deleted_path_ids=deleted_path_ids,
                 decoding=encoding,
             )
         except:

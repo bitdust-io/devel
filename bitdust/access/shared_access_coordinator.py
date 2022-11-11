@@ -223,6 +223,38 @@ def open_known_shares():
 #------------------------------------------------------------------------------
 
 
+def get_deleted_path_ids(customer_idurl, key_alias):
+    key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
+    if not my_keys.is_key_registered(key_id):
+        return []
+    if not my_keys.is_active(key_id):
+        return []
+    active_share = get_active_share(key_id)
+    if not active_share:
+        return []
+    if _Debug:
+        lg.args(_DebugLevel, k=key_id, ret=active_share.files_to_be_deleted)
+    return active_share.files_to_be_deleted
+
+
+#------------------------------------------------------------------------------
+
+
+def on_file_deleted(customer_idurl, key_alias, path_id):
+    key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
+    if _Debug:
+        lg.args(_DebugLevel, k=key_id, path=path_id)
+    if not my_keys.is_key_registered(key_id):
+        return
+    if not my_keys.is_active(key_id):
+        return
+    active_share = get_active_share(key_id)
+    if not active_share:
+        lg.warn('index file was updated and key is active, but share %s is not known' % key_id)
+        return
+    active_share.files_to_be_deleted.append(path_id)
+
+
 def on_index_file_updated(customer_idurl, key_alias):
     key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
     if _Debug:
@@ -370,7 +402,7 @@ def on_my_list_files_refreshed(evt):
                     target_supplier=supplier_idurl,
                     customer_idurl=cur_share.customer_idurl,
                     key_id=cur_share.key_id,
-                    timeout=20,
+                    timeout=15,
                     callbacks={
                         commands.Files(): lambda r, i: on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
                         commands.Fail(): lambda r, i: on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
@@ -401,7 +433,7 @@ def on_key_transfer_success(customer_idurl, supplier_idurl, key_id):
         target_supplier=supplier_idurl,
         customer_idurl=customer_idurl,
         key_id=key_id,
-        timeout=30,
+        timeout=15,
         callbacks={
             commands.Files(): lambda r, i: on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
             commands.Fail(): lambda r, i: on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
@@ -440,6 +472,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
         self.to_be_restarted = False
+        self.files_to_be_deleted = []
         super(SharedAccessCoordinator, self).__init__(
             name='%s$%s' % (self.key_alias, self.glob_id['customer']),
             state='AT_STARTUP',
@@ -497,6 +530,7 @@ class SharedAccessCoordinator(automat.Automat):
         if newstate == 'CONNECTED':
             lg.info('share connected : %s' % self.key_id)
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
+            self.files_to_be_deleted = []
             if self.to_be_restarted:
                 self.to_be_restarted = False
                 reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
@@ -812,7 +846,11 @@ class SharedAccessCoordinator(automat.Automat):
             lg.err('incoming Data() is not valid from supplier %r' % supplier_idurl)
             self.automat('supplier-failed', supplier_idurl=supplier_idurl)
             return
-        supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet, key_id=self.key_id)
+        supplier_revision = backup_control.IncomingSupplierBackupIndex(
+            wrapped_packet,
+            key_id=self.key_id,
+            deleted_path_ids=self.files_to_be_deleted,
+        )
         self.received_index_file_revision[supplier_idurl] = supplier_revision
         if _Debug:
             lg.dbg(_DebugLevel, 'received %s from %r with rev: %s' % (wrapped_packet, supplier_idurl, supplier_revision))
@@ -884,7 +922,6 @@ class SharedAccessCoordinator(automat.Automat):
             self.automat('supplier-connected', supplier_idurl=idurl)
 
     def _on_list_files_response(self, response, info, customer_idurl, supplier_idurl, key_id):
-        # TODO: remember the response and prevent sending ListFiles() too often
         if _Debug:
             lg.args(_DebugLevel, response=response, customer_idurl=customer_idurl, supplier_idurl=supplier_idurl, key_id=key_id)
         self.automat('list-files-received', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)

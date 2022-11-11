@@ -162,10 +162,7 @@ def verify_ownership(newpacket, raise_exception=False):
         if _Debug:
             lg.dbg(_DebugLevel, 'non-authorized user is trying to store data on the supplier')
         return None, None
-    if newpacket.Command in [
-        commands.DeleteFile(),
-        commands.DeleteBackup(),
-    ]:
+    if newpacket.Command in [commands.DeleteFile(), commands.DeleteBackup()]:
         if owner_idurl == creator_idurl:
             if contactsdb.is_customer(creator_idurl):
                 if _Debug:
