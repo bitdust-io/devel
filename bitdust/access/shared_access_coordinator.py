@@ -494,6 +494,7 @@ class SharedAccessCoordinator(automat.Automat):
                 'creator': self.customer_idurl.to_id(),
                 'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
                 'ecc_map': self.known_ecc_map,
+                'revision': backup_fs.revision(self.customer_idurl, self.key_alias),
             }
         )
         return j

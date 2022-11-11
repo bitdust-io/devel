@@ -2430,6 +2430,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     from bitdust.access import shared_access_coordinator
+    from bitdust.storage import backup_fs
     from bitdust.crypt import my_keys
     from bitdust.userid import global_id
     from bitdust.userid import my_id
@@ -2473,6 +2474,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
                 'creator': creator_idurl.to_id(),
                 'suppliers': [],
                 'ecc_map': None,
+                'revision': backup_fs.revision(creator_idurl, key_alias),
                 'index': None,
                 'id': None,
                 'name': None,
@@ -2499,6 +2501,7 @@ def share_info(key_id):
         return ERROR('invalid share id')
     from bitdust.crypt import my_keys
     from bitdust.access import shared_access_coordinator
+    from bitdust.storage import backup_fs
     from bitdust.userid import global_id
     if not my_keys.is_active(key_id):
         glob_id = global_id.NormalizeGlobalID(key_id)
@@ -2511,6 +2514,7 @@ def share_info(key_id):
                 'creator': glob_id['idurl'].to_id(),
                 'suppliers': [],
                 'ecc_map': None,
+                'revision': backup_fs.revision(glob_id['idurl'], glob_id['key_alias']),
                 'index': None,
                 'id': None,
                 'name': None,
@@ -2528,6 +2532,7 @@ def share_info(key_id):
                 'creator': glob_id['idurl'].to_id(),
                 'suppliers': None,
                 'ecc_map': None,
+                'revision': backup_fs.revision(glob_id['idurl'], glob_id['key_alias']),
                 'index': None,
                 'id': None,
                 'name': None,
