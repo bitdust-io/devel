@@ -269,19 +269,20 @@ def list_dir_recursive(dirpath):
     return r
 
 
-def traverse_dir_recursive(callback, basepath, relpath=''):
+def traverse_dir_recursive(callback, basepath, relative_path=''):
     """
     Call ``callback`` method for every file and folder under ``basepath``.
 
     If method ``callback`` can returns False traverse process will not
     go deeper. Useful to count size of the whole folder.
     """
-    for name in os.listdir(basepath):
-        realpath = os.path.join(basepath, name)
-        subpath = name if relpath == '' else relpath + '/' + name
-        go_down = callback(realpath, subpath, name)
-        if os.path.isdir(realpath) and go_down:
-            traverse_dir_recursive(callback, realpath, subpath)
+    if os.path.isdir(basepath):
+        for name in os.listdir(basepath):
+            real_path = os.path.join(basepath, name)
+            sub_path = name if relative_path == '' else relative_path + '/' + name
+            go_down = callback(real_path, sub_path, name)
+            if os.path.isdir(real_path) and go_down:
+                traverse_dir_recursive(callback, real_path, sub_path)
 
 
 def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):

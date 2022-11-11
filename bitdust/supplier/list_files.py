@@ -122,7 +122,7 @@ def process_query_item(query_path, key_alias, ownerdir):
     if query_path == '*':
         if key_alias == 'master':
             key_alias_dir = os.path.join(ownerdir, key_alias)
-            ret += TreeSummary(key_alias_dir, key_alias=key_alias)
+            ret += TreeSummary(key_alias_dir, key_alias)
         for one_key_alias in os.listdir(ownerdir):
             if one_key_alias == 'master':
                 continue
@@ -131,7 +131,7 @@ def process_query_item(query_path, key_alias, ownerdir):
             if not misc.ValidKeyAlias(strng.to_text(one_key_alias)):
                 continue
             key_alias_dir = os.path.join(ownerdir, one_key_alias)
-            ret += TreeSummary(key_alias_dir, key_alias=one_key_alias)
+            ret += TreeSummary(key_alias_dir, one_key_alias)
         if _Debug:
             lg.args(_DebugLevel, o=ownerdir, q=query_path, k=key_alias, result_bytes=len(ret))
         return ret
@@ -143,8 +143,7 @@ def process_query_item(query_path, key_alias, ownerdir):
     if not os.path.exists(local_path):
         lg.warn('local file or folder not exist: %r' % local_path)
         return ''
-    if os.path.isdir(local_path):
-        ret += TreeSummary(local_path, key_alias=key_alias)
+    ret += TreeSummary(local_path, key_alias)
     if _Debug:
         lg.args(_DebugLevel, o=ownerdir, q=query_path, k=key_alias, p=local_path, result_bytes=len(ret))
     return ret
@@ -188,10 +187,9 @@ def UnpackListFiles(payload, method):
 #------------------------------------------------------------------------------
 
 
-def TreeSummary(ownerdir, key_alias=None):
+def TreeSummary(ownerdir, key_alias):
     out = StringIO()
-    if key_alias is not None:
-        out.write('K%s\n' % key_alias)
+    out.write('K%s\n' % key_alias)
 
     def cb(result, realpath, subpath, name):
         if not os.access(realpath, os.R_OK):
