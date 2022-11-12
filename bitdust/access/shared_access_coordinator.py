@@ -187,10 +187,12 @@ def open_known_shares():
     to_be_opened = []
     for customer_idurl in backup_fs.known_customers():
         for key_alias in backup_fs.known_keys_aliases(customer_idurl):
+            if not key_alias.startswith('share_'):
+                continue
             key_id = my_keys.make_key_id(alias=key_alias, creator_idurl=customer_idurl)
             if not key_id:
                 continue
-            if not key_id.startswith('share_'):
+            if my_keys.latest_key_id(key_id) != key_id:
                 continue
             if key_id in to_be_opened:
                 continue
@@ -205,11 +207,7 @@ def open_known_shares():
         lg.args(_DebugLevel, known_offline_shares=known_offline_shares, to_be_opened=to_be_opened)
     populate_shared_files = listeners.is_populate_requered('shared_file')
     for key_id in to_be_opened:
-        active_share = SharedAccessCoordinator(
-            key_id,
-            log_events=True,
-            publish_events=False,
-        )
+        active_share = SharedAccessCoordinator(key_id, log_events=True, publish_events=False)
         active_share.automat('restart')
         if populate_shared_files:
             backup_fs.populate_shared_files(key_id=key_id)

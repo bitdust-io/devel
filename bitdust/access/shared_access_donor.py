@@ -308,7 +308,7 @@ class SharedAccessDonor(automat.Automat):
         self.automat('list-files-ok')
         return
         # TODO: cleanup
-        json_list_files = backup_fs.Serialize(
+        json_list_files = backup_fs.SerializeIndex(
             customer_idurl=global_id.glob2idurl(self.key_id),
             to_json=True,
             filter_cb=lambda path_id, path, info: True if strng.to_text(info.key_id) == strng.to_text(self.key_id) else False,

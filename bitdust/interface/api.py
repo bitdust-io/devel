@@ -1592,26 +1592,27 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         r['uploads']['running'] = running
         r['uploads']['pending'] = pending
     if include_downloads:
-        from bitdust.storage import restore_monitor
-        downloads = []
-        for backupID in restore_monitor.FindWorking(pathID=pathID):
-            d = restore_monitor.GetWorkingRestoreObject(backupID)
-            if d:
-                downloads.append(
-                    {
-                        'backup_id': d.backup_id,
-                        'creator_id': d.creator_id,
-                        'path_id': d.path_id,
-                        'version': d.version,
-                        'block_number': d.block_number,
-                        'bytes_processed': d.bytes_written,
-                        'created': time.asctime(time.localtime(d.Started)),
-                        'aborted': d.abort_flag,
-                        'done': d.done_flag,
-                        'eccmap': '' if not d.EccMap else d.EccMap.name,
-                    }
-                )
-        r['downloads'] = downloads
+        if driver.is_on('service_restores'):
+            from bitdust.storage import restore_monitor
+            downloads = []
+            for backupID in restore_monitor.FindWorking(pathID=pathID):
+                d = restore_monitor.GetWorkingRestoreObject(backupID)
+                if d:
+                    downloads.append(
+                        {
+                            'backup_id': d.backup_id,
+                            'creator_id': d.creator_id,
+                            'path_id': d.path_id,
+                            'version': d.version,
+                            'block_number': d.block_number,
+                            'bytes_processed': d.bytes_written,
+                            'created': time.asctime(time.localtime(d.Started)),
+                            'aborted': d.abort_flag,
+                            'done': d.done_flag,
+                            'eccmap': '' if not d.EccMap else d.EccMap.name,
+                        }
+                    )
+            r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : %r' % pathID)
     r['revision'] = backup_fs.revision()
