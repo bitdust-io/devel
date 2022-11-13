@@ -293,8 +293,8 @@ def on_supplier_file_modified(evt):
     if active_share.state == 'DISCONNECTED':
         active_share.automat('restart')
         return
-    if active_share.state != 'CONNECTED':
-        active_share.to_be_restarted = True
+    # if active_share.state != 'CONNECTED':
+    #     active_share.to_be_restarted = True
     active_share.automat('supplier-file-modified', supplier_idurl=evt.data['supplier_idurl'], remote_path=evt.data['remote_path'])
 
 
@@ -409,12 +409,12 @@ def on_list_files_verified(newpacket, list_files_info):
         return False
     # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
-    supplier_index_file_revision = active_share.received_index_file_revision.get(external_supplier_idurl)
-    if supplier_index_file_revision:
-        _rev = backup_fs.revision(customer_idurl=active_share.customer_idurl, key_alias=incoming_key_alias)
-        if supplier_index_file_revision > _rev:
-            lg.warn('shared location index file is not in sync, local revision is %r but revision by supplier is %r' % (_rev, supplier_index_file_revision))
-            return False
+    #     supplier_index_file_revision = active_share.received_index_file_revision.get(external_supplier_idurl)
+    #     if supplier_index_file_revision:
+    #         _rev = backup_fs.revision(customer_idurl=active_share.customer_idurl, key_alias=incoming_key_alias)
+    #         if supplier_index_file_revision <= _rev:
+    #             lg.warn('shared location index file is not in sync, local revision is %r but revision by supplier is %r' % (_rev, supplier_index_file_revision))
+    #             return False
     try:
         supplier_raw_list_files = backup_control.UnpackListFiles(raw_files, settings.ListFilesFormat())
     except:
@@ -679,7 +679,10 @@ class SharedAccessCoordinator(automat.Automat):
         if event == 'supplier-file-modified':
             remote_path = kwargs['remote_path']
             if remote_path == settings.BackupIndexFileName():
-                self.automat('restart')
+                if self.state == 'CONNECTED':
+                    self.automat('restart')
+                else:
+                    self.to_be_restarted = True
             else:
                 remote_path, _, _ = remote_path.rpartition('/')
                 iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(self.customer_idurl, self.key_alias))
@@ -744,11 +747,17 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        is_in_sync = False
+        supplier_index_file_revision = self.received_index_file_revision.get(kwargs['supplier_idurl'])
+        if supplier_index_file_revision:
+            _rev = backup_fs.revision(customer_idurl=self.customer_idurl, key_alias=self.key_alias)
+            if supplier_index_file_revision <= _rev:
+                is_in_sync = True
         remote_files_changed, backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
             supplier_num=kwargs['supplier_pos'],
             list_files_text_body=kwargs['payload'],
             customer_idurl=self.customer_idurl,
-            is_in_sync=True,
+            is_in_sync=is_in_sync,
         )
         if remote_files_changed:
             backup_matrix.SaveLatestRawListFiles(
