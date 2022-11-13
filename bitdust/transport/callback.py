@@ -115,29 +115,15 @@ def insert_inbox_callback(index, cb):
 
         callback(newpacket, info, status, error_message).
     """
-    #     if _Debug:
-    #         lg.out(_DebugLevel, 'callback.insert_inbox_callback new callback at position %d, current callbacks:' % index)
     global _InboxPacketCallbacksList
     if cb not in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.insert(index, cb)
 
 
-#     if _Debug:
-#         import pprint
-#         lg.out(_DebugLevel, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
-
-
 def remove_inbox_callback(cb):
-    #     if _Debug:
-    #         lg.out(_DebugLevel, 'callback.remove_inbox_callback removing a callback, current callbacks:')
     global _InboxPacketCallbacksList
     if cb in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.remove(cb)
-
-
-#     if _Debug:
-#         import pprint
-#         lg.out(_DebugLevel, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
 
 
 def append_outbox_filter_callback(cb):

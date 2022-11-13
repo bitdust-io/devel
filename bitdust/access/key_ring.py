@@ -70,10 +70,7 @@ from bitdust.crypt import key
 from bitdust.crypt import my_keys
 from bitdust.crypt import encrypted
 
-from bitdust.storage import backup_control
 from bitdust.storage import backup_matrix
-
-from bitdust.supplier import list_files
 
 from bitdust.interface import api
 
@@ -586,6 +583,7 @@ def do_backup_key(key_id, keys_folder=None):
     global_key_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_exists(global_key_path)
     if res['status'] == 'OK' and res['result'] and res['result'].get('exist'):
+        from bitdust.storage import backup_control
         lg.warn('key %s already exists in catalog' % global_key_path)
         global_key_path_id = res['result'].get('path_id')
         if global_key_path_id and backup_control.IsPathInProcess(global_key_path_id):
@@ -740,7 +738,6 @@ def on_files_received(newpacket, info):
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False
-    trusted_customer_idurl = list_files_global_id['idurl']
     incoming_key_id = list_files_global_id['key_id']
     if not my_keys.is_valid_key_id(incoming_key_id):
         lg.warn('ignore, invalid key id in packet %s' % newpacket)
@@ -754,11 +751,12 @@ def on_files_received(newpacket, info):
         lg.warn('private key is not registered : %s' % incoming_key_id)
         p2p_service.SendFail(newpacket, 'private key is not registered')
         return False
+    if list_files_global_id['key_alias'].startswith('share_'):
+        from bitdust.access import shared_access_coordinator
+        return shared_access_coordinator.on_list_files_verified(newpacket, list_files_global_id)
+    # for other shared files that are not controlled by shared_access_coordinator(): message archive keys are starting with "group_"
     try:
-        block = encrypted.Unserialize(
-            newpacket.Payload,
-            decrypt_key=incoming_key_id,
-        )
+        block = encrypted.Unserialize(newpacket.Payload, decrypt_key=incoming_key_id)
     except:
         lg.exc(newpacket.Payload)
         return False
@@ -770,16 +768,20 @@ def on_files_received(newpacket, info):
     except:
         lg.exc()
         return False
+    from bitdust.storage import index_synchronizer
+    from bitdust.storage import backup_control
+    from bitdust.storage import backup_fs
     # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
     try:
-        supplier_raw_list_files = list_files.UnpackListFiles(raw_files, settings.ListFilesFormat())
+        supplier_raw_list_files = backup_control.UnpackListFiles(raw_files, settings.ListFilesFormat())
     except:
         lg.exc()
         return False
     # need to detect supplier position from the list of packets
     # and place that supplier on the correct position in contactsdb
     supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
+    trusted_customer_idurl = list_files_global_id['idurl']
     known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
     if known_supplier_pos < 0:
         lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl))
@@ -793,11 +795,12 @@ def on_files_received(newpacket, info):
     else:
         lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (trusted_customer_idurl, known_supplier_pos))
         supplier_pos = known_supplier_pos
+    is_in_sync = index_synchronizer.is_synchronized() and backup_fs.revision() > 0
     remote_files_changed, _, _, _ = backup_matrix.process_raw_list_files(
         supplier_num=supplier_pos,
         list_files_text_body=supplier_raw_list_files,
         customer_idurl=trusted_customer_idurl,
-        is_in_sync=True,
+        is_in_sync=is_in_sync,
     )
     if remote_files_changed:
         backup_matrix.SaveLatestRawListFiles(

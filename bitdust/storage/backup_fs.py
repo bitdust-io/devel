@@ -1823,7 +1823,7 @@ def ClearAllIndexes():
 #------------------------------------------------------------------------------
 
 
-def Serialize(customer_idurl, key_alias=None, encoding='utf-8', filter_cb=None):
+def SerializeIndex(customer_idurl, key_alias=None, encoding='utf-8', filter_cb=None):
     """
     Use this to write index to the local file.
     """
@@ -1852,11 +1852,11 @@ def Serialize(customer_idurl, key_alias=None, encoding='utf-8', filter_cb=None):
             iterID=fsID(customer_idurl, k_alias),
         )
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Serialize done with %d indexed files of %d aliases for %r' % (cnt[0], len(key_aliases), customer_idurl))
+        lg.dbg(_DebugLevel, 'done with %d indexed files of %d aliases for %r' % (cnt[0], len(key_aliases), customer_idurl))
     return result
 
 
-def Unserialize(json_data, customer_idurl=None, new_revision=None, deleted_path_ids=[], decoding='utf-8'):
+def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_path_ids=[], decoding='utf-8'):
     """
     Read index from ``StringIO`` object.
     """
@@ -1877,6 +1877,7 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, deleted_path_
         count_modified = 0
         modified_items = set()
         known_items = set()
+        new_files = []
         to_be_removed_items = set()
         to_be_removed_items.update(deleted_path_ids)
         for json_item in json_data[key_alias]['items']:
@@ -1894,6 +1895,7 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, deleted_path_
                 if modified:
                     count_modified += 1
                     modified_items.add(item.path_id)
+                    new_files.append(item)
             elif item.type == DIR:
                 success, modified = SetDir(item, customer_idurl=customer_idurl)
                 if not success:
@@ -1908,14 +1910,41 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, deleted_path_
 
         def _one_item(path_id, path, info):
             if path_id not in known_items:
-                to_be_removed_items.add(path_id)
+                if path_id != settings.BackupIndexFileName():
+                    to_be_removed_items.add(path_id)
 
         TraverseByID(_one_item, iterID=fsID(customer_idurl, key_alias))
         if _Debug:
             lg.dbg(_DebugLevel, 'from %d known items %d were modified and %d items marked to be removed' % (len(known_items), len(modified_items), len(to_be_removed_items)))
         for path_id in to_be_removed_items:
+            deleted_info = {}
+            if key_alias.startswith('share_'):
+                deleted_iter_and_path = WalkByID(path_id, iterID=fsID(customer_idurl, key_alias))
+                if deleted_iter_and_path:
+                    deleted_file_item, deleted_file_path = deleted_iter_and_path
+                    full_glob_id = global_id.MakeGlobalID(idurl=customer_idurl, path=path_id, key_alias=key_alias)
+                    full_remote_path = global_id.MakeGlobalID(idurl=customer_idurl, path=deleted_file_path, key_alias=key_alias)
+                    deleted_info = dict(
+                        global_id=full_glob_id,
+                        remote_path=full_remote_path,
+                        size=max(0, deleted_file_item.size),
+                        type=TYPES.get(deleted_file_item.type, 'unknown').lower(),
+                        customer=customer_idurl.to_id(),
+                        versions=[dict(backup_id=v) for v in deleted_file_item.versions.keys()],
+                    )
             DeleteByID(path_id, iter=fs(customer_idurl, key_alias), iterID=fsID(customer_idurl, key_alias))
             count_modified += 1
+            if deleted_info:
+                listeners.push_snapshot(
+                    'shared_file', snap_id=full_glob_id, deleted=True, data=dict(
+                        global_id=deleted_info['global_id'],
+                        remote_path=deleted_info['remote_path'],
+                        size=deleted_info['size'],
+                        type=deleted_info['type'],
+                        customer=deleted_info['customer'],
+                        versions=deleted_info['versions'],
+                    )
+                )
 
         total_count += count
         total_modified_count += count_modified
@@ -1926,10 +1955,28 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, deleted_path_
                 old_rev, new_rev = commit(new_revision_number=new_revision, customer_idurl=customer_idurl, key_alias=key_alias)
             Scan(customer_idurl=customer_idurl, key_alias=key_alias)
             updated_keys.append(key_alias)
+            if key_alias.startswith('share_'):
+                for new_file_item in new_files:
+                    if new_file_item.path_id == settings.BackupIndexFileName():
+                        continue
+                    new_file_path = ToPath(new_file_item.path_id, iterID=fsID(customer_idurl, key_alias))
+                    if new_file_path:
+                        full_glob_id = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_item.path_id, key_alias=key_alias)
+                        full_remote_path = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_path, key_alias=key_alias)
+                        listeners.push_snapshot(
+                            'shared_file', snap_id=full_glob_id, data=dict(
+                                global_id=full_glob_id,
+                                remote_path=full_remote_path,
+                                size=max(0, new_file_item.size),
+                                type=TYPES.get(new_file_item.type, 'unknown').lower(),
+                                customer=customer_idurl.to_id(),
+                                versions=[dict(backup_id=v) for v in new_file_item.versions.keys()],
+                            )
+                        )
             if _Debug:
                 lg.args(_DebugLevel, count=count, modified=count_modified, c=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d total items and %d modified, loaded data for %d keys' % (total_count, total_modified_count, len(updated_keys)))
+        lg.dbg(_DebugLevel, 'done with %d total items and %d modified, loaded data for %d keys' % (total_count, total_modified_count, len(updated_keys)))
     return total_count, total_modified_count, updated_keys
 
 
@@ -1945,7 +1992,7 @@ def SaveIndex(customer_idurl=None, key_alias='master', encoding='utf-8'):
     if not os.path.isdir(os.path.dirname(index_file_path)):
         os.makedirs(os.path.dirname(index_file_path))
     json_data = {}
-    json_data[customer_id] = Serialize(
+    json_data[customer_id] = SerializeIndex(
         customer_idurl=customer_idurl,
         key_alias=key_alias,
         encoding=encoding,
@@ -1983,7 +2030,7 @@ def ReadIndex(text_data, new_revision=None, deleted_path_ids=[], encoding='utf-8
             identitycache.immediatelyCaching(customer_idurl, try_other_sources=False, ignore_errors=True)
             continue
         try:
-            count, modified_count, updated_keys = Unserialize(
+            count, modified_count, updated_keys = UnserializeIndex(
                 json_data[customer_id],
                 customer_idurl=customer_idurl,
                 new_revision=new_revision,
@@ -2106,10 +2153,7 @@ def _test():
     json_data = json.loads(inpt.read())
     inpt.close()
     for customer_id in json_data.keys():
-        count, modified_count, updated_keys = Unserialize(json_data[customer_id])
-        # customer_id = 'test01@bitrex.ai'
-        # customer_idurl = global_id.GlobalUserToIDURL(customer_id)
-        # count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))
+        count, modified_count, updated_keys = UnserializeIndex(json_data[customer_id])
         print(customer_id, count)
     Scan()
     Calculate()

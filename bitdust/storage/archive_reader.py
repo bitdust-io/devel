@@ -274,9 +274,7 @@ class ArchiveReader(automat.Automat):
             outpacket = p2p_service.SendListFiles(
                 target_supplier=supplier_idurl,
                 key_id=self.group_key_id,
-                query_items=[
-                    self.queue_alias,
-                ],
+                query_items=[self.queue_alias],
                 timeout=30,
                 callbacks={
                     commands.Fail(): lambda resp, info: self._on_list_files_failed(supplier_pos),

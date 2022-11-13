@@ -1592,26 +1592,27 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         r['uploads']['running'] = running
         r['uploads']['pending'] = pending
     if include_downloads:
-        from bitdust.storage import restore_monitor
-        downloads = []
-        for backupID in restore_monitor.FindWorking(pathID=pathID):
-            d = restore_monitor.GetWorkingRestoreObject(backupID)
-            if d:
-                downloads.append(
-                    {
-                        'backup_id': d.backup_id,
-                        'creator_id': d.creator_id,
-                        'path_id': d.path_id,
-                        'version': d.version,
-                        'block_number': d.block_number,
-                        'bytes_processed': d.bytes_written,
-                        'created': time.asctime(time.localtime(d.Started)),
-                        'aborted': d.abort_flag,
-                        'done': d.done_flag,
-                        'eccmap': '' if not d.EccMap else d.EccMap.name,
-                    }
-                )
-        r['downloads'] = downloads
+        if driver.is_on('service_restores'):
+            from bitdust.storage import restore_monitor
+            downloads = []
+            for backupID in restore_monitor.FindWorking(pathID=pathID):
+                d = restore_monitor.GetWorkingRestoreObject(backupID)
+                if d:
+                    downloads.append(
+                        {
+                            'backup_id': d.backup_id,
+                            'creator_id': d.creator_id,
+                            'path_id': d.path_id,
+                            'version': d.version,
+                            'block_number': d.block_number,
+                            'bytes_processed': d.bytes_written,
+                            'created': time.asctime(time.localtime(d.Started)),
+                            'aborted': d.abort_flag,
+                            'done': d.done_flag,
+                            'eccmap': '' if not d.EccMap else d.EccMap.name,
+                        }
+                    )
+            r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : %r' % pathID)
     r['revision'] = backup_fs.revision()
@@ -2430,6 +2431,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     from bitdust.access import shared_access_coordinator
+    from bitdust.storage import backup_fs
     from bitdust.crypt import my_keys
     from bitdust.userid import global_id
     from bitdust.userid import my_id
@@ -2473,6 +2475,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
                 'creator': creator_idurl.to_id(),
                 'suppliers': [],
                 'ecc_map': None,
+                'revision': backup_fs.revision(creator_idurl, key_alias),
                 'index': None,
                 'id': None,
                 'name': None,
@@ -2499,6 +2502,7 @@ def share_info(key_id):
         return ERROR('invalid share id')
     from bitdust.crypt import my_keys
     from bitdust.access import shared_access_coordinator
+    from bitdust.storage import backup_fs
     from bitdust.userid import global_id
     if not my_keys.is_active(key_id):
         glob_id = global_id.NormalizeGlobalID(key_id)
@@ -2511,6 +2515,7 @@ def share_info(key_id):
                 'creator': glob_id['idurl'].to_id(),
                 'suppliers': [],
                 'ecc_map': None,
+                'revision': backup_fs.revision(glob_id['idurl'], glob_id['key_alias']),
                 'index': None,
                 'id': None,
                 'name': None,
@@ -2528,6 +2533,7 @@ def share_info(key_id):
                 'creator': glob_id['idurl'].to_id(),
                 'suppliers': None,
                 'ecc_map': None,
+                'revision': backup_fs.revision(glob_id['idurl'], glob_id['key_alias']),
                 'index': None,
                 'id': None,
                 'name': None,

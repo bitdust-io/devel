@@ -139,10 +139,7 @@ def is_synchronized():
         return False
     if A().state == 'IN_SYNC!':
         return True
-    if A().state in [
-        'REQUEST?',
-        'SENDING',
-    ]:
+    if A().state in ['REQUEST?', 'SENDING']:
         if A().last_time_in_sync > 0 and time.time() - A().last_time_in_sync < 30:
             return True
     return False
@@ -151,10 +148,7 @@ def is_synchronized():
 def is_synchronizing():
     if not A():
         return False
-    return A().state in [
-        'REQUEST?',
-        'SENDING',
-    ]
+    return A().state in ['REQUEST?', 'SENDING']
 
 
 #------------------------------------------------------------------------------
@@ -357,7 +351,6 @@ class IndexSynchronizer(automat.Automat):
         Action method.
         """
         self.ping_required = False
-        data = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
 
     def doSuppliersRequestIndexFile(self, *args, **kwargs):
         """
