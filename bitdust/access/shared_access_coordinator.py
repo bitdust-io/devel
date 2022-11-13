@@ -293,8 +293,8 @@ def on_supplier_file_modified(evt):
     if active_share.state == 'DISCONNECTED':
         active_share.automat('restart')
         return
-    if active_share.state != 'CONNECTED':
-        active_share.to_be_restarted = True
+    # if active_share.state != 'CONNECTED':
+    #     active_share.to_be_restarted = True
     active_share.automat('supplier-file-modified', supplier_idurl=evt.data['supplier_idurl'], remote_path=evt.data['remote_path'])
 
 
@@ -679,7 +679,10 @@ class SharedAccessCoordinator(automat.Automat):
         if event == 'supplier-file-modified':
             remote_path = kwargs['remote_path']
             if remote_path == settings.BackupIndexFileName():
-                self.automat('restart')
+                if self.state == 'CONNECTED':
+                    self.automat('restart')
+                else:
+                    self.to_be_restarted = True
             else:
                 remote_path, _, _ = remote_path.rpartition('/')
                 iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(self.customer_idurl, self.key_alias))

@@ -301,7 +301,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
     except:
         pth = line
     path_id = pth.strip('/')
-    if auto_create:
+    if auto_create and is_in_sync:
         if path_id != settings.BackupIndexFileName() and path_id not in ignored_path_ids:
             if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
                 if _Debug:
@@ -361,7 +361,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
         pth = line
         filesz = -1
     path_id = pth.strip('/')
-    if auto_create:
+    if auto_create and is_in_sync:
         if path_id != settings.BackupIndexFileName() and path_id not in ignored_path_ids:
             if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
                 if _Debug:
@@ -492,7 +492,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
         return modified, backups2remove, paths2remove, found_backups, newfiles
-    if auto_create:
+    if auto_create and is_in_sync:
         if not item.has_version(versionName):
             if not current_key_alias or not customer_idurl:
                 if _Debug:
