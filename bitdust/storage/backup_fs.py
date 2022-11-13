@@ -1910,7 +1910,8 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
 
         def _one_item(path_id, path, info):
             if path_id not in known_items:
-                to_be_removed_items.add(path_id)
+                if path_id != settings.BackupIndexFileName():
+                    to_be_removed_items.add(path_id)
 
         TraverseByID(_one_item, iterID=fsID(customer_idurl, key_alias))
         if _Debug:
@@ -1956,6 +1957,8 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
             updated_keys.append(key_alias)
             if key_alias.startswith('share_'):
                 for new_file_item in new_files:
+                    if new_file_item.path_id == settings.BackupIndexFileName():
+                        continue
                     new_file_path = ToPath(new_file_item.path_id, iterID=fsID(customer_idurl, key_alias))
                     if new_file_path:
                         full_glob_id = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_item.path_id, key_alias=key_alias)

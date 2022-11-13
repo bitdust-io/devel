@@ -176,14 +176,6 @@ def PackListFiles(plaintext, method):
     return ''
 
 
-def UnpackListFiles(payload, method):
-    if method == 'Text':
-        return payload
-    elif method == 'Compressed':
-        return strng.to_text(zlib.decompress(strng.to_bin(payload)))
-    return payload
-
-
 #------------------------------------------------------------------------------
 
 

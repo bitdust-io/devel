@@ -606,12 +606,6 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     from bitdust.storage import backup_control
     if not customer_idurl:
         customer_idurl = my_id.getIDURL()
-    if is_in_sync is None:
-        if driver.is_on('service_backup_db'):
-            from bitdust.storage import index_synchronizer
-            is_in_sync = index_synchronizer.is_synchronized() and backup_fs.revision() > 0
-        else:
-            is_in_sync = False
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files [%d] : %d bytes, is_in_sync=%s, rev:%d, c=%s' % (supplier_num, len(list_files_text_body), is_in_sync, backup_fs.revision(), customer_idurl))
     backups2remove = set()

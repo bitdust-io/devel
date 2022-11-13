@@ -39,11 +39,13 @@ EVENTS:
     * :red:`key-sent`
     * :red:`list-files-failed`
     * :red:`list-files-received`
+    * :red:`list-files-verified`
     * :red:`new-private-key-registered`
     * :red:`restart`
     * :red:`shutdown`
     * :red:`supplier-connected`
     * :red:`supplier-failed`
+    * :red:`supplier-file-modified`
     * :red:`timer-1min`
     * :red:`timer-30sec`
 """
@@ -88,6 +90,7 @@ from bitdust.p2p import p2p_service
 from bitdust.p2p import online_status
 
 from bitdust.contacts import identitycache
+from bitdust.contacts import contactsdb
 
 from bitdust.crypt import my_keys
 from bitdust.crypt import key
@@ -97,6 +100,7 @@ from bitdust.crypt import encrypted
 from bitdust.access import key_ring
 
 from bitdust.storage import backup_control
+from bitdust.storage import backup_matrix
 from bitdust.storage import backup_fs
 
 from bitdust.customer import supplier_connector
@@ -291,32 +295,7 @@ def on_supplier_file_modified(evt):
         return
     if active_share.state != 'CONNECTED':
         active_share.to_be_restarted = True
-        return
-    remote_path = evt.data['remote_path']
-    if remote_path == settings.BackupIndexFileName():
-        active_share.automat('restart')
-    else:
-        remote_path, _, _ = remote_path.rpartition('/')
-        iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(active_share.customer_idurl, active_share.key_alias))
-        if not iter_path:
-            active_share.automat('restart')
-        else:
-            supplier_idurl = evt.data['supplier_idurl']
-            sc = supplier_connector.by_idurl(
-                supplier_idurl,
-                customer_idurl=active_share.customer_idurl,
-            )
-            if sc is not None and sc.state == 'CONNECTED':
-                p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    customer_idurl=active_share.customer_idurl,
-                    key_id=active_share.key_id,
-                    timeout=15,
-                    callbacks={
-                        commands.Files(): lambda r, i: on_list_files_response(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                        commands.Fail(): lambda r, i: on_list_files_failed(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                    },
-                )
+    active_share.automat('supplier-file-modified', supplier_idurl=evt.data['supplier_idurl'], remote_path=evt.data['remote_path'])
 
 
 def on_key_registered(evt):
@@ -388,55 +367,85 @@ def on_my_list_files_refreshed(evt):
         cur_share = get_active_share(key_id)
         if not cur_share:
             continue
+        if cur_share.state == 'DISCONNECTED':
+            cur_share.automat('restart')
+            continue
         if cur_share.state != 'CONNECTED':
             continue
-        for supplier_idurl in cur_share.known_suppliers_list:
-            sc = supplier_connector.by_idurl(
-                supplier_idurl,
-                customer_idurl=cur_share.customer_idurl,
-            )
-            if sc is not None and sc.state == 'CONNECTED':
-                p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    customer_idurl=cur_share.customer_idurl,
-                    key_id=cur_share.key_id,
-                    timeout=15,
-                    callbacks={
-                        commands.Files(): lambda r, i: on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
-                        commands.Fail(): lambda r, i: on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
-                    },
-                )
+        if not cur_share.connected_last_time:
+            cur_share.automat('restart')
+            continue
+        if time.time() - cur_share.connected_last_time < 60:
+            continue
+        cur_share.automat('restart')
 
 
-def on_list_files_response(response, info, customer_idurl, supplier_idurl, key_id):
-    # TODO: remember the response and prevent sending ListFiles() too often
+def on_list_files_verified(newpacket, list_files_info):
+    incoming_key_id = list_files_info['key_id']
+    incoming_key_alias = list_files_info['key_alias']
+    active_share = get_active_share(incoming_key_id)
+    if not active_share:
+        lg.warn('active share was not found for incoming key %r' % incoming_key_id)
+        return False
+    if active_share.state == 'DISCONNECTED':
+        lg.warn('active share is currently disconnect for incoming key %r, restarting' % incoming_key_id)
+        active_share.automat('restart')
+        return False
+    try:
+        block = encrypted.Unserialize(
+            newpacket.Payload,
+            decrypt_key=incoming_key_id,
+        )
+    except:
+        lg.exc(newpacket.Payload)
+        return False
+    if block is None:
+        lg.warn('failed reading data from %s' % newpacket.RemoteID)
+        return False
+    try:
+        raw_files = block.Data()
+    except:
+        lg.exc()
+        return False
+    # otherwise this must be an external supplier sending us a files he stores for trusted customer
+    external_supplier_idurl = block.CreatorID
+    supplier_index_file_revision = active_share.received_index_file_revision.get(external_supplier_idurl)
+    if supplier_index_file_revision:
+        _rev = backup_fs.revision(customer_idurl=active_share.customer_idurl, key_alias=incoming_key_alias)
+        if supplier_index_file_revision > _rev:
+            lg.warn('shared location index file is not in sync, local revision is %r but revision by supplier is %r' % (_rev, supplier_index_file_revision))
+            return False
+    try:
+        supplier_raw_list_files = backup_control.UnpackListFiles(raw_files, settings.ListFilesFormat())
+    except:
+        lg.exc()
+        return False
+    # need to detect supplier position from the list of packets
+    # and place that supplier on the correct position in contactsdb
+    supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
+    known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, active_share.customer_idurl)
+    if known_supplier_pos < 0:
+        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, active_share.customer_idurl))
+        return False
     if _Debug:
-        lg.args(_DebugLevel, r=response, i=info, c=customer_idurl, s=supplier_idurl, k=key_id)
-
-
-def on_list_files_failed(response, info, customer_idurl, supplier_idurl, key_id):
-    if strng.to_text(response.Payload).count('key not registered'):
-        lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (supplier_idurl, customer_idurl, key_id))
-        result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
-        result.addCallback(lambda r: on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
-        result.addErrback(lambda err: lg.err('failed sending key %r to %r : %r' % (key_id, supplier_idurl, err)))
+        lg.args(_DebugLevel, sz=len(supplier_raw_list_files), s=external_supplier_idurl, pos=supplier_pos, known_pos=known_supplier_pos, pid=newpacket.PacketID)
+    if supplier_pos >= 0:
+        if known_supplier_pos != supplier_pos:
+            lg.err('known external supplier %r position %d is not matching with received list files position %d for customer %s' % (external_supplier_idurl, known_supplier_pos, supplier_pos, active_share.customer_idurl))
+            return False
     else:
-        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r: %r' % (key_id, customer_idurl, supplier_idurl, strng.to_text(response.Payload)))
-    return None
-
-
-def on_key_transfer_success(customer_idurl, supplier_idurl, key_id):
-    lg.info('public key %r shared to supplier %r of customer %r, now will send ListFiles()' % (key_id, supplier_idurl, customer_idurl))
-    p2p_service.SendListFiles(
-        target_supplier=supplier_idurl,
-        customer_idurl=customer_idurl,
-        key_id=key_id,
-        timeout=15,
-        callbacks={
-            commands.Files(): lambda r, i: on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
-            commands.Fail(): lambda r, i: on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
-        },
+        lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (active_share.customer_idurl, known_supplier_pos))
+        supplier_pos = known_supplier_pos
+    active_share.automat(
+        'list-files-verified',
+        newpacket=newpacket,
+        supplier_pos=supplier_pos,
+        supplier_idurl=external_supplier_idurl,
+        payload=supplier_raw_list_files,
     )
+    # finally sending Ack() packet back
+    p2p_service.SendAck(newpacket)
+    return True
 
 
 #------------------------------------------------------------------------------
@@ -471,6 +480,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.suppliers_succeed = []
         self.to_be_restarted = False
         self.files_to_be_deleted = []
+        self.connected_last_time = None
         super(SharedAccessCoordinator, self).__init__(
             name='%s$%s' % (self.key_alias, self.glob_id['customer']),
             state='AT_STARTUP',
@@ -528,6 +538,7 @@ class SharedAccessCoordinator(automat.Automat):
             lg.out(_DebugLevel, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'CONNECTED':
             lg.info('share connected : %s' % self.key_id)
+            self.connected_last_time = time.time()
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
             self.files_to_be_deleted = []
             if self.to_be_restarted:
@@ -535,6 +546,7 @@ class SharedAccessCoordinator(automat.Automat):
                 reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         elif newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
             lg.info('share disconnected : %s' % self.key_id)
+            self.connected_last_time = None
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
             if self.to_be_restarted:
                 self.to_be_restarted = False
@@ -575,8 +587,6 @@ class SharedAccessCoordinator(automat.Automat):
                 self.doSupplierSendIndexFile(*args, **kwargs)
             elif event == 'key-not-registered':
                 self.doSupplierTransferPubKey(*args, **kwargs)
-            elif event == 'index-received' or event == 'index-missing':
-                self.doSupplierRequestListFiles(*args, **kwargs)
             elif event == 'supplier-connected' or event == 'key-sent':
                 self.doSupplierRequestIndexFile(*args, **kwargs)
             elif event == 'all-suppliers-connected':
@@ -585,6 +595,10 @@ class SharedAccessCoordinator(automat.Automat):
             elif event == 'index-sent' or event == 'index-up-to-date' or event == 'index-failed' or event == 'list-files-failed' or event == 'supplier-failed':
                 self.doRemember(event, *args, **kwargs)
                 self.doCheckAllConnected(*args, **kwargs)
+            elif event == 'list-files-verified':
+                self.doSupplierProcessListFiles(*args, **kwargs)
+            elif event == 'supplier-file-modified' or event == 'index-received' or event == 'index-missing':
+                self.doSupplierRequestListFiles(event, *args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -601,33 +615,14 @@ class SharedAccessCoordinator(automat.Automat):
             elif event == 'supplier-failed' or event == 'restart':
                 self.state = 'DHT_LOOKUP'
                 self.doDHTLookupSuppliers(*args, **kwargs)
+            elif event == 'supplier-file-modified' or event == 'index-received' or event == 'index-missing':
+                self.doSupplierRequestListFiles(event, *args, **kwargs)
+            elif event == 'list-files-verified':
+                self.doSupplierProcessListFiles(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
-
-
-#     def isEnoughSuppliersConnected(self, *args, **kwargs):
-#         """
-#         Condition method.
-#         """
-#         # TODO:
-#         return False
-
-#     def isAnyFilesShared(self, *args, **kwargs):
-#         """
-#         Condition method.
-#         """
-#         if id_url.is_the_same(self.customer_idurl, my_id.getIDURL()):
-#             if _Debug:
-#                 lg.args(_DebugLevel, c=self.customer_idurl, key_alias=self.key_alias, ret='my own share')
-#             # no need to wait for incoming list files
-#             # TODO: check what is going to happen when new file is uploaded to the share by another user (not creator of the share)
-#             return True
-#         ret = backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl, self.key_alias))
-#         if _Debug:
-#             lg.args(_DebugLevel, customer=self.customer_idurl, key_alias=self.key_alias, ret=ret)
-#         return ret
 
     def doInit(self, *args, **kwargs):
         """
@@ -675,23 +670,53 @@ class SharedAccessCoordinator(automat.Automat):
         """
         self._do_retrieve_index_file(kwargs['supplier_idurl'])
 
-    def doSupplierRequestListFiles(self, *args, **kwargs):
+    def doSupplierRequestListFiles(self, event, *args, **kwargs):
         """
         Action method.
         """
-        pkt_out = p2p_service.SendListFiles(
-            target_supplier=kwargs['supplier_idurl'],
-            customer_idurl=self.customer_idurl,
-            key_id=self.key_id,
-            callbacks={
-                commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
-                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
-                None: lambda pkt_out: self._on_list_files_timeout(self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
-            },
-            timeout=15,
-        )
+        supplier_idurl = kwargs['supplier_idurl']
+        pkt_out = None
+        if event == 'supplier-file-modified':
+            remote_path = kwargs['remote_path']
+            if remote_path == settings.BackupIndexFileName():
+                self.automat('restart')
+            else:
+                remote_path, _, _ = remote_path.rpartition('/')
+                iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(self.customer_idurl, self.key_alias))
+                if not iter_path:
+                    lg.warn('did not found modified file %r in the catalog, restarting %r' % (remote_path, self))
+                    self.automat('restart')
+                else:
+                    sc = supplier_connector.by_idurl(
+                        supplier_idurl,
+                        customer_idurl=self.customer_idurl,
+                    )
+                    if sc is not None and sc.state == 'CONNECTED':
+                        pkt_out = p2p_service.SendListFiles(
+                            target_supplier=supplier_idurl,
+                            customer_idurl=self.customer_idurl,
+                            key_id=self.key_id,
+                            timeout=15,
+                            callbacks={
+                                commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
+                                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
+                                None: lambda pkt_out: self._on_list_files_timeout(self.customer_idurl, supplier_idurl, self.key_id),
+                            },
+                        )
+        else:
+            pkt_out = p2p_service.SendListFiles(
+                target_supplier=supplier_idurl,
+                customer_idurl=self.customer_idurl,
+                key_id=self.key_id,
+                timeout=15,
+                callbacks={
+                    commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
+                    commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
+                    None: lambda pkt_out: self._on_list_files_timeout(self.customer_idurl, supplier_idurl, self.key_id),
+                },
+            )
         if _Debug:
-            lg.args(_DebugLevel, supplier=kwargs['supplier_idurl'], pid=pkt_out.PacketID)
+            lg.args(_DebugLevel, e=event, s=supplier_idurl, outgoing=pkt_out)
 
     def doSupplierTransferPubKey(self, *args, **kwargs):
         """
@@ -714,6 +739,33 @@ class SharedAccessCoordinator(automat.Automat):
                 self.automat('index-up-to-date', supplier_idurl=kwargs['supplier_idurl'])
                 return
         self._do_send_index_file(kwargs['supplier_idurl'])
+
+    def doSupplierProcessListFiles(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        remote_files_changed, backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
+            supplier_num=kwargs['supplier_pos'],
+            list_files_text_body=kwargs['payload'],
+            customer_idurl=self.customer_idurl,
+            is_in_sync=True,
+        )
+        if remote_files_changed:
+            backup_matrix.SaveLatestRawListFiles(
+                supplier_idurl=kwargs['supplier_idurl'],
+                raw_data=kwargs['payload'],
+                customer_idurl=self.customer_idurl,
+            )
+            if _Debug:
+                lg.dbg(_DebugLevel, 'received updated list of files from external supplier %s for customer %s' % (kwargs['supplier_idurl'], self.customer_idurl))
+            if len(backups2remove) > 0:
+                p2p_service.RequestDeleteListBackups(backups2remove)
+                if _Debug:
+                    lg.out(_DebugLevel, '    also sent requests to remove %d backups' % len(backups2remove))
+            if len(paths2remove) > 0:
+                p2p_service.RequestDeleteListPaths(paths2remove)
+                if _Debug:
+                    lg.out(_DebugLevel, '    also sent requests to remove %d paths' % len(paths2remove))
 
     def doRemember(self, event, *args, **kwargs):
         """

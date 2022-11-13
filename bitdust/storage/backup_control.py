@@ -48,6 +48,7 @@ _DebugLevel = 12
 import os
 import sys
 import time
+import zlib
 import pprint
 
 #------------------------------------------------------------------------------
@@ -216,6 +217,14 @@ def on_files_received(newpacket, info):
 #------------------------------------------------------------------------------
 
 
+def UnpackListFiles(payload, method):
+    if method == 'Text':
+        return payload
+    elif method == 'Compressed':
+        return strng.to_text(zlib.decompress(strng.to_bin(payload)))
+    return payload
+
+
 def IncomingSupplierListFiles(newpacket, list_files_global_id):
     """
     Called when command "Files" were received from one of my suppliers.
@@ -228,7 +237,6 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     if num < -1:
         lg.warn('unknown supplier: %s' % supplier_idurl)
         return False
-    from bitdust.supplier import list_files
     from bitdust.customer import list_files_orator
     target_key_id = my_keys.latest_key_id(list_files_global_id['key_id'])
     if not my_keys.is_key_private(target_key_id):
@@ -243,12 +251,14 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     except:
         lg.err('failed decrypting data from packet %r received from %r' % (newpacket, supplier_idurl))
         return False
-    list_files_raw = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())
+    from bitdust.storage import index_synchronizer
+    is_in_sync = index_synchronizer.is_synchronized() and backup_fs.revision() > 0
+    list_files_raw = UnpackListFiles(input_data, settings.ListFilesFormat())
     remote_files_changed, backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
         supplier_num=num,
         list_files_text_body=list_files_raw,
         customer_idurl=None,
-        is_in_sync=None,
+        is_in_sync=is_in_sync,
     )
     list_files_orator.IncomingListFiles(newpacket)
     if remote_files_changed:
@@ -643,7 +653,6 @@ class Task():
             backup_fs.SaveIndex(customer_idurl=self.customerIDURL, key_alias=self.keyAlias)
             if self.keyAlias == 'master':
                 if driver.is_on('service_backup_db'):
-                    # TODO: switch to event
                     from bitdust.storage import index_synchronizer
                     index_synchronizer.A('push')
         jobs()[self.backupID].automat('start')

@@ -213,16 +213,11 @@ class ListFilesOrator(automat.Automat):
         if newstate == 'SAW_FILES':
             lt_saw_files = self.last_time_saw_files.get(self.target_customer_idurl, -1)
             if lt_saw_files <= 0 or time.time() - lt_saw_files < 20:
-                events.send('my-list-files-refreshed', data={
-                    'customer_idurl': self.target_customer_idurl,
-                })
+                events.send('my-list-files-refreshed', data={'customer_idurl': self.target_customer_idurl})
             self.last_time_saw_files[self.target_customer_idurl] = time.time()
         if newstate == 'NO_FILES':
             self.last_time_saw_files[self.target_customer_idurl] = -1
-        if newstate in [
-            'SAW_FILES',
-            'NO_FILES',
-        ]:
+        if newstate in ['SAW_FILES', 'NO_FILES']:
             self.target_customer_idurl = None
             if self.result_defer:
                 if not self.result_defer.called:
@@ -270,11 +265,7 @@ class ListFilesOrator(automat.Automat):
         """
         from bitdust.customer import supplier_connector
         for one_supplier_connector in supplier_connector.connectors(customer_idurl=self.target_customer_idurl).values():
-            if one_supplier_connector.state not in [
-                'CONNECTED',
-                'DISCONNECTED',
-                'NO_SERVICE',
-            ]:
+            if one_supplier_connector.state not in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE']:
                 return True
         return False
 
@@ -313,7 +304,7 @@ class ListFilesOrator(automat.Automat):
         outpacket = p2p_service.SendListFiles(
             target_supplier=supplier_idurl,
             customer_idurl=self.target_customer_idurl,
-            timeout=30,
+            timeout=15,
         )
         if outpacket:
             self.requested_lf_packet_ids.add(outpacket.PacketID)
@@ -338,7 +329,7 @@ class ListFilesOrator(automat.Automat):
                     outpacket = p2p_service.SendListFiles(
                         target_supplier=idurl,
                         customer_idurl=self.target_customer_idurl,
-                        timeout=30,
+                        timeout=15,
                     )
                     if outpacket:
                         self.requested_lf_packet_ids.add(outpacket.PacketID)

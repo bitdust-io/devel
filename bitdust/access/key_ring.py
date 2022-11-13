@@ -60,7 +60,6 @@ from bitdust.lib import serialization
 from bitdust.main import settings
 
 from bitdust.contacts import identitycache
-from bitdust.contacts import contactsdb
 
 from bitdust.p2p import online_status
 from bitdust.p2p import p2p_service
@@ -71,11 +70,10 @@ from bitdust.crypt import my_keys
 from bitdust.crypt import encrypted
 
 from bitdust.storage import backup_control
-from bitdust.storage import backup_matrix
-
-from bitdust.supplier import list_files
 
 from bitdust.interface import api
+
+from bitdust.services import driver
 
 from bitdust.userid import global_id
 from bitdust.userid import my_id
@@ -736,11 +734,12 @@ def do_delete_key(key_id, is_private):
 
 
 def on_files_received(newpacket, info):
+    if not driver.is_on('service_shared_data'):
+        return False
     list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False
-    trusted_customer_idurl = list_files_global_id['idurl']
     incoming_key_id = list_files_global_id['key_id']
     if not my_keys.is_valid_key_id(incoming_key_id):
         lg.warn('ignore, invalid key id in packet %s' % newpacket)
@@ -754,59 +753,5 @@ def on_files_received(newpacket, info):
         lg.warn('private key is not registered : %s' % incoming_key_id)
         p2p_service.SendFail(newpacket, 'private key is not registered')
         return False
-    try:
-        block = encrypted.Unserialize(
-            newpacket.Payload,
-            decrypt_key=incoming_key_id,
-        )
-    except:
-        lg.exc(newpacket.Payload)
-        return False
-    if block is None:
-        lg.warn('failed reading data from %s' % newpacket.RemoteID)
-        return False
-    try:
-        raw_files = block.Data()
-    except:
-        lg.exc()
-        return False
-    # otherwise this must be an external supplier sending us a files he stores for trusted customer
-    external_supplier_idurl = block.CreatorID
-    try:
-        supplier_raw_list_files = list_files.UnpackListFiles(raw_files, settings.ListFilesFormat())
-    except:
-        lg.exc()
-        return False
-    # need to detect supplier position from the list of packets
-    # and place that supplier on the correct position in contactsdb
-    supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
-    known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
-    if known_supplier_pos < 0:
-        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl))
-        return False
-    if _Debug:
-        lg.args(_DebugLevel, sz=len(supplier_raw_list_files), s=external_supplier_idurl, pos=supplier_pos, known_pos=known_supplier_pos, pid=newpacket.PacketID)
-    if supplier_pos >= 0:
-        if known_supplier_pos != supplier_pos:
-            lg.err('known external supplier %r position %d is not matching with received list files position %d for customer %s' % (external_supplier_idurl, known_supplier_pos, supplier_pos, trusted_customer_idurl))
-            return False
-    else:
-        lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (trusted_customer_idurl, known_supplier_pos))
-        supplier_pos = known_supplier_pos
-    remote_files_changed, _, _, _ = backup_matrix.process_raw_list_files(
-        supplier_num=supplier_pos,
-        list_files_text_body=supplier_raw_list_files,
-        customer_idurl=trusted_customer_idurl,
-        is_in_sync=True,
-    )
-    if remote_files_changed:
-        backup_matrix.SaveLatestRawListFiles(
-            supplier_idurl=external_supplier_idurl,
-            raw_data=supplier_raw_list_files,
-            customer_idurl=trusted_customer_idurl,
-        )
-    # finally sending Ack() packet back
-    p2p_service.SendAck(newpacket)
-    if remote_files_changed:
-        lg.info('received updated list of files from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))
-    return True
+    from bitdust.access import shared_access_coordinator
+    return shared_access_coordinator.on_list_files_verified(newpacket, list_files_global_id)
