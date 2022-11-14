@@ -1869,9 +1869,9 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
     for key_alias in json_data.keys():
         if new_revision is not None:
             cur_revision = revision(customer_idurl, key_alias)
-            if cur_revision > new_revision:
+            if cur_revision >= new_revision:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>%d' % (customer_idurl, key_alias, cur_revision, new_revision))
+                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d >= %d' % (customer_idurl, key_alias, cur_revision, new_revision))
                 continue
         count = 0
         count_modified = 0
@@ -1948,11 +1948,10 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
 
         total_count += count
         total_modified_count += count_modified
-        if count_modified:
+        if new_revision is not None and new_revision > cur_revision:
             old_rev = None
             new_rev = None
-            if new_revision is not None:
-                old_rev, new_rev = commit(new_revision_number=new_revision, customer_idurl=customer_idurl, key_alias=key_alias)
+            old_rev, new_rev = commit(new_revision_number=new_revision, customer_idurl=customer_idurl, key_alias=key_alias)
             Scan(customer_idurl=customer_idurl, key_alias=key_alias)
             updated_keys.append(key_alias)
             if key_alias.startswith('share_'):
