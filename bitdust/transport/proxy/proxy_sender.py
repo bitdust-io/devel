@@ -168,7 +168,7 @@ class ProxySender(automat.Automat):
             elif event == 'start' and proxy_receiver.A().state != 'LISTEN' and self.isSendingEnabled(*args, **kwargs):
                 self.state = 'ROUTER?'
                 self.doStartFilterOutgoingTraffic(*args, **kwargs)
-            elif ((event == 'proxy_receiver.state' and args[0] == 'LISTEN') or (event == 'start' and proxy_receiver.A().state is 'LISTEN')) and self.isSendingEnabled(*args, **kwargs):
+            elif ((event == 'proxy_receiver.state' and args[0] == 'LISTEN') or (event == 'start' and proxy_receiver.A().state == 'LISTEN')) and self.isSendingEnabled(*args, **kwargs):
                 self.state = 'REDIRECTING'
                 self.doStartFilterOutgoingTraffic(*args, **kwargs)
         #---ROUTER?---
@@ -192,8 +192,6 @@ class ProxySender(automat.Automat):
                 self.state = 'CLOSED'
                 self.doStopFilterOutgoingTraffic(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif (event == 'proxy_receiver.state' and args[0] != 'LISTEN'):
-                self.state = 'ROUTER?'
             elif event == 'relay-failed':
                 self.doRetryCancelPacket(*args, **kwargs)
             elif event == 'retry' or event == 'retry-cache-failed' or event == 'retry-send-failed' or event == 'retry-failed':
@@ -202,6 +200,8 @@ class ProxySender(automat.Automat):
                 self.doCleanPacket(*args, **kwargs)
             elif event == 'relay-out':
                 self.doCountTraffic(*args, **kwargs)
+            elif (event == 'proxy_receiver.state' and args[0] != 'LISTEN'):
+                self.state = 'ROUTER?'
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
