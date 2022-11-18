@@ -153,7 +153,7 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
-def Save(customer_idurl=None, key_alias='master', increase_revision=True):
+def SaveFSIndex(customer_idurl=None, key_alias='master', increase_revision=True):
     """
     Save index data base to local file and notify "index_synchronizer()" or "shared_access_coordinator()" state machines.
     """
@@ -354,8 +354,7 @@ def DeleteAllBackups():
     # check and calculate used space
     backup_fs.Calculate()
     # save the index
-    Save()
-    # refresh the GUI
+    SaveFSIndex()
 
 
 def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True):
@@ -374,6 +373,8 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     10) save the modified index data base, soon it will be synchronized with "index_synchronizer()" state machine
     """
     backupID = global_id.CanonicalID(backupID)
+    key_alias, customer, _, _ = packetid.SplitBackupIDFull(backupID)
+    customer_idurl = global_id.GlobalUserToIDURL(customer)
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment
     if AbortRunningBackup(backupID):
@@ -402,12 +403,12 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     backup_rebuilder.RemoveAllBackupsToWork()
     backup_rebuilder.SetStoppedFlag()
     # check and calculate used space
-    if calculate:
-        backup_fs.Scan()
-        backup_fs.Calculate()
+    if calculate or key_alias != 'master':
+        backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
+        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     # in some cases we want to save the DB later
-    if saveDB:
-        Save()
+    if saveDB or key_alias != 'master':
+        SaveFSIndex(customer_idurl, key_alias)
     return True
 
 
@@ -454,12 +455,12 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     backup_rebuilder.RemoveAllBackupsToWork()
     backup_rebuilder.SetStoppedFlag()
     # check and calculate used space
-    if calculate:
-        backup_fs.Scan()
-        backup_fs.Calculate()
+    if calculate or key_alias != 'master':
+        backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
+        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     # save the index if needed
-    if saveDB:
-        Save()
+    if saveDB or key_alias != 'master':
+        SaveFSIndex(customer_idurl, key_alias)
     return True
 
 
@@ -770,8 +771,8 @@ def OnFoundFolderSize(pth, sz, arg):
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL, keyAlias))
         if item:
             item.set_size(sz)
-            backup_fs.Calculate()
-            Save()
+            backup_fs.Calculate(iterID=backup_fs.fsID(customerIDURL, keyAlias))
+            SaveFSIndex(customerIDURL, keyAlias)
         if version:
             backupID = packetid.MakeBackupID(customerGlobID, pathID, version, key_alias=keyAlias)
             job = GetRunningBackupObject(backupID)
@@ -812,8 +813,8 @@ def OnJobDone(backupID, result):
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
         backup_fs.ScanID(remotePath)
-        backup_fs.Calculate()
-        Save()
+        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, keyAlias))
+        SaveFSIndex(customer_idurl, keyAlias)
         # TODO: check used space, if we have over use - stop all tasks immediately
     elif result == 'abort':
         DeleteBackup(backupID)

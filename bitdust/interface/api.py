@@ -1713,7 +1713,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         )
         if not newPathID:
             return ERROR('remote path can not be assigned, failed to create new item %s' % path)
-    backup_control.Save(customer_idurl, key_alias)
+    backup_control.SaveFSIndex(customer_idurl, key_alias)
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and key_alias == 'master':
@@ -1805,7 +1805,7 @@ def file_delete(remote_path):
         if driver.is_on('service_shared_data'):
             from bitdust.access import shared_access_coordinator
             shared_access_coordinator.on_file_deleted(customer_idurl, key_alias, pathID)
-    backup_control.Save(customer_idurl, key_alias)
+    backup_control.SaveFSIndex(customer_idurl, key_alias)
     backup_monitor.A('restart')
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
         listeners.push_snapshot(
@@ -1989,7 +1989,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             api_method='file_upload_start',
         ), ), )
         backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
-        backup_control.Save(customer_idurl, key_alias)
+        backup_control.SaveFSIndex(customer_idurl, key_alias)
         if _Debug:
             lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return task_created_defer
@@ -2003,7 +2003,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     #     tsk.result_defer.addCallback(_restart_active_share)
     tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1])))
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
-    backup_control.Save(customer_idurl, key_alias)
+    backup_control.SaveFSIndex(customer_idurl, key_alias)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
