@@ -382,7 +382,7 @@ def on_my_list_files_refreshed(evt):
 
 def on_list_files_verified(newpacket, list_files_info):
     incoming_key_id = list_files_info['key_id']
-    incoming_key_alias = list_files_info['key_alias']
+    # incoming_key_alias = list_files_info['key_alias']
     active_share = get_active_share(incoming_key_id)
     if not active_share:
         lg.warn('active share was not found for incoming key %r' % incoming_key_id)

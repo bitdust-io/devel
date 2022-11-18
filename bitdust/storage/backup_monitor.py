@@ -377,9 +377,7 @@ class BackupMonitor(automat.Automat):
         if delete_count > 0:
             backup_fs.Scan()
             backup_fs.Calculate()
-            backup_control.Save()
-            # from bitdust.main import control
-            # control.request_update()
+            backup_control.SaveFSIndex()
         collected = gc.collect()
         if self.backups_progress_last_iteration > 0:
             if _Debug:

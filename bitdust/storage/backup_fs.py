@@ -92,6 +92,8 @@ from bitdust.system import bpio
 from bitdust.main import settings
 from bitdust.main import listeners
 
+from bitdust.services import driver
+
 from bitdust.lib import misc
 from bitdust.lib import packetid
 from bitdust.lib import jsn
@@ -1945,6 +1947,9 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
                         versions=deleted_info['versions'],
                     )
                 )
+            if driver.is_on('service_shared_data'):
+                from bitdust.access import shared_access_coordinator
+                shared_access_coordinator.on_file_deleted(customer_idurl, key_alias, path_id)
 
         total_count += count
         total_modified_count += count_modified

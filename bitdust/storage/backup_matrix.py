@@ -206,9 +206,7 @@ def GetActiveArray(customer_idurl=None):
     the current state of supplier.
     """
     from bitdust.p2p import online_status
-    activeArray = [
-        0,
-    ]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    activeArray = [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for i in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
@@ -418,6 +416,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     found_backups = set()
     newfiles = 0
     modified = False
+    file_auto_created = False
     # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
     words = line.split(' ')
     if len(words) < 4:
@@ -499,6 +498,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                     lg.out(_DebugLevel, '        AUTO CREATE VERSION (skip key verification) "%s" at "%s" in the index' % (versionName, remotePath))
                 item.add_version(versionName)
                 modified = True
+                file_auto_created = True
             else:
                 authorized_key_id = my_keys.make_key_id(
                     alias=current_key_alias,
@@ -509,6 +509,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                         lg.out(_DebugLevel, '        AUTO CREATE VERSION "%s" at "%s" in the index' % (versionName, remotePath))
                     item.add_version(versionName)
                     modified = True
+                    file_auto_created = True
                 else:
                     lg.warn('skip auto create version %r for path %r because key %r not registered' % (versionName, remotePath, authorized_key_id))
     if not item.has_version(versionName):
@@ -572,7 +573,23 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             ))
         item.set_version_info(versionName, maxBlockNum, versionSize)
         modified = True
-    # mark this backup to be repainted
+    if file_auto_created:
+        full_remote_path = global_id.MakeGlobalID(path=item.name(), key_id=item.key_id)
+        full_remote_path_id = global_id.MakeGlobalID(path=item.path_id, key_id=item.key_id)
+        _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
+        listeners.push_snapshot(
+            'remote_version', snap_id=backupID, data=dict(
+                backup_id=backupID,
+                max_block=maxBlockNum,
+                remote_path=full_remote_path,
+                global_id=full_remote_path_id,
+                type=item.type,
+                size=item.size,
+                key_id=item.key_id,
+                delivered=misc.percent2string(percent),
+                reliable=misc.percent2string(weakPercent),
+            )
+        )
     return modified, backups2remove, paths2remove, found_backups, newfiles
 
 
@@ -741,7 +758,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
         )
     if remote_files_changed and is_in_sync:
         for key_alias in updated_keys:
-            backup_control.Save(customer_idurl, key_alias)
+            backup_control.SaveFSIndex(customer_idurl, key_alias)
     for query_key in query_results:
         if query_key in _ListFilesQueryCallbacks:
             for cb in _ListFilesQueryCallbacks[query_key]:
@@ -787,12 +804,17 @@ def ReadLatestRawListFiles(customer_idurl=None):
             if os.path.isfile(filename):
                 listFileText = bpio.ReadTextFile(filename).strip()
                 if listFileText:
-                    process_raw_list_files(
+                    remote_files_changed, backups2remove, paths2remove, missed_backups = process_raw_list_files(
                         supplier_num=contactsdb.supplier_position(idurl),
                         list_files_text_body=listFileText,
                         customer_idurl=customer_idurl,
                         is_in_sync=False,
                     )
+                    if _Debug:
+                        lg.out(
+                            _DebugLevel,
+                            '    %r loaded with %d bytes, changed:%r, backups2remove:%d, paths2remove:%d, missed_backups:%d' % (filename, len(listFileText), remote_files_changed, len(backups2remove), len(paths2remove), len(missed_backups))
+                        )
 
 
 #------------------------------------------------------------------------------
@@ -1448,7 +1470,7 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
                 continue
             try:
                 remote_files()[backupID][blockNum]['D'][supplierNum]
-                remote_files()[backupID][blockNum]['D'][supplierNum]
+                remote_files()[backupID][blockNum]['P'][supplierNum]
             except:
                 goodSuppliers -= 1
                 continue
