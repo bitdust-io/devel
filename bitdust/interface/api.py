@@ -1166,7 +1166,7 @@ def key_share(key_id, trusted_user_id, include_private=False, include_signature=
     return ret
 
 
-def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
+def key_audit(key_id, untrusted_user_id, is_private=False, timeout=None):
     """
     Connects to remote node identified by `untrusted_user_id` parameter and request audit of given public or private key `key_id` on that node.
 
@@ -2870,7 +2870,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
-def group_create(creator_id=None, key_size=None, label='', timeout=20):
+def group_create(creator_id=None, key_size=None, label='', timeout=30):
     """
     Creates a new messaging group.
 
@@ -3300,7 +3300,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
                     trusted_idurl=idurl,
                     include_private=False,
                     include_signature=False,
-                    timeout=15,
+                    timeout=None,
                 )])
 
         if _Debug:
@@ -3369,7 +3369,7 @@ def friend_remove(user_id):
 #------------------------------------------------------------------------------
 
 
-def user_ping(user_id, timeout=15, retries=1):
+def user_ping(user_id, timeout=None, retries=1):
     """
     Sends `Identity` packet to remote peer and wait for an `Ack` packet to check connection status.
 
@@ -3392,7 +3392,7 @@ def user_ping(user_id, timeout=15, retries=1):
     ret = Deferred()
     d = online_status.handshake(
         idurl,
-        ack_timeout=int(timeout),
+        ack_timeout=timeout,
         ping_retries=int(retries),
         channel='api_user_ping',
         keep_alive=False,
@@ -3434,7 +3434,7 @@ def user_status(user_id):
     })
 
 
-def user_status_check(user_id, timeout=5):
+def user_status_check(user_id, timeout=15):
     """
     Returns current online status of a user and only if node is known but disconnected performs "ping" operation.
 
@@ -5401,7 +5401,7 @@ def dht_user_random(layer_id=0, count=1):
     )
     tsk.result_defer.addCallback(_cb)
     tsk.result_defer.addErrback(_eb)
-    tsk.result_defer.addTimeout(timeout=25, clock=reactor)
+    tsk.result_defer.addTimeout(timeout=30, clock=reactor)
     return ret
 
 

@@ -102,6 +102,7 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, include_si
     p2p_service.SendRequestService(
         idurl,
         'service_keys_registry',
+        timeout=timeout,
         callbacks={
             commands.Ack(): lambda response, info: _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout),
             commands.Fail(): lambda response, info: result.errback(Exception('"service_keys_registry" not started on remote node')),
@@ -157,12 +158,14 @@ def _on_transfer_key_response(response, info, key_id, result):
     return None
 
 
-def transfer_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=10, result=None):
+def transfer_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=None, result=None):
     """
     Actually sending given key to remote user.
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, trusted_idurl))
+    if not timeout:
+        timeout = settings.P2PTimeOut()
     key_id = my_keys.latest_key_id(key_id)
     if not result:
         result = Deferred()
@@ -222,7 +225,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
     return result
 
 
-def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=15):
+def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=None):
     """
     Method to be used to send given key to one trusted user.
     Make sure remote user is identified and connected.
@@ -230,6 +233,8 @@ def share_key(key_id, trusted_idurl, include_private=False, include_signature=Fa
     """
     if _Debug:
         lg.args(_DebugLevel, key_id=key_id, trusted_idurl=trusted_idurl)
+    if not timeout:
+        timeout = settings.P2PTimeOut()
     key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
     d = online_status.ping(
@@ -280,7 +285,7 @@ def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_
     return False
 
 
-def audit_public_key(key_id, untrusted_idurl, timeout=10):
+def audit_public_key(key_id, untrusted_idurl, timeout=None):
     """
     Be sure remote user stores given public key.
     I also need to stores that public key in order to do such audit.
@@ -290,6 +295,8 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.audit_public_key   testing %s from %s' % (key_id, untrusted_idurl))
+    if not timeout:
+        timeout = settings.P2PTimeOut()
     key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
     recipient_id_obj = identitycache.FromCache(untrusted_idurl)
@@ -361,7 +368,7 @@ def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test
     return False
 
 
-def audit_private_key(key_id, untrusted_idurl, timeout=10):
+def audit_private_key(key_id, untrusted_idurl, timeout=None):
     """
     Be sure remote user possess given private key.
     I need to possess the public key to be able to audit.
@@ -371,6 +378,8 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.audit_private_key   testing %s from %s' % (key_id, untrusted_idurl))
+    if not timeout:
+        timeout = settings.P2PTimeOut()
     key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
     recipient_id_obj = identitycache.FromCache(untrusted_idurl)

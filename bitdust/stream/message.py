@@ -52,6 +52,7 @@ from twisted.internet.defer import Deferred
 from bitdust.logs import lg
 
 from bitdust.main import config
+from bitdust.main import settings
 
 from bitdust.p2p import commands
 from bitdust.p2p import online_status
@@ -472,7 +473,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     return result
 
 
-def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=15, ping_retries=0, skip_handshake=False, fire_callbacks=True, require_handshake=False):
+def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=None, ping_retries=0, skip_handshake=False, fire_callbacks=True, require_handshake=False):
     """
     Send command.Message() packet to remote peer. Returns Deferred object.
     """
@@ -480,6 +481,10 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     global _PingTrustIntervalSeconds
     if not packet_id:
         packet_id = packetid.UniqueID()
+    if ping_timeout is None:
+        ping_timeout = settings.P2PTimeOut()
+    if message_ack_timeout is None:
+        message_ack_timeout = settings.P2PTimeOut()
     if _Debug:
         lg.out(_DebugLevel, 'message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d' % (recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)

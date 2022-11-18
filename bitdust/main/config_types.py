@@ -131,6 +131,7 @@ def defaults():
         'services/employer/replace-critically-offline-enabled': TYPE_BOOLEAN,
         'services/employer/candidates': TYPE_STRING,
         'services/gateway/enabled': TYPE_BOOLEAN,
+        'services/gateway/p2p-timeout': TYPE_POSITIVE_INTEGER,
         'services/http-connections/enabled': TYPE_BOOLEAN,
         'services/http-connections/http-port': TYPE_PORT_NUMBER,
         'services/http-transport/enabled': TYPE_BOOLEAN,

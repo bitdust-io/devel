@@ -531,7 +531,7 @@ class IndexSynchronizer(automat.Automat):
                 creatorID=localID,
                 packetID=packetID,
                 remoteID=supplier_idurl,
-                response_timeout=30,
+                response_timeout=settings.P2PTimeOut(),
                 callbacks={
                     commands.Data(): self._on_supplier_response,
                     commands.Fail(): self._on_supplier_fail,

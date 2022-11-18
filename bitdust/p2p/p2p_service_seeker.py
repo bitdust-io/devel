@@ -60,6 +60,8 @@ from bitdust.automats import automat
 from bitdust.lib import strng
 from bitdust.lib import packetid
 
+from bitdust.main import settings
+
 from bitdust.p2p import commands
 from bitdust.p2p import p2p_service
 from bitdust.p2p import handshaker
@@ -232,7 +234,7 @@ class P2PServiceSeeker(automat.Automat):
             keep_alive=True,
             force_cache=False,
             ping_retries=(1 if self.ping_retries is None else self.ping_retries),
-            ack_timeout=(15 if self.ack_timeout is None else self.ack_timeout),
+            ack_timeout=(settings.P2PTimeOut() if self.ack_timeout is None else self.ack_timeout),
             cancel_running=self.force_handshake,
         )
         d.addCallback(lambda ok: self.automat('shook-hands'))

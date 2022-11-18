@@ -87,6 +87,7 @@ from bitdust.lib import net_misc
 from bitdust.automats import automat
 
 from bitdust.main import config
+from bitdust.main import settings
 
 from bitdust.crypt import key
 from bitdust.crypt import signed
@@ -440,7 +441,7 @@ class ProxyReceiver(automat.Automat):
             #     commands.Ack(): self._on_request_service_ack,
             #     commands.Fail(): self._on_request_service_fail,
             # },
-            response_timeout=15,
+            response_timeout=settings.P2PTimeOut(),
         )
 
     def doProcessInboxPacket(self, *args, **kwargs):
@@ -767,7 +768,7 @@ class ProxyReceiver(automat.Automat):
                 'failed': lambda pkt_out, error_message: self.automat('sending-failed', (pkt_out, error_message)),
             },
             keep_alive=True,
-            response_timeout=30,
+            response_timeout=settings.P2PTimeOut(),
         )
 
     def _do_send_request_service(self, *args, **kwargs):
@@ -802,7 +803,7 @@ class ProxyReceiver(automat.Automat):
                 # 'timeout': lambda pkt_out, err: self.automat('request-timeout', pkt_out),
                 None: lambda pkt_out: self.automat('request-timeout', pkt_out),
             },
-            response_timeout=15,
+            response_timeout=settings.P2PTimeOut(),
         )
         self.request_service_packet_id.append(newpacket.PacketID)
 

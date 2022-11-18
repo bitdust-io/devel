@@ -343,7 +343,7 @@ class IdRotator(automat.Automat):
             if webport == 80:
                 webport = ''
             new_idurl = nameurl.UrlMake('http', strng.to_text(host), webport, my_id.getIDName() + '.xml')
-            d = net_misc.getPageTwisted(new_idurl, timeout=10)
+            d = net_misc.getPageTwisted(new_idurl, timeout=15)
             d.addCallback(_new_idurl_exist, new_idurl, pos)
             d.addErrback(_new_idurl_not_exist, new_idurl)
 
@@ -364,7 +364,7 @@ class IdRotator(automat.Automat):
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
             if _Debug:
                 lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d' % (server_url, tcpport))
-            d = net_misc.getPageTwisted(server_url, timeout=10)
+            d = net_misc.getPageTwisted(server_url, timeout=15)
             d.addCallback(_server_replied, host, pos)
             d.addErrback(_server_failed, host, pos)
 
@@ -469,7 +469,7 @@ class IdRotator(automat.Automat):
 
         dl = []
         for idurl in my_id.getLocalIdentity().getSources(as_originals=True):
-            dl.append(net_misc.getPageTwisted(idurl, timeout=10))
+            dl.append(net_misc.getPageTwisted(idurl, timeout=15))
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(_cb)
         d.addErrback(_eb)
@@ -638,7 +638,7 @@ class IdRotator(automat.Automat):
         my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         dl = []
         for idurl_bin in my_sources:
-            d = net_misc.getPageTwisted(idurl_bin, timeout=5)
+            d = net_misc.getPageTwisted(idurl_bin, timeout=15)
             dl.append(d)
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(self._do_check_ping_results)
@@ -657,7 +657,7 @@ class IdRotator(automat.Automat):
             lg.args(_DebugLevel, id_servers=id_servers)
         dl = []
         for url in id_servers:
-            d = net_misc.getPageTwisted(url, timeout=5)
+            d = net_misc.getPageTwisted(url, timeout=15)
             dl.append(d)
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(lambda result: self.automat('ping-done', []))

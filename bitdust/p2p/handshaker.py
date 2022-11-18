@@ -60,6 +60,8 @@ from bitdust.lib import packetid
 
 from bitdust.automats import automat
 
+from bitdust.main import settings
+
 from bitdust.contacts import identitycache
 
 from bitdust.crypt import signed
@@ -82,8 +84,8 @@ _KnownChannels = {}
 
 def ping(
     idurl,
-    ack_timeout=15,
-    cache_timeout=5,
+    ack_timeout=None,
+    cache_timeout=15,
     cache_retries=2,
     ping_retries=2,
     force_cache=False,
@@ -213,6 +215,8 @@ class Handshaker(automat.Automat):
         self.remote_idurl = strng.to_bin(remote_idurl)
         self.remote_global_id = global_id.idurl2glob(self.remote_idurl)
         self.ack_timeout = ack_timeout
+        if not self.ack_timeout:
+            self.ack_timeout = settings.P2PTimeOut()
         self.cache_timeout = cache_timeout
         self.cache_retries = cache_retries
         self.ping_retries = ping_retries

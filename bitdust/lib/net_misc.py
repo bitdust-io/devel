@@ -546,7 +546,7 @@ def readResponse(response, timeout):
     return d
 
 
-def getPageTwisted(url, timeout=10, method=b'GET'):
+def getPageTwisted(url, timeout=15, method=b'GET'):
     """
     A smart way to download pages from HTTP hosts.
     """
@@ -737,7 +737,7 @@ def TestInternetConnectionOld(remote_host='www.google.com'):  # 74.125.113.99
 #------------------------------------------------------------------------------
 
 
-def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
+def TestInternetConnectionOld2(remote_hosts=None, timeout=15):
     """
     A little bit more smart method to check Internet connection.
     """
@@ -775,7 +775,7 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
 #------------------------------------------------------------------------------
 
 
-def TestInternetConnection(remote_hosts=None, timeout=10):
+def TestInternetConnection(remote_hosts=None, timeout=15):
     if remote_hosts is None:
         remote_hosts = []
         from bitdust.userid import known_servers
