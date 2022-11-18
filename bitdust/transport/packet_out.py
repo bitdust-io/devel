@@ -727,7 +727,7 @@ class PacketOut(automat.Automat):
                 if self.response_timeout:
                     self.timeout = self.response_timeout
                 else:
-                    self.timeout = 30
+                    self.timeout = settings.P2PTimeOut()
             elif self.filesize > 1024*1024:
                 self.timeout = 5 + int(self.filesize/float(settings.SendingSpeedLimit()))
             else:

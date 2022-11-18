@@ -20,7 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-FROM python:3.6
+FROM python:3.8
 
 RUN apt-get update -y && apt-get install -y mosh openssh-client curl nano && rm -rf /var/lib/apt/lists/*
 
