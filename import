@@ -21,3 +21,4 @@ cd "$tmppath"
 cp -r -v * "$curpath"
 rm -rf "$tmppath"
 cd "$curpath"
+exit 0
