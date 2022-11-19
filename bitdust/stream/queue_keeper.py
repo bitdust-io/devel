@@ -546,8 +546,7 @@ class QueueKeeper(automat.Automat):
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTRead')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTRead')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
     def doDHTWrite(self, event, *args, **kwargs):
@@ -719,8 +718,7 @@ class QueueKeeper(automat.Automat):
             revision=revision,
         )
         result.addCallback(self._on_write_customer_message_broker_success, desired_position, archive_folder_path, revision, event, **kwargs)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
         result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry, event, **kwargs)
 
     def _do_dht_push_state(self, event=None, **kwargs):
@@ -777,8 +775,7 @@ class QueueKeeper(automat.Automat):
             attempts=1,
         )
         result.addCallback(self._on_broker_verify_result)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper._do_verify_cooperated_brokers')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper._do_verify_cooperated_brokers')
         result.addErrback(self._on_broker_verify_failed)
 
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):

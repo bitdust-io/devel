@@ -130,6 +130,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/employer/candidates', '')
 
     conf_obj.setDefaultValue('services/gateway/enabled', 'true')
+    conf_obj.setDefaultValue('services/gateway/p2p-timeout', 15)
 
     conf_obj.setDefaultValue('services/http-connections/enabled', 'false')
     conf_obj.setDefaultValue('services/http-connections/http-port', settings.DefaultHTTPPort())

@@ -472,7 +472,7 @@ class IdRegistrator(automat.Automat):
                 webport = ''
             idurl = nameurl.UrlMake('http', strng.to_text(host), webport, login + '.xml')
             lg.out(4, '    %s' % idurl)
-            d = net_misc.getPageTwisted(idurl, timeout=7)
+            d = net_misc.getPageTwisted(idurl, timeout=10)
             d.addCallback(_cb, idurl, host)
             d.addErrback(_eb, idurl, host)
             self.registrations.append(idurl)
@@ -567,7 +567,7 @@ class IdRegistrator(automat.Automat):
 
         for idurl in self.new_identity.getSources(as_originals=True):
             lg.out(8, '        %s' % idurl)
-            d = net_misc.getPageTwisted(idurl, timeout=7)
+            d = net_misc.getPageTwisted(idurl, timeout=15)
             d.addCallback(_cb)
             d.addErrback(_eb)
 

@@ -57,6 +57,8 @@ from bitdust.logs import lg
 
 from bitdust.contacts import contactsdb
 
+from bitdust.main import settings
+
 from bitdust.p2p import commands
 
 from bitdust.lib import packetid
@@ -348,7 +350,9 @@ def Identity(newpacket, info):
 #     return True
 
 
-def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
+def SendIdentity(remote_idurl, wide=False, timeout=None, callbacks={}):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     packet_id = 'identity:%s' % packetid.UniqueID()
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendIdentity to %s wide=%s packet_id=%r' % (nameurl.GetName(remote_idurl), wide, packet_id))
@@ -378,7 +382,9 @@ def RequestService(request, info):
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=60, packet_id=None):
+def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=None, packet_id=None):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     service_info = {
         'name': service_name,
         'payload': json_payload,
@@ -411,7 +417,9 @@ def CancelService(request, info):
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=20):
+def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=None):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     service_info = {
         'name': service_name,
         'payload': json_payload,
@@ -452,6 +460,8 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
     """
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     MyID = my_id.getIDURL()
     if not customer_idurl:
         customer_idurl = MyID
@@ -507,19 +517,15 @@ def Files(request, info):
         lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s] from %s by %s|%s' % (len(request.Payload), request.PacketID, nameurl.GetName(request.RemoteID), nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID)))
 
 
-def SendFiles(
-    idurl,
-    raw_list_files_info,
-    packet_id,
-    callbacks={},
-    timeout=10,
-):
+def SendFiles(idurl, raw_list_files_info, packet_id, callbacks={}, timeout=None):
     """
     Sending information about known files stored locally for given customer (if you are supplier).
     You can also send a list of your files to another user if you wish to grand access.
     This will not send any personal data : only file names, ids, versions, etc.
     So pass list of files in encrypted form in the `payload` or leave it empty.
     """
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     MyID = my_id.getIDURL()
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packet_id))
@@ -832,8 +838,10 @@ def SendKey(
     packet_id=None,
     wide=False,
     callbacks={},
-    timeout=20,
+    timeout=None,
 ):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     if packet_id is None:
         packet_id = packetid.UniqueID()
     if _Debug:
@@ -856,9 +864,11 @@ def AuditKey(request, info):
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s  sender_idurl=%s' % (request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
 
 
-def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, timeout=10, wide=False, callbacks={}):
+def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, timeout=None, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendAuditKey to %s with %d bytes in json payload data' % (remote_idurl, len(encrypted_payload)))
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     if packet_id is None:
         packet_id = packetid.UniqueID()
     outpacket = signed.Packet(
@@ -888,7 +898,9 @@ def Event(request, info):
         lg.out(_DebugLevel, 'p2p_service.Event %s from %s with %d bytes in json' % (e_json['event_id'], info.sender_idurl, len(request.Payload)))
 
 
-def SendEvent(remote_idurl, event_id, payload=None, producer_id=None, consumer_id=None, queue_id=None, message_id=None, created=None, packet_id=None, wide=False, callbacks={}, response_timeout=5):
+def SendEvent(remote_idurl, event_id, payload=None, producer_id=None, consumer_id=None, queue_id=None, message_id=None, created=None, packet_id=None, wide=False, callbacks={}, response_timeout=None):
+    if response_timeout is None:
+        response_timeout = settings.P2PTimeOut()
     if packet_id is None:
         packet_id = packetid.UniqueID()
     e_json = {

@@ -231,6 +231,9 @@ You can use `TCP`, `UDP`, and other network protocols to communicate with people
 The `gateway` service controls application transport protocols and all encrypted packets passing through and reaching application engine.
 Every incoming packet is digitally verified here, processed and sent to the underlying services.
 
+{services/gateway/p2p-timeout} peer-to-peer reply timeout
+Due to network failures or slowness, signed peer-to-peer packets are considered as "undelivered" without receiving a confirmation of delivery within the specified number of seconds.
+
 {services/http-connections/enabled} HTTP enabled
 This will allow BitDust to use the HTTP protocol for service data and encrypted traffic
 

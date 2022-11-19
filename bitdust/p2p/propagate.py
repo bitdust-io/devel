@@ -72,6 +72,8 @@ from bitdust.lib import packetid
 from bitdust.contacts import contactsdb
 from bitdust.contacts import identitycache
 
+from bitdust.main import settings
+
 from bitdust.userid import my_id
 from bitdust.userid import id_url
 
@@ -116,13 +118,15 @@ def startup_list():
 #------------------------------------------------------------------------------
 
 
-def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=False, wait_packets=False, response_timeout=10):
+def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=False, wait_packets=False, response_timeout=None):
     """
     Run the "propagate" process.
 
     First need to fetch ``selected_contacts`` IDs from id servers. And
     then send our Identity file to that contacts.
     """
+    if response_timeout is None:
+        response_timeout = settings.P2PTimeOut()
     if _Debug:
         lg.out(_DebugLevel, 'propagate.propagate to %d contacts' % len(selected_contacts))
     result = Deferred()
@@ -151,7 +155,7 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
     return result
 
 
-def fetch(list_ids, refresh_cache=False, timeout=10, try_other_sources=True):
+def fetch(list_ids, refresh_cache=False, timeout=15, try_other_sources=True):
     """
     Request a list of identity files.
     """
@@ -171,10 +175,12 @@ def fetch(list_ids, refresh_cache=False, timeout=10, try_other_sources=True):
     return DeferredList(dl, consumeErrors=True)
 
 
-def start(ack_handler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True, include_startup=False, wait_packets=False, response_timeout=10):
+def start(ack_handler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True, include_startup=False, wait_packets=False, response_timeout=None):
     """
     Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
+    if response_timeout is None:
+        response_timeout = settings.P2PTimeOut()
     selected_contacts = set(filter(None, contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled)))
     if include_startup and startup_list():
         lg.warn('going to propagate my identity also to %d nodes from startup list' % len(startup_list()))
@@ -435,7 +441,7 @@ def SendToID(
     wide=False,
     ack_handler=None,
     timeout_handler=None,
-    response_timeout=20,
+    response_timeout=None,
 ):
     """
     Create ``packet`` with my Identity file and calls
@@ -444,6 +450,8 @@ def SendToID(
     global _PropagateCounter
     if _Debug:
         lg.out(_DebugLevel, 'propagate.SendToID [%s] wide=%s' % (nameurl.GetName(idurl), str(wide)))
+    if response_timeout is None:
+        response_timeout = settings.P2PTimeOut()
     if ack_handler is None:
         ack_handler = HandleAck
     if timeout_handler is None:
@@ -477,11 +485,13 @@ def SendToID(
     return result
 
 
-def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, response_timeout=20, wait_packets=False):
+def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, response_timeout=None, wait_packets=False):
     """
     Same, but send to many IDs and also check previous packets to not re-send.
     """
     global _PropagateCounter
+    if response_timeout is None:
+        response_timeout = settings.P2PTimeOut()
     if ack_handler is None:
         ack_handler = HandleAck
     if timeout_handler is None:
@@ -557,7 +567,9 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 #------------------------------------------------------------------------------
 
 
-def ping_suppliers(customer_idurl=None, timeout=20):
+def ping_suppliers(customer_idurl=None, timeout=None):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     from bitdust.p2p import online_status
     l = []
     for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
@@ -566,7 +578,9 @@ def ping_suppliers(customer_idurl=None, timeout=20):
     return DeferredList(l, consumeErrors=True)
 
 
-def ping_customers(timeout=20):
+def ping_customers(timeout=None):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     from bitdust.p2p import online_status
     l = []
     for customer_idurl in contactsdb.customers():
@@ -575,7 +589,9 @@ def ping_customers(timeout=20):
     return DeferredList(l, consumeErrors=True)
 
 
-def ping_nodes(idurl_list, timeout=15, channel='ping_nodes', keep_alive=True):
+def ping_nodes(idurl_list, timeout=None, channel='ping_nodes', keep_alive=True):
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     from bitdust.p2p import online_status
     l = []
     for idurl in idurl_list:

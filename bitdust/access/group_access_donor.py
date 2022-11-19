@@ -152,8 +152,7 @@ class GroupAccessDonor(automat.Automat):
         """
         d = handshaker.ping(idurl=self.remote_idurl, channel='group_access_donor', keep_alive=True, force_cache=True)
         d.addCallback(lambda ok: self.automat('shook-hands'))
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doHandshake')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doHandshake')
         d.addErrback(lambda err: self.automat('fail'))
 
     def doAuditUserMasterKey(self, *args, **kwargs):
@@ -163,8 +162,7 @@ class GroupAccessDonor(automat.Automat):
         master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
         d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
         d.addCallback(lambda audit_result: (self.automat('audit-ok') if audit_result else self.automat('fail', Exception('remote user master key audit process failed'))))
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doAuditUserMasterKey')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doAuditUserMasterKey')
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doSendPrivKeyToUser(self, *args, **kwargs):

@@ -906,7 +906,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def user_status_check_v1(self, request):
         return api.user_status_check(
             user_id=_request_arg(request, 'user_id') or _request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
-            timeout=_request_arg(request, 'timeout', 10),
+            timeout=_request_arg(request, 'timeout', 15),
         )
 
     @GET('^/us/s/(?P<nickname>[^/]+)/$')
@@ -1132,7 +1132,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def service_restart_v1(self, request, service_name):
         return api.service_restart(
             service_name=service_name,
-            wait_timeout=_request_data(request).get('wait_timeout', 10),
+            wait_timeout=_request_data(request).get('wait_timeout', 15),
         )
 
     @GET('^/svc/h/(?P<service_name>[^/]+)/$')
@@ -1250,7 +1250,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/network/connected$')
     @GET('^/network/connected/v1$')
     def network_connected_v1(self, request):
-        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '5')))
+        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '10')))
 
     @GET('^/nw/st$')
     @GET('^/v1/network/status$')

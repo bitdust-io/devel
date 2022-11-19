@@ -359,8 +359,7 @@ class MessageProducer(automat.Automat):
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_producer.doDHTReadBrokers')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_producer.doDHTReadBrokers')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
     def doConnectFirstBroker(self, *args, **kwargs):
@@ -414,8 +413,7 @@ class MessageProducer(automat.Automat):
             attempts=1,
         )
         result.addCallback(self._on_broker_connected, top_broker_pos)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_producer.doConnectFirstBroker')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_producer.doConnectFirstBroker')
         result.addErrback(self._on_message_broker_connect_failed, top_broker_pos)
 
     def doRememberBroker(self, *args, **kwargs):
@@ -517,7 +515,6 @@ class MessageProducer(automat.Automat):
             skip_handshake=True,
             fire_callbacks=False,
         )
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_producer._do_send_message_to_broker')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_producer._do_send_message_to_broker')
         # d.addCallback(self._on_message_to_broker_sent, packet_id)
         # d.addErrback(self._on_message_to_broker_failed, packet_id)

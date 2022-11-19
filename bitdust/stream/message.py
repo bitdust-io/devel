@@ -52,6 +52,7 @@ from twisted.internet.defer import Deferred
 from bitdust.logs import lg
 
 from bitdust.main import config
+from bitdust.main import settings
 
 from bitdust.p2p import commands
 from bitdust.p2p import online_status
@@ -391,7 +392,10 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
         err = Exception(response) if response else (error if not strng.is_string(error) else Exception(error))
+        if _Debug:
+            lg.args(_DebugLevel, err=err, i=idurl, r=recipient_global_id, pid=packet_id, j=json_data)
         result_defer.errback(err)
+    return None
 
 
 #------------------------------------------------------------------------------
@@ -411,7 +415,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
         encoding='utf-8',
     )
     if _Debug:
-        lg.out(_DebugLevel, 'message.do_send_message to %s with %d bytes message ack_timeout=%s' % (recipient_global_id, len(message_body), message_ack_timeout))
+        lg.out(_DebugLevel, 'message.do_send_message to %s with %d bytes message ack_timeout=%s pid:%s' % (recipient_global_id, len(message_body), message_ack_timeout, packet_id))
     try:
         private_message_object = PrivateMessage(recipient=recipient_global_id)
         private_message_object.encrypt(message_body)
@@ -444,6 +448,16 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
                 result_defer=result_defer,
                 error='timeout',
             ),
+            'timeout': lambda pkt_out, errmsg: on_message_failed(
+                remote_idurl,
+                json_data,
+                recipient_global_id,
+                packet_id,
+                None,
+                None,
+                result_defer=result_defer,
+                error=errmsg,
+            ),
             'failed': lambda pkt_out, errmsg: on_message_failed(
                 remote_idurl,
                 json_data,
@@ -472,7 +486,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     return result
 
 
-def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=15, ping_retries=0, skip_handshake=False, fire_callbacks=True, require_handshake=False):
+def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=None, ping_retries=0, skip_handshake=False, fire_callbacks=True, require_handshake=False):
     """
     Send command.Message() packet to remote peer. Returns Deferred object.
     """
@@ -480,6 +494,10 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     global _PingTrustIntervalSeconds
     if not packet_id:
         packet_id = packetid.UniqueID()
+    if ping_timeout is None:
+        ping_timeout = settings.P2PTimeOut()
+    if message_ack_timeout is None:
+        message_ack_timeout = settings.P2PTimeOut()
     if _Debug:
         lg.out(_DebugLevel, 'message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d' % (recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
@@ -487,6 +505,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
         lg.warn('invalid recipient')
         return fail(Exception('invalid recipient'))
     ret = Deferred()
+    ret.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message.send_message')
     if remote_idurl not in _LastUserPingTime:
         is_ping_expired = True
     else:

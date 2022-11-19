@@ -118,14 +118,14 @@ def get_one(idurl):
     return FromCache(id_url.to_original(idurl))
 
 
-def start_one(idurl, timeout=10, try_other_sources=True):
+def start_one(idurl, timeout=15, try_other_sources=True):
     """
     An alias for `immediatelyCaching()` method.
     """
     return immediatelyCaching(id_url.to_original(idurl), timeout=timeout, try_other_sources=try_other_sources)
 
 
-def start_multiple(idurl_list, timeout=10, try_other_sources=True):
+def start_multiple(idurl_list, timeout=15, try_other_sources=True):
     """
     Executes in parallel multiple `immediatelyCaching()` calls on the list of IDURL items.
     Returns `DeferredList` object.
@@ -400,7 +400,7 @@ def getPageFail(x, idurl):
     return x
 
 
-def pageRequestTwisted(idurl, timeout=0):
+def pageRequestTwisted(idurl, timeout=15):
     """
     Request an HTML page - this can be an user identity.
     """
@@ -410,7 +410,7 @@ def pageRequestTwisted(idurl, timeout=0):
     return d
 
 
-def scheduleForCaching(idurl, timeout=0):
+def scheduleForCaching(idurl, timeout=15):
     """
     Even if we have a copy in cache we are to try and read another one.
     """
@@ -440,7 +440,7 @@ def on_caching_task_failed(err, idurl, ignore_errors):
     return err
 
 
-def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=False):
+def immediatelyCaching(idurl, timeout=15, try_other_sources=True, ignore_errors=False):
     """
     A smart method to cache some identity and get results in callbacks.
     """

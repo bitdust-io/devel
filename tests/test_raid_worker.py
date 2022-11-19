@@ -44,8 +44,8 @@ class TestRaidWorker(TestCase):
 
         def _read_done(cmd, taskdata, result):
             final_result = False
-            source_data = open('/tmp/source.txt', 'rb').read()
-            reconstructed_data = open('/tmp/destination.txt', 'rb').read()
+            source_data = bpio.ReadBinaryFile('/tmp/source.txt')
+            reconstructed_data = bpio.ReadBinaryFile('/tmp/destination.txt')
             if read_success:
                 final_result = (source_data == reconstructed_data)
             else:
@@ -171,7 +171,7 @@ class TestRaidWorker(TestCase):
         os.system('rm -rf /tmp/destination.txt')
         os.system('rm -rf /tmp/raidtest')
         os.system("mkdir -p '/tmp/raidtest/master$alice@somehost.com/0/F12345678'")
-        open('/tmp/source.txt', 'wb').write(base64.b64encode(os.urandom(filesize)))
+        bpio.WriteBinaryFile('/tmp/source.txt', base64.b64encode(os.urandom(filesize)))
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
         reactor.callLater(  # @UndefinedVariable
             0.5,

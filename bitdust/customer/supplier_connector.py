@@ -421,8 +421,7 @@ class SupplierConnector(automat.Automat):
             family_position=family_position,
             family_snapshot=family_snapshot,
         ))
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='supplier_connector.doPingRequestService')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='supplier_connector.doPingRequestService')
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doCancelService(self, *args, **kwargs):

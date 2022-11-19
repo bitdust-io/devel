@@ -463,8 +463,7 @@ class BrokerNegotiator(automat.Automat):
             attempts=1,
         )
         result.addCallback(self._on_cur_broker_connected, target_pos, self.my_position, self.desired_position, event)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestCurBroker')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestCurBroker')
         result.addErrback(self._on_cur_broker_connect_failed, target_pos, event)
 
     def doRotateRequestCurBroker(self, *args, **kwargs):
@@ -488,8 +487,7 @@ class BrokerNegotiator(automat.Automat):
             attempts=1,
         )
         result.addCallback(self._on_rotate_broker_connected, target_pos, None)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRotateRequestCurBroker')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRotateRequestCurBroker')
         result.addErrback(self._on_rotate_broker_connect_failed, target_pos, None)
 
     def doRefreshDHT(self, event, *args, **kwargs):
@@ -531,8 +529,7 @@ class BrokerNegotiator(automat.Automat):
                     attempts=1,
                 )
                 result.addCallback(self._on_new_broker_hired, target_pos, self.my_position, self.desired_position)
-                if _Debug:
-                    result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doHirePrevBroker')
+                result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doHirePrevBroker')
                 result.addErrback(self._on_new_broker_lookup_failed, target_pos)
                 return
         result = p2p_service_seeker.connect_random_node(
@@ -545,8 +542,7 @@ class BrokerNegotiator(automat.Automat):
             force_handshake=True,
         )
         result.addCallback(self._on_new_broker_hired, target_pos, self.my_position, self.desired_position)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doHirePrevBroker')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doHirePrevBroker')
         result.addErrback(self._on_new_broker_lookup_failed, target_pos)
 
     def doAccept(self, event, *args, **kwargs):

@@ -889,7 +889,6 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
             queue_id=queue_id,
             message_id=existing_message.message_id,
             created=existing_message.created,
-            response_timeout=15,
             callbacks={
                 commands.Ack(): lambda response, info: ret.callback(True),
                 commands.Fail(): lambda response, info: ret.callback(False),
@@ -914,8 +913,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
             result = False
         if isinstance(result, Deferred):
             result.addCallback(lambda ok: ret.callback(True) if ok else ret.callback(False))
-            if _Debug:
-                result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_queue.do_notify')
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_queue.do_notify')
             result.addErrback(lambda err: ret.callback(False))
         else:
             reactor.callLater(0, ret.callback, result)  # @UndefinedVariable

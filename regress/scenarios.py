@@ -2722,6 +2722,7 @@ def scenario22():
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
     request_get(active_broker_name, 'process/stop/v1', verbose=True, raise_error=False)
     kw.wait_packets_finished(CUSTOMERS_IDS_123)
+    run_ssh_command_and_wait(active_broker_name, 'cp /root/.bitdust/logs/*.log /tmp/', verbose=False)
 
     # start active broker node again
     start_daemon(active_broker_name, skip_initialize=True, verbose=True)

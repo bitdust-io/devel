@@ -74,6 +74,7 @@ from bitdust.automats import automat
 from bitdust.contacts import contactsdb
 
 from bitdust.main import events
+from bitdust.main import settings
 
 from bitdust.services import driver
 
@@ -304,7 +305,7 @@ class ListFilesOrator(automat.Automat):
         outpacket = p2p_service.SendListFiles(
             target_supplier=supplier_idurl,
             customer_idurl=self.target_customer_idurl,
-            timeout=15,
+            timeout=settings.P2PTimeOut(),
         )
         if outpacket:
             self.requested_lf_packet_ids.add(outpacket.PacketID)
@@ -329,7 +330,7 @@ class ListFilesOrator(automat.Automat):
                     outpacket = p2p_service.SendListFiles(
                         target_supplier=idurl,
                         customer_idurl=self.target_customer_idurl,
-                        timeout=15,
+                        timeout=settings.P2PTimeOut(),
                     )
                     if outpacket:
                         self.requested_lf_packet_ids.add(outpacket.PacketID)

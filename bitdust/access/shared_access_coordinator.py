@@ -56,7 +56,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -699,7 +699,7 @@ class SharedAccessCoordinator(automat.Automat):
                             target_supplier=supplier_idurl,
                             customer_idurl=self.customer_idurl,
                             key_id=self.key_id,
-                            timeout=15,
+                            timeout=settings.P2PTimeOut(),
                             callbacks={
                                 commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
                                 commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
@@ -711,7 +711,7 @@ class SharedAccessCoordinator(automat.Automat):
                 target_supplier=supplier_idurl,
                 customer_idurl=self.customer_idurl,
                 key_id=self.key_id,
-                timeout=15,
+                timeout=settings.P2PTimeOut(),
                 callbacks={
                     commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
                     commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
@@ -889,7 +889,7 @@ class SharedAccessCoordinator(automat.Automat):
             creatorID=my_id.getIDURL(),
             packetID=packetID,
             remoteID=supplier_idurl,
-            response_timeout=15,
+            response_timeout=settings.P2PTimeOut(),
             payload=raw_payload,
             callbacks={
                 commands.Data(): self._on_index_file_response,

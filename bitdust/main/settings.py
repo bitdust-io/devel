@@ -76,6 +76,7 @@ _InitDone = False
 _BandwidthLimit = None
 _BackupBlockSize = None
 _BackupMaxBlockSize = None
+_P2PTimeOut = None
 
 #------------------------------------------------------------------------------
 
@@ -291,40 +292,6 @@ def defaultDebugLevel():
     return 0
 
 
-def MinimumSendingDelay():
-    """
-    The lower limit of delay for repeated calls for sending processes.
-
-    DO NOT SET TO 0 - the main process will be blocked.
-    See ``lib.misc.LoopAttenuation`` method.
-    """
-    return 0.03
-
-
-def MaximumSendingDelay():
-    """
-    The higher limit of delay for repeated calls for sending processes.
-
-    Higher values should decrease the network speed, but save CPU
-    resources.
-    """
-    return 4.0
-
-
-def MinimumReceivingDelay():
-    """
-    Lower limit for receiving processes.
-    """
-    return 0.08
-
-
-def MaximumReceivingDelay():
-    """
-    Higher limit for receiving processes.
-    """
-    return 4.0
-
-
 def MaxPacketsOutstanding():
     """
     PREPRO Should be a function of disk space available.
@@ -363,13 +330,6 @@ def DefaultBandwidthOutLimit():
     return 100*125000
 
 
-def SendTimeOut():
-    """
-    A default timeout when sending packets.
-    """
-    return 10
-
-
 def MaxRetries():
     """
     The idea was to create some "exponential backoff" -
@@ -377,43 +337,6 @@ def MaxRetries():
     double each time. Set to 1 at the moment - so failed packets is ignored.
     """
     return 1
-
-
-def DefaultSendTimeOutEmail():
-    """
-    Timeout for email sending, not used.
-    """
-    return 300
-
-
-def DefaultSendTimeOutHTTP():
-    """
-    Timeout for http sending, not used.
-    """
-    return 60
-
-
-def DefaultAlivePacketTimeOut():
-    """
-    Lets send alive packets to our contacts every hour.
-    """
-    return 60*60
-
-
-def DefaultBandwidthReportTimeOut():
-    """
-    Send ``BandwidthReport`` packets every 24 hours.
-    """
-    return 60*60*24
-
-
-def DefaultNeedSuppliersPacketTimeOut():
-    """
-    If we need suppliers we will request it every 60 sec.
-
-    Not used right now.
-    """
-    return 60
 
 
 def DefaultEccMapName():
@@ -434,37 +357,6 @@ def DefaultDesiredSuppliers():
     Must comply with ``DefaultEccMapName()``
     """
     return 2
-
-
-def DefaultLocaltesterLoop():
-    """
-    The code in ``p2p.local_tester`` will check the customers files
-    periodically.
-
-    This constant controls that - seconds between two calls.
-    """
-    return 20
-
-
-def DefaultLocaltesterValidateTimeout():
-    """
-    A period in seconds to call ``Validate`` action of the local tester.
-    """
-    return 120*60
-
-
-def DefaultLocaltesterUpdateCustomersTimeout():
-    """
-    A period in seconds to call ``UpdateCustomers`` action of the local tester.
-    """
-    return 5*60
-
-
-def DefaultLocaltesterSpaceTimeTimeout():
-    """
-    A period in seconds to call ``SpaceTime`` action of the local tester.
-    """
-    return 5*60
 
 
 def MinimumUsernameLength():
@@ -537,6 +429,132 @@ def MinimumBandwidthOutLimitKBSec():
     return 10
 
 
+def MaxDeletedBackupIDsToKeep():
+    """
+    How many deleted backup IDs do we want to hold on to in backup db.
+
+    Not used.
+    """
+    return 100
+
+
+#------------------------------------------------------------------------------
+#--- CONSTANTS (TIMEOUTS/DELAYS) ------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
+def P2PTimeOut():
+    """
+    A default timeout when sending and receiving packets.
+    """
+    global _P2PTimeOut
+    if _P2PTimeOut is None:
+        _P2PTimeOut = config.conf().getInt('services/gateway/p2p-timeout', 15)
+    return _P2PTimeOut
+
+
+def DefaultSendTimeOutEmail():
+    """
+    Timeout for email sending, not used.
+    """
+    return 300
+
+
+def DefaultSendTimeOutHTTP():
+    """
+    Timeout for http sending, not used.
+    """
+    return 60
+
+
+def DefaultAlivePacketTimeOut():
+    """
+    Lets send alive packets to our contacts every hour.
+    """
+    return 60*60
+
+
+def DefaultBandwidthReportTimeOut():
+    """
+    Send ``BandwidthReport`` packets every 24 hours.
+    """
+    return 60*60*24
+
+
+def DefaultNeedSuppliersPacketTimeOut():
+    """
+    If we need suppliers we will request it every 60 sec.
+
+    Not used right now.
+    """
+    return 60
+
+
+def DefaultLocaltesterLoop():
+    """
+    The code in ``p2p.local_tester`` will check the customers files
+    periodically.
+
+    This constant controls that - seconds between two calls.
+    """
+    return 20
+
+
+def DefaultLocaltesterValidateTimeout():
+    """
+    A period in seconds to call ``Validate`` action of the local tester.
+    """
+    return 120*60
+
+
+def DefaultLocaltesterUpdateCustomersTimeout():
+    """
+    A period in seconds to call ``UpdateCustomers`` action of the local tester.
+    """
+    return 5*60
+
+
+def DefaultLocaltesterSpaceTimeTimeout():
+    """
+    A period in seconds to call ``SpaceTime`` action of the local tester.
+    """
+    return 5*60
+
+
+def MinimumSendingDelay():
+    """
+    The lower limit of delay for repeated calls for sending processes.
+
+    DO NOT SET TO 0 - the main process will be blocked.
+    See ``lib.misc.LoopAttenuation`` method.
+    """
+    return 0.03
+
+
+def MaximumSendingDelay():
+    """
+    The higher limit of delay for repeated calls for sending processes.
+
+    Higher values should decrease the network speed, but save CPU
+    resources.
+    """
+    return 4.0
+
+
+def MinimumReceivingDelay():
+    """
+    Lower limit for receiving processes.
+    """
+    return 0.08
+
+
+def MaximumReceivingDelay():
+    """
+    Higher limit for receiving processes.
+    """
+    return 4.0
+
+
 def FireHireMinimumDelay():
     """
     Really do not want to fire suppliers too often, so use 15 minutes interval.
@@ -549,15 +567,6 @@ def BackupDBSynchronizeDelay():
     Save backup index database no more than one time per every 5 min.
     """
     return 60*5
-
-
-def MaxDeletedBackupIDsToKeep():
-    """
-    How many deleted backup IDs do we want to hold on to in backup db.
-
-    Not used.
-    """
-    return 100
 
 
 #------------------------------------------------------------------------------

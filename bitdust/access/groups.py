@@ -282,9 +282,8 @@ def send_group_pub_key_to_suppliers(group_key_id):
     for supplier_idurl in contactsdb.suppliers():
         if supplier_idurl:
             d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False, include_signature=False)
-            if _Debug:
-                d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
-                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
+            d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
             # TODO: build some kind of retry mechanism - in case of a particular supplier did not receive the key
             # it must be some process with each supplier that first verifies a list of my public keys supplier currently possess
             # and then transfer the missing keys or send a note to erase "unused" keys to be able to cleanup old keys
