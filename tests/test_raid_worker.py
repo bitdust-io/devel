@@ -44,8 +44,8 @@ class TestRaidWorker(TestCase):
 
         def _read_done(cmd, taskdata, result):
             final_result = False
-            source_data = bpio.ReadBinaryFile('/tmp/source.txt', 'rb')
-            reconstructed_data = bpio.ReadBinaryFile('/tmp/destination.txt', 'rb')
+            source_data = bpio.ReadBinaryFile('/tmp/source.txt')
+            reconstructed_data = bpio.ReadBinaryFile('/tmp/destination.txt')
             if read_success:
                 final_result = (source_data == reconstructed_data)
             else:
