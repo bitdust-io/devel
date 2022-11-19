@@ -629,8 +629,7 @@ class GroupMember(automat.Automat):
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doDHTReadBrokers')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doDHTReadBrokers')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
     def doConnectSingleBroker(self, event, *args, **kwargs):
@@ -705,8 +704,7 @@ class GroupMember(automat.Automat):
             skip_handshake=True,
             fire_callbacks=False,
         )
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
         result.addErrback(self._on_read_queue_failed)
 
     def doReadArchive(self, *args, **kwargs):
@@ -909,8 +907,7 @@ class GroupMember(automat.Automat):
             attempts=1,
         )
         result.addCallback(self._on_broker_connected, broker_pos)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_request_service_one_broker')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_request_service_one_broker')
         result.addErrback(self._on_broker_connect_failed, broker_pos)
 
     def _do_lookup_one_broker(self, broker_pos, skip_brokers):
@@ -949,8 +946,7 @@ class GroupMember(automat.Automat):
                     attempts=1,
                 )
                 result.addCallback(self._on_broker_hired, broker_pos)
-                if _Debug:
-                    result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
+                result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
                 result.addErrback(self._on_broker_connect_failed, broker_pos)
                 return result
         result = p2p_service_seeker.connect_random_node(
@@ -962,8 +958,7 @@ class GroupMember(automat.Automat):
             attempts=2,
         )
         result.addCallback(self._on_broker_hired, broker_pos)
-        if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
         result.addErrback(self._on_broker_lookup_failed, broker_pos)
         return result
 
@@ -1200,8 +1195,7 @@ class GroupMember(automat.Automat):
             fire_callbacks=False,
             require_handshake=require_handshake,
         )
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_send_message_to_broker')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_send_message_to_broker')
         d.addCallback(self._on_message_to_broker_sent, outgoing_counter, packet_id)
         d.addErrback(self._on_message_to_broker_failed, outgoing_counter, packet_id)
 

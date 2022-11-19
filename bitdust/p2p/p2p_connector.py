@@ -540,8 +540,7 @@ class P2PConnector(automat.Automat):
         d.addCallback(lambda x: self.automat('my-id-propagated'))
         if rotated:
             d.addBoth(lambda x: events.send('my-identity-rotate-complete', data=dict()))
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
         d.addErrback(self._on_propagate_failed)
         # d.addTimeout(30, clock=reactor)
         return result
@@ -566,8 +565,7 @@ class P2PConnector(automat.Automat):
             return None
         d = propagate.update()
         d.addCallback(self._do_propagate, rotated)
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_update')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_update')
         d.addErrback(self._on_update_failed)
         return ret
 
@@ -586,12 +584,8 @@ class P2PConnector(automat.Automat):
         from bitdust.p2p import id_rotator
         d = id_rotator.run()
         d.addCallback(self._do_update)
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_rotate')
-        d.addErrback(lambda _: self._do_update((
-            False,
-            False,
-        )))
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_rotate')
+        d.addErrback(lambda _: self._do_update((False, False)))
         return ret
 
     def _do_check(self, ret):
@@ -600,12 +594,8 @@ class P2PConnector(automat.Automat):
         from bitdust.p2p import id_rotator
         d = id_rotator.check()
         d.addCallback(self._do_rotate)
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_check')
-        d.addErrback(lambda _: self._do_rotate((
-            False,
-            False,
-        )))
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_check')
+        d.addErrback(lambda _: self._do_rotate((False, False)))
         return ret
 
     def _check_rotate_propagate_my_identity(self):

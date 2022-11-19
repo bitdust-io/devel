@@ -953,8 +953,7 @@ def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SEC
     _write_response = None
     _join = Deferred()
     _join.addCallback(_do_verify)
-    if _Debug:
-        _join.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='write_verify_republish_data')
+    _join.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='write_verify_republish_data')
 
     def _some_nodes_found(nodes):
         global _write_response

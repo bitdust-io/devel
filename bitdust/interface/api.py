@@ -3303,8 +3303,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
                     timeout=None,
                 )])
 
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
         if added:
             result_defer.callback(OK(message='new friend has been added', api_method='friend_add'))
         else:
@@ -3383,8 +3382,11 @@ def user_ping(user_id, timeout=None, retries=1):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
+    from bitdust.main import settings
     from bitdust.p2p import online_status
     from bitdust.userid import global_id
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
@@ -3434,7 +3436,7 @@ def user_status(user_id):
     })
 
 
-def user_status_check(user_id, timeout=15):
+def user_status_check(user_id, timeout=None):
     """
     Returns current online status of a user and only if node is known but disconnected performs "ping" operation.
 
@@ -3446,9 +3448,12 @@ def user_status_check(user_id, timeout=15):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
+    from bitdust.main import settings
     from bitdust.p2p import online_status
     from bitdust.userid import global_id
     from bitdust.userid import id_url
+    if timeout is None:
+        timeout = settings.P2PTimeOut()
     idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
@@ -3469,8 +3474,7 @@ def user_status_check(user_id, timeout=15):
             api_method='user_status_check',
         ))
     )
-    if _Debug:
-        ping_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.user_status_check')
+    ping_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.user_status_check')
     ping_result.addErrback(lambda err: ret.errback(err))
     peer_status.automat('ping-now', ping_result, channel=None, ack_timeout=timeout, ping_retries=0)
     return ret

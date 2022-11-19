@@ -351,8 +351,7 @@ class ArchiveReader(automat.Automat):
         )
         rw = restore_worker.RestoreWorker(backup_id, outfd, KeyID=self.group_key_id)
         rw.MyDeferred.addCallback(self._on_restore_done, backup_id, outfd, outfilename, backup_index)
-        if _Debug:
-            rw.MyDeferred.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='archive_reader.doStartRestoreWorker')
+        rw.MyDeferred.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='archive_reader.doStartRestoreWorker')
         rw.MyDeferred.addErrback(self._on_restore_failed, backup_id, outfd, outfilename, backup_index)
         rw.automat('init')
 

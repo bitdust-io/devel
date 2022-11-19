@@ -233,7 +233,7 @@ def share_key(key_id, trusted_idurl, include_private=False, include_signature=Fa
     """
     if _Debug:
         lg.args(_DebugLevel, key_id=key_id, trusted_idurl=trusted_idurl)
-    if not timeout:
+    if timeout is None:
         timeout = settings.P2PTimeOut()
     key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
@@ -604,8 +604,7 @@ def do_backup_key(key_id, keys_folder=None):
                 if backup_job:
                     backup_result = Deferred()
                     backup_job.resultDefer.addCallback(lambda resp: backup_result.callback(True) if resp == 'done' else backup_result.errback(Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp))))
-                    if _Debug:
-                        backup_job.resultDefer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='key_ring.do_backup_key')
+                    backup_job.resultDefer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='key_ring.do_backup_key')
                     backup_job.resultDefer.addErrback(backup_result.errback)
                     if _Debug:
                         lg.args(_DebugLevel, backup_id=backup_id, global_key_path_id=global_key_path_id)
