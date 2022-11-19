@@ -2,6 +2,33 @@ Change Log
 ==========
 
 
+2022-11-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* catching some unhandled failures from defered calls
+* switched regression tests to python3.8
+* added new services/gateway/p2p-timeout option
+* keep track of deleted shared files in backup_fs
+* proper handling of backup_fs revision number
+* updated shared_access_coordinator()
+* solved an issue in archive_reader()
+* more accurate streaming of the websocket events about the shared files
+* updated api.share_info() with additional "revision" field
+* make sure it is also possible to delete shared file
+* bug fixes in list_files.py
+* bug fixes in backup_matrix.py
+* bug fixes in customer_assistant()
+* updated "bitdust alias" command line method
+* rework in backup_fs.py
+
+
+
+2022-11-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* solved issue with p2p_queue consumer callbacks
+* solved an issue related to message streaming in the message_peddler()
+
+
+
 2022-11-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added file bitdust/main/default_network.py to simplify package distribution
