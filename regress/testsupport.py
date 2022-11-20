@@ -104,7 +104,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
         *cmd_args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        loop=loop,
+        # loop=loop,
     )
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
@@ -297,7 +297,7 @@ async def open_tunnel_async(node, local_port, loop):
         *cmd_args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        loop=loop,
+        # loop=loop,
     )
     ssh_proc = await tunnel
     _SSHTunnels[node] = ssh_proc
@@ -980,7 +980,7 @@ async def start_message_broker_async(
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
     cmd += 'bitdust set logs/packet-enabled true;'
-    cmd += 'bitdust set services/gateway/p2p-timeout 20;'
+    cmd += 'bitdust set services/gateway/p2p-timeout 30;'
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
