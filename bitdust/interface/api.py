@@ -3500,7 +3500,6 @@ def user_search(nickname, attempts=1):
         return ERROR('service_private_messages() is not started')
 
     from bitdust.chat import nickname_observer
-    # nickname_observer.stop_all()
     ret = Deferred()
 
     def _result(result, nik, pos, idurl):
