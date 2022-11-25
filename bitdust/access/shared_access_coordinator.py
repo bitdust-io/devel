@@ -56,7 +56,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -783,10 +783,7 @@ class SharedAccessCoordinator(automat.Automat):
         supplier_idurl = kwargs['supplier_idurl']
         if supplier_idurl in self.suppliers_in_progress:
             self.suppliers_in_progress.remove(supplier_idurl)
-            if event in [
-                'index-sent',
-                'index-up-to-date',
-            ]:
+            if event in ['index-sent', 'index-up-to-date']:
                 if supplier_idurl not in self.suppliers_succeed:
                     self.suppliers_succeed.append(supplier_idurl)
         if _Debug:

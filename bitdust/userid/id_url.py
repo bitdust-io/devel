@@ -404,14 +404,7 @@ def field(idurl):
     global _KnownIDURLs
     if isinstance(idurl, ID_URL_FIELD):
         return idurl
-    if idurl in [
-        None,
-        'None',
-        '',
-        b'None',
-        b'',
-        False,
-    ]:
+    if idurl in [None, 'None', '', b'None', b'', False]:
         return ID_URL_FIELD(idurl)
     idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
@@ -448,14 +441,7 @@ def is_idurl(value):
     """
     Return True if input is `ID_URL_FIELD` field or string in valid format.
     """
-    if value in [
-        None,
-        'None',
-        '',
-        b'None',
-        b'',
-        False,
-    ]:
+    if value in [None, 'None', '', b'None', b'', False]:
         return False
     if isinstance(value, ID_URL_FIELD):
         return True
@@ -473,14 +459,7 @@ def to_bin(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.to_bin()
-    if idurl in [
-        None,
-        'None',
-        '',
-        b'None',
-        b'',
-        False,
-    ]:
+    if idurl in [None, 'None', '', b'None', b'', False]:
         return b''
     return strng.to_bin(idurl)
 
@@ -491,14 +470,7 @@ def to_original(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.original()
-    if idurl in [
-        None,
-        'None',
-        '',
-        b'None',
-        b'',
-        False,
-    ]:
+    if idurl in [None, 'None', '', b'None', b'', False]:
         return b''
     return strng.to_bin(idurl)
 
@@ -600,14 +572,7 @@ def is_empty(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return not bool(idurl)
-    if idurl in [
-        None,
-        'None',
-        '',
-        b'None',
-        b'',
-        False,
-    ]:
+    if idurl in [None, 'None', '', b'None', b'', False]:
         return True
     return not bool(idurl)
 
@@ -779,14 +744,7 @@ class ID_URL_FIELD(object):
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
-            if idurl in [
-                None,
-                'None',
-                '',
-                b'None',
-                b'',
-                False,
-            ]:
+            if idurl in [None, 'None', '', b'None', b'', False]:
                 self.current = b''
             else:
                 self.current = strng.to_bin(idurl.strip())
@@ -812,14 +770,7 @@ class ID_URL_FIELD(object):
         # always check type : must be `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
             # to be able to compare with empty value lets make an exception
-            if idurl in [
-                None,
-                'None',
-                '',
-                b'None',
-                b'',
-                False,
-            ]:
+            if idurl in [None, 'None', '', b'None', b'', False]:
                 return not bool(self.latest)
             # in other cases must raise an exception
             caller_code = sys._getframe().f_back.f_code
@@ -846,17 +797,9 @@ class ID_URL_FIELD(object):
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
-                exc = KeyError('unknown idurl %r in %s.%s' % (
-                    self.current,
-                    caller_modul,
-                    caller_method,
-                ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method))
             else:
-                exc = KeyError('unknown idurl %r in %s.%s' % (
-                    idurl.current,
-                    caller_modul,
-                    caller_method,
-                ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -870,14 +813,7 @@ class ID_URL_FIELD(object):
         # always check type : must be `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
             # to be able to compare with empty value lets make an exception
-            if idurl in [
-                None,
-                'None',
-                '',
-                b'None',
-                b'',
-                False,
-            ]:
+            if idurl in [None, 'None', '', b'None', b'', False]:
                 return bool(self.latest)
             # in other cases must raise an exception
             caller_code = sys._getframe().f_back.f_code
@@ -904,17 +840,9 @@ class ID_URL_FIELD(object):
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
-                exc = KeyError('unknown idurl %r in %s.%s' % (
-                    self.current,
-                    caller_modul,
-                    caller_method,
-                ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method))
             else:
-                exc = KeyError('unknown idurl %r in %s.%s' % (
-                    idurl.current,
-                    caller_modul,
-                    caller_method,
-                ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -938,7 +866,7 @@ class ID_URL_FIELD(object):
     def __repr__(self):
         if _Debug:
             lg.args(_DebugLevel*2, latest_as_string=self.latest_as_string)
-        return self.latest_as_string
+        return '[%s%s]' % ('' if self.is_latest() else '*', self.latest_as_string)
 
     def __str__(self):
         if _Debug:
@@ -1035,11 +963,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = KeyError('unknown idurl %r in %s.%s' % (
-                self.current,
-                caller_modul,
-                caller_method,
-            ))
+            exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         pub_key = _KnownIDURLs[self.current]
