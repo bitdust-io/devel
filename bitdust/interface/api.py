@@ -236,11 +236,59 @@ def enable_model_listener(model_name, request_all=False):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "enable_model_listener", "kwargs": {"model_name": "key"} }');
     """
+    if _Debug:
+        lg.args(_DebugLevel, m=model_name, request_all=request_all)
     from bitdust.main import listeners
     from bitdust.interface import api_web_socket
     listeners.add_listener(api_web_socket.on_model_changed, model_name)
-    if not request_all:
-        return OK()
+    if request_all:
+        return request_model_data(model_name)
+    return OK()
+
+
+def disable_model_listener(model_name):
+    """
+    Stop live streaming of all updates regarding given data type to the WebSocket connection.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "disable_model_listener", "kwargs": {"model_name": "key"} }');
+    """
+    if _Debug:
+        lg.args(_DebugLevel, m=model_name)
+    from bitdust.main import listeners
+    from bitdust.interface import api_web_socket
+    if model_name == 'key':
+        listeners.populate_later('key', stop=True)
+    elif model_name == 'conversation':
+        listeners.populate_later('conversation', stop=True)
+    elif model_name == 'message':
+        listeners.populate_later('message', stop=True)
+    elif model_name == 'correspondent':
+        listeners.populate_later('correspondent', stop=True)
+    elif model_name == 'online_status':
+        listeners.populate_later('online_status', stop=True)
+    elif model_name == 'private_file':
+        listeners.populate_later('private_file', stop=True)
+    elif model_name == 'shared_file':
+        listeners.populate_later('shared_file', stop=True)
+    elif model_name == 'remote_version':
+        listeners.populate_later('remote_version', stop=True)
+    elif model_name == 'shared_location':
+        listeners.populate_later('shared_location', stop=True)
+    listeners.remove_listener(api_web_socket.on_model_changed, model_name)
+    return OK()
+
+
+def request_model_data(model_name, query_details=None):
+    """
+    The engine will try to immediately populate all data related to the given model type to the WebSocket, one time only.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "request_model_data", "kwargs": {"model_name": "key"} }');
+    """
+    if _Debug:
+        lg.args(_DebugLevel, m=model_name, query_details=query_details)
+    from bitdust.main import listeners
     if model_name == 'service':
         driver.populate_services()
     elif model_name == 'key':
@@ -282,7 +330,7 @@ def enable_model_listener(model_name, request_all=False):
     elif model_name == 'shared_file':
         if driver.is_on('service_shared_data'):
             from bitdust.storage import backup_fs  # @Reimport
-            backup_fs.populate_shared_files()
+            backup_fs.populate_shared_files(key_id=(query_details or {}).get('key_id'))
         else:
             listeners.populate_later('shared_file')
     elif model_name == 'remote_version':
@@ -297,19 +345,6 @@ def enable_model_listener(model_name, request_all=False):
             shared_access_coordinator.populate_shares()
         else:
             listeners.populate_later('shared_location')
-    return OK()
-
-
-def disable_model_listener(model_name):
-    """
-    Stop live streaming of all updates regarding given data type to the WebSocket connection.
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "disable_model_listener", "kwargs": {"model_name": "key"} }');
-    """
-    from bitdust.main import listeners
-    from bitdust.interface import api_web_socket
-    listeners.remove_listener(api_web_socket.on_model_changed, model_name)
     return OK()
 
 

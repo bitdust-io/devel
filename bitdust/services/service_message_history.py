@@ -60,10 +60,10 @@ class MessageHistoryService(LocalService):
         events.add_subscriber(self.on_key_generated, 'key-generated')
         events.add_subscriber(self.on_key_erased, 'key-erased')
         if listeners.is_populate_requered('conversation'):
-            listeners.populate_later().remove('conversation')
+            # listeners.populate_later().remove('conversation')
             message_database.populate_conversations()
         if listeners.is_populate_requered('message'):
-            listeners.populate_later().remove('message')
+            # listeners.populate_later().remove('message')
             message_database.populate_messages()
         return True
 

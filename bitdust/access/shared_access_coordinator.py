@@ -215,10 +215,10 @@ def open_known_shares():
         active_share.automat('restart')
         if populate_shared_files:
             backup_fs.populate_shared_files(key_id=key_id)
-    if populate_shared_files:
-        listeners.populate_later().remove('shared_file')
+    # if populate_shared_files:
+    # listeners.populate_later().remove('shared_file')
     if listeners.is_populate_requered('shared_location'):
-        listeners.populate_later().remove('shared_location')
+        # listeners.populate_later().remove('shared_location')
         populate_shares()
 
 

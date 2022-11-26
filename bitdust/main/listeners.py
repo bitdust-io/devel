@@ -204,13 +204,18 @@ def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=Fal
 #------------------------------------------------------------------------------
 
 
-def populate_later(model_name=None):
+def populate_later(model_name=None, stop=False):
     global _ModelsToBePopulated
     if model_name is not None:
         if model_name not in _ModelsToBePopulated:
             _ModelsToBePopulated.append(model_name)
             if _Debug:
                 lg.args(_DebugLevel, model_name=model_name)
+        else:
+            if stop:
+                _ModelsToBePopulated.remove(model_name)
+                if _Debug:
+                    lg.args(_DebugLevel, model_name=model_name, stop=True)
     return _ModelsToBePopulated
 
 
