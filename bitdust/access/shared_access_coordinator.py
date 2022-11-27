@@ -56,7 +56,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -215,10 +215,10 @@ def open_known_shares():
         active_share.automat('restart')
         if populate_shared_files:
             backup_fs.populate_shared_files(key_id=key_id)
-    if populate_shared_files:
-        listeners.populate_later().remove('shared_file')
+    # if populate_shared_files:
+    # listeners.populate_later().remove('shared_file')
     if listeners.is_populate_requered('shared_location'):
-        listeners.populate_later().remove('shared_location')
+        # listeners.populate_later().remove('shared_location')
         populate_shares()
 
 
@@ -783,10 +783,7 @@ class SharedAccessCoordinator(automat.Automat):
         supplier_idurl = kwargs['supplier_idurl']
         if supplier_idurl in self.suppliers_in_progress:
             self.suppliers_in_progress.remove(supplier_idurl)
-            if event in [
-                'index-sent',
-                'index-up-to-date',
-            ]:
+            if event in ['index-sent', 'index-up-to-date']:
                 if supplier_idurl not in self.suppliers_succeed:
                     self.suppliers_succeed.append(supplier_idurl)
         if _Debug:

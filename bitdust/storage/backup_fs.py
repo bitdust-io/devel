@@ -2104,7 +2104,7 @@ def populate_private_files():
                 size=itm['size'],
                 type=itm['type'],
                 customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id']) for v in itm['versions']],
+                versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
             )
         )
 
@@ -2135,7 +2135,7 @@ def populate_shared_files(key_id=None):
                 size=itm['size'],
                 type=itm['type'],
                 customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id']) for v in itm['versions']],
+                versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
             )
         )
 

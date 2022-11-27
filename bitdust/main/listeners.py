@@ -34,7 +34,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -192,8 +192,8 @@ def dispatch_snapshot(snap):
 
 def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=False, fast=False):
     snap = Snapshot(model_name, snap_id=snap_id, data=data, created=created, deleted=deleted)
-    if _Debug:
-        lg.args(_DebugLevel, s=snap, d=data)
+    # if _Debug:
+    #     lg.args(_DebugLevel, s=snap, d=data)
     if fast:
         dispatch_snapshot(snap)
     else:
@@ -204,11 +204,18 @@ def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=Fal
 #------------------------------------------------------------------------------
 
 
-def populate_later(model_name=None):
+def populate_later(model_name=None, stop=False):
     global _ModelsToBePopulated
     if model_name is not None:
         if model_name not in _ModelsToBePopulated:
             _ModelsToBePopulated.append(model_name)
+            if _Debug:
+                lg.args(_DebugLevel, model_name=model_name)
+        else:
+            if stop:
+                _ModelsToBePopulated.remove(model_name)
+                if _Debug:
+                    lg.args(_DebugLevel, model_name=model_name, stop=True)
     return _ModelsToBePopulated
 
 
