@@ -6,6 +6,9 @@
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
+[![CodeTriage](https://www.codetriage.com/bitdust-io/devel/badges/users.svg)](https://www.codetriage.com)
+
+
 
 ## About
 
