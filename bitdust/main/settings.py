@@ -67,6 +67,7 @@ from bitdust.main import config
 
 #------------------------------------------------------------------------------
 
+_CurrentNetwork = None
 _UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings
 _InitDone = False
@@ -707,6 +708,12 @@ def WindowsBinDir():
     "Program files" folder.
     """
     return os.path.join(BaseDir(), 'bin')
+
+
+def CurrentNetworkDir():
+    global _CurrentNetwork
+    _CurrentNetwork
+    # TODO:...
 
 
 def MetaDataDir():

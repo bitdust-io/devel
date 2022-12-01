@@ -56,7 +56,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -78,6 +78,7 @@ from bitdust.system import bpio
 
 from bitdust.lib import strng
 from bitdust.lib import serialization
+from bitdust.lib import packetid
 
 from bitdust.main import events
 from bitdust.main import settings
@@ -684,10 +685,10 @@ class SharedAccessCoordinator(automat.Automat):
                 else:
                     self.to_be_restarted = True
             else:
-                remote_path, _, _ = remote_path.rpartition('/')
+                _, remote_path, _, _ = packetid.SplitVersionFilename(remote_path)
                 iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(self.customer_idurl, self.key_alias))
                 if not iter_path:
-                    lg.warn('did not found modified file %r in the catalog, restarting %r' % (remote_path, self))
+                    lg.warn('did not found modified file %r in the catalog, restarting %r' % (kwargs['remote_path'], self))
                     self.automat('restart')
                 else:
                     sc = supplier_connector.by_idurl(
