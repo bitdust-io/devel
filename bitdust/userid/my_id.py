@@ -106,7 +106,7 @@ def shutdown():
 
 def isLocalIdentityExists():
     """
-    Return True if local file `~/.bitdust/metadata/localidentity` exists.
+    Return True if local file `~/.bitdust/[network name]/metadata/localidentity` exists.
     """
     return os.path.isfile(settings.LocalIdentityFilename())
 
@@ -229,11 +229,9 @@ def getID():
 
 def loadLocalIdentity():
     """
-    The core method.
-
-    The file [BitDust data dir]/metadata/localidentity keeps the user
-    identity in XML format. Do read the local file and set into object
-    in memory.
+    The file `~/.bitdust/[network name]/metadata/localidentity` keeps the user
+    identity in XML format.
+    The method reads the local file and set into object in memory.
     """
     global _LocalIdentity
     xmlid = ''
@@ -392,9 +390,7 @@ def validateTransports(orderL):
 
 def setTransportOrder(orderL):
     """
-    Validate transports and save the list in the [BitDust data
-    dir]\metadata\torder.
-
+    Validate transports and save the list in the `~/.bitdust/[network name]/metadata/torder`.
     It is useful to remember the priority of used transports.
     """
     orderl = orderL
@@ -407,7 +403,7 @@ def setTransportOrder(orderL):
 
 def getTransportOrder():
     """
-    Read and validate tranports from [BitDust data dir]\metadata\torder file.
+    Read and validate tranports from `~/.bitdust/[network name]/metadata/torder` file.
     """
     global _ValidTransports
     if _Debug:

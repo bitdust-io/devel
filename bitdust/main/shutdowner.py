@@ -76,12 +76,87 @@ from bitdust.automats import automat
 
 from bitdust.main import initializer
 from bitdust.main import settings
+from bitdust.main import config
 
 #------------------------------------------------------------------------------
 
 _Shutdowner = None
 
 #------------------------------------------------------------------------------
+
+
+def shutdown_settings():
+    if config.conf():
+        config.conf().removeConfigNotifier('logs/debug-level')
+    settings.shutdown()
+
+
+def shutdown_engine():
+    from bitdust.contacts import identitydb
+    from bitdust.userid import id_url
+    from bitdust.main import listeners
+    from bitdust.main import events
+    identitydb.shutdown()
+    id_url.shutdown()
+    listeners.shutdown()
+    events.shutdown()
+
+
+def shutdown_automats():
+    survived_automats = list(automat.objects().values())
+    if survived_automats:
+        lg.warn('found %d survived state machines, sending "shutdown" event to them all' % len(survived_automats))
+        for a in survived_automats:
+            if a.name != 'shutdowner':
+                a.event('shutdown')
+    survived_automats = list(automat.objects().values())
+    if survived_automats:
+        lg.warn('still found %d survived state machines, executing "destroy()" method to them all' % len(survived_automats))
+        for a in survived_automats:
+            if a.name != 'shutdowner':
+                a.destroy()
+    automat.shutdown()
+
+
+def shutdown_local():
+    from bitdust.logs import weblog
+    from bitdust.logs import webtraffic
+    from bitdust.system import tmpfile
+    from bitdust.system import run_upnpc
+    from bitdust.raid import eccmap
+    from bitdust.lib import net_misc
+    from bitdust.updates import git_proc
+    from bitdust.crypt import my_keys
+    from bitdust.userid import my_id
+    my_keys.shutdown()
+    my_id.shutdown()
+    eccmap.shutdown()
+    run_upnpc.shutdown()
+    net_misc.shutdown()
+    git_proc.shutdown()
+    tmpfile.shutdown()
+    try:
+        weblog.shutdown()
+    except:
+        lg.exc()
+    try:
+        webtraffic.shutdown()
+    except:
+        lg.exc()
+
+
+def shutdown_interfaces():
+    from bitdust.interface import api_rest_http_server
+    from bitdust.interface import api_web_socket
+    # from bitdust.interface import ftp_server
+    # ftp_server.shutdown()
+    api_rest_http_server.shutdown()
+    api_web_socket.shutdown()
+
+
+def shutdown_services():
+    from bitdust.services import driver
+    driver.shutdown()
 
 
 def shutdown(x=None):
@@ -95,60 +170,12 @@ def shutdown(x=None):
         lg.out(_DebugLevel, 'shutdowner.shutdown ' + str(x))
     dl = []
     try:
-        from bitdust.services import driver
-        # from bitdust.main import control
-        from bitdust.main import events
-        from bitdust.main import listeners
-        from bitdust.logs import weblog
-        from bitdust.logs import webtraffic
-        from bitdust.system import tmpfile
-        from bitdust.system import run_upnpc
-        from bitdust.raid import eccmap
-        from bitdust.lib import net_misc
-        from bitdust.updates import git_proc
-        from bitdust.interface import api_rest_http_server
-        from bitdust.interface import api_web_socket
-        # from bitdust.interface import ftp_server
-        from bitdust.contacts import identitydb
-        from bitdust.crypt import my_keys
-        from bitdust.userid import id_url
-        from bitdust.userid import my_id
-        my_keys.shutdown()
-        my_id.shutdown()
-        identitydb.shutdown()
-        # ftp_server.shutdown()
-        api_rest_http_server.shutdown()
-        api_web_socket.shutdown()
-        driver.shutdown()
-        eccmap.shutdown()
-        run_upnpc.shutdown()
-        net_misc.shutdown()
-        git_proc.shutdown()
-        listeners.shutdown()
-        events.shutdown()
-        tmpfile.shutdown()
-        try:
-            weblog.shutdown()
-        except:
-            lg.exc()
-        try:
-            webtraffic.shutdown()
-        except:
-            lg.exc()
-        survived_automats = list(automat.objects().values())
-        if survived_automats:
-            lg.warn('found %d survived state machines, sending "shutdown" event to them all' % len(survived_automats))
-            for a in survived_automats:
-                if a.name != 'shutdowner':
-                    a.event('shutdown')
-        survived_automats = list(automat.objects().values())
-        if survived_automats:
-            lg.warn('still found %d survived state machines, executing "destroy()" method to them all' % len(survived_automats))
-            for a in survived_automats:
-                if a.name != 'shutdowner':
-                    a.destroy()
-        settings.shutdown()
-        id_url.shutdown()
+        shutdown_services()
+        shutdown_interfaces()
+        shutdown_local()
+        shutdown_automats()
+        shutdown_engine()
+        shutdown_settings()
     except:
         lg.exc()
     # TODO: rework all shutdown() methods to return deferred objects
@@ -312,17 +339,10 @@ class Shutdowner(automat.Automat):
         def do_restart(param):
             from bitdust.lib import misc
             from bitdust.system import bpio
-            settings.init()
-            # appdata = settings.BaseDir()
             detach = False
             if bpio.Windows():
                 detach = True
-            misc.DoRestart(
-                param,
-                detach=detach,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
-            )
-            settings.shutdown()
+            misc.DoRestart(param, detach=detach)
 
         def shutdown_finished(x, param):
             if _Debug:

@@ -63,7 +63,7 @@ import os
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

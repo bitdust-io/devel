@@ -98,8 +98,8 @@ def help_text():
     return '''usage: bitdust [options] [command] [arguments]
 
 Commands:
-  install               create virtual environment and deploy
-                        Python2.7 dependencies in ~/.bitdust/venv/
+  install               create virtual environment and deploy required
+                        Python packages in ~/.bitdust/venv/
 
   [start]               start main BitDust process
 
@@ -112,7 +112,7 @@ Commands:
   show                  start BitDust and show the main window
 
   alias                 helper to create a binary command-alias in OS,
-                        you can put it in /usr/local/bin/bitdust for ex.
+                        you can put it in /usr/local/bin/bitdust
 
   id                    print your global ID in BitDust network
 

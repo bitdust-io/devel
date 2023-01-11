@@ -109,9 +109,7 @@ def throttle():
 def init():
     """
     Init ``throttle()`` object and link with transports.
-
-    This is the mechanism for sending and requesting files to drive
-    backups.
+    This is the mechanism for sending and requesting files pieces.
     """
     if _Debug:
         lg.out(_DebugLevel, 'io_throttle.init')
@@ -121,9 +119,6 @@ def init():
 
 
 def shutdown():
-    """
-    To stop program correctly - need to call this before shut down.
-    """
     if _Debug:
         lg.out(_DebugLevel, 'io_throttle.shutdown')
     callback.remove_finish_file_sending_callback(FileSendingFinished)

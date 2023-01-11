@@ -95,6 +95,8 @@ def shutdown():
         lg.out(_DebugLevel, 'events.shutdown')
     clear_subscribers()
     subscribers().clear()
+    event_queue().clear()
+    count().clear()
 
 
 #------------------------------------------------------------------------------

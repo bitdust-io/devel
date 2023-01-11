@@ -48,7 +48,7 @@ import threading
 
 #-------------------------------------------------------------------------------
 
-AppDataDir = ''
+_AppDataDir = None
 
 #-------------------------------------------------------------------------------
 
@@ -82,7 +82,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     instance of ``initializer()`` state machine and send it an event
     "run".
     """
-    global AppDataDir
+    global _AppDataDir
 
     from bitdust.logs import lg
     if _Debug:
@@ -93,35 +93,16 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         lg.out(_DebugLevel, 'bpmain.init ostype=%r' % bpio.ostype())
 
     #---settings---
+    from bitdust.main import initializer
+    initializer.init_settings(
+        base_dir=_AppDataDir,
+        override_configs=overDict,
+        enable_debug=(not options or options.debug is None),
+    )
     from bitdust.main import settings
-    if overDict:
-        settings.override_dict(overDict)
-    settings.init(AppDataDir)
-    if not options or options.debug is None:
-        lg.set_debug_level(settings.getDebugLevel())
     from bitdust.main import config
-    config.conf().addConfigNotifier('logs/debug-level', lambda p, value, o, r: lg.set_debug_level(value))
 
     #---USE_TRAY_ICON---
-    #     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
-    #         try:
-    #             from bitdust.system.tray_icon import USE_TRAY_ICON
-    #             if bpio.Mac() or not bpio.isGUIpossible():
-    #                 if _Debug:
-    #                     lg.out(_DebugLevel, '    GUI is not possible')
-    #                 USE_TRAY_ICON = False
-    #             if USE_TRAY_ICON:
-    #                 from twisted.internet import wxreactor
-    #                 wxreactor.install()
-    #                 if _Debug:
-    #                     lg.out(_DebugLevel, '    wxreactor installed')
-    #         except:
-    #             USE_TRAY_ICON = False
-    #             lg.exc()
-    #     else:
-    #         if _Debug:
-    #             lg.out(_DebugLevel, '    local identity or key file is not ready')
-    #         USE_TRAY_ICON = False#         USE_TRAY_ICON = False
     USE_TRAY_ICON = False
     if _Debug:
         lg.out(_DebugLevel, '    USE_TRAY_ICON=' + str(USE_TRAY_ICON))
@@ -159,18 +140,9 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         sys.exit('Error initializing reactor in bpmain.py\n')
         return
 
-#     #---logfile----
-#     if (lg.logs_enabled() and lg.log_file()) and not bpio.Android():
-#         lg.out(2, 'bpmain.run want to switch log files')
-#         if bpio.Windows() and bpio.isFrozen():
-#             lg.stdout_stop_redirecting()
-#         lg.close_log_file()
-#         lg.open_log_file(settings.MainLogFilename())
-#         # lg.open_log_file(settings.MainLogFilename() + '-' + time.strftime('%y%m%d%H%M%S') + '.log')
-#         if bpio.Windows() and bpio.isFrozen():
-#             lg.stdout_start_redirecting()
+    initializer.init_engine()
 
-#---memdebug---
+    #---memdebug---
     if config.conf().getBool('logs/memdebug-enabled'):
         try:
             from bitdust.logs import memdebug
@@ -185,7 +157,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     #---process ID---
     try:
         pid = os.getpid()
-        pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
+        pid_file_path = os.path.join(settings.AppDataDir(), 'processid')
         bpio.WriteTextFile(pid_file_path, str(pid))
         if _Debug:
             lg.out(_DebugLevel, 'bpmain.init wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
@@ -207,21 +179,8 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         lg.out(_DebugLevel, 'bpmain.init going to initialize state machines')
 
     #---START!---
-    from bitdust.automats import automat
-    automat.LifeBegins(lg.when_life_begins())
-    automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
-    automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
-    automat.SetExceptionsHandler(lg.exc)
-    automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
-    # automat.OpenLogFile(settings.AutomatsLog())
+    initializer.init_automats()
 
-    from bitdust.main import events
-    events.init()
-
-    from bitdust.main import listeners
-    listeners.init()
-
-    from bitdust.main import initializer
     IA = initializer.A()
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.init is sending event "run" to initializer()')
@@ -237,33 +196,32 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 
 def shutdown():
     from bitdust.logs import lg
-    from bitdust.main import config
-    from bitdust.system import bpio
+    # from bitdust.main import config
+    # from bitdust.system import bpio
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown')
-
-    if config.conf():
-        config.conf().removeConfigNotifier('logs/debug-level')
 
     from bitdust.main import shutdowner
     shutdowner.A('reactor-stopped')
 
-    from bitdust.main import listeners
-    listeners.shutdown()
+    shutdowner.shutdown_automats()
 
-    from bitdust.main import events
-    events.shutdown()
+    # from bitdust.main import listeners
+    # listeners.shutdown()
 
-    from bitdust.automats import automat
-    automat.objects().clear()
-    if len(automat.index()) > 0:
-        lg.warn('%d automats was not cleaned' % len(automat.index()))
-        for a in automat.index().keys():
-            if _Debug:
-                lg.out(_DebugLevel, '    %r' % a)
-    else:
-        if _Debug:
-            lg.out(_DebugLevel, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
+    #     from bitdust.main import events
+    #     events.shutdown()
+
+    #     from bitdust.automats import automat
+    #     automat.objects().clear()
+    #     if len(automat.index()) > 0:
+    #         lg.warn('%d automats was not cleaned' % len(automat.index()))
+    #         for a in automat.index().keys():
+    #             if _Debug:
+    #                 lg.out(_DebugLevel, '    %r' % a)
+    #     else:
+    #         if _Debug:
+    #             lg.out(_DebugLevel, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
 
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
@@ -274,19 +232,20 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown finishing and closing log file, EXIT')
 
+    shutdowner.shutdown_settings()
+
     # automat.CloseLogFile()
-    automat.SetExceptionsHandler(None)
-    automat.SetLogOutputHandler(None)
+    # automat.SetExceptionsHandler(None)
+    # automat.SetLogOutputHandler(None)
 
     lg.close_log_file()
-
     lg.close_intercepted_log_file()
 
     lg.stdout_stop_redirecting()
     lg.stderr_stop_redirecting()
 
-    from bitdust.main import settings
-    settings.shutdown()
+    # from bitdust.main import settings
+    # settings.shutdown()
 
     return 0
 
@@ -499,7 +458,6 @@ def wait_then_kill(x):
     ``kill()``.
     """
     from twisted.internet import reactor  # @UnresolvedImport
-    from bitdust.logs import lg
     from bitdust.system import bpio
     total_count = 0
     while True:
@@ -641,7 +599,7 @@ def main(executable_path=None, start_reactor=True):
     """
     THE ENTRY POINT
     """
-    global AppDataDir
+    global _AppDataDir
 
     pars = parser()
     (opts, args) = pars.parse_args()
@@ -672,12 +630,7 @@ def main(executable_path=None, start_reactor=True):
             return 1
 
     #---install---
-    if cmd in [
-        'deploy',
-        'install',
-        'venv',
-        'virtualenv',
-    ]:
+    if cmd in ['deploy', 'install', 'venv', 'virtualenv']:
         from bitdust.system import deploy
         return deploy.run(args)
 
@@ -716,7 +669,7 @@ def main(executable_path=None, start_reactor=True):
 
     if opts.appdir:
         appdata = opts.appdir
-        AppDataDir = appdata
+        _AppDataDir = appdata
 
     else:
         curdir = os.getcwd()
@@ -730,10 +683,10 @@ def main(executable_path=None, start_reactor=True):
                 appdata = defaultappdata
             if not os.path.isdir(appdata):
                 appdata = defaultappdata
-        AppDataDir = appdata
+        _AppDataDir = appdata
 
     #---BitDust Home
-    deploy.init_base_dir(base_dir=AppDataDir)
+    deploy.init_base_dir(base_dir=_AppDataDir)
 
     from bitdust.logs import lg
 
@@ -741,7 +694,7 @@ def main(executable_path=None, start_reactor=True):
     from bitdust.system import bpio
     bpio.init()
 
-    appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+    appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'processid'))
 
     if bpio.Android():
         lg.close_intercepted_log_file()
@@ -849,7 +802,7 @@ def main(executable_path=None, start_reactor=True):
 
     #---daemon---
     elif cmd == 'detach' or cmd == 'daemon':
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'processid'))
         if len(appList) > 0:
             print_text('main BitDust process already started: %s\n' % str(appList), nl='')
             bpio.shutdown()
@@ -883,7 +836,7 @@ def main(executable_path=None, start_reactor=True):
 
     #---restart---
     elif cmd == 'restart' or cmd == 'reboot':
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'processid'))
         ui = False
         if len(appList) > 0:
             print_text('found main BitDust process: %r ... ' % appList, nl='')
@@ -975,7 +928,7 @@ def main(executable_path=None, start_reactor=True):
             print_text('this operating system not supporting X11 interface\n', nl='')
             bpio.shutdown()
             return 0
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'processid'))
         if len(appList) == 0:
             try:
                 ret = run('show', opts, args, overDict, executable_path)
@@ -1000,7 +953,7 @@ def main(executable_path=None, start_reactor=True):
                 if opts.coverage_report:
                     cov.report(file=open(opts.coverage_report, 'w'))
             return ret
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'processid'))
         if len(appList) > 0:
             if cmd == 'kill':
                 print_text('found main BitDust process: %s, about to kill running process ... ' % appList, nl='')

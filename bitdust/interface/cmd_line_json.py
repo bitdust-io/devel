@@ -294,7 +294,7 @@ def call_websocket_method(method, **kwargs):
             'on_open': _on_open,
             'on_error': _on_error,
         },
-        api_secret_filepath=os.path.join(deploy.current_base_dir(), 'metadata', 'apisecret'),
+        api_secret_filepath=os.path.join(deploy.current_base_dir(), deploy.current_network(), 'metadata', 'apisecret'),
     )
     return ret
 
@@ -322,6 +322,23 @@ def call_websocket_method_transform_template_and_stop(method, template, transfor
     d = call_websocket_method(method, **kwargs)
     d.addCallback(lambda result: print_template_and_stop(transform(result), template))
     d.addErrback(fail_and_stop)
+    reactor.run()  # @UndefinedVariable
+    return 0
+
+
+def call_api_method_template_and_stop(method, template, **kwargs):
+    from twisted.internet import reactor  # @UnresolvedImport
+    from bitdust.main import settings
+    from bitdust.interface import api
+
+    def _run():
+        settings.init()
+        m = getattr(api, method)
+        d = m(**kwargs)
+        d.addCallback(print_template_and_stop, template)
+        d.addErrback(fail_and_stop)
+
+    reactor.callWhenRunning(_run)  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
     return 0
 
@@ -427,10 +444,32 @@ def cmd_reconnect(opts, args, overDict):
 #------------------------------------------------------------------------------
 
 
+def cmd_network(opts, args, overDict, running):
+    if len(args) >= 3 and args[1] in ['create', 'setup']:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        if not running:
+            return call_api_method_template_and_stop('network_create', tpl, url=args[2])
+        return call_websocket_method_template_and_stop('network_create', tpl, url=args[2])
+
+    if len(args) >= 3 and args[1] in ['select', 'chose', 'set', 'switch']:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        if not running:
+            return call_api_method_template_and_stop('network_select', tpl, name=args[2])
+        return call_websocket_method_template_and_stop('network_select', tpl, name=args[2])
+
+    return 2
+
+
+#------------------------------------------------------------------------------
+
+
 def cmd_identity(opts, args, overDict, running, executablePath):
-    from bitdust.userid import my_id
+    from bitdust.main import initializer
+    from bitdust.main import shutdowner
     from bitdust.main import settings
-    settings.init()
+    from bitdust.userid import my_id
+    initializer.init_settings()
+    initializer.init_automats()
     my_id.init()
 
     def _do_cmd():
@@ -441,24 +480,14 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('local identity is not valid or not exist')
             return 0
 
-        if args[0] in [
-            'globid',
-            'globalid',
-            'gid',
-            'glid',
-        ] or (args[0] == 'id' and len(args) <= 1):
+        if args[0] in ['globid', 'globalid', 'gid', 'glid'] or (args[0] == 'id' and len(args) <= 1):
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getGlobalID())
             else:
                 print_text('local identity is not valid or not exist')
             return 0
 
-        if len(args) == 1 or args[1].lower() in [
-            'info',
-            '?',
-            'show',
-            'print',
-        ]:
+        if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print']:
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getLocalIdentity().serialize(as_text=True))
             else:
@@ -467,10 +496,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
 
         from twisted.internet import reactor  # @UnresolvedImport
 
-        if args[1] in [
-            'server',
-            'srv',
-        ] and args[0]:
+        if args[1] in ['server', 'srv'] and args[0]:
 
             def _run_stand_alone_id_server():
                 from bitdust.logs import lg
@@ -516,8 +542,6 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 except:
                     print_text('incorrect private key size\n')
                     return 0
-            from bitdust.automats import automat
-            from bitdust.main import initializer
             from bitdust.lib import misc
             if not misc.ValidUserName(args[2]):
                 print_text('invalid user name')
@@ -526,7 +550,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             # automat.OpenLogFile(settings.AutomatsLog())
             initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
             reactor.run()  # @UndefinedVariable
-            automat.objects().clear()
+            shutdowner.shutdown_automats()
             my_id.loadLocalIdentity()
             if my_id.isLocalIdentityReady():
                 print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
@@ -558,19 +582,20 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if not idurl:
                 print_text('BitDust need to know your IDURL to recover your account\n')
                 return 2
-            from bitdust.automats import automat
-            from bitdust.main import initializer
-            from bitdust.main import config
-            from bitdust.logs import lg
-            automat.LifeBegins(lg.when_life_begins())
-            automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
-            automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
-            automat.SetExceptionsHandler(lg.exc)
-            automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
-            # automat.OpenLogFile(settings.AutomatsLog())
+            # from bitdust.automats import automat
+            # from bitdust.main import initializer
+            # from bitdust.main import config
+            # from bitdust.logs import lg
+            initializer.init_automats()
+            #             automat.LifeBegins(lg.when_life_begins())
+            #             automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
+            #             automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
+            #             automat.SetExceptionsHandler(lg.exc)
+            #             automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
+            #             # automat.OpenLogFile(settings.AutomatsLog())
             initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
             reactor.run()  # @UndefinedVariable
-            automat.objects().clear()
+            shutdowner.shutdown_automats()
             my_id.loadLocalIdentity()
             if my_id.isLocalIdentityReady():
                 print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
@@ -578,12 +603,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('identity recovery FAILED')
             return 0
 
-        if args[1].lower() in [
-            'create',
-            'new',
-            'register',
-            'generate',
-        ]:
+        if args[1].lower() in ['create', 'new', 'register', 'generate']:
             if my_id.isLocalIdentityReady():
                 print_text('local identity [%s] already exist\n' % my_id.getIDName())
                 return 1
@@ -592,11 +612,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 return 0
             return _register()
 
-        if len(args) >= 2 and args[1].lower() in [
-            'bk',
-            'backup',
-            'save',
-        ]:
+        if len(args) >= 2 and args[1].lower() in ['bk', 'backup', 'save']:
             from bitdust.interface import api
             key_id = 'master'
             key_json = api.key_get(key_id=key_id, include_private=True)
@@ -604,11 +620,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('\n'.join(key_json['errors']))
                 return 1
             TextToSave = key_json['result']['creator'] + u'\n' + key_json['result']['private']
-            if args[1] in [
-                'bk',
-                'backup',
-                'save',
-            ]:
+            if args[1] in ['bk', 'backup', 'save']:
                 from bitdust.system import bpio
                 curpath = os.getcwd()
                 os.chdir(executablePath)
@@ -627,12 +639,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 return 0
             return 2
 
-        if args[1].lower() in [
-            'restore',
-            'recover',
-            'read',
-            'load',
-        ]:
+        if args[1].lower() in ['restore', 'recover', 'read', 'load']:
             if running:
                 print_text('BitDust is running at the moment, need to stop the software first\n')
                 return 0
@@ -654,7 +661,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         return 2
 
     ret = _do_cmd()
-    settings.shutdown()
+    shutdowner.shutdown_settings()
     return ret
 
 
@@ -666,20 +673,11 @@ def cmd_key(opts, args, overDict, running, executablePath):
         print_text('BitDust is not running at the moment\n')
         return 0
 
-    if len(args) == 1 or (len(args) == 2 and args[1] in [
-        'list',
-        'ls',
-    ]):
+    if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls']):
         tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
         return call_websocket_method_template_and_stop('keys_list', tpl, include_private=False)
 
-    if len(args) >= 3 and args[1] in [
-        'create',
-        'new',
-        'gen',
-        'generate',
-        'make',
-    ]:
+    if len(args) >= 3 and args[1] in ['create', 'new', 'gen', 'generate', 'make']:
         key_id = args[2]
         key_sz = 4096
         if len(args) > 3:
@@ -687,22 +685,12 @@ def cmd_key(opts, args, overDict, running, executablePath):
         tpl = jsontemplate.Template(templ.TPL_KEY_CREATE)
         return call_websocket_method_template_and_stop('key_create', tpl, key_alias=key_id, key_size=key_sz)
 
-    if len(args) >= 2 and args[1] in [
-        'copy',
-        'cp',
-        'bk',
-        'backup',
-        'save',
-    ]:
+    if len(args) >= 2 and args[1] in ['copy', 'cp', 'bk', 'backup', 'save']:
         from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_key(key_json):
             TextToSave = key_json['result']['creator'] + u'\n' + key_json['result']['private']
-            if len(args) >= 4 and args[1] in [
-                'bk',
-                'backup',
-                'save',
-            ]:
+            if len(args) >= 4 and args[1] in ['bk', 'backup', 'save']:
                 from bitdust.system import bpio
                 curpath = os.getcwd()
                 os.chdir(executablePath)
@@ -731,33 +719,16 @@ def cmd_key(opts, args, overDict, running, executablePath):
         reactor.run()  # @UndefinedVariable
         return 0
 
-    if len(args) >= 2 and args[1] in [
-        'print',
-        'get',
-        'show',
-    ]:
+    if len(args) >= 2 and args[1] in ['print', 'get', 'show']:
         tpl = jsontemplate.Template(templ.TPL_KEY_GET)
         key_id = 'master' if len(args) < 3 else args[2]
         return call_websocket_method_template_and_stop('key_get', tpl, key_id=key_id, include_private=True)
 
-    if len(args) >= 3 and args[1] in [
-        'delete',
-        'erase',
-        'remove',
-        'clear',
-        'del',
-        'rm',
-        'kill',
-    ]:
+    if len(args) >= 3 and args[1] in ['delete', 'erase', 'remove', 'clear', 'del', 'rm', 'kill']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('key_erase', tpl, key_id=args[2])
 
-    if len(args) >= 4 and args[1] in [
-        'share',
-        'send',
-        'transfer',
-        'access',
-    ]:
+    if len(args) >= 4 and args[1] in ['share', 'send', 'transfer', 'access']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('key_share', tpl, key_id=args[2], idurl=args[3])
 
@@ -820,10 +791,7 @@ def cmd_api(opts, args, overDict, executablePath):
         return 0
 
     def _clean_value(v):
-        if isinstance(v, str) and v in [
-            'true',
-            'True',
-        ]:
+        if isinstance(v, str) and v in ['true', 'True']:
             return True
         return v
 
@@ -844,23 +812,12 @@ def cmd_file(opts, args, overDict, executablePath):
         'dir',
         'folder',
     ]:
-        if len(args) > 2 and args[1] in [
-            'create',
-            'make',
-            'cr',
-            'mk',
-            'add',
-            'bind',
-            'map',
-        ]:
+        if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map']:
             tpl = jsontemplate.Template(templ.TPL_RAW)
             return call_websocket_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=True)
         return 2
 
-    if len(args) < 2 or args[1] in [
-        'list',
-        'ls',
-    ]:
+    if len(args) < 2 or args[1] in ['list', 'ls']:
         remote_path = args[2] if len(args) > 2 else None
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
         return call_websocket_method_template_and_stop('files_list', tpl, remote_path=remote_path)
@@ -869,72 +826,34 @@ def cmd_file(opts, args, overDict, executablePath):
 #         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
 #         return call_websocket_method_template_and_stop('backups_id_list', tpl)
 
-    if len(args) == 2 and args[1] in [
-        'update',
-        'upd',
-        'refresh',
-        'sync',
-    ]:
+    if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('files_sync', tpl)
 
-    if len(args) >= 2 and args[1] in [
-        'running',
-        'progress',
-        'status',
-        'prog',
-    ]:
+    if len(args) >= 2 and args[1] in ['running', 'progress', 'status', 'prog']:
         if len(args) >= 3:
-            if args[2] in [
-                'download',
-                'down',
-            ]:
+            if args[2] in ['download', 'down']:
                 tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
                 return call_websocket_method_template_and_stop('files_downloads', tpl)
-            elif args[2] in [
-                'upload',
-                'up',
-            ]:
+            elif args[2] in ['upload', 'up']:
                 tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
                 return call_websocket_method_template_and_stop('files_uploads', tpl)
             return 2
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
         return call_websocket_method_template_and_stop('files_uploads', tpl)
 
-    if len(args) > 2 and args[1] in [
-        'create',
-        'make',
-        'cr',
-        'mk',
-        'add',
-        'bind',
-        'map',
-    ]:
+    if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=False)
 
-    if len(args) > 3 and args[1] in [
-        'upload',
-        'up',
-        'store',
-        'start',
-        'send',
-        'write',
-    ]:
+    if len(args) > 3 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.exists(os.path.abspath(args[2])):
             print_text('path %s not exist\n' % args[2])
             return 1
         return call_websocket_method_template_and_stop('file_upload_start', tpl, local_path=args[2], remote_path=args[3], wait_result=False)
 
-    if len(args) > 2 and args[1] in [
-        'download',
-        'down',
-        'load',
-        'request',
-        'read',
-        'restore',
-    ]:
+    if len(args) > 2 and args[1] in ['download', 'down', 'load', 'request', 'read', 'restore']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if len(args) > 3:
             local_path = args[3]
@@ -942,31 +861,16 @@ def cmd_file(opts, args, overDict, executablePath):
             local_path = os.path.join(os.getcwd(), os.path.basename(args[2]))
         return call_websocket_method_template_and_stop('file_download_start', tpl, remote_path=args[2], destination_path=local_path)
 
-    if len(args) > 2 and args[1] in [
-        'delete',
-        'del',
-        'rm',
-        'remove',
-        'erase',
-    ]:
+    if len(args) > 2 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('file_delete', tpl, remote_path=args[2])
 
-    if len(args) >= 3 and args[1] in [
-        'cancel',
-        'abort',
-    ]:
+    if len(args) >= 3 and args[1] in ['cancel', 'abort']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if len(args) > 3:
-            if args[2] in [
-                'download',
-                'down',
-            ]:
+            if args[2] in ['download', 'down']:
                 return call_websocket_method_template_and_stop('file_download_stop', tpl, remote_path=args[3])
-            elif args[2] in [
-                'upload',
-                'up',
-            ]:
+            elif args[2] in ['upload', 'up']:
                 return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[3])
             return 2
         return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[2])
@@ -1012,38 +916,21 @@ def cmd_file(opts, args, overDict, executablePath):
 
 def option_name_to_path(name, default=''):
     path = default
-    if name in [
-        'donated',
-        'shared',
-        'given',
-    ]:
+    if name in ['donated', 'shared', 'given']:
         path = 'services/supplier/donated-space'
-    elif name in [
-        'needed',
-    ]:
+    elif name in ['needed']:
         path = 'services/customer/needed-space'
-    elif name in [
-        'suppliers',
-    ]:
+    elif name in ['suppliers']:
         path = 'services/customer/suppliers-number'
     elif name in ['debug']:
         path = 'logs/debug-level'
-    elif name in [
-        'block-size',
-    ]:
+    elif name in ['block-size']:
         path = 'services/backups/block-size'
-    elif name in [
-        'block-size-max',
-        'max-block-size',
-    ]:
+    elif name in ['block-size-max', 'max-block-size']:
         path = 'services/backups/max-block-size'
     elif name in ['max-backups', 'max-copies', 'copies']:
         path = 'services/backups/max-copies'
-    elif name in [
-        'local-backups',
-        'local-data',
-        'keep-local-data',
-    ]:
+    elif name in ['local-backups', 'local-data', 'keep-local-data']:
         path = 'services/backups/keep-local-copies-enabled'
     elif name in ['tcp']:
         path = 'services/tcp-transport/enabled'
@@ -1073,17 +960,12 @@ def option_name_to_path(name, default=''):
 
 
 def cmd_set(opts, args, overDict):
-    from bitdust.main import settings
+    from bitdust.main import initializer
+    from bitdust.main import shutdowner
     from bitdust.interface import api
-    settings.init()
+    initializer.init_settings()
     name = args[1].lower()
-    if name in [
-        'list',
-        'ls',
-        'all',
-        'show',
-        'print',
-    ]:
+    if name in ['list', 'ls', 'all', 'show', 'print']:
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
         result = api.configs_list(sort=sort)
@@ -1093,7 +975,7 @@ def cmd_set(opts, args, overDict):
                 result['result'][i]['value'] = val[:60].replace('\n', '') + '...'
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
-        settings.shutdown()
+        shutdowner.shutdown_settings()
         return 0
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
@@ -1105,23 +987,17 @@ def cmd_set(opts, args, overDict):
             result = api.config_get(path)
         tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
         print_template(result, tpl)
-        settings.shutdown()
+        shutdowner.shutdown_settings()
         return 0
 
-    settings.shutdown()
+    shutdowner.shutdown_settings()
     return 2
 
 
 def cmd_set_request(opts, args, overDict):
     print_text('connecting to already started BitDust process ...')
     name = args[1].lower()
-    if name in [
-        'list',
-        'ls',
-        'all',
-        'show',
-        'print',
-    ]:
+    if name in ['list', 'ls', 'all', 'show', 'print']:
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
@@ -1160,11 +1036,7 @@ def cmd_suppliers(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2])
 
-    elif args[1] in [
-        'hire',
-        'change',
-        'ch',
-    ] and len(args) >= 4:
+    elif args[1] in ['hire', 'change', 'ch'] and len(args) >= 4:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2], new_supplier_id=args[3])
 
@@ -1183,15 +1055,7 @@ def cmd_customers(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('customers_ping', tpl)
 
-    elif args[1] in [
-        'reject',
-        'refuse',
-        'remove',
-        'delete',
-        'rm',
-        'free',
-        'del',
-    ] and len(args) >= 3:
+    elif args[1] in ['reject', 'refuse', 'remove', 'delete', 'rm', 'free', 'del'] and len(args) >= 3:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('customer_reject', tpl, customer_id=args[2])
 
@@ -1250,10 +1114,7 @@ def cmd_automats(opts, args, overDict):
 
 
 def cmd_services(opts, args, overDict):
-    if len(args) < 2 or args[1] in [
-        'list',
-        'ls',
-    ]:
+    if len(args) < 2 or args[1] in ['list', 'ls']:
 
         def _services_update(result):
             for i in range(len(result['result'])):
@@ -1266,19 +1127,11 @@ def cmd_services(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_SERVICES)
         return call_websocket_method_transform_template_and_stop('services_list', tpl, _services_update)
 
-    if len(args) >= 3 and args[1] in [
-        'start',
-        'enable',
-        'on',
-    ]:
+    if len(args) >= 3 and args[1] in ['start', 'enable', 'on']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_start', tpl, service_name=args[2])
 
-    if len(args) >= 3 and args[1] in [
-        'stop',
-        'disable',
-        'off',
-    ]:
+    if len(args) >= 3 and args[1] in ['stop', 'disable', 'off']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_stop', tpl, service_name=args[2])
 
@@ -1297,17 +1150,11 @@ def cmd_message(opts, args, overDict):
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
     #         return call_websocket_method_template_and_stop('list_messages', tpl)
-    if len(args) >= 4 and args[1] in [
-        'send',
-        'to',
-    ]:
+    if len(args) >= 4 and args[1] in ['send', 'to']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('message_send', tpl, recipient_id=args[2], data=args[3])
 
-    if len(args) < 2 or args[1] in [
-        'listen',
-        'read',
-    ]:
+    if len(args) < 2 or args[1] in ['listen', 'read']:
         from bitdust.chat import terminal_chat
 
         def _send_message(to, msg):
@@ -1369,17 +1216,9 @@ def cmd_friend(opts, args, overDict):
     if len(args) < 2:
         tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_websocket_method_template_and_stop('list_correspondents', tpl)
-    elif len(args) > 2 and args[1] in [
-        'check',
-        'nick',
-        'nickname',
-        'test',
-    ]:
+    elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test']:
         return call_websocket_method_template_and_stop('user_search', tpl_lookup, nickname=strng.text_type(args[2]))
-    elif len(args) > 2 and args[1] in [
-        'add',
-        'append',
-    ]:
+    elif len(args) > 2 and args[1] in ['add', 'append']:
         inp = strng.text_type(args[2])
         if inp.startswith('http://'):
             return call_websocket_method_template_and_stop('friend_add', tpl_add, trusted_user_id=inp)
@@ -1413,41 +1252,33 @@ def cmd_friend(opts, args, overDict):
 def cmd_dhtseed(opts, args, overDict):
     from bitdust.lib import misc
     from bitdust.system import bpio
-    from bitdust.main import settings
-    settings.init()
-    appdata = settings.BaseDir()
+    from bitdust.main import initializer
+    from bitdust.main import shutdowner
+    initializer.init_settings()
 
-    if len(args) > 1 and args[1] in [
-        'daemon',
-        'background',
-        'detach',
-        'spawn',
-    ]:
+    if len(args) > 1 and args[1] in ['daemon', 'background', 'detach', 'spawn']:
         appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('main BitDust process already started: %s' % str(appList))
-            settings.shutdown()
+            shutdowner.shutdown_settings()
             return 0
         print_text('starting Distributed Hash Table seed node and detach main BitDust process')
         result = misc.DoRestart(
             param='dhtseed',
-            detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-            # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            detach=True,
         )
         try:
             result = result.pid
         except:
             result = str(result)
-        settings.shutdown()
+        shutdowner.shutdown_settings()
         return 0
 
     from bitdust.dht import dht_service
     from bitdust.logs import lg
-    settings.init()
-    # lg.open_log_file(os.path.join(settings.LogsDir(), 'dhtseed.log'))
-    lg.set_debug_level(settings.getDebugLevel())
+    initializer.init_settings()
     dht_service.main(args=args[1:])
-    settings.shutdown()
+    shutdowner.shutdown_settings()
     return 0
 
 
@@ -1463,12 +1294,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     bpio.init()
 
     #---install---
-    if cmd in [
-        'deploy',
-        'install',
-        'venv',
-        'virtualenv',
-    ]:
+    if cmd in ['deploy', 'install', 'venv', 'virtualenv']:
         return cmd_deploy(opts, args, overDict)
 
     #---start---
@@ -1486,20 +1312,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('main BitDust process already started: %s' % str(appList))
             return 0
         from bitdust.lib import misc
-        from bitdust.main import settings
-        settings.init()
-        appdata = settings.BaseDir()
         print_text('run and detach main BitDust process')
-        result = misc.DoRestart(
-            detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-            # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
-        )
+        result = misc.DoRestart(detach=True, )
         try:
             result = result.pid
         except:
             result = str(result)
         print_text(result)
-        settings.shutdown()
         return 0
 
     #---restart---
@@ -1525,20 +1344,14 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             except:
                 print_exception()
             from twisted.internet import reactor  # @UnresolvedImport
-            from bitdust.lib import misc
-            from bitdust.main import settings
-            settings.init()
-            appdata = settings.BaseDir()
             reactor.addSystemEventTrigger(  # @UndefinedVariable
                 'after',
                 'shutdown',
                 misc.DoRestart,
                 param='show' if ui else '',
-                detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                detach=True,
             )
             reactor.stop()  # @UndefinedVariable
-            settings.shutdown()
 
         try:
             from twisted.internet import reactor  # @UnresolvedImport
@@ -1552,10 +1365,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---show---
     elif cmd == 'show' or cmd == 'open':
-        appList_bpgui = bpio.find_process([
-            'bpgui.exe',
-            'bpgui.py',
-        ])
+        appList_bpgui = bpio.find_process(['bpgui.exe', 'bpgui.py'])
         appList = bpio.find_main_process()
         if len(appList_bpgui) > 0:
             if len(appList) == 0:
@@ -1565,22 +1375,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 print_text('BitDust GUI already opened, found another process: %s' % str(appList))
                 return 0
         if len(appList) == 0:
-            from bitdust.lib import misc
-            from bitdust.main import settings
-            settings.init()
-            # appdata = settings.BaseDir()
             print_text('run and detach main BitDust process')
-            result = misc.DoRestart(
-                'show',
-                detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
-            )
+            result = misc.DoRestart('show', detach=True)
             try:
                 result = result.pid
             except:
                 pass
             print_text(result)
-            settings.shutdown()
             return 0
         # print_text('found main BitDust process: %s, sending command "show" to start the GUI\n' % str(appList))
         # call_websocket_method('show')
@@ -1619,8 +1420,6 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         if len(args) >= 2 and args[1].lower() == 'schedule':
             print_text(help.schedule_format())
         elif len(args) >= 2 and args[1].lower() == 'settings':
-            # from bitdust.main import settings
-            # settings.uconfig().print_all()
             from bitdust.main import config
             for k in config.conf().listAllEntries():
                 print(k, config.conf().getData(k))
@@ -1635,25 +1434,11 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     overDict = override_options(opts, args)
 
     #---identity---
-    if cmd in [
-        'identity',
-        'id',
-        'idurl',
-        'globalid',
-        'globid',
-        'glid',
-        'gid',
-    ]:
+    if cmd in ['identity', 'id', 'idurl', 'globalid', 'globid', 'glid', 'gid']:
         return cmd_identity(opts, args, overDict, running, executablePath)
 
     #---key---
-    elif cmd in [
-        'key',
-        'keys',
-        'pk',
-        'private_key',
-        'priv',
-    ]:
+    elif cmd in ['key', 'keys', 'pk', 'private_key', 'priv']:
         return cmd_key(opts, args, overDict, running, executablePath)
 
     #---ping---
@@ -1664,14 +1449,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return call_websocket_method_template_and_stop('user_ping', tpl, user_id=args[1])
 
     #---config---
-    elif cmd in [
-        'set',
-        'get',
-        'conf',
-        'config',
-        'option',
-        'setting',
-    ]:
+    elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting']:
         if len(args) == 1 or args[1].lower() in ['help', '?']:
             from bitdust.main import help
             print_text(help.settings_help())
@@ -1681,34 +1459,21 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_set_request(opts, args, overDict)
 
     #---reconnect---
-    if cmd in [
-        'reconnect',
-        'rejoin',
-        'connect',
-    ]:
+    if cmd in ['reconnect', 'rejoin', 'connect']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_reconnect(opts, args, overDict)
 
     #---api---
-    elif cmd in [
-        'api',
-        'call',
-    ]:
+    elif cmd in ['api', 'call']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_api(opts, args, overDict, executablePath)
 
     #---messages---
-    elif cmd in [
-        'msg',
-        'message',
-        'messages',
-        'chat',
-        'talk',
-    ]:
+    elif cmd in ['msg', 'message', 'messages', 'chat', 'talk']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
@@ -1735,28 +1500,19 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             return 0
         return cmd_storage(opts, args, overDict)
 
+    #---storage---
+    elif cmd in ['network', 'net', 'nw']:
+        return cmd_network(opts, args, overDict, running)
+
     #---automats---
-    elif cmd in [
-        'st',
-        'state',
-        'automats',
-        'aut',
-        'states',
-        'machines',
-    ]:
+    elif cmd in ['st', 'state', 'automats', 'aut', 'states', 'machines']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_automats(opts, args, overDict)
 
     #---services---
-    elif cmd in [
-        'services',
-        'service',
-        'svc',
-        'serv',
-        'srv',
-    ]:
+    elif cmd in ['services', 'service', 'svc', 'serv', 'srv']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
@@ -1770,15 +1526,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_friend(opts, args, overDict)
 
     #---file---
-    elif cmd in [
-        'file',
-        'files',
-        'fi',
-        'fs',
-        'f',
-        'folder',
-        'dir',
-    ]:
+    elif cmd in ['file', 'files', 'fi', 'fs', 'f', 'folder', 'dir']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0

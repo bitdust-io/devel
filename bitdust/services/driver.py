@@ -62,6 +62,7 @@ from bitdust.logs import lg
 from bitdust.system import bpio
 
 from bitdust.main import config
+from bitdust.main import settings
 from bitdust.main import events
 from bitdust.main import listeners
 
@@ -264,6 +265,7 @@ def init():
 
 
 def shutdown():
+    #TODO: rework to make sure all services are properly shutdown and return Deferred object finally
     if _Debug:
         lg.out(_DebugLevel, 'driver.shutdown')
     config.conf().removeConfigNotifier('services/')
@@ -519,17 +521,10 @@ def start_single(service_name):
     _stopping = Deferred()
 
     def _on_started(response):
-        if response in [
-            'started',
-        ]:
+        if response in ['started']:
             result.callback(True)
             return response
-        if response in [
-            'not_installed',
-            'failed',
-            'depends_off',
-            'stopped',
-        ]:
+        if response in ['not_installed', 'failed', 'depends_off', 'stopped']:
             result.callback(False)
             return response
         raise Exception('bad response: %r' % response)
@@ -553,15 +548,10 @@ def start_single(service_name):
         return succeed(False)
     if svc.state == 'ON':
         return succeed(True)
-    if svc.state in [
-        'STARTING',
-    ]:
+    if svc.state in ['STARTING']:
         svc.add_callback(_starting)
         return result
-    if svc.state in [
-        'STOPPING',
-        'INFLUENCE',
-    ]:
+    if svc.state in ['STOPPING', 'INFLUENCE']:
         svc.add_callback(_stopping)
         return result
     svc.automat('start', _starting)
@@ -580,16 +570,10 @@ def stop_single(service_name):
         return response
 
     def _on_started(response):
-        if response in [
-            'started',
-        ]:
+        if response in ['started']:
             svc.automat('stop', _stopping)
             return response
-        if response in [
-            'not_installed',
-            'failed',
-            'depends_off',
-        ]:
+        if response in ['not_installed', 'failed', 'depends_off']:
             result.callback(True)
             return response
         raise Exception('bad response: %r' % response)
@@ -607,15 +591,10 @@ def stop_single(service_name):
         return succeed(False)
     if svc.state == 'OFF':
         return succeed(True)
-    if svc.state in [
-        'STARTING',
-    ]:
+    if svc.state in ['STARTING']:
         svc.add_callback(_starting)
         return result
-    if svc.state in [
-        'STOPPING',
-        'INFLUENCE',
-    ]:
+    if svc.state in ['STOPPING', 'INFLUENCE']:
         svc.add_callback(_stopping)
         return result
     svc.automat('stop', _stopping)
@@ -656,7 +635,9 @@ def get_network_configuration(services_list=[]):
         services_list.extend(reversed(boot_up_order()))
     if _Debug:
         lg.out(_DebugLevel, 'driver.get_network_info with %d services' % len(services_list))
-    result = {}
+    result = {
+        'current_network': settings.CurrentNetworkName(),
+    }
     for name in services_list:
         svc = services().get(name, None)
         if not svc:
@@ -667,6 +648,9 @@ def get_network_configuration(services_list=[]):
         if network_configuration:
             result[name] = network_configuration
     return result
+
+
+#------------------------------------------------------------------------------
 
 
 def get_attached_dht_layers(services_list=[]):

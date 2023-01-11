@@ -1318,14 +1318,14 @@ async def clean_one_node_async(node, event_loop, verbose=False):
     )
 
 
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
-#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/backups', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/metadata', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/identitycache', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/identityserver', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/keys', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/customers', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/suppliers', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/regression/messages', event_loop)
 
 
 async def clean_one_customer_async(node, event_loop, verbose=False):
@@ -1341,7 +1341,7 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbo
         [
             'mkdir',
             '-p',
-            '/app/coverage/%s' % node,
+            '/app/coverage/%s' % node
         ],
         event_loop,
         verbose=verbose,

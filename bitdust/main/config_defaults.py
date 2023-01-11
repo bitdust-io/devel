@@ -32,7 +32,7 @@ module:: config_defaults
 
 def reset(conf_obj):
     """
-    Configure default values for all BitDust local settings inside ~/.bitdust/config/ folder.
+    Configure default values for all BitDust local settings inside ~/.bitdust/[network name]/config/ folder.
 
     Every option must have a default value, however there are exceptions possible.
 
@@ -213,9 +213,9 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/proxy-transport/preferred-routers', '')
     # conf_obj.setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
     # TODO: those two settings needs to be removed.
-    # if service require storing locally value which user should not modify be implemented
-    # inside service (for example read/write to local file inside ~/.bitdust/*/ folder)
-    # in the future we can split all files more structural way into ~/.bitdust/services/*/ sub folders
+    # if service require storing locally a value which user should not modify we better move it to another place
+    # in the future we can split those local data files in more structural way and move into
+    # ~/.bitdust/[network name]/services/*/ sub folders
     conf_obj.setDefaultValue('services/proxy-transport/my-original-identity', '')
     conf_obj.setDefaultValue('services/proxy-transport/current-router', '')
 

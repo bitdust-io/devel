@@ -60,21 +60,19 @@ _TempDirPath = None
 _FilesDict = {}
 _CollectorTask = None
 _SubDirs = {
-    'outbox': 60*60*1,  # hold onto outbox files 1 hour
-    # so we can handle resends if contact is off-line
+    'outbox': 60*10,  # hold onto outbox files 10 minutes
     'tcp-in': 60*10,  # 10 minutes for incoming tcp files
     'udp-in': 60*10,  # 10 minutes for incoming udp files
     'proxy-in': 60*10,  # 10 minutes for incoming proxy files
     'proxy-out': 60*10,  # 10 minutes for outgoing proxy files
     'propagate': 60*10,  # propagate happens often enough,
-    # 10 minutes should be enough
     'backup': 60*10,  # 10 minutes for backup files
     'restore': 0,  # never remove files during restore process, they must be cleaned afterwards
     'raid': 60*10,  # 10 minutes for backup files
     'idsrv': 60,  # 1 minute for incoming xml identity files
     'error': 60*60*24*30,  # store errors for one month
     'all': 0,  # other files. do not know when to remove
-    # they can be even in another location
+    # they can be located even in another location
     # use register(name, filename)
 }
 

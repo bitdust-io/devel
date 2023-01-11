@@ -85,7 +85,7 @@ class Test(TestCase):
         lg.set_debug_level(30)
         settings.init(base_dir='/tmp/.bitdust_tmp')
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata')
+            os.makedirs('/tmp/.bitdust_tmp/default/metadata')
         except:
             pass
         automat.OpenLogFile('/tmp/.bitdust_tmp/logs/automats.log')
@@ -105,7 +105,7 @@ class Test(TestCase):
             pass
         local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
         tmpfile.init(temp_dir_path='/tmp/.bitdust_tmp/temp/')
-        os.makedirs('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234')
+        os.makedirs('/tmp/.bitdust_tmp/default/backups/master$alice@127.0.0.1_8084/1/F1234')
         try:
             bpio.rmdir_recursive('/tmp/_some_folder', ignore_errors=True)
         except:
@@ -160,8 +160,8 @@ class Test(TestCase):
 
         def _bk_closed(job):
             if False:
-                os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Data')
-                os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Parity')
+                os.remove('/tmp/.bitdust_tmp/default/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Data')
+                os.remove('/tmp/.bitdust_tmp/default/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Parity')
             reactor.callLater(0.5, _restore)  # @UndefinedVariable
 
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable

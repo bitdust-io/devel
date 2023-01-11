@@ -29,7 +29,7 @@
 module:: deploy
 
 Lets keep all software related data files in one place.
-BaseDir is a location of ".bitdust" folder basically.
+AppDataDir is a location of ".bitdust" folder basically.
 However you can setup your donated location in another place: USB-stick, second hard disk, etc ...
 
 Linux: /home/$USER/.bitdust
@@ -47,7 +47,8 @@ import platform
 
 #------------------------------------------------------------------------------
 
-_BaseDirPath = None
+_AppDataDirPath = None
+_CurrentNetwork = None
 
 #------------------------------------------------------------------------------
 
@@ -86,16 +87,21 @@ def current_base_dir():
     """
     Returns currently known base location.
     """
-    global _BaseDirPath
-    return _BaseDirPath
+    global _AppDataDirPath
+    return _AppDataDirPath
 
 
 def set_base_dir(new_path):
     """
     Rewrite currently known location of base dir with new path.
     """
-    global _BaseDirPath
-    _BaseDirPath = new_path
+    global _AppDataDirPath
+    _AppDataDirPath = new_path
+
+
+def current_network():
+    global _CurrentNetwork
+    return _CurrentNetwork
 
 
 def default_base_dir_portable():
@@ -111,7 +117,7 @@ def default_base_dir_portable():
             # We are on Android, it must be in /storage/emulated/0/.bitdust/
             # I also tried /data/user/0/org.kivy.bitdust/files/app/.bitdust/ but then I can't browse files from other apps
             # return os.path.join(os.environ.get('ANDROID_APP_PATH'), '.bitdust')
-            return os.path.join('/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents', '.bitdust')
+            return '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust'
 
         # This should be okay : /home/veselin/.bitdust/
         return os.path.join(os.path.expanduser('~'), '.bitdust')
@@ -124,25 +130,49 @@ def default_base_dir_portable():
     return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 
-def init_base_dir(base_dir=None):
+def init_current_network(name=None, base_dir=None):
+    global _CurrentNetwork
+    base_dir = base_dir or current_base_dir()
+    if name:
+        if name == 'current_network':
+            raise Exception('invalid network name')
+        _CurrentNetwork = name
+        open(os.path.join(base_dir, 'current_network'), 'w').write(_CurrentNetwork)
+        return
+    if _CurrentNetwork:
+        return
+    try:
+        cur_network = open(os.path.join(base_dir, 'current_network'), 'r').read().strip()
+    except:
+        cur_network = 'default'
+    if not os.path.isdir(os.path.join(base_dir, cur_network)):
+        cur_network = 'default'
+    _CurrentNetwork = cur_network
+    open(os.path.join(base_dir, 'current_network'), 'w').write(_CurrentNetwork)
+
+
+def init_base_dir(base_dir=None, network_name=None):
     """
     Do some validation and create needed data folders if they are not exist
     yet.
 
     You can specify another location for data files.
     """
-    global _BaseDirPath
+    global _AppDataDirPath
+    global _CurrentNetwork
 
     # if we already know the place - we are done
     if base_dir:
-        _BaseDirPath = base_dir
-        if not os.path.exists(_BaseDirPath):
-            os.makedirs(_BaseDirPath, 0o777)
-        return _BaseDirPath
+        _AppDataDirPath = base_dir
+        if not os.path.exists(_AppDataDirPath):
+            os.makedirs(_AppDataDirPath, 0o777)
+        init_current_network(name=network_name)
+        return _AppDataDirPath
 
     # if location was already known - no need to check again
-    if _BaseDirPath is not None:
-        return _BaseDirPath
+    if _AppDataDirPath is not None:
+        init_current_network(name=network_name)
+        return _AppDataDirPath
 
     # if we have a file "appdata" in current folder - read location path from there
     appdata_path = appdata_location_file_path()
@@ -155,8 +185,9 @@ def init_base_dir(base_dir=None):
                 path = os.path.abspath(path)
                 if not os.path.isdir(path):
                     os.makedirs(path, 0o777)
-                _BaseDirPath = path
-                return _BaseDirPath
+                _AppDataDirPath = path
+                init_current_network(name=network_name)
+                return _AppDataDirPath
 
     # get the default place for that machine
     default_path = default_base_dir_portable()
@@ -164,45 +195,49 @@ def init_base_dir(base_dir=None):
     # we can use folder ".bitdust" placed on the same level with binary folder:
     # /..
     #   /.bitdust - data files
-    #   /bitdust  - binary files
+    #   /bitdust  - source files
     path1 = str(os.path.abspath(os.path.join(get_executable_location(), '..', '.bitdust')))
     # and default path will have lower priority
     path2 = default_path
 
     # if default path exists - use it
     if os.path.isdir(path2):
-        _BaseDirPath = path2
+        _AppDataDirPath = path2
     # but ".bitdust" folder on same level will have higher priority
     if os.path.isdir(path1):
-        _BaseDirPath = path1
+        _AppDataDirPath = path1
     # use default path if nothing existing yet
-    if not _BaseDirPath:
-        _BaseDirPath = default_path
+    if not _AppDataDirPath:
+        _AppDataDirPath = default_path
 
-    # if we did not found "metadata" subfolder - use default path, new copy of BitDust
-    if not os.path.isdir(os.path.join(current_base_dir(), 'metadata')):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            os.makedirs(_BaseDirPath)
-        return _BaseDirPath
+    # if we did not found "current_network" file - use default path, new copy of BitDust
+    if not os.path.isdir(os.path.join(current_base_dir(), 'current_network')):
+        _AppDataDirPath = path2
+        if not os.path.exists(_AppDataDirPath):
+            os.makedirs(_AppDataDirPath)
+        init_current_network(name=network_name)
+        return _AppDataDirPath
 
     # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), 'metadata', 'mykeyfile'), os.R_OK) or \
-        not os.access(os.path.join(current_base_dir(), 'metadata', 'mykeyfile_location'), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            os.makedirs(_BaseDirPath, 0o777)
-        return _BaseDirPath
+    if not os.access(os.path.join(current_base_dir(), current_network(), 'metadata', 'mykeyfile'), os.R_OK) or \
+        not os.access(os.path.join(current_base_dir(), current_network(), 'metadata', 'mykeyfile_location'), os.R_OK):
+        _AppDataDirPath = path2
+        if not os.path.exists(_AppDataDirPath):
+            os.makedirs(_AppDataDirPath, 0o777)
+        init_current_network(name=network_name)
+        return _AppDataDirPath
 
     # if we did not found our identity - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), 'metadata', 'localidentity'), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            os.makedirs(_BaseDirPath)
-        return _BaseDirPath
+    if not os.access(os.path.join(current_base_dir(), current_network(), 'metadata', 'localidentity'), os.R_OK):
+        _AppDataDirPath = path2
+        if not os.path.exists(_AppDataDirPath):
+            os.makedirs(_AppDataDirPath)
+        init_current_network(name=network_name)
+        return _AppDataDirPath
 
-    # seems we found needed files in a path1 - lets use this as a base dir
-    return _BaseDirPath
+    init_current_network(name=network_name)
+    # seems we found needed files in a path1 - let us use this as a base dir
+    return _AppDataDirPath
 
 
 #------------------------------------------------------------------------------
