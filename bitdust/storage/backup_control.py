@@ -136,7 +136,7 @@ def init():
     """
     Must be called before other methods here.
 
-    Load index database from file .bitdust/metadata/index.
+    Load index database from file `~/.bitdust/[network name]/metadata/index`.
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.init')

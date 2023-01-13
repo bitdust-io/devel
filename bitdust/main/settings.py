@@ -52,8 +52,8 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 4
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 from bitdust.logs import lg
@@ -67,9 +67,8 @@ from bitdust.main import config
 
 #------------------------------------------------------------------------------
 
-_CurrentNetwork = None
-_UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
-_OverrideDict = {}  # list of values to replace some of user settings
+_UserConfig = None
+_OverrideDict = {}  # list of specific values to be replacing some of the user settings
 _InitDone = False
 
 #------------------------------------------------------------------------------
@@ -82,14 +81,14 @@ _P2PTimeOut = None
 #------------------------------------------------------------------------------
 
 
-def init(base_dir=None):
+def init(base_dir=None, network_name=None):
     """
     Must be called before all other things.
     This is called only once, prepare a bunch of things:
 
     - Set the base folder where for program data
     - Check and create if not exist "metadata" directory
-    - Load settings from [BitDust data dir]/metadata/userconfig or create a new, default settings
+    - Load settings from [app data dir]/[network name]/config or create a new, default settings
     - Check other "static" folders
     - Validate most important user settings
     - Check custom folders
@@ -98,9 +97,9 @@ def init(base_dir=None):
     if _InitDone:
         return
     _InitDone = True
-    deploy.init_base_dir(base_dir)
+    deploy.init_base_dir(base_dir=base_dir, network_name=network_name)
     if _Debug:
-        lg.out(_DebugLevel, 'settings.init data folder location is %r' % BaseDir())
+        lg.out(_DebugLevel, 'settings.init app data folder location is %r' % AppDataDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
     _setUpDefaultSettings()
@@ -575,14 +574,6 @@ def BackupDBSynchronizeDelay():
 #------------------------------------------------------------------------------
 
 
-def ApplicationName():
-    """
-    May be one day we decide to do some rebranding - so this can be useful method. :-)
-    But this is not used at the moment.
-    """
-    return 'BitDust'
-
-
 def ListFilesFormat():
     """
     Argument to ListFiles command to say format to return the data in.
@@ -590,66 +581,6 @@ def ListFilesFormat():
     Can be "Text" or "Compressed". TODO: add "Encrypted" format
     """
     return 'Compressed'
-
-
-def DefaultRepo():
-    """
-    BitDust software can be updated from different "repositories".
-
-    Right now we have three locations for Windows (testing, development
-    and stable) and one for Linux (going to add another one). This is to
-    be able to run different code in the network and so be able to test
-    new features without any chances to broke the whole network.
-    """
-    return 'stable'
-
-
-def DefaultRepoURL(repo='stable'):
-    """
-    Return a given repository location for Windows.
-    """
-    if repo == 'stable':
-        return 'https://bitdust.io/repo/stable/'
-    elif repo == 'devel':
-        return 'https://bitdust.io/repo/devel/'
-    else:
-        return 'https://bitdust.io/repo/test/'
-
-
-def FilesDigestsFilename():
-    """
-    This file keeps MD5 checksum of all binary files for Windows release. Every
-    Windows repository have such file, this is link for "stable" repo::
-
-        https://bitdust.io/repo/stable/files
-
-    Local copy of this file is also stored in the file::
-
-        .bitdust/bin/files
-
-    Our bitstarter.exe read local copy and than can request a public copy and compare the content.
-    If some files were changed or new files added to the repo - it will update the local binaries from repo.
-    The idea is to update only modified files when new release will be published.
-    """
-    return 'files'
-
-
-def CurrentVersionDigestsFilename():
-    """
-    This file keeps a MD5 checksum of the file "files", see
-    ``FilesDigestsFilename()``. It is also placed in the Windows repository::
-
-        https://bitdust.io/repo/stable/checksum
-
-    If some binary files have been changed - the file "files" also changed and
-    its checksum also.
-    Locally this is stored in the file::
-
-        .bitdust/bin/checksum
-
-    The software check "checksum" file first and if it is not the same - further download "files".
-    """
-    return 'checksum'
 
 
 def LegalUsernameChars():
@@ -671,13 +602,21 @@ def LegalNickNameChars():
 #------------------------------------------------------------------------------
 
 
-def BaseDir():
+def AppDataDir():
     """
     Return current data folder location, also call ``init()`` to be sure all
     things were configured.
     """
     init()
     return deploy.current_base_dir()
+
+
+def BaseDir():
+    return os.path.join(AppDataDir(), deploy.current_network())
+
+
+def CurrentNetworkName():
+    return deploy.current_network()
 
 
 def BaseDirPathFileName():
@@ -700,22 +639,6 @@ def DefaultRestoreDir():
     return os.path.expanduser('~')
 
 
-def WindowsBinDir():
-    """
-    Under Windows executable files is placed in the [BitDust data folder]/bin/.
-
-    This is because Windows Vista and later not allow to write to
-    "Program files" folder.
-    """
-    return os.path.join(BaseDir(), 'bin')
-
-
-def CurrentNetworkDir():
-    global _CurrentNetwork
-    _CurrentNetwork
-    # TODO:...
-
-
 def MetaDataDir():
     """
     Return current location of the "metadata" folder - most important config files is here.
@@ -735,7 +658,7 @@ def TempDir():
     TODO: need to add some stuff to control how much extra space we use
     and be able limit that.
     """
-    return os.path.join(BaseDir(), 'temp')
+    return os.path.join(AppDataDir(), 'temp')
 
 
 def IdentityHistoryDir():
@@ -809,7 +732,7 @@ def LogsDir():
     """
     Place for log files.
     """
-    return os.path.join(BaseDir(), 'logs')
+    return os.path.join(AppDataDir(), 'logs')
 
 
 def SuppliersDir():
@@ -2011,46 +1934,6 @@ def enableBroadcastRouting(enable=None):
     if enable is None:
         return config.conf().getBool('services/broadcasting/routing-enabled')
     config.conf().setBool('services/broadcasting/routing-enabled', enable)
-
-
-#------------------------------------------------------------------------------
-#--- INITIALIZE BASE DIR ------------------------------------------------------
-#------------------------------------------------------------------------------
-
-
-def RenameBaseDir(newdir):
-    """
-    The idea was to be able to move BitDust data folder to another place if
-    user want that.
-
-    Not used.
-    """
-    olddir = deploy.current_base_dir()
-    try:
-        import shutil
-        shutil.copytree(olddir, newdir)
-    except:
-        lg.exc()
-        return False
-    deploy.set_base_dir(newdir)
-    if _Debug:
-        lg.out(_DebugLevel, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
-    pathfilename = BaseDirPathFileName()
-    bpio.WriteTextFile(pathfilename, deploy.current_base_dir())
-    if _Debug:
-        lg.out(_DebugLevel, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
-    logfilename = lg.log_filename()
-    lg.close_log_file()
-    lg.close_intercepted_log_file()
-    try:
-        bpio.rmdir_recursive(olddir, True)
-        if _Debug:
-            lg.out(_DebugLevel, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
-    except:
-        lg.exc()
-    if logfilename:
-        lg.open_log_file(logfilename, True)
-    return True
 
 
 #------------------------------------------------------------------------------

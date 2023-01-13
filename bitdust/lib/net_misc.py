@@ -57,16 +57,13 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in net_misc.py')
 
-from twisted.internet.defer import Deferred, DeferredList, succeed, fail, CancelledError
-from twisted.python.failure import Failure
-from twisted.python import log as twisted_log
-from twisted.internet import protocol
-from twisted.web import iweb
-from twisted.web import client
-from twisted.web import http_headers
-from twisted.web.client import downloadPage, HTTPDownloader, Agent, _ReadBodyProtocol
-
-from twisted.web.http_headers import Headers
+from twisted.python import log as twisted_log  # @UnresolvedImport
+from twisted.python.failure import Failure  # @UnresolvedImport
+from twisted.internet import protocol  # @UnresolvedImport
+from twisted.internet.defer import Deferred, DeferredList, succeed, fail, CancelledError  # @UnresolvedImport
+from twisted.web import iweb, client, http_headers  # @UnresolvedImport
+from twisted.web.client import Agent, _ReadBodyProtocol  # @UnresolvedImport
+from twisted.web.http_headers import Headers  # @UnresolvedImport
 
 from zope.interface import implementer
 
@@ -352,151 +349,7 @@ def proxy_is_on():
     return get_proxy_host() != ''
 
 
-#------------------------------------------------------------------------------
-
-
-def downloadPageTwisted(url, filename):
-    """
-    A wrapper for twisted method ``twisted.web.client.downloadPage``.
-    """
-    global _UserAgentString
-    return downloadPage(url, filename, agent=_UserAgentString)
-
-
 #-------------------------------------------------------------------------------
-
-
-class HTTPProgressDownloader(HTTPDownloader):
-    """
-    Download to a file and keep track of progress.
-
-    http://schwerkraft.elitedvb.net/plugins/scmcvs/cvsweb.php/enigma2-pl
-    ugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=
-    enigma2-plugins;only_with_tag=HEAD
-    """
-    def __init__(self, url, fileOrName, writeProgress=None, *args, **kwargs):
-        HTTPDownloader.__init__(self, url, fileOrName, supportPartial=0, *args, **kwargs)
-        # Save callback(s) locally
-        if writeProgress and not isinstance(writeProgress, list):
-            writeProgress = [writeProgress]
-        self.writeProgress = writeProgress
-
-        # Initialize
-        self.currentlength = 0
-        self.totallength = None
-
-    def gotHeaders(self, headers):
-        HTTPDownloader.gotHeaders(self, headers)
-
-        # If we have a callback and 'OK' from Server try to get length
-        if self.writeProgress and self.status == '200':
-            if 'content-length' in headers:
-                self.totallength = int(headers['content-length'][0])
-                for cb in self.writeProgress:
-                    if cb:
-                        cb(0, self.totallength)
-
-    def pagePart(self, data):
-        HTTPDownloader.pagePart(self, data)
-
-        # If we have a callback and 'OK' from server increment pos
-        if self.writeProgress and self.status == '200':
-            self.currentlength += len(data)
-            for cb in self.writeProgress:
-                if cb:
-                    cb(self.currentlength, self.totallength)
-
-
-def downloadWithProgressTwisted(url, file, progress_func):
-    """
-    This method can keep track of the progress.
-    """
-    global _UserAgentString
-    from twisted.internet import ssl
-    scheme, host, port, path = parse_url(url)
-    factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
-    if scheme == 'https':
-        contextFactory = ssl.ClientContextFactory()
-        reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
-    else:
-        reactor.connectTCP(host, port, factory)  # @UndefinedVariable
-    return factory.deferred
-
-
-#-------------------------------------------------------------------------------
-
-
-def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName, certificateFileName):
-    """
-    Can download from HTTPS sites.
-    Not used at the moment.
-    """
-    global _UserAgentString
-    from twisted.internet import ssl
-    scheme, host, port, path = parse_url(url)
-    factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
-    if scheme != 'https':
-        return None
-    contextFactory = ssl.DefaultOpenSSLContextFactory(privateKeyFileName, certificateFileName)
-    reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
-    return factory.deferred
-
-
-#-------------------------------------------------------------------------------
-
-
-def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
-    """
-    Another method to download from HTTPS.
-    Not used at the moment.
-    """
-    global _UserAgentString
-    from twisted.internet import ssl
-    from OpenSSL import SSL  # @UnresolvedImport
-
-    class MyClientContextFactory(ssl.ClientContextFactory):
-        def __init__(self, certificates_filenames):
-            self.certificates_filenames = list(certificates_filenames)
-
-        def verify(self, connection, x509, errnum, errdepth, ok):
-            return ok
-
-        def getContext(self):
-            ctx = ssl.ClientContextFactory.getContext(self)
-            for cert in self.certificates_filenames:
-                try:
-                    ctx.load_verify_locations(cert)
-                except:
-                    pass
-            ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify)
-            return ctx
-
-    scheme, host, port, path = parse_url(url)
-    if not isinstance(certificates_filenames, list):
-        certificates_filenames = [
-            certificates_filenames,
-        ]
-    cert_found = False
-    for cert in certificates_filenames:
-        if os.path.isfile(cert) and os.access(cert, os.R_OK):
-            cert_found = True
-            break
-    if not cert_found:
-        return fail(Exception('no one ssl certificate found'))
-
-    factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
-    contextFactory = MyClientContextFactory(certificates_filenames)
-    reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
-    return factory.deferred
-
-
-#------------------------------------------------------------------------------
-
-# class ProxyClientFactory(client.HTTPClientFactory):
-#
-#     def setURL(self, url):
-#         client.HTTPClientFactory.setURL(self, url)
-#         self.path = url
 
 
 class custom_ReadBodyProtocol(_ReadBodyProtocol):
@@ -593,24 +446,6 @@ def getPageTwisted(url, timeout=15, method=b'GET'):
 #------------------------------------------------------------------------------
 
 
-def downloadHTTP(url, fileOrName):
-    """
-    Another method to download from HTTP host.
-    """
-    global _UserAgentString
-    scheme, host, port, path = parse_url(url)
-    factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
-    if proxy_is_on():
-        host = get_proxy_host()
-        port = get_proxy_port()
-        factory.path = url
-    reactor.connectTCP(host, port, factory)  # @UndefinedVariable
-    return factory.deferred
-
-
-#-------------------------------------------------------------------------------
-
-
 def IpIsLocal(ip):
     """
     A set of "classic" patterns for local networks.
@@ -634,9 +469,6 @@ def IpIsLocal(ip):
         if secondByte >= 16 and secondByte <= 31:
             return True
     return False
-
-
-#-------------------------------------------------------------------------------
 
 
 def getLocalIp():
@@ -1066,6 +898,9 @@ def getIfconfig(iface='en0'):
                     ip = line[ipStart:ipEnd]
                     break
     return ip
+
+
+#------------------------------------------------------------------------------
 
 
 def getNetworkInterfaces():

@@ -102,14 +102,14 @@ def init():
 
 def readLocalIP():
     """
-    Read local IP stored in the file [BitDust data dir]/metadata/localip.
+    Read local IP stored in the file `~/.bitdust/[network name]/metadata/localip`.
     """
     return bpio.ReadTextFile(settings.LocalIPFilename()).strip()
 
 
 def readExternalIP():
     """
-    Read external IP stored in the file [BitDust data dir]/metadata/externalip.
+    Read external IP stored in the file `~/.bitdust/[network name]/metadata/externalip`.
     """
     return bpio.ReadTextFile(settings.ExternalIPFilename()).strip()
 
@@ -972,33 +972,6 @@ def str2gmtime(time_string, format):
     A reverse method for ``gmtime2str``.
     """
     return time.mktime(time.strptime(time_string, format))
-
-
-#------------------------------------------------------------------------------
-
-
-def ReadRepoLocation():
-    """
-    This method reutrn a tuple of two strings: "name of the current repo" and
-    "repository location".
-    """
-    if bpio.Linux() or bpio.Mac():
-        repo_file = os.path.join(bpio.getExecutableDir(), 'repo')
-        if os.path.isfile(repo_file):
-            src = bpio.ReadTextFile(repo_file)
-            if src:
-                try:
-                    return src.split('\n')[0].strip(), src.split('\n')[1].strip()
-                except:
-                    lg.exc()
-        return 'sources', 'https://bitdust.io/download/'
-    src = strng.to_bin(bpio.ReadTextFile(settings.RepoFile())).strip()
-    if not src:
-        return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
-    l = src.split('\n')
-    if len(l) < 2:
-        return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
-    return l[0], l[1]
 
 
 #------------------------------------------------------------------------------

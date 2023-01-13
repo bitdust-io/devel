@@ -41,7 +41,7 @@ import re
 def network_info():
     """
     Returns correct and full network info from `default_network.json` file in the repository root.
-    If file `~/.bitdust/metadata/networkconfig` exists - use it instead.
+    If file `~/.bitdust/[network name]/metadata/networkconfig` exists - use it instead.
     """
     from bitdust.main import network_config
     network_config = network_config.read_network_config_file()

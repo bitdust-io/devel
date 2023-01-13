@@ -53,17 +53,19 @@ from io import open
 #------------------------------------------------------------------------------
 
 AppData = ''
+CurrentNetwork = ''
 
 #------------------------------------------------------------------------------
 
 
 def sharedPath(filename, subdir='logs'):
     global AppData
-    if AppData == '':
+    global CurrentNetwork
+    if not AppData:
         curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
         if os.path.isfile(os.path.join(curdir, 'appdata')):
             try:
-                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip())
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'r').read().strip())
             except:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
@@ -74,7 +76,15 @@ def sharedPath(filename, subdir='logs'):
             else:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
-    return os.path.join(AppData, subdir, filename)
+    if not CurrentNetwork:
+        try:
+            cur_network = open(os.path.join(AppData, 'current_network'), 'r').read().strip()
+        except:
+            cur_network = 'default'
+        if not os.path.isdir(os.path.join(AppData, cur_network)):
+            cur_network = 'default'
+        CurrentNetwork = cur_network
+    return os.path.join(AppData, CurrentNetwork, subdir, filename)
 
 
 def logfilepath():

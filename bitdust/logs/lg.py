@@ -471,16 +471,13 @@ def exception_name(value, e_type, tr_back):
 
 def set_debug_level(level):
     """
-    Code will use ``level`` 2-4 for most important things and 10 for really
+    We will use ``level`` 2-6 for most important things and 10 for really
     minor stuff.
 
     Level 14 and higher is for things we don't think we want to see
     again. Can set ``level`` to 0 for no debug messages at all.
     """
     global _GlobalDebugLevel
-    level = int(level)
-    if _GlobalDebugLevel > level:
-        out(level, 'lg.SetDebug _GlobalDebugLevel=' + str(level))
     _GlobalDebugLevel = level
 
 

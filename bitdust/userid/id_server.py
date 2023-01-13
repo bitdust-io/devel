@@ -490,9 +490,9 @@ def main():
         tcp_port = settings.getIdServerTCPPort()
     lg.set_debug_level(20)
     lg.out(2, 'starting ID server ...')
-    reactor.addSystemEventTrigger(
+    reactor.addSystemEventTrigger(  # @UndefinedVariable
         'before',
-        'shutdown',  # @UndefinedVariable
+        'shutdown',
         A().automat,
         'shutdown',
     )

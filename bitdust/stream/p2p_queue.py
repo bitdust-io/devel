@@ -1158,7 +1158,6 @@ def test():
     lg.set_debug_level(24)
     init()
     my_keys.generate_key('customer$bob@server-second.com')
-    # copy bob@server-second.com's key to dave@server-4.com in ~/.bitdust/keys/
     open_queue('event-test123&bob@server-second.com&carl@thirdnode.net')
     add_producer('alice@host-one.com')
     connect_producer('alice@host-one.com', 'event-test123&bob@server-second.com&carl@thirdnode.net')

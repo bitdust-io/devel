@@ -77,12 +77,13 @@ _MyKeyObject = None
 
 def InitMyKey(keyfilename=None):
     """
-    This is core method. At first it check the Private Key in the memory, if it
-    is already initialized it does nothing. The local key are placed in the
-    "[BitDust data dir]/metadata/mykeyfile". If file "[BitDust data
-    dir]/metadata/mykeyfile_location" exists - it should contain the location
-    of the mykeyfile. Useful to store Private Key on the USB flash. BitDust
-    data dir is platform dependent:
+    This is core method. At first it check the Private Key in the memory, if it is already initialized it does nothing.
+    The local key are placed in the `~/.bitdust/[network name]/metadata/mykeyfile`.
+
+    If file "~/.bitdust/[network name]/metadata/mykeyfile_location" exists - it should contain the location
+    of the mykeyfile. Useful to store Private Key on the USB flash.
+
+    BitDust data dir is platform dependent:
 
         - Linux and Mac: ~/.bitdust
         - Windows XP: C:/Documents and Settings/[user]/.bitdust

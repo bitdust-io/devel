@@ -82,7 +82,7 @@ def shutdown():
 
 
 def verify_local_install():
-    ethereum_location = os.path.join(settings.BaseDir(), 'ethereum')
+    ethereum_location = os.path.join(settings.AppDataDir(), 'ethereum')
     if not os.path.isdir(ethereum_location):
         raise ValueError('Ethereum root location not found: {}'.format(ethereum_location))
     geth_location = os.path.join(ethereum_location, 'go-ethereum')
@@ -103,7 +103,7 @@ def verify_global_install():
 
 
 def clone(callback=None):
-    ethereum_location = os.path.join(settings.BaseDir(), 'ethereum')
+    ethereum_location = os.path.join(settings.AppDataDir(), 'ethereum')
     if not os.path.isdir(ethereum_location):
         os.makedirs(ethereum_location)
     geth_location = os.path.join(ethereum_location, 'go-ethereum')
@@ -125,7 +125,7 @@ def clone(callback=None):
 
 
 def make(callback=None):
-    geth_location = os.path.join(settings.BaseDir(), 'ethereum', 'go-ethereum')
+    geth_location = os.path.join(settings.AppDataDir(), 'ethereum', 'go-ethereum')
     execute(['make', 'geth'], base_dir=geth_location, env=os.environ, callback=callback)
 
 
@@ -141,7 +141,7 @@ def deploy(callback=None):
 
 def run(cmdargs, callback=None):
     geth_location = os.path.join(
-        settings.BaseDir(),
+        settings.AppDataDir(),
         'ethereum',
         'go-ethereum',
     )
@@ -152,7 +152,7 @@ def run(cmdargs, callback=None):
 
 
 def run_geth_node():
-    geth_datadir = os.path.join(settings.BaseDir(), 'ethereum', 'datadir')
+    geth_datadir = os.path.join(settings.AppDataDir(), 'ethereum', 'datadir')
     if not os.path.isdir(geth_datadir):
         os.makedirs(geth_datadir)
     run(['--datadir="{}"'.format(geth_datadir), '--verbosity', '4', '--ipcdisable', '--port', '30300', '--rpcport', '8100', '--networkid', '1'])

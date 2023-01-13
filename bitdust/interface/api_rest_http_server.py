@@ -363,6 +363,85 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
+    @POST('^/nw/cr')
+    @POST('^/network/create')
+    @POST('^/network/create/v1$')
+    def network_create_v1(self, request):
+        data = _request_data(request, mandatory_keys=['url'])
+        return api.network_create(url=data['url'])
+
+    @POST('^/nw/sel')
+    @POST('^/network/select')
+    @POST('^/network/select/v1$')
+    def network_select_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name'])
+        return api.network_select(name=data['name'])
+
+    @GET('^/nw/con$')
+    @GET('^/v1/network/connected$')
+    @GET('^/network/connected/v1$')
+    def network_connected_v1(self, request):
+        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '10')))
+
+    @GET('^/nw/dcon$')
+    @GET('^/v1/network/disconnect')
+    @GET('^/network/disconnect/v1$')
+    def network_disconnect_v1(self, request):
+        return api.network_disconnect()
+
+    @GET('^/nw/rcon$')
+    @GET('^/v1/network/reconnect$')
+    @GET('^/network/reconnect/v1$')
+    def network_reconnect_v1(self, request):
+        return api.network_reconnect()
+
+    @GET('^/nw/st$')
+    @GET('^/v1/network/status$')
+    @GET('^/network/status/v1$')
+    def network_status_v1(self, request):
+        return api.network_status(
+            suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true']),
+            customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true']),
+            cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true']),
+            tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true']),
+            udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true']),
+            proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true']),
+            dht=bool(_request_arg(request, 'dht', '0') in ['1', 'true']),
+        )
+
+    @GET('^/nw/i$')
+    @GET('^/v1/network/info$')
+    @GET('^/v1/network/details$')
+    @GET('^/network/info/v1$')
+    @GET('^/network/details/v1$')
+    def network_info_v1(self, request):
+        return api.network_status(
+            suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true']),
+            customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true']),
+            cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true']),
+            tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true']),
+            udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true']),
+            proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true']),
+            dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true']),
+        )
+
+    @GET('^/nw/cf$')
+    @GET('^/v1/network/configuration$')
+    @GET('^/network/configuration/v1$')
+    def network_configuration_v1(self, request):
+        return api.network_configuration()
+
+    @GET('^/nw/stn$')
+    @GET('^/v1/network/stun$')
+    @GET('^/network/stun/v1$')
+    def network_stun_v1(self, request):
+        return api.network_stun(
+            udp_port=int(_request_arg(request, 'udp_port', 0)) or None,
+            dht_port=int(_request_arg(request, 'dht_port', 0)) or None,
+        )
+
+    #------------------------------------------------------------------------------
+
     @GET('^/c/l$')
     @GET('^/v1/config/list$')
     @GET('^/config/list/v1$')
@@ -1228,65 +1307,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/event/listen/(?P<consumer_callback_id>[^/]+)/v1$')
     def event_listen_v1(self, request, consumer_callback_id):
         return api.event_listen(consumer_callback_id=consumer_callback_id)
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/nw/stn$')
-    @GET('^/v1/network/stun$')
-    @GET('^/network/stun/v1$')
-    def network_stun_v1(self, request):
-        return api.network_stun(
-            udp_port=int(_request_arg(request, 'udp_port', 0)) or None,
-            dht_port=int(_request_arg(request, 'dht_port', 0)) or None,
-        )
-
-    @GET('^/nw/rcon$')
-    @GET('^/v1/network/reconnect$')
-    @GET('^/network/reconnect/v1$')
-    def network_reconnect_v1(self, request):
-        return api.network_reconnect()
-
-    @GET('^/nw/con$')
-    @GET('^/v1/network/connected$')
-    @GET('^/network/connected/v1$')
-    def network_connected_v1(self, request):
-        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '10')))
-
-    @GET('^/nw/st$')
-    @GET('^/v1/network/status$')
-    @GET('^/network/status/v1$')
-    def network_status_v1(self, request):
-        return api.network_status(
-            suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true']),
-            customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true']),
-            cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true']),
-            tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true']),
-            udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true']),
-            proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true']),
-            dht=bool(_request_arg(request, 'dht', '0') in ['1', 'true']),
-        )
-
-    @GET('^/nw/i$')
-    @GET('^/v1/network/info$')
-    @GET('^/v1/network/details$')
-    @GET('^/network/info/v1$')
-    @GET('^/network/details/v1$')
-    def network_info_v1(self, request):
-        return api.network_status(
-            suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true']),
-            customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true']),
-            cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true']),
-            tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true']),
-            udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true']),
-            proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true']),
-            dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true']),
-        )
-
-    @GET('^/nw/cf$')
-    @GET('^/v1/network/configuration$')
-    @GET('^/network/configuration/v1$')
-    def network_configuration_v1(self, request):
-        return api.network_configuration()
 
     #------------------------------------------------------------------------------
 

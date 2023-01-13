@@ -40,7 +40,7 @@ It also checks whether the program is installed and switch to run another "insta
 
 The ``initializer()`` machine is doing several operations:
 
-    * start low-level modules and init local data, see ``initializer._init_local()``
+    * start low-level modules and init local data, see ``initializer.init_local()``
     * starts the network communications by running core method ``initializer.doInitServices()``
     * other modules is started after all other more important things
     * machine can switch to "install" wizard if Private Key or local identity file is not fine
@@ -87,9 +87,6 @@ from bitdust.system import local_fs
 
 from bitdust.crypt import cipher
 
-from bitdust.main import settings
-from bitdust.main import events
-
 from bitdust.automats import automat
 
 from bitdust.services import driver
@@ -97,6 +94,130 @@ from bitdust.services import driver
 #------------------------------------------------------------------------------
 
 _Initializer = None
+
+#------------------------------------------------------------------------------
+
+
+def init_settings(base_dir=None, network_name=None, override_configs=None, enable_debug=False):
+    from bitdust.main import settings
+    from bitdust.main import config
+    if override_configs:
+        settings.override_dict(override_configs)
+    settings.init(base_dir=base_dir, network_name=network_name)
+    if enable_debug:
+        lg.set_debug_level(settings.getDebugLevel())
+    config.conf().addConfigNotifier('logs/debug-level', lambda p, value, o, r: lg.set_debug_level(value))
+
+
+def init_engine():
+    from bitdust.contacts import identitydb
+    from bitdust.userid import id_url
+    from bitdust.main import listeners
+    from bitdust.main import events
+    events.init()
+    listeners.init()
+    id_url.init()
+    identitydb.init()
+
+
+def init_automats():
+    from bitdust.main import config
+    automat.init()
+    automat.LifeBegins(lg.when_life_begins())
+    automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
+    automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
+    automat.SetExceptionsHandler(lg.exc)
+    automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
+    # automat.OpenLogFile(settings.AutomatsLog())
+
+
+def init_local():
+    from bitdust.main import settings
+    from bitdust.p2p import commands
+    from bitdust.lib import net_misc
+    from bitdust.lib import misc
+    from bitdust.system import tmpfile
+    from bitdust.system import run_upnpc
+    from bitdust.raid import eccmap
+    from bitdust.crypt import my_keys
+    from bitdust.userid import my_id
+    my_id.init()
+    if settings.enableWebStream():
+        try:
+            from bitdust.logs import weblog
+            weblog.init(settings.getWebStreamPort())
+        except:
+            lg.exc()
+    if settings.enableWebTraffic():
+        try:
+            from bitdust.logs import webtraffic
+            webtraffic.init(port=settings.getWebTrafficPort())
+        except:
+            lg.exc()
+    misc.init()
+    commands.init()
+    tmpfile.init(settings.getTempDir())
+    net_misc.init()
+    settings.update_proxy_settings()
+    run_upnpc.init()
+    eccmap.init()
+    my_keys.init()
+    # if sys.argv.count('--twisted'):
+    #     from twisted.python import log as twisted_log
+    #     twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
+    # import twisted.python.failure as twisted_failure
+    # twisted_failure.startDebugMode()
+    # twisted_log.defaultObserver.stop()
+    # if settings.getDebugLevel() > 10:
+    #     defer.setDebugging(True)
+    if settings.enableMemoryProfile():
+        try:
+            from guppy import hpy  # @UnresolvedImport
+            hp = hpy()
+            hp.setrelheap()
+            if _Debug:
+                lg.out(_DebugLevel, 'hp.heap():\n' + str(hp.heap()))
+                lg.out(_DebugLevel, 'hp.heap().byrcs:\n' + str(hp.heap().byrcs))
+                lg.out(_DebugLevel, 'hp.heap().byvia:\n' + str(hp.heap().byvia))
+        except:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'guppy package is not installed')
+    if _Debug:
+        lg.dbg(_DebugLevel, 'all local modules are initialized, ready to start the engine')
+
+
+def init_interfaces():
+    from bitdust.main import settings
+    # if settings.enableFTPServer():
+    #     try:
+    #         from bitdust.interface import ftp_server
+    #         ftp_server.init()
+    #     except:
+    #         lg.exc()
+    if settings.enableAPIAuthSecret():
+        current_secret = local_fs.ReadTextFile(settings.APISecretFile())
+        if not current_secret:
+            new_secret = cipher.generate_secret_text(10)
+            local_fs.WriteTextFile(settings.APISecretFile(), new_secret)
+            lg.info('generated new API auth secret text and stored in %r' % settings.APISecretFile())
+    if settings.enableRESTHTTPServer():
+        try:
+            from bitdust.interface import api_rest_http_server
+            api_rest_http_server.init(port=settings.getRESTHTTPServerPort())
+        except:
+            lg.exc()
+    if settings.enableWebSocketServer():
+        try:
+            from bitdust.interface import api_web_socket
+            api_web_socket.init(port=settings.getWebSocketServerPort())
+        except:
+            lg.exc()
+
+
+def init_services():
+    driver.init()
+    return driver.start()
+
 
 #------------------------------------------------------------------------------
 
@@ -246,7 +367,7 @@ class Initializer(automat.Automat):
         self.flagGUI = args[0].strip() == 'show'
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
-        self._init_local()
+        init_local()
         if bpio.Android():
             self.automat('init-local-done')
         else:
@@ -263,43 +384,19 @@ class Initializer(automat.Automat):
                 lg.dbg(_DebugLevel, 'log file "android.log" re-opened')
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitServices')
-        driver.init()
-        d = driver.start()
+        d = init_services()
         d.addBoth(lambda x: self.automat('init-services-done'))
 
     def doInitInterfaces(self, *args, **kwargs):
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitInterfaces')
-        # if settings.enableFTPServer():
-        #     try:
-        #         from bitdust.interface import ftp_server
-        #         ftp_server.init()
-        #     except:
-        #         lg.exc()
-        if settings.enableAPIAuthSecret():
-            current_secret = local_fs.ReadTextFile(settings.APISecretFile())
-            if not current_secret:
-                new_secret = cipher.generate_secret_text(10)
-                local_fs.WriteTextFile(settings.APISecretFile(), new_secret)
-                lg.info('generated new API auth secret text and stored in %r' % settings.APISecretFile())
-        if settings.enableRESTHTTPServer():
-            try:
-                from bitdust.interface import api_rest_http_server
-                api_rest_http_server.init(port=settings.getRESTHTTPServerPort())
-            except:
-                lg.exc()
-        if settings.enableWebSocketServer():
-            try:
-                from bitdust.interface import api_web_socket
-                api_web_socket.init(port=settings.getWebSocketServerPort())
-            except:
-                lg.exc()
+        init_interfaces()
         reactor.callLater(0, self.automat, 'init-interfaces-done')  # @UndefinedVariable
 
     def doInitModules(self, *args, **kwargs):
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitModules')
-        self._init_modules()
+        self._init_auto_update()
         reactor.callLater(0, self.automat, 'init-modules-done')  # @UndefinedVariable
 
     def doShowGUI(self, *args, **kwargs):
@@ -337,6 +434,7 @@ class Initializer(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'initializer._check_install')
+        from bitdust.main import settings
         from bitdust.userid import identity
         from bitdust.crypt import key
         keyfilename = settings.KeyFileName()
@@ -388,63 +486,6 @@ class Initializer(automat.Automat):
             lg.out(_DebugLevel, 'initializer._check_install SUCCESS!!!')
         return True
 
-    def _init_local(self):
-        from bitdust.p2p import commands
-        from bitdust.lib import net_misc
-        from bitdust.lib import misc
-        from bitdust.system import tmpfile
-        from bitdust.system import run_upnpc
-        from bitdust.raid import eccmap
-        from bitdust.contacts import identitydb
-        from bitdust.crypt import my_keys
-        from bitdust.userid import id_url
-        from bitdust.userid import my_id
-        id_url.init()
-        identitydb.init()
-        my_id.init()
-        if settings.enableWebStream():
-            try:
-                from bitdust.logs import weblog
-                weblog.init(settings.getWebStreamPort())
-            except:
-                lg.exc()
-        if settings.enableWebTraffic():
-            try:
-                from bitdust.logs import webtraffic
-                webtraffic.init(port=settings.getWebTrafficPort())
-            except:
-                lg.exc()
-        misc.init()
-        commands.init()
-        tmpfile.init(settings.getTempDir())
-        net_misc.init()
-        settings.update_proxy_settings()
-        run_upnpc.init()
-        eccmap.init()
-        my_keys.init()
-        # if sys.argv.count('--twisted'):
-        #     from twisted.python import log as twisted_log
-        #     twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
-        # import twisted.python.failure as twisted_failure
-        # twisted_failure.startDebugMode()
-        # twisted_log.defaultObserver.stop()
-        # if settings.getDebugLevel() > 10:
-        #     defer.setDebugging(True)
-        if settings.enableMemoryProfile():
-            try:
-                from guppy import hpy  # @UnresolvedImport
-                hp = hpy()
-                hp.setrelheap()
-                if _Debug:
-                    lg.out(_DebugLevel, 'hp.heap():\n' + str(hp.heap()))
-                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n' + str(hp.heap().byrcs))
-                    lg.out(_DebugLevel, 'hp.heap().byvia:\n' + str(hp.heap().byvia))
-            except:
-                if _Debug:
-                    lg.out(_DebugLevel, 'guppy package is not installed')
-        if _Debug:
-            lg.dbg(_DebugLevel, 'all local modules are initialized, ready to start the engine')
-
     def _on_software_code_updated(self, evt):
         if _Debug:
             lg.out(_DebugLevel, 'initializer._on_software_code_updated will RESTART BitDust now! "source-code-fetched" event received')
@@ -457,13 +498,11 @@ class Initializer(automat.Automat):
         from bitdust.main import shutdowner
         shutdowner.A('stop', 'restart')
 
-    def _init_modules(self):
-        """
-        Finish initialization part, run delayed methods.
-        """
+    def _init_auto_update(self):
         if _Debug:
             lg.out(_DebugLevel, 'initializer._init_modules')
         from bitdust.updates import git_proc
+        from bitdust.main import events
         git_proc.init()
         events.add_subscriber(self._on_software_code_updated, 'source-code-fetched')
 

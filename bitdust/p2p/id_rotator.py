@@ -555,8 +555,6 @@ class IdRotator(automat.Automat):
         return True
 
     def _do_check_ping_results(self, ping_results):
-        """
-        """
         self.alive_idurls = []
         my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         local_revision = my_id.getLocalIdentity().getRevisionValue()

@@ -103,6 +103,30 @@ _StateChangedCallback = None  # : Called when some state were changed
 #------------------------------------------------------------------------------
 
 
+def init():
+    pass
+
+
+def shutdown():
+    global _Counter
+    global _Index
+    global _Objects
+    global _StateChangedCallback
+    LifeBegins(0)
+    CloseLogFile()
+    SetGlobalLogEvents()
+    SetGlobalLogTransitions()
+    SetExceptionsHandler(None)
+    SetLogOutputHandler(None)
+    _StateChangedCallback = None
+    _Index.clear()
+    _Objects.clear()
+    _Counter = 0
+
+
+#------------------------------------------------------------------------------
+
+
 def get_new_index():
     """
     Just get the current index and increase by one.
@@ -298,7 +322,7 @@ def LifeBegins(when=None):
     logs, not absolute.
     """
     global _LifeBeginsTime
-    if when:
+    if when is not None:
         _LifeBeginsTime = when
     else:
         _LifeBeginsTime = time.time()

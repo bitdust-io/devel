@@ -596,8 +596,6 @@ class DetailedConfig(CachedConfig):
             lg.exc()
 
     def _load_details(self, src):
-        """
-        """
         current_option = ''
         for line in src.splitlines():
             if not line.strip():

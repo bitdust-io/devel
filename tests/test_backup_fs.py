@@ -71,7 +71,7 @@ class Test(TestCase):
         settings.init(base_dir='/tmp/.bitdust_tmp')
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+            os.makedirs('/tmp/.bitdust_tmp/default/metadata/')
         except:
             pass
         fout = open(settings.KeyFileName(), 'w')

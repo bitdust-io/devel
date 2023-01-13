@@ -386,15 +386,8 @@ def process_restart():
         websocket.send('{"command": "api_call", "method": "process_restart", "kwargs": {} }');
     """
     from bitdust.main import shutdowner
-    # if showgui:
-    #     if _Debug:
-    #         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
-    #     reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')  # @UndefinedVariable
-    #     # shutdowner.A('stop', 'restartnshow')
-    #     return OK({'restarted': True, 'show_gui': True, })
     if _Debug:
         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
-    # shutdowner.A('stop', 'restart')
     reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')  # @UndefinedVariable
     return OK({
         'restarted': True,
@@ -580,6 +573,459 @@ def process_debug():
     import pdb
     pdb.set_trace()
     return OK()
+
+
+#------------------------------------------------------------------------------
+
+
+def network_create(url):
+    """
+    This method is a way to load a new custom network configuration for this BitDust node.
+
+    You can always use the default network configuration - this is a public network available for everyone.
+    The seed nodes are maintained by the founders of the project.
+
+    But you can also run your own hardware and maintain a number of your own BitDust seed nodes.
+    This is a way to run a completely isolated and private BitDust network.
+
+    All BitDust users on your network will need to run this method once on their devices to load the custom network configuration and
+    make software know where to connect for the first time.
+
+    The `url` parameter is a web location of the JSON-formatted network configuration file.
+    It can also be a full path to the local file where the network configuration is stored on your drive.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/network/create/v1' -d '{"url": "https://my-people.secure-url-location.org/network.json"}
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_create", "kwargs": {"url": "https://my-people.secure-url-location.org/network.json"} }');
+    """
+    from bitdust.system import deploy
+    from bitdust.system import local_fs
+    from bitdust.main import initializer
+    from bitdust.main import shutdowner
+    from bitdust.main import settings
+    from bitdust.lib import net_misc
+    from bitdust.lib import serialization
+    ret = Deferred()
+
+    def _on_network_disconnected(x, network_info):
+        cur_base_dir = deploy.current_base_dir()
+        cur_network = deploy.current_network()
+        shutdowner.shutdown_services()
+        shutdowner.shutdown_local()
+        shutdowner.shutdown_automats()
+        shutdowner.shutdown_engine()
+        shutdowner.shutdown_settings()
+        deploy.init_current_network(name=network_info['name'], base_dir=cur_base_dir)
+        initializer.init_settings(base_dir=cur_base_dir)
+        networks_json_path = os.path.join(settings.MetaDataDir(), 'networkconfig')
+        local_fs.WriteBinaryFile(networks_json_path, serialization.DictToBytes(network_info, indent=2))
+        shutdowner.shutdown_settings()
+        deploy.init_current_network(name=cur_network, base_dir=cur_base_dir)
+        initializer.init_settings(base_dir=cur_base_dir)
+        initializer.init_engine()
+        initializer.init_automats()
+        initializer.init_local()
+        d = initializer.init_services()
+        d.addCallback(lambda resp: ret.callback(OK(resp, api_method='network_create')))
+        d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_create')))
+        return None
+
+    def _on_network_info_received(raw_data):
+        try:
+            network_info = serialization.BytesToDict(
+                strng.to_bin(raw_data),
+                keys_to_text=True,
+                values_to_text=True,
+            )
+        except Exception as exc:
+            ret.callback(ERROR(exc, api_method='network_create'))
+            return ret
+        try:
+            network_name = network_info['name']
+            network_info['label']
+            network_info['maintainer']
+        except:
+            ret.callback(ERROR('incorrect network configuration', api_method='network_create'))
+            return ret
+        if os.path.isdir(os.path.join(deploy.current_base_dir(), network_name)):
+            ret.callback(ERROR('network %r already exist' % network_name, api_method='network_create'))
+            return ret
+        d = network_disconnect()
+        d.addCallback(_on_network_disconnected, network_info)
+        d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_create')))
+        return ret
+
+    network_info_raw = None
+    try:
+        if os.path.isfile(url):
+            network_info_raw = local_fs.ReadBinaryFile(url)
+    except:
+        pass
+    if network_info_raw:
+        return _on_network_info_received(network_info_raw)
+    d = net_misc.getPageTwisted(url)
+    d.addCallback(_on_network_info_received)
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_create')))
+    return ret
+
+
+def network_select(name):
+    """
+    Use this method to switch between different, previously loaded, network configurations.
+    Only one network configuration can be active at a moment.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/network/select/v1' -d '{"name": "my-people"}
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_select", "kwargs": {"name": "my-people"} }');
+    """
+    from bitdust.system import deploy
+    from bitdust.main import initializer
+    from bitdust.main import shutdowner
+    if not os.path.isdir(os.path.join(deploy.current_base_dir(), name)):
+        return ERROR('network %r does not exist' % name)
+    ret = Deferred()
+
+    def _on_network_disconnected(x):
+        cur_base_dir = deploy.current_base_dir()
+        shutdowner.shutdown_services()
+        shutdowner.shutdown_local()
+        shutdowner.shutdown_automats()
+        shutdowner.shutdown_engine()
+        shutdowner.shutdown_settings()
+        deploy.init_current_network(name=name, base_dir=cur_base_dir)
+        initializer.init_settings(base_dir=cur_base_dir)
+        initializer.init_engine()
+        initializer.init_automats()
+        initializer.init_local()
+        d = initializer.init_services()
+        d.addCallback(lambda resp: ret.callback(OK(resp, api_method='network_select')))
+        d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_select')))
+        return None
+
+    d = network_disconnect()
+    d.addCallback(_on_network_disconnected)
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_select')))
+    return ret
+
+
+def network_connected(wait_timeout=5):
+    """
+    Method can be used by clients to ensure BitDust application is connected to other nodes in the network.
+
+    If all is good this method will block for `wait_timeout` seconds. In case of some network issues method will return result immediately.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/connected/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_connected", "kwargs": {} }');
+    """
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'api.network_connected  wait_timeout=%r' % wait_timeout)
+    if not driver.is_on('service_network'):
+        return ERROR('service_network() is not started')
+    ret = Deferred()
+
+    def _on_network_service_connected(resp):
+        if 'error' in resp:
+            ret.callback(ERROR(resp['error'], reason=resp.get('reason'), api_method='network_connected'))
+            return None
+        ret.callback(OK(resp, api_method='network_connected'))
+        return None
+
+    from bitdust.p2p import network_service
+    d = network_service.connected(wait_timeout=wait_timeout)
+    d.addCallback(_on_network_service_connected)
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_connected')))
+    return ret
+
+
+def network_disconnect():
+    """
+    This method will stop `service_network()` service.
+    Your BitDust node will be completely disconnected from the currently selected peer-to-peer network.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/disconnect/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_disconnect", "kwargs": {} }');
+    """
+    ret = Deferred()
+    d = driver.stop_single('service_network')
+    d.addCallback(lambda resp: ret.callback(OK(resp, api_method='network_disconnect')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_disconnect')))
+    return ret
+
+
+def network_reconnect():
+    """
+    Method can be used to refresh network status and restart all internal connections.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/reconnect/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_reconnect", "kwargs": {} }');
+    """
+    if not driver.is_on('service_network'):
+        return ERROR('service_network() is not started')
+    from bitdust.p2p import network_connector
+    if _Debug:
+        lg.out(_DebugLevel, 'api.network_reconnect')
+    network_connector.A('reconnect')
+    return OK(message='reconnected')
+
+
+def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp=False, proxy=False, dht=False):
+    """
+    Returns detailed info about current network status, protocols and active connections.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/status/v1?cache=1&suppliers=1&dht=1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_status", "kwargs": {"cache": 1, "suppliers": 1, "dht": 1} }');
+    """
+    if not driver.is_on('service_network'):
+        return ERROR('service_network() is not started')
+    from bitdust.automats import automat
+    from bitdust.lib import net_misc
+    from bitdust.main import settings
+    from bitdust.userid import my_id
+    from bitdust.userid import global_id
+
+    r = {
+        'p2p_connector_state': None,
+        'network_connector_state': None,
+        'idurl': None,
+        'global_id': None,
+    }
+    p2p_connector_lookup = automat.find('p2p_connector')
+    if p2p_connector_lookup:
+        p2p_connector_machine = automat.by_index(p2p_connector_lookup[0])
+        if p2p_connector_machine:
+            r['p2p_connector_state'] = p2p_connector_machine.state
+    network_connector_lookup = automat.find('network_connector')
+    if network_connector_lookup:
+        network_connector_machine = automat.by_index(network_connector_lookup[0])
+        if network_connector_machine:
+            r['network_connector_state'] = network_connector_machine.state
+    if my_id.isLocalIdentityReady():
+        r['idurl'] = my_id.getIDURL()
+        r['global_id'] = my_id.getID()
+        r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
+        r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
+        r['identity_revision'] = my_id.getLocalIdentity().getRevisionValue()
+    if True in [suppliers, customers, cache] and driver.is_on('service_p2p_hookups'):
+        from bitdust.contacts import contactsdb
+        from bitdust.p2p import online_status
+        if suppliers:
+            connected = 0
+            items = []
+            for idurl in contactsdb.all_suppliers():
+                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
+                inst = online_status.getInstance(idurl)
+                if inst:
+                    i['state'] = inst.state
+                    if inst.state == 'CONNECTED':
+                        connected += 1
+                items.append(i)
+            r['suppliers'] = {
+                'desired': settings.getSuppliersNumberDesired(),
+                'requested': contactsdb.num_suppliers(),
+                'connected': connected,
+                'total': contactsdb.total_suppliers(),
+                'peers': items,
+            }
+        if customers:
+            connected = 0
+            items = []
+            for idurl in contactsdb.customers():
+                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
+                inst = online_status.getInstance(idurl)
+                if inst:
+                    i['state'] = inst.state
+                    if inst.state == 'CONNECTED':
+                        connected += 1
+                items.append(i)
+            r['customers'] = {
+                'connected': connected,
+                'total': contactsdb.num_customers(),
+                'peers': items,
+            }
+        if cache:
+            from bitdust.contacts import identitycache
+            connected = 0
+            items = []
+            for idurl in identitycache.Items().keys():
+                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
+                inst = online_status.getInstance(idurl)
+                if inst:
+                    i['state'] = inst.state
+                    if inst.state == 'CONNECTED':
+                        connected += 1
+                items.append(i)
+            r['cache'] = {
+                'total': identitycache.CacheLen(),
+                'connected': connected,
+                'peers': items,
+            }
+    if True in [tcp, udp, proxy]:
+        from bitdust.transport import gateway
+        if tcp:
+            r['tcp'] = {
+                'sessions': [],
+                'streams': [],
+            }
+            if driver.is_on('service_tcp_transport'):
+                sessions = []
+                for s in gateway.list_active_sessions('tcp'):
+                    i = s.to_json()
+                    i.update(
+                        {
+                            'peer': getattr(s, 'peer', None),
+                            'state': getattr(s, 'state', None),
+                            'id': getattr(s, 'id', None),
+                            'idurl': getattr(s, 'peer_idurl', None),
+                            'address': net_misc.pack_address_text(getattr(s, 'peer_address', None)),
+                            'external_address': net_misc.pack_address_text(getattr(s, 'peer_external_address', None)),
+                            'connection_address': net_misc.pack_address_text(getattr(s, 'connection_address', None)),
+                            'bytes_received': getattr(s, 'total_bytes_received', 0),
+                            'bytes_sent': getattr(s, 'total_bytes_sent', 0),
+                        }
+                    )
+                    sessions.append(i)
+                streams = []
+                for s in gateway.list_active_streams('tcp'):
+                    i = {
+                        'started': s.started,
+                        'stream_id': s.file_id,
+                        'transfer_id': s.transfer_id,
+                        'size': s.size,
+                        'type': s.typ,
+                    }
+                    streams.append(i)
+                r['tcp']['sessions'] = sessions
+                r['tcp']['streams'] = streams
+        if udp:
+            from bitdust.lib import udp
+            r['udp'] = {
+                'sessions': [],
+                'streams': [],
+                'ports': [],
+            }
+            for one_listener in udp.listeners().values():
+                r['udp']['ports'].append(one_listener.port)
+            if driver.is_on('service_udp_transport'):
+                sessions = []
+                for s in gateway.list_active_sessions('udp'):
+                    i = s.to_json()
+                    i.update(
+                        {
+                            'peer': s.peer_id,
+                            'state': s.state,
+                            'id': s.id,
+                            'idurl': s.peer_idurl,
+                            'address': net_misc.pack_address_text(s.peer_address),
+                            'bytes_received': s.bytes_sent,
+                            'bytes_sent': s.bytes_received,
+                            'outgoing': len(s.file_queue.outboxFiles),
+                            'incoming': len(s.file_queue.inboxFiles),
+                            'queue': len(s.file_queue.outboxQueue),
+                            'dead_streams': len(s.file_queue.dead_streams),
+                        }
+                    )
+                    sessions.append(i)
+                streams = []
+                for s in gateway.list_active_streams('udp'):
+                    streams.append({
+                        'started': s.started,
+                        'stream_id': s.stream_id,
+                        'transfer_id': s.transfer_id,
+                        'size': s.size,
+                        'type': s.typ,
+                    })
+                r['udp']['sessions'] = sessions
+                r['udp']['streams'] = streams
+        if proxy:
+            r['proxy'] = {
+                'sessions': [],
+            }
+            if driver.is_on('service_proxy_transport'):
+                sessions = []
+                for s in gateway.list_active_sessions('proxy'):
+                    i = s.to_json()
+                    if getattr(s, 'router_idurl', None):
+                        i['idurl'] = s.router_idurl
+                        i['router'] = global_id.UrlToGlobalID(s.router_idurl)
+                    if getattr(s, 'pending_packets', None):
+                        i['queue'] = len(s.pending_packets)
+                    sessions.append(i)
+                r['proxy']['sessions'] = sessions
+    if dht:
+        from bitdust.dht import dht_service
+        r['dht'] = {}
+        if driver.is_on('service_entangled_dht'):
+            layers = []
+            for layer_id in sorted(dht_service.node().layers):
+                layers.append(
+                    {
+                        'layer_id': layer_id,
+                        'data_store_items': len(dht_service.node()._dataStores[layer_id].keys()),
+                        'node_items': len(dht_service.node().data.get(layer_id, {})),
+                        'node_id': dht_service.node().layers[layer_id],
+                        'buckets': len(dht_service.node()._routingTables[layer_id]._buckets),
+                        'contacts': dht_service.node()._routingTables[layer_id].totalContacts(),
+                        'attached': (layer_id in dht_service.node().attached_layers),
+                        'active': (layer_id in dht_service.node().active_layers),
+                        'packets_received': dht_service.node().packets_in.get(layer_id, 0),
+                        'packets_sent': dht_service.node().packets_out.get(layer_id, 0),
+                        'rpc_calls': dht_service.node().rpc_calls.get(layer_id, {}),
+                        'rpc_responses': dht_service.node().rpc_responses.get(layer_id, {}),
+                    }
+                )
+            r['dht'].update({
+                'udp_port': dht_service.node().port,
+                'bytes_received': dht_service.node().bytes_in,
+                'bytes_sent': dht_service.node().bytes_out,
+                'layers': layers,
+            })
+    return OK(r)
+
+
+def network_configuration():
+    """
+    Returns details about network services.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/configuration/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_configuration", "kwargs": {} }');
+    """
+    return OK(driver.get_network_configuration())
+
+
+def network_stun(udp_port=None, dht_port=None):
+    """
+    Begins network STUN process to detect your network configuration and current external IP address of that host.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/stun/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_stun", "kwargs": {} }');
+    """
+    from bitdust.stun import stun_client
+    ret = Deferred()
+    d = stun_client.safe_stun(udp_port=udp_port, dht_port=dht_port)
+    d.addBoth(lambda r: ret.callback(OK(r, api_method='network_stun')))
+    return ret
 
 
 #------------------------------------------------------------------------------
@@ -895,7 +1341,7 @@ def identity_erase(erase_private_key=False):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "identity_erase", "kwargs": {"erase_private_key": true} }');
     """
-    return ERROR('not implemented yet. please manually stop the application process and erase files inside ".bitdust/metadata/" folder')
+    return ERROR('not implemented yet. please manually stop the application process and erase files inside ".bitdust/[network name]/metadata/" folder')
 
 
 def identity_rotate():
@@ -4411,7 +4857,7 @@ def service_start(service_name):
 
     This method also set `True` for correspondent option in the program settings to mark the service as enabled:
 
-        .bitdust/config/services/[service name]/enabled
+        .bitdust/[network name]/config/services/[service name]/enabled
 
     Other dependent services, if they were enabled before but stopped, also will be started.
 
@@ -4447,7 +4893,7 @@ def service_stop(service_name):
 
     This method also set `False` for correspondent option in the program settings to mark the service as disabled:
 
-        .bitdust/config/services/[service name]/enabled
+        .bitdust/[network name]config/services/[service name]/enabled
 
     Dependent services will be stopped as well but will not be disabled.
 
@@ -5030,315 +5476,6 @@ def event_listen(consumer_callback_id):
 #------------------------------------------------------------------------------
 
 
-def network_stun(udp_port=None, dht_port=None):
-    """
-    Begins network STUN process to detect your network configuration and current external IP address of that host.
-
-    ###### HTTP
-        curl -X GET 'localhost:8180/network/stun/v1'
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "network_stun", "kwargs": {} }');
-    """
-    from bitdust.stun import stun_client
-    ret = Deferred()
-    d = stun_client.safe_stun(udp_port=udp_port, dht_port=dht_port)
-    d.addBoth(lambda r: ret.callback(OK(r, api_method='network_stun')))
-    return ret
-
-
-def network_reconnect():
-    """
-    Method can be used to refresh network status and restart all internal connections.
-
-    ###### HTTP
-        curl -X GET 'localhost:8180/network/reconnect/v1'
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "network_reconnect", "kwargs": {} }');
-    """
-    if not driver.is_on('service_network'):
-        return ERROR('service_network() is not started')
-    from bitdust.p2p import network_connector
-    if _Debug:
-        lg.out(_DebugLevel, 'api.network_reconnect')
-    network_connector.A('reconnect')
-    return OK(message='reconnected')
-
-
-def network_connected(wait_timeout=5):
-    """
-    Method can be used by clients to ensure BitDust application is connected to other nodes in the network.
-
-    If all is good this method will block for `wait_timeout` seconds. In case of some network issues method will return result immediately.
-
-    ###### HTTP
-        curl -X GET 'localhost:8180/network/connected/v1'
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "network_connected", "kwargs": {} }');
-    """
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'api.network_connected  wait_timeout=%r' % wait_timeout)
-    if not driver.is_on('service_network'):
-        return ERROR('service_network() is not started')
-    ret = Deferred()
-
-    def _on_network_service_connected(resp):
-        if 'error' in resp:
-            ret.callback(ERROR(resp['error'], reason=resp.get('reason'), api_method='network_connected'))
-            return None
-        ret.callback(OK(resp, api_method='network_connected'))
-        return None
-
-    from bitdust.p2p import network_service
-    d = network_service.connected(wait_timeout=wait_timeout)
-    d.addCallback(_on_network_service_connected)
-    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_connected')))
-    return ret
-
-
-def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp=False, proxy=False, dht=False):
-    """
-    Returns detailed info about current network status, protocols and active connections.
-
-    ###### HTTP
-        curl -X GET 'localhost:8180/network/status/v1?cache=1&suppliers=1&dht=1'
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "network_status", "kwargs": {"cache": 1, "suppliers": 1, "dht": 1} }');
-    """
-    if not driver.is_on('service_network'):
-        return ERROR('service_network() is not started')
-    from bitdust.automats import automat
-    from bitdust.lib import net_misc
-    from bitdust.main import settings
-    from bitdust.userid import my_id
-    from bitdust.userid import global_id
-
-    r = {
-        'p2p_connector_state': None,
-        'network_connector_state': None,
-        'idurl': None,
-        'global_id': None,
-    }
-    p2p_connector_lookup = automat.find('p2p_connector')
-    if p2p_connector_lookup:
-        p2p_connector_machine = automat.by_index(p2p_connector_lookup[0])
-        if p2p_connector_machine:
-            r['p2p_connector_state'] = p2p_connector_machine.state
-    network_connector_lookup = automat.find('network_connector')
-    if network_connector_lookup:
-        network_connector_machine = automat.by_index(network_connector_lookup[0])
-        if network_connector_machine:
-            r['network_connector_state'] = network_connector_machine.state
-    if my_id.isLocalIdentityReady():
-        r['idurl'] = my_id.getIDURL()
-        r['global_id'] = my_id.getID()
-        r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
-        r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
-        r['identity_revision'] = my_id.getLocalIdentity().getRevisionValue()
-    if True in [
-        suppliers,
-        customers,
-        cache,
-    ] and driver.is_on('service_p2p_hookups'):
-        from bitdust.contacts import contactsdb
-        from bitdust.p2p import online_status
-        if suppliers:
-            connected = 0
-            items = []
-            for idurl in contactsdb.all_suppliers():
-                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
-                inst = online_status.getInstance(idurl)
-                if inst:
-                    i['state'] = inst.state
-                    if inst.state == 'CONNECTED':
-                        connected += 1
-                items.append(i)
-            r['suppliers'] = {
-                'desired': settings.getSuppliersNumberDesired(),
-                'requested': contactsdb.num_suppliers(),
-                'connected': connected,
-                'total': contactsdb.total_suppliers(),
-                'peers': items,
-            }
-        if customers:
-            connected = 0
-            items = []
-            for idurl in contactsdb.customers():
-                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
-                inst = online_status.getInstance(idurl)
-                if inst:
-                    i['state'] = inst.state
-                    if inst.state == 'CONNECTED':
-                        connected += 1
-                items.append(i)
-            r['customers'] = {
-                'connected': connected,
-                'total': contactsdb.num_customers(),
-                'peers': items,
-            }
-        if cache:
-            from bitdust.contacts import identitycache
-            connected = 0
-            items = []
-            for idurl in identitycache.Items().keys():
-                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
-                inst = online_status.getInstance(idurl)
-                if inst:
-                    i['state'] = inst.state
-                    if inst.state == 'CONNECTED':
-                        connected += 1
-                items.append(i)
-            r['cache'] = {
-                'total': identitycache.CacheLen(),
-                'connected': connected,
-                'peers': items,
-            }
-    if True in [
-        tcp,
-        udp,
-        proxy,
-    ]:
-        from bitdust.transport import gateway
-        if tcp:
-            r['tcp'] = {
-                'sessions': [],
-                'streams': [],
-            }
-            if driver.is_on('service_tcp_transport'):
-                sessions = []
-                for s in gateway.list_active_sessions('tcp'):
-                    i = s.to_json()
-                    i.update(
-                        {
-                            'peer': getattr(s, 'peer', None),
-                            'state': getattr(s, 'state', None),
-                            'id': getattr(s, 'id', None),
-                            'idurl': getattr(s, 'peer_idurl', None),
-                            'address': net_misc.pack_address_text(getattr(s, 'peer_address', None)),
-                            'external_address': net_misc.pack_address_text(getattr(s, 'peer_external_address', None)),
-                            'connection_address': net_misc.pack_address_text(getattr(s, 'connection_address', None)),
-                            'bytes_received': getattr(s, 'total_bytes_received', 0),
-                            'bytes_sent': getattr(s, 'total_bytes_sent', 0),
-                        }
-                    )
-                    sessions.append(i)
-                streams = []
-                for s in gateway.list_active_streams('tcp'):
-                    i = {
-                        'started': s.started,
-                        'stream_id': s.file_id,
-                        'transfer_id': s.transfer_id,
-                        'size': s.size,
-                        'type': s.typ,
-                    }
-                    streams.append(i)
-                r['tcp']['sessions'] = sessions
-                r['tcp']['streams'] = streams
-        if udp:
-            from bitdust.lib import udp
-            r['udp'] = {
-                'sessions': [],
-                'streams': [],
-                'ports': [],
-            }
-            for one_listener in udp.listeners().values():
-                r['udp']['ports'].append(one_listener.port)
-            if driver.is_on('service_udp_transport'):
-                sessions = []
-                for s in gateway.list_active_sessions('udp'):
-                    i = s.to_json()
-                    i.update(
-                        {
-                            'peer': s.peer_id,
-                            'state': s.state,
-                            'id': s.id,
-                            'idurl': s.peer_idurl,
-                            'address': net_misc.pack_address_text(s.peer_address),
-                            'bytes_received': s.bytes_sent,
-                            'bytes_sent': s.bytes_received,
-                            'outgoing': len(s.file_queue.outboxFiles),
-                            'incoming': len(s.file_queue.inboxFiles),
-                            'queue': len(s.file_queue.outboxQueue),
-                            'dead_streams': len(s.file_queue.dead_streams),
-                        }
-                    )
-                    sessions.append(i)
-                streams = []
-                for s in gateway.list_active_streams('udp'):
-                    streams.append({
-                        'started': s.started,
-                        'stream_id': s.stream_id,
-                        'transfer_id': s.transfer_id,
-                        'size': s.size,
-                        'type': s.typ,
-                    })
-                r['udp']['sessions'] = sessions
-                r['udp']['streams'] = streams
-        if proxy:
-            r['proxy'] = {
-                'sessions': [],
-            }
-            if driver.is_on('service_proxy_transport'):
-                sessions = []
-                for s in gateway.list_active_sessions('proxy'):
-                    i = s.to_json()
-                    if getattr(s, 'router_idurl', None):
-                        i['idurl'] = s.router_idurl
-                        i['router'] = global_id.UrlToGlobalID(s.router_idurl)
-                    if getattr(s, 'pending_packets', None):
-                        i['queue'] = len(s.pending_packets)
-                    sessions.append(i)
-                r['proxy']['sessions'] = sessions
-    if dht:
-        from bitdust.dht import dht_service
-        r['dht'] = {}
-        if driver.is_on('service_entangled_dht'):
-            layers = []
-            for layer_id in sorted(dht_service.node().layers):
-                layers.append(
-                    {
-                        'layer_id': layer_id,
-                        'data_store_items': len(dht_service.node()._dataStores[layer_id].keys()),
-                        'node_items': len(dht_service.node().data.get(layer_id, {})),
-                        'node_id': dht_service.node().layers[layer_id],
-                        'buckets': len(dht_service.node()._routingTables[layer_id]._buckets),
-                        'contacts': dht_service.node()._routingTables[layer_id].totalContacts(),
-                        'attached': (layer_id in dht_service.node().attached_layers),
-                        'active': (layer_id in dht_service.node().active_layers),
-                        'packets_received': dht_service.node().packets_in.get(layer_id, 0),
-                        'packets_sent': dht_service.node().packets_out.get(layer_id, 0),
-                        'rpc_calls': dht_service.node().rpc_calls.get(layer_id, {}),
-                        'rpc_responses': dht_service.node().rpc_responses.get(layer_id, {}),
-                    }
-                )
-            r['dht'].update({
-                'udp_port': dht_service.node().port,
-                'bytes_received': dht_service.node().bytes_in,
-                'bytes_sent': dht_service.node().bytes_out,
-                'layers': layers,
-            })
-    return OK(r)
-
-
-def network_configuration():
-    """
-    Returns details about network services.
-
-    ###### HTTP
-        curl -X GET 'localhost:8180/network/configuration/v1'
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "network_configuration", "kwargs": {} }');
-    """
-    return OK(driver.get_network_configuration())
-
-
-#------------------------------------------------------------------------------
-
-
 def dht_node_find(node_id_64=None, layer_id=0):
     """
     Lookup "closest" (in terms of hashes and cryptography) DHT nodes to a given `node_id_64` value.
@@ -5730,7 +5867,7 @@ def automat_events_stop(index=None, automat_id=None):
         curl -X POST 'localhost:8180/automat/events/stop/v1' -d '{"index": 12345}
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "automat_events_stop", "kwargs": {} }');
+        websocket.send('{"command": "api_call", "method": "automat_events_stop", "kwargs": {"index": 12345} }');
     """
     if index is None and automat_id is None:
         return ERROR('one of the identifiers must be provided')

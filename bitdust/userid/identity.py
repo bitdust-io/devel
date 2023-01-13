@@ -1045,7 +1045,7 @@ def main():
     """
     This should print a current identity or create a new one.
     """
-    settings.init(base_dir='/tmp/fake_id')
+    settings.init()
     from bitdust.userid import my_id
     my_id.loadLocalIdentity()
     if my_id.isLocalIdentityReady():

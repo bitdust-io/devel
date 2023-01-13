@@ -1292,7 +1292,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
     try:
         if not pid_file_path:
             from bitdust.main import settings
-            pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
+            pid_file_path = os.path.join(settings.AppDataDir(), 'processid')
         processid = int(ReadTextFile(pid_file_path))
     except:
         processid = None
