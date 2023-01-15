@@ -1,6 +1,25 @@
 Change Log
 ==========
 
+2023-01-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to create new configurations and switch between different networks
+* bug fix in shared_access_coordinator()
+* some changes in bitdust/main/listeners.py
+
+
+
+2022-11-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated CHANGELOG, prepare next release
+* decrease _Debug logging
+* fix in   tests/test_raid_worker.py
+* catching some unhandled failures from defered calls
+* switched regression tests to python3.8
+* added new services/gateway/p2p-timeout option
+* cosmetic modifications in proxy_sender() and p2p_connector()
+
+
 
 2022-11-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 

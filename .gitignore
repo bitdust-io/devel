@@ -29,6 +29,7 @@ devops/nodes.txt
 devops/development_net.txt
 devops/main_net.txt
 .coverage
+.import
 
 # IDE specific
 .idea
