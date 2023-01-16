@@ -28,6 +28,7 @@
 
 from __future__ import absolute_import
 import os
+import sys
 
 try:
     import locale
@@ -38,6 +39,9 @@ except:
 
 def main():
     executable_path = os.getcwd()
+
+    if executable_path not in sys.path:
+        sys.path.append(executable_path)
 
     # try:
     #     os.chdir(os.path.dirname(__file__))
