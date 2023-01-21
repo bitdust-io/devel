@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+2023-01-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor fix for Windows OS
+
+
+
 2023-01-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * make possible to create new configurations and switch between different networks
