@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+2023-01-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* version bump Twisted==22.10.0 and incremental==22.10.0
+
+
+
 2023-01-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * minor fix for Windows OS

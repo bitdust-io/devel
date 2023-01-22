@@ -82,6 +82,8 @@ def init():
     if Linux() or Mac():
         lg.setup_unbuffered_stdout()
         lg.setup_unbuffered_stderr()
+    if Windows():
+        import encodings.idna  # nopycln: import  # @UnusedImport
 
 
 def shutdown():
@@ -1270,6 +1272,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
     if Android():
         return []
     q = [
+        'bitdust-node.exe',
         'bitdustnode.exe',
         'BitDustNode.exe',
         'BitDustConsole.exe',  # 'bitdust.py',

@@ -1001,23 +1001,23 @@ def FTPServerCredentialsFile():
 
 
 def APIServerCertificateKeyFile():
-    return os.path.join(MetaDataDir(), 'apiservercertkey')
+    return os.path.join(AppDataDir(), 'apiservercertkey')
 
 
 def APIServerCertificateFile():
-    return os.path.join(MetaDataDir(), 'apiservercert')
+    return os.path.join(AppDataDir(), 'apiservercert')
 
 
 def APIClientCertificateKeyFile():
-    return os.path.join(MetaDataDir(), 'apiclientcertkey')
+    return os.path.join(AppDataDir(), 'apiclientcertkey')
 
 
 def APIClientCertificateFile():
-    return os.path.join(MetaDataDir(), 'apiclientcert')
+    return os.path.join(AppDataDir(), 'apiclientcert')
 
 
 def APISecretFile():
-    return os.path.join(MetaDataDir(), 'apisecret')
+    return os.path.join(AppDataDir(), 'apisecret')
 
 
 def ChatMessagesHistoryDatabaseFile():
@@ -1039,9 +1039,9 @@ def WindowsStarterFileName():
 
 def WindowsMainScriptFileName():
     """
-    Return a file name of the root Windows executable script : "BitDustNode.exe".
+    Return a file name of the root Windows executable script : "bitdust-node.exe".
     """
-    return 'BitDustNode.exe'
+    return 'bitdust-node.exe'
 
 
 def getIconLaunchFilename():
@@ -1051,29 +1051,7 @@ def getIconLaunchFilename():
     For Windows platforms this should target to executable file to run
     when clicked on Desktop icon.
     """
-    return os.path.join(bpio.getExecutableDir(), 'bitdustnode.exe')
-
-
-def getIconLinkFilename():
-    """
-    A file name for Desktop icon for Windows users.
-    """
-    return 'Data Haven .NET.lnk'
-
-
-def IconFilename():
-    """
-    Application icon file name.
-    """
-    return 'desktop.ico'
-
-
-def StyleSheetsFilename():
-    return 'styles.css'
-
-
-def StyleSheetsPath():
-    return os.path.join(bpio.getExecutableDir(), 'html', StyleSheetsFilename())
+    return os.path.join(bpio.getExecutableDir(), 'bitdust-node.exe')
 
 
 def IconsFolderPath():

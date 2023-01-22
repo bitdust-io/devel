@@ -137,7 +137,7 @@ class Manager(object):
         if bpio.Windows():
             from bitdust.system import deploy
             deploy.init_base_dir()
-            venv_python_path = os.path.join(deploy.current_base_dir(), 'venv', 'Scripts', 'BitDustNode.exe')
+            venv_python_path = os.path.join(deploy.current_base_dir(), 'venv', 'Scripts', 'bitdust-node.exe')
             lg.info('will use %s as multiprocessing executable' % venv_python_path)
             multiprocessing.set_executable(venv_python_path)
 

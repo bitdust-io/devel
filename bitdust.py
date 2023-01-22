@@ -21,10 +21,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-#
-#
-#
-#
 
 from __future__ import absolute_import
 import os
@@ -42,25 +38,6 @@ def main():
 
     if executable_path not in sys.path:
         sys.path.append(executable_path)
-
-    # try:
-    #     os.chdir(os.path.dirname(__file__))
-    # except:
-    #     pass
-
-    # try:
-    #     from bitdust.main.bpmain import main
-    # except:
-    #     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    #     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    #     from distutils.sysconfig import get_python_lib
-    #     sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
-    #     try:
-    #         from bitdust.main.bpmain import main
-    #     except:
-    #         print('ERROR! can not import working code.  Python Path:')
-    #         print('\n'.join(sys.path))
-    #         return 1
 
     from bitdust.main.bpmain import main
 
