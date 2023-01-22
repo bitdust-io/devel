@@ -294,7 +294,7 @@ def call_websocket_method(method, **kwargs):
             'on_open': _on_open,
             'on_error': _on_error,
         },
-        api_secret_filepath=os.path.join(deploy.current_base_dir(), deploy.current_network(), 'metadata', 'apisecret'),
+        api_secret_filepath=os.path.join(deploy.current_base_dir(), 'apisecret'),
     )
     return ret
 

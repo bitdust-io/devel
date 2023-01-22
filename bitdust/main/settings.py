@@ -1001,23 +1001,23 @@ def FTPServerCredentialsFile():
 
 
 def APIServerCertificateKeyFile():
-    return os.path.join(MetaDataDir(), 'apiservercertkey')
+    return os.path.join(AppDataDir(), 'apiservercertkey')
 
 
 def APIServerCertificateFile():
-    return os.path.join(MetaDataDir(), 'apiservercert')
+    return os.path.join(AppDataDir(), 'apiservercert')
 
 
 def APIClientCertificateKeyFile():
-    return os.path.join(MetaDataDir(), 'apiclientcertkey')
+    return os.path.join(AppDataDir(), 'apiclientcertkey')
 
 
 def APIClientCertificateFile():
-    return os.path.join(MetaDataDir(), 'apiclientcert')
+    return os.path.join(AppDataDir(), 'apiclientcert')
 
 
 def APISecretFile():
-    return os.path.join(MetaDataDir(), 'apisecret')
+    return os.path.join(AppDataDir(), 'apisecret')
 
 
 def ChatMessagesHistoryDatabaseFile():
