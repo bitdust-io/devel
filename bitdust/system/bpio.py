@@ -82,6 +82,8 @@ def init():
     if Linux() or Mac():
         lg.setup_unbuffered_stdout()
         lg.setup_unbuffered_stderr()
+    if Windows():
+        import encodings.idna  # nopycln: import  # @UnusedImport
 
 
 def shutdown():

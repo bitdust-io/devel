@@ -275,7 +275,7 @@ def run(args):
     current_python = sys.executable
     print_text('\n***** Current Python executable is {}'.format(current_python))
 
-    print_text('\n***** Create fresh virtual environment in "%s"' % venv_path)
+    print_text('\n***** Creating virtual environment in "%s"' % venv_path)
     make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
     if on_windows:
         python_exe = '"%s"' % os.path.join(base_dir, 'python', 'python.exe')
@@ -331,8 +331,14 @@ def run(args):
 
     print_text('\n***** Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
+
+    if on_windows and status == 0:
+        extra_requirements_cmd = '{} -m pip install -q pywin32 pypiwin32'.format(venv_python_path)
+        status = os.system(extra_requirements_cmd)
+
     if status != 0:
         # TODO: try to detect package manager on target OS and give more correct info: debian/mandrake/OSX
+        # TODO: on Windows it could be that some of the .wheels are not available - need to provide a different message
         depends = [
             'gcc',
             'build-essential',
@@ -345,6 +351,7 @@ def run(args):
         print_text('    %s\n\n' % (' '.join(depends)))
         return status
 
+    # TODO: on Windows this script should create .bat file instead
     script = u'#!/bin/sh\n'
     script += u'# This is a short shell script to create an alias in OS for BitDust software.\n'
     script += u'# NOTICE: BitDust software do not require root permissions to run, please start it as normal user.\n\n'
