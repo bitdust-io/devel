@@ -1272,6 +1272,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
     if Android():
         return []
     q = [
+        'bitdust-node.exe',
         'bitdustnode.exe',
         'BitDustNode.exe',
         'BitDustConsole.exe',  # 'bitdust.py',
