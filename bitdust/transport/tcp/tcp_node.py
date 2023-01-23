@@ -221,8 +221,11 @@ def disconnect():
         tcp_interface.interface_disconnected(None)
         return True
     d = _Listener.stopListening()
-    d.addCallback(tcp_interface.interface_disconnected)
-    d.addErrback(lambda *args: lg.warn(str(*args)))
+    if not d:
+        tcp_interface.interface_disconnected(None)
+    else:
+        d.addCallback(tcp_interface.interface_disconnected)
+        d.addErrback(lambda *args: lg.warn(str(*args)))
     _Listener = None
     return True
 
