@@ -814,10 +814,10 @@ def main(executable_path=None, start_reactor=True):
             return 0
         from bitdust.lib import misc
         print_text('new BitDust process will be started in daemon mode\n', nl='')
-        result = misc.DoRestart(
-            detach=True,  # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-            # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
-        )
+        result = misc.DoRestart(detach=True,
+                                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                               )
         if result is not None:
             try:
                 result = int(result)
