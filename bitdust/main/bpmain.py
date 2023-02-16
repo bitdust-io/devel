@@ -595,14 +595,23 @@ def copyright_text():
 
 
 #--- THE ENTRY POINT
-def main(executable_path=None, start_reactor=True):
+def main(executable_path=None, start_reactor=True, appdir=None):
     """
     THE ENTRY POINT
     """
     global _AppDataDir
 
+    if _Debug:
+        print_text('ENTRY POINT: executable_path=%s appdir=%s' % (
+            executable_path,
+            appdir,
+        ))
+
     pars = parser()
     (opts, args) = pars.parse_args()
+
+    if not appdir:
+        appdir = opts.appdir
 
     if opts.coverage:
         import coverage  # @UnresolvedImport
@@ -667,8 +676,8 @@ def main(executable_path=None, start_reactor=True):
         print_text(src)
         return 0
 
-    if opts.appdir:
-        appdata = opts.appdir
+    if appdir:
+        appdata = appdir
         _AppDataDir = appdata
 
     else:
@@ -685,6 +694,10 @@ def main(executable_path=None, start_reactor=True):
                 appdata = defaultappdata
         _AppDataDir = appdata
 
+    if _Debug:
+        print_text('_AppDataDir: %s' % _AppDataDir)
+        print_text('default_base_dir_portable(): %s' % deploy.default_base_dir_portable())
+
     #---BitDust Home
     deploy.init_base_dir(base_dir=_AppDataDir)
 
@@ -698,7 +711,8 @@ def main(executable_path=None, start_reactor=True):
 
     if bpio.Android():
         lg.close_intercepted_log_file()
-        lg.open_intercepted_log_file('/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust/logs/android.log')
+        from android.storage import app_storage_path  # @UnresolvedImport
+        lg.open_intercepted_log_file(os.path.join(app_storage_path(), '.bitdust', 'logs', 'android.log'))
 
     # sys.excepthook = lg.exception_hook
 

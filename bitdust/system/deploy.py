@@ -113,12 +113,17 @@ def default_base_dir_portable():
 
     elif platform.uname()[0] == 'Linux':
         if 'ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ:
-            return '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust'
+            from android.storage import app_storage_path  # @UnresolvedImport
+            return os.path.join(app_storage_path(), '.bitdust')
 
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
     elif platform.uname()[0] == 'Darwin':
         return os.path.join(os.path.expanduser('~'), '.bitdust')
+
+    elif 'ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ:
+        from android.storage import app_storage_path  # @UnresolvedImport
+        return os.path.join(app_storage_path(), '.bitdust')
 
     return os.path.join(os.path.expanduser('~'), '.bitdust')
 
