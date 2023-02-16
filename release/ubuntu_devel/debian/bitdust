@@ -1,9 +1,0 @@
-#!/bin/bash
-INSTALLATOR=""
-BD_DIR="~/.bitdust"
-if [ -f /usr/share/bitdust/user.txt ]; then
-    INSTALLATOR=`cat /usr/share/bitdust/user.txt`
-    BD_DIR=`cat /usr/share/bitdust/path.txt`
-fi
-cd $BD_DIR/src
-/usr/bin/python bitdust.py

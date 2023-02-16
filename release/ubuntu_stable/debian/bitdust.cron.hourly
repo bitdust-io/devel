@@ -1,5 +1,0 @@
-#!/bin/sh
-
-apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust.list" -o Dir::Etc::sourceparts="-"
-apt-get install bitdust
-#echo "BitDust hourly update started" > /tmp/dhn-hourly1

@@ -1,6 +1,0 @@
-?package(bitdust-stable):needs="x11" \
-  section="Applications/File Management" \
-  hints="Backup" \
-  title="BitDust" \
-  icon="/usr/share/pixmaps/bitdust.xpm" \
-  command="bitdust show"

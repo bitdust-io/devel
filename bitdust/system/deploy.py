@@ -109,24 +109,17 @@ def default_base_dir_portable():
     A portable method to get the default data folder location.
     """
     if platform.uname()[0] == 'Windows':
-        # TODO: move somewhere on Win10 ...
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
     elif platform.uname()[0] == 'Linux':
-        if 'ANDROID_ARGUMENT' in os.environ:
-            # We are on Android, it must be in /storage/emulated/0/.bitdust/
-            # I also tried /data/user/0/org.kivy.bitdust/files/app/.bitdust/ but then I can't browse files from other apps
-            # return os.path.join(os.environ.get('ANDROID_APP_PATH'), '.bitdust')
+        if 'ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ:
             return '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust'
 
-        # This should be okay : /home/veselin/.bitdust/
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
     elif platform.uname()[0] == 'Darwin':
-        # This should be okay : /Users/veselin/.bitdust/
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
-    # otherwise just default : ".bitdust/" in user root folder
     return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 
