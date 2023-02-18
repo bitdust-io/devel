@@ -634,9 +634,11 @@ def DefaultRestoreDir():
     """
     Default location to place restored files and folders.
     """
-    if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
-        from android.storage import primary_external_storage_path  # @UnresolvedImport
-        return os.path.join(primary_external_storage_path(), 'Download')
+    if bpio.Android():
+        # from android.storage import primary_external_storage_path  # @UnresolvedImport
+        # return os.path.join(primary_external_storage_path(), 'Download')
+        from android.storage import app_storage_path  # @UnresolvedImport
+        return app_storage_path()
     return os.path.expanduser('~')
 
 

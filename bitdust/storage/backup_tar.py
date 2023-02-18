@@ -231,10 +231,6 @@ def extracttar_thread(tarfile, outdir):
         lg.out(_DebugLevel, 'backup_tar.extracttar_thread tarfile=%s' % tarfile)
 
     def _run():
-        if bpio.Android():
-            from android.storage import app_storage_path  # @UnresolvedImport
-            outdir = app_storage_path()
-            # TODO: move file to the shared Downloads location after all
         if _Debug:
             lg.out(_DebugLevel, 'backup_tar.extracttar_thread._run outdir=%s' % outdir)
         from bitdust.storage import tar_file
