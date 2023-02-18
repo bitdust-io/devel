@@ -35,7 +35,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -228,15 +228,22 @@ def extracttar_thread(tarfile, outdir):
         lg.err('path %s not found' % tarfile)
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'backup_tar.extracttar_thread %s %s' % (tarfile, outdir))
+        lg.out(_DebugLevel, 'backup_tar.extracttar_thread tarfile=%s' % tarfile)
 
     def _run():
+        if bpio.Android():
+            from android.storage import app_storage_path  # @UnresolvedImport
+            outdir = app_storage_path()
+            # TODO: move file to the shared Downloads location after all
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_tar.extracttar_thread._run outdir=%s' % outdir)
         from bitdust.storage import tar_file
-        return tar_file.readtar(
+        ret = tar_file.readtar(
             archivepath=tarfile,
             outputdir=outdir,
             encoding='utf-8',
         )
+        return ret
 
     return threads.deferToThread(_run)  # @UndefinedVariable
 

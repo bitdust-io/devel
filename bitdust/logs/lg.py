@@ -478,7 +478,7 @@ def set_debug_level(level):
     again. Can set ``level`` to 0 for no debug messages at all.
     """
     global _GlobalDebugLevel
-    _GlobalDebugLevel = level
+    _GlobalDebugLevel = int(level)
 
 
 def get_debug_level():

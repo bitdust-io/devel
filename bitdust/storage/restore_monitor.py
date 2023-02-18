@@ -33,7 +33,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ def extract_failed(err, backupID, source_filename, output_location, callback_met
     global OnRestoreDoneFunc
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-    tmpfile.throw_out(source_filename, 'file extract failed')
+    # tmpfile.throw_out(source_filename, 'file extract failed')
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, 'extract failed')
     if callback_method:
@@ -151,6 +151,8 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
+    if _Debug:
+        lg.args(_DebugLevel, result=result, bid=backupID, tar=tarfilename, out=outputlocation)
     if result == 'done':
         lg.info('restore success of %s with result=%s' % (backupID, result))
     else:
