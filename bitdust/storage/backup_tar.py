@@ -238,7 +238,7 @@ def extracttar_thread(tarfile, outdir):
             archivepath=tarfile,
             outputdir=outdir,
             encoding='utf-8',
-            mode='r|' if bpio.Android() else 'r:*',
+            mode='r:bz2',
         )
         return ret
 

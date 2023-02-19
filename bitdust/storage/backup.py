@@ -581,7 +581,7 @@ def main():
     my_id.init()
 
     sourcePath = sys.argv[1]
-    compress_mode = 'none'  # 'gz'
+    compress_mode = 'bz2'
     backupID = sys.argv[2]
     raid_worker.A('init')
 

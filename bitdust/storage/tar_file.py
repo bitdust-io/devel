@@ -67,8 +67,6 @@ import platform
 import tarfile
 import traceback
 
-# from bitdust.lib import tarfile_mine as tarfile
-
 #------------------------------------------------------------------------------
 
 AppData = ''
@@ -245,7 +243,7 @@ def writetar_filter(tarinfo, sourcepath):
 #------------------------------------------------------------------------------
 
 
-def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None):
+def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None, mode=None):
     """
     Create a tar archive from given ``sourcepath`` location.
     """
@@ -254,9 +252,11 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (sourcepath, arcname, subdirs, compression, encoding))
     if not fileobj:
         fileobj = sys.stdout
-    mode = 'w|'
-    if compression != 'none':
-        mode += compression
+    if not mode:
+        if compression != 'none':
+            mode = 'w|' + compression
+        else:
+            mode = 'w|tar'
     _, filename = os.path.split(sourcepath)
     if arcname is None:
         arcname = to_text(filename)
@@ -302,18 +302,7 @@ def readtar(archivepath, outputdir, encoding=None, mode='r:*'):
     """
     if _Debug:
         printlog('READ: mode=%s name=%s outputdir=%s encoding=%s\n' % (mode, archivepath, outputdir, encoding))
-    try:
-        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
-            tar = tarfile.open(fileobj=open(archivepath, 'rb'), mode=mode, encoding=encoding)
-        else:
-            tar = tarfile.open(name=archivepath, mode=mode, encoding=encoding)
-    except:
-        import time
-        time.sleep(0.1)
-        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
-            tar = tarfile.open(fileobj=open(archivepath, 'rb'), mode=mode, encoding=encoding)
-        else:
-            tar = tarfile.open(name=archivepath, mode=mode, encoding=encoding)
+    tar = tarfile.open(name=archivepath, mode=mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
     return True
