@@ -189,10 +189,11 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
     global _WorkingRestoreProgress
     if backupID in list(_WorkingBackupIDs.keys()):
         return _WorkingBackupIDs[backupID]
+    alias = backupID.split('$')[0]
     outfd, outfilename = tmpfile.make(
         'restore',
         extension='.tar.gz',
-        prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+        prefix=alias + '_',
     )
     from bitdust.storage import restore_worker
     r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)

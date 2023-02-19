@@ -490,10 +490,11 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
+        alias = self.backup_id.split('$')[0]
         _, outfilename = tmpfile.make(
             'restore',
             extension='.raid',
-            prefix=self.backup_id.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.block_number) + '_',
+            prefix=alias + '_' + str(self.block_number) + '_',
             close_fd=True,
         )
         inputpath = os.path.join(settings.getLocalBackupsDir(), self.customer_id, self.path_id)

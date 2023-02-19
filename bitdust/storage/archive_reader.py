@@ -344,10 +344,11 @@ class ArchiveReader(automat.Automat):
             self.automat('extract-all-done', self.extracted_messages)
             return
         backup_id = self.selected_backups[backup_index]
+        alias = backup_id.split('$')[0]
         outfd, outfilename = tmpfile.make(
             'restore',
             extension='.tar.gz',
-            prefix=backup_id.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+            prefix=alias + '_',
         )
         rw = restore_worker.RestoreWorker(backup_id, outfd, KeyID=self.group_key_id)
         rw.MyDeferred.addCallback(self._on_restore_done, backup_id, outfd, outfilename, backup_index)

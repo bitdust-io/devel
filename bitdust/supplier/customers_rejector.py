@@ -50,6 +50,8 @@ from bitdust.logs import lg
 
 from bitdust.automats import automat
 
+from bitdust.system import bpio
+
 from bitdust.main import settings
 from bitdust.main import config
 
@@ -157,6 +159,9 @@ class CustomersRejector(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'customers_rejector.doTestMyCapacity')
+        if bpio.Android():
+            self.automat('space-enough')
+            return
         failed_customers = set()
         current_customers = contactsdb.customers()
         donated_bytes = settings.getDonatedBytes()

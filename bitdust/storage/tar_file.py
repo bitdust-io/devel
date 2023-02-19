@@ -57,7 +57,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -66,6 +66,8 @@ import sys
 import platform
 import tarfile
 import traceback
+
+# from bitdust.lib import tarfile_mine as tarfile
 
 #------------------------------------------------------------------------------
 
@@ -261,7 +263,11 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
+    if _Debug:
+        printlog('OPEN: mode=%s fileobj=%r\n' % (mode, fileobj))
     tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
+    if _Debug:
+        printlog('ADD: name=%s arcname=%r\n' % (sourcepath, arcname))
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -273,9 +279,12 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         for subfile in os.listdir(sourcepath):
             subpath = os.path.join(sourcepath, subfile)
             if not os.path.isdir(subpath):
+                arcname = to_text(os.path.join(arcname, subfile))
+                if _Debug:
+                    printlog('ADD: name=%s arcname=%r\n' % (subpath, arcname))
                 tar.add(
                     name=subpath,
-                    arcname=to_text(os.path.join(arcname, subfile)),
+                    arcname=arcname,
                     recursive=False,
                     filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
                 )
@@ -286,15 +295,25 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
 #------------------------------------------------------------------------------
 
 
-def readtar(archivepath, outputdir, encoding=None):
+def readtar(archivepath, outputdir, encoding=None, mode='r:*'):
     """
     Extract tar file from ``archivepath`` location into local ``outputdir``
     folder.
     """
     if _Debug:
-        printlog('READ: %s to %s, encoding=%s\n' % (archivepath, outputdir, encoding))
-    mode = 'r:*'
-    tar = tarfile.open(archivepath, mode, encoding=encoding)
+        printlog('READ: mode=%s name=%s outputdir=%s encoding=%s\n' % (mode, archivepath, outputdir, encoding))
+    try:
+        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
+            tar = tarfile.open(fileobj=open(archivepath, 'rb'), mode=mode, encoding=encoding)
+        else:
+            tar = tarfile.open(name=archivepath, mode=mode, encoding=encoding)
+    except:
+        import time
+        time.sleep(0.1)
+        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
+            tar = tarfile.open(fileobj=open(archivepath, 'rb'), mode=mode, encoding=encoding)
+        else:
+            tar = tarfile.open(name=archivepath, mode=mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
     return True
