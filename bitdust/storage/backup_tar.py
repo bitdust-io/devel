@@ -189,7 +189,7 @@ def backuptarfile_thread(filepath, arcname=None, compress=None):
     return p
 
 
-def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, compress=None):
+def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, compress='bz2'):
     """
     Makes tar archive of a single file inside a thread.
     Returns `BytesLoop` object instance which can be used to read produced data in parallel.
@@ -220,7 +220,7 @@ def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, 
     return p
 
 
-def extracttar_thread(tarfile, outdir):
+def extracttar_thread(tarfile, outdir, mode='r:bz2'):
     """
     Opposite method, extract files and folders from ".tar" file inside a thread.
     """
@@ -238,7 +238,7 @@ def extracttar_thread(tarfile, outdir):
             archivepath=tarfile,
             outputdir=outdir,
             encoding='utf-8',
-            mode='r:bz2',
+            mode=mode,
         )
         return ret
 
