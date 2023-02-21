@@ -2,6 +2,17 @@ Change Log
 ==========
 
 
+2023-02-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in shared_access_coordinator()
+* added 'local_path' field to api.file_info() and api.files_list()
+* set to always use bz2 as a default tar file reading/writing mode
+* use internal Android app data location for restore
+* Android fixes related to internal storage location
+* removed some legacy scripts
+
+
+
 2023-01-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * minor fix in bitdust/transport/tcp/tcp_node.py
