@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2023-01-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor fix in bitdust/transport/tcp/tcp_node.py
+* some more fixes related to WindowsOS
+
+
+
 2023-01-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * moved apisecret file from .bitdust/default/metadata/apisecret to .bitdust/apisecret

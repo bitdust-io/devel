@@ -634,8 +634,11 @@ def DefaultRestoreDir():
     """
     Default location to place restored files and folders.
     """
-    if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-        return '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Downloads'
+    if bpio.Android():
+        # from android.storage import primary_external_storage_path  # @UnresolvedImport
+        # return os.path.join(primary_external_storage_path(), 'Download')
+        from android.storage import app_storage_path  # @UnresolvedImport
+        return app_storage_path()
     return os.path.expanduser('~')
 
 

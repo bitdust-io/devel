@@ -57,7 +57,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -135,8 +135,9 @@ def sharedPath(filename, subdir='logs'):
             if not os.path.isdir(appdata):
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         else:
-            if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-                appdata = '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust'
+            if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
+                from android.storage import app_storage_path  # @UnresolvedImport
+                appdata = os.path.join(app_storage_path(), '.bitdust')
             else:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
@@ -242,7 +243,7 @@ def writetar_filter(tarinfo, sourcepath):
 #------------------------------------------------------------------------------
 
 
-def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None):
+def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None, mode=None):
     """
     Create a tar archive from given ``sourcepath`` location.
     """
@@ -251,16 +252,22 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (sourcepath, arcname, subdirs, compression, encoding))
     if not fileobj:
         fileobj = sys.stdout
-    mode = 'w|'
-    if compression != 'none':
-        mode += compression
+    if not mode:
+        if compression != 'none':
+            mode = 'w|' + compression
+        else:
+            mode = 'w|tar'
     _, filename = os.path.split(sourcepath)
     if arcname is None:
         arcname = to_text(filename)
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
+    if _Debug:
+        printlog('OPEN: mode=%s fileobj=%r\n' % (mode, fileobj))
     tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
+    if _Debug:
+        printlog('ADD: name=%s arcname=%r\n' % (sourcepath, arcname))
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -272,9 +279,12 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         for subfile in os.listdir(sourcepath):
             subpath = os.path.join(sourcepath, subfile)
             if not os.path.isdir(subpath):
+                arcname = to_text(os.path.join(arcname, subfile))
+                if _Debug:
+                    printlog('ADD: name=%s arcname=%r\n' % (subpath, arcname))
                 tar.add(
                     name=subpath,
-                    arcname=to_text(os.path.join(arcname, subfile)),
+                    arcname=arcname,
                     recursive=False,
                     filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
                 )
@@ -285,15 +295,14 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
 #------------------------------------------------------------------------------
 
 
-def readtar(archivepath, outputdir, encoding=None):
+def readtar(archivepath, outputdir, encoding=None, mode='r:*'):
     """
     Extract tar file from ``archivepath`` location into local ``outputdir``
     folder.
     """
     if _Debug:
-        printlog('READ: %s to %s, encoding=%s\n' % (archivepath, outputdir, encoding))
-    mode = 'r:*'
-    tar = tarfile.open(archivepath, mode, encoding=encoding)
+        printlog('READ: mode=%s name=%s outputdir=%s encoding=%s\n' % (mode, archivepath, outputdir, encoding))
+    tar = tarfile.open(name=archivepath, mode=mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
     return True

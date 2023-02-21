@@ -35,7 +35,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -189,7 +189,7 @@ def backuptarfile_thread(filepath, arcname=None, compress=None):
     return p
 
 
-def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, compress=None):
+def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, compress='bz2'):
     """
     Makes tar archive of a single file inside a thread.
     Returns `BytesLoop` object instance which can be used to read produced data in parallel.
@@ -220,7 +220,7 @@ def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, 
     return p
 
 
-def extracttar_thread(tarfile, outdir):
+def extracttar_thread(tarfile, outdir, mode='r:bz2'):
     """
     Opposite method, extract files and folders from ".tar" file inside a thread.
     """
@@ -228,15 +228,19 @@ def extracttar_thread(tarfile, outdir):
         lg.err('path %s not found' % tarfile)
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'backup_tar.extracttar_thread %s %s' % (tarfile, outdir))
+        lg.out(_DebugLevel, 'backup_tar.extracttar_thread tarfile=%s' % tarfile)
 
     def _run():
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_tar.extracttar_thread._run outdir=%s' % outdir)
         from bitdust.storage import tar_file
-        return tar_file.readtar(
+        ret = tar_file.readtar(
             archivepath=tarfile,
             outputdir=outdir,
             encoding='utf-8',
+            mode=mode,
         )
+        return ret
 
     return threads.deferToThread(_run)  # @UndefinedVariable
 

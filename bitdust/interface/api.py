@@ -1734,6 +1734,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
+    from bitdust.main import settings
     from bitdust.storage import backup_fs
     from bitdust.storage import backup_control
     from bitdust.system import bpio
@@ -1797,6 +1798,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         return ERROR(lookup)
     if _Debug:
         lg.out(_DebugLevel, '    lookup with %d items' % len(lookup))
+    local_dir = settings.getRestoreDir()
     for i in lookup:
         if i['path_id'] == 'index':
             continue
@@ -1845,6 +1847,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                 'pending': [],
             },
             'downloads': [],
+            'local_path': os.path.join(local_dir, i['name']),
         }
         if include_uploads:
             backup_control.tasks()
@@ -1984,6 +1987,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         return ERROR('service_backup_db() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info remote_path=%s include_uploads=%s include_downloads=%s' % (remote_path, include_uploads, include_downloads))
+    from bitdust.main import settings
     from bitdust.storage import backup_fs
     from bitdust.storage import backup_control
     from bitdust.lib import misc
@@ -2034,6 +2038,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
             'pending': [],
         },
         'downloads': [],
+        'local_path': os.path.join(settings.getRestoreDir(), item.name()),
     }
     if include_uploads:
         backup_control.tasks()
@@ -2915,11 +2920,14 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     from bitdust.storage import backup_fs
     from bitdust.crypt import my_keys
     from bitdust.userid import global_id
+    from bitdust.userid import id_url
     from bitdust.userid import my_id
     results = []
     if only_active:
         for key_id in shared_access_coordinator.list_active_shares():
             _glob_id = global_id.ParseGlobalID(key_id)
+            if not id_url.is_cached(_glob_id['idurl']):
+                continue
             to_be_listed = False
             if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
@@ -2937,6 +2945,8 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
         if not key_id.startswith('share_'):
             continue
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
+        if not id_url.is_cached(creator_idurl):
+            continue
         to_be_listed = False
         if include_mine and creator_idurl == my_id.getIDURL():
             to_be_listed = True

@@ -1,9 +1,0 @@
-[Desktop Entry]
-Encoding=UTF-8
-Name=BitDust
-Comment=Distributed peer-to-peer encrypted backup program
-GenericName=BitDust
-Icon=bitdust.png
-Type=Application
-Exec=bitdust show
-Categories=Network;Application;

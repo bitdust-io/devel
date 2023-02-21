@@ -280,10 +280,7 @@ class ArchiveWriter(automat.Automat):
             version=dataID,
         )
         backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backup_id)
-        if bpio.Android():
-            compress_mode = 'none'
-        else:
-            compress_mode = 'bz2'
+        compress_mode = 'bz2'
         arcname = os.path.basename(local_path)
         backupPipe = backup_tar.backuptarfile_thread(local_path, arcname=arcname, compress=compress_mode)
         self.backup_job = backup.backup(

@@ -379,7 +379,8 @@ class Initializer(automat.Automat):
         """
         if bpio.Android():
             lg.close_intercepted_log_file()
-            lg.open_intercepted_log_file('/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust/logs/android.log', mode='a')
+            from android.storage import app_storage_path  # @UnresolvedImport
+            lg.open_intercepted_log_file(os.path.join(app_storage_path(), '.bitdust', 'logs', 'android.log'), mode='a')
             if _Debug:
                 lg.dbg(_DebugLevel, 'log file "android.log" re-opened')
         if _Debug:

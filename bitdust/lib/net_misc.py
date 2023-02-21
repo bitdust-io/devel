@@ -932,6 +932,12 @@ def getNetworkInterfaces():
             return ips
 
     elif plat == 'Linux':
+        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
+            # fake nw interface on Android
+            return [
+                '127.0.0.1',
+            ]
+
         try:
             pipe = os.popen('`which ip` -f inet a')
         except IOError:

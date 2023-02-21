@@ -132,7 +132,7 @@ def ostype():
     global PlatformInfo
     if PlatformInfo is None:
         PlatformInfo = list(platform.uname())
-        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
+        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ):
             PlatformInfo[0] = 'Android'
     return PlatformInfo[0]
 

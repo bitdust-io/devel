@@ -117,7 +117,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     if level:
         s = ' '*level + s
     if _IsAndroid is None:
-        _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ))
+        _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ))
     if (_ShowTime and level > 0) or showtime:
         tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
@@ -478,7 +478,7 @@ def set_debug_level(level):
     again. Can set ``level`` to 0 for no debug messages at all.
     """
     global _GlobalDebugLevel
-    _GlobalDebugLevel = level
+    _GlobalDebugLevel = int(level)
 
 
 def get_debug_level():

@@ -130,7 +130,7 @@ class Test(TestCase):
         with open('/tmp/_some_folder/random_file', 'wb') as fout:
             fout.write(os.urandom(10))
             # fout.write(os.urandom(100*1024))
-        backupPipe = backup_tar.backuptardir_thread('/tmp/_some_folder/')
+        backupPipe = backup_tar.backuptardir_thread('/tmp/_some_folder/', compress='bz2')
 
         def _extract_done(retcode, backupID, source_filename, output_location):
             assert retcode is True

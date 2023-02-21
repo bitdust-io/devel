@@ -308,13 +308,23 @@ def on_key_registered(evt):
     if active_share:
         active_share.automat('new-private-key-registered')
         return
-    new_share = SharedAccessCoordinator(
-        evt.data['key_id'],
-        log_events=True,
-        publish_events=False,
-    )
-    new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: on_share_first_connected(evt.data['key_id'], _id, _result))
-    new_share.automat('new-private-key-registered')
+
+    def _run_coordinator():
+        new_share = SharedAccessCoordinator(
+            key_id=evt.data['key_id'],
+            log_events=True,
+            publish_events=False,
+        )
+        new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: on_share_first_connected(evt.data['key_id'], _id, _result))
+        new_share.automat('new-private-key-registered')
+
+    glob_id = global_id.NormalizeGlobalID(evt.data['key_id'])
+    if id_url.is_cached(glob_id['idurl']):
+        _run_coordinator()
+    else:
+        d = identitycache.immediatelyCaching(glob_id['idurl'])
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_coordinator.on_key_registered')
+        d.addCallback(lambda *args: _run_coordinator())
 
 
 def on_key_erased(evt):

@@ -275,6 +275,9 @@ class KeysSynchronizer(automat.Automat):
                 else:
                     stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
                     is_private = True
+                if not my_keys.is_valid_key_id(stored_key_id):
+                    lg.warn('not able to recognize stored key_id from item: %r' % i)
+                    continue
                 stored_key_id = my_keys.latest_key_id(stored_key_id)
                 is_reliable = False
                 for v in i['versions']:
