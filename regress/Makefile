@@ -27,6 +27,9 @@
 # * docker
 # * docker-compose
 
+ifeq ($(PYTHON_VERSION),)
+	PYTHON_VERSION=3.9
+endif
 
 ALL_TESTS := $(patsubst tests/%,%,$(wildcard tests/*))
 
