@@ -14,24 +14,20 @@
 
 #### BitDust is a peer-to-peer online backup utility.
 
-This is a distributed network for backup data storage. Each participant of the network provides a portion of his hard drive for other users. In exchange, he is able to store his data on other peers.
+This is a distributed network for backup data storage. Each network participant provides a portion of their hard drive for other users. In exchange, they can store data on other peers.
 
-The redundancy in backup makes it so if someone loses your data, you can rebuild what was lost and give it to someone else to hold. And all of this happens without you having to do a thing - the software keeps your data in safe.
+The redundancy in backup makes it so that if someone loses your data, you can rebuild what was lost and give it to someone else to hold. And all of this happens without you having to do a thing - the software keeps your data safe.
 
-All your data is encrypted before it leaves your computer with a private key your computer generates. No one else can read your data, even BitDust Team! Recover data is only one way - download the necessary pieces from computers of other peers and decrypt them with your private key.
+All your data is encrypted before it leaves your computer with a private key your computer generates. No one else can read your data, even BitDust Team! Recovering data is only one way - download the necessary pieces from the computers of other peers and decrypt them with your private key.
 
-BitDust is written in Python using pure Twisted framework and published under GNU AGPLv3.
+BitDust is written in Python using a pure Twisted framework and published under GNU AGPLv3.
 
 
 #### Current status
 
-Current project stage is about to only research opportunities of
-building a holistic eco-system that protects your privacy in the network
-by establishing p2p communications of users and maximize distribution of
-information flows in the network.
+The current project stage is about only research opportunities for building a holistic eco-system that protects your privacy in the network by establishing p2p communications of users and maximizing the distribution of information flows in the network.
 
-At the moment exists a very limited alpha version of the BitDust software.
-We decided to publish those earlier works to verify/test/share our ideas and experiments with other people.
+Currently, a very limited alpha version of the BitDust software exists. We decided to publish those earlier works to verify/test/share our ideas and experiments with other people.
 
 
 ## Install BitDust software
@@ -43,7 +39,7 @@ Seems like in Ubuntu (probably most other distros) you can install all dependenc
         sudo apt-get install git gcc python3-dev python3-virtualenv
 
 
-Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
+Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incoming connections from other nodes.:
 
         sudo apt-get install miniupnpc
 
@@ -73,9 +69,9 @@ Second step is to get the BitDust sources. To have a full control over BitDust p
         git clone https://github.com/<your GitHub username>/<name of BitDust fork>.git bitdust
 
 
-The software will periodically run `git fetch` and `git rebase` to check for recent commits in the repo. This way we make sure that everyone is running the latest version of the program. Once you made a fork, you will have to update your Fork manually and pull commits from Public BitDust repository if you trust them.
+The software will periodically run `git fetch` and `git rebase` to check for recent commits in the repo. This way, we ensure that everyone is running the program's latest version. Once you make a fork, you must manually update your Fork and pull commits from the Public BitDust repository if you trust them.
 
-However if you just trust BitDust contributors you can simply clone the Public repository directly and software will be up to date with the "official" public code base:
+However, if you just trust BitDust contributors, you can simply clone the Public repository directly, and software will be up to date with the "official" public code base:
 
         git clone https://github.com/bitdust-io/public.git bitdust
 
@@ -135,7 +131,7 @@ To get more info about API methods available go to [BitDust API](https://bitdust
 
 #### Binary Dependencies
 
-If you are installing BitDust on Windows platforms, you may require some binary packages already compiled and packaged for Microsoft Windows platforms, you can check following locations and download needed binaries and libraries:
+If you are installing BitDust on Windows platforms, you may require some binary packages already compiled and packaged for Microsoft Windows platforms. You can check the following locations and download needed binaries and libraries:
 
 * cygwin: [cygwin.com](https://cygwin.com/install.html)
 * git: [git-scm.com](https://git-scm.com/download/win)
@@ -148,7 +144,7 @@ If you are installing BitDust on Windows platforms, you may require some binary 
 
 #### Docker Hub container image
 
-You can also run bitdust inside Docker. We prepared a container which have BitDust installed and easy to run. You will have to SSH into the running container after start it and manually configure bitdust as you wish and run it:
+You can also run BitDust inside Docker. We prepared a container that has BitDust installed and is easy to run. You will have to SSH into the running container after starting it and manually configure BitDust as you wish and run it:
 
         docker run -d -P --name bdnode bitdust/app1
         docker port bdnode 22
