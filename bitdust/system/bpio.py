@@ -240,6 +240,8 @@ def isConsoled():
         return False
     if getExecutableFilename().count('bitdust-node.exe'):
         return False
+    if getExecutableFilename().count('BitDust-node'):
+        return False
     if not sys.stdout:
         return False
     return True
@@ -1279,6 +1281,8 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
         'bitdustnode.exe',
         'BitDustNode.exe',
         'BitDustConsole.exe',  # 'bitdust.py',
+        'BitDust-node',
+        'bpmain.py',
     ]
     if os.environ.get('BITDUST_IN_DOCKER') == '1':
         q.extend([
@@ -1322,6 +1326,7 @@ def lookup_main_process():
         'bitdustnode.exe',
         'BitDustNode.exe',
         'BitDustConsole.exe',
+        'BitDust-node',
         'bpmain.py',
     ]
     if os.environ.get('BITDUST_IN_DOCKER') == '1':

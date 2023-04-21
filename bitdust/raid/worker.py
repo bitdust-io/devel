@@ -27,7 +27,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -78,6 +78,9 @@ class my_decorator_class(object):
 
 def func_thread(tasks, pool):
     while True:
+        if _Debug:
+            lg.out(_DebugLevel, 'raid.worker.func_thread tasks: %d' % len(tasks))
+
         try:
             _WorkerQueue.get()
         except (EOFError, OSError, IOError):
@@ -93,7 +96,7 @@ def func_thread(tasks, pool):
         if task:
             func, params, callback, error_callback, task_id = task[1]
             if _Debug:
-                lg.out(_DebugLevel, 'raid.worker.func_thread is going to apply task %s' % task_id)
+                lg.out(_DebugLevel, 'raid.worker.func_thread is going to apply task %s with callback %r' % (task_id, callback, ))
             if six.PY3:
                 pool.apply_async(func=func, args=params + (task_id, ), callback=callback, error_callback=error_callback)
             else:

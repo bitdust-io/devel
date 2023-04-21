@@ -130,7 +130,7 @@ def extract_failed(err, backupID, source_filename, output_location, callback_met
     global OnRestoreDoneFunc
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-    # tmpfile.throw_out(source_filename, 'file extract failed')
+    tmpfile.throw_out(source_filename, 'file extract failed')
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, 'extract failed')
     if callback_method:
