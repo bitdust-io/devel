@@ -562,6 +562,7 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
     save_key(key_id, keys_folder=keys_folder)
     events.send('key-registered', data=dict(
         key_id=key_id,
+        local_key_id=new_local_key_id,
         label=label,
         key_size=key_object.size(),
     ))
@@ -599,16 +600,18 @@ def erase_key(key_id, keys_folder=None):
         lg.exc()
         return False
     k_obj = known_keys().pop(key_id)
+    erased_local_key_id = k_obj.local_key_id
     local_keys().pop(k_obj.local_key_id, None)
     local_keys_index().pop(k_obj.toPublicString(), None)
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
-    events.send('key-erased', data=dict(key_id=key_id, is_private=is_private))
+    events.send('key-erased', data=dict(key_id=key_id, local_key_id=erased_local_key_id, is_private=is_private))
     listeners.push_snapshot(
         'key', snap_id=key_id, deleted=True, data=make_key_info(
             key_object=None,
             key_id=key_id,
+            local_id=erased_local_key_id,
             event='key-erased',
             include_private=False,
             include_local_id=True,
@@ -947,7 +950,9 @@ def make_master_key_info(include_private=False):
     return r
 
 
-def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, generate_signature=False, include_signature=False, include_local_id=False, include_label=True, include_state=False, event=None):
+def make_key_info(
+    key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, generate_signature=False, include_signature=False, include_local_id=False, include_label=True, include_state=False, event=None, local_id=None
+):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -980,7 +985,10 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     else:
         r['size'] = '0'
     if include_local_id:
-        r['local_key_id'] = getattr(key_object, 'local_key_id', None) if key_object else None
+        if local_id:
+            r['local_key_id'] = local_id
+        else:
+            r['local_key_id'] = getattr(key_object, 'local_key_id', None) if key_object else None
     if key_object and generate_signature:
         r = sign_key_info(r)
     else:

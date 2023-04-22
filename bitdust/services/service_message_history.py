@@ -93,10 +93,10 @@ class MessageHistoryService(LocalService):
 
     def on_key_erased(self, evt):
         from bitdust.main import listeners
-        from bitdust.crypt import my_keys
+        from bitdust.chat import message_database
         if evt.data['key_id'].startswith('group_'):
-            local_key_id = my_keys.get_local_key_id(evt.data['key_id'])
-            listeners.push_snapshot('conversation', snap_id=local_key_id, deleted=True)
+            conversation_id = message_database.get_conversation_id(evt.data['local_key_id'], evt.data['local_key_id'], 3)
+            listeners.push_snapshot('conversation', snap_id=conversation_id, deleted=True)
 
     def do_check_create_rename_key(self, new_key_id):
         from bitdust.logs import lg

@@ -204,10 +204,7 @@ def get_conversation_id(
     payload_type,
 ):
     conversation_id = None
-    if payload_type in [
-        3,
-        4,
-    ]:
+    if payload_type in [3, 4]:
         conversation_id = '{}&{}'.format(recipient_local_key_id, recipient_local_key_id)
     elif payload_type == 2:
         if recipient_local_key_id < sender_local_key_id:
@@ -229,10 +226,7 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
     if not recipient:
         recipient = my_id.getGlobalID(key_alias='master')
     if direction is None:
-        if message_type in [
-            'private_message',
-            None,
-        ]:
+        if message_type in ['private_message', None]:
             direction = 'out' if sender == my_id.getGlobalID(key_alias='master') else 'in'
         else:
             direction = 'in'
@@ -735,10 +729,7 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
     db().commit()
     if _Debug:
         lg.args(_DebugLevel, sql=sql, params=params)
-    if conversation_type in [
-        'group_message',
-        'personal_message',
-    ]:
+    if conversation_type in ['group_message', 'personal_message']:
         update_conversation(
             sender_local_key_id=new_local_key_id,
             recipient_local_key_id=new_local_key_id,
