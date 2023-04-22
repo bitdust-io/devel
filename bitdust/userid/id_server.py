@@ -173,7 +173,7 @@ class IdServer(automat.Automat):
         """
         self.hostname = settings.getIdServerHost()
         if self.hostname == '':
-            self.hostname = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
+            self.hostname = strng.to_bin(misc.readExternalIP())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
         lg.out(4, 'id_server.doSetUp hostname=%s' % strng.to_text(self.hostname))
@@ -236,12 +236,12 @@ class IdServer(automat.Automat):
         """
         lg.out(6, 'id_server._save_identity ' + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
-            lg.warn('input file too big - ignoring ')
+            lg.warn('input file too big - ignoring')
             tmpfile.erase('idsrv', inputfilename, 'input file too big')
             return
         newxml = bpio.ReadTextFile(inputfilename)
-        if len(newxml.strip()) < 500:
-            lg.warn('input file too small - ignoring ')
+        if not newxml or len(newxml.strip()) < 500:
+            lg.warn('input file too small - ignoring')
             tmpfile.erase('idsrv', inputfilename, 'input file too small')
             return
         try:

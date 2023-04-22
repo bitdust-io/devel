@@ -577,7 +577,7 @@ class IdRotator(automat.Automat):
                 if latest_revision <= remote_ident.getRevisionValue():
                     latest_revision = remote_ident.getRevisionValue()
             except:
-                lg.exc()
+                lg.exc(remote_identity_src)
                 self.alive_idurls.append(None)
                 continue
             if idurl_bin not in self.alive_idurls:

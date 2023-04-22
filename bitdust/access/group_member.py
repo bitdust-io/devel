@@ -61,7 +61,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -825,11 +825,6 @@ class GroupMember(automat.Automat):
         if event == 'leave':
             groups.set_group_active(self.group_key_id, False)
             groups.save_group_info(self.group_key_id)
-            if kwargs.get('erase_key', False):
-                if my_keys.is_key_registered(self.group_key_id):
-                    my_keys.erase_key(self.group_key_id)
-                else:
-                    lg.warn('key %r not registered, can not be erased' % self.group_key_id)
         else:
             groups.save_group_info(self.group_key_id)
 
@@ -846,6 +841,11 @@ class GroupMember(automat.Automat):
                     service_name='service_message_broker',
                     json_payload=self._do_prepare_service_request_params(broker_idurl, action='queue-disconnect'),
                 )
+            if kwargs.get('erase_key', False):
+                if my_keys.is_key_registered(self.group_key_id):
+                    my_keys.erase_key(self.group_key_id)
+                else:
+                    lg.warn('key %r not registered, can not be erased' % self.group_key_id)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1207,7 +1207,7 @@ class GroupMember(automat.Automat):
         #     lg.warn('group key %r was not registered, checking all registered keys' % self.group_key_id)
         #     my_keys.check_rename_my_keys(prefix=self.group_key_id.split('@')[0])
         if not my_keys.is_key_registered(self.group_key_id):
-            lg.err('closing group_member %r because key %r is not registered' % (self, self.group_key_id))
+            lg.warn('closing group_member %r because key %r is not registered' % (self, self.group_key_id))
             lg.exc('group key %r is not registered' % self.group_key_id)
             self.automat('shutdown')
             return
