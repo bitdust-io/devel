@@ -16,10 +16,6 @@
         "udp_port": 14441
       },
       {
-        "host": "bitrex.ai",
-        "udp_port": 14441
-      },
-      {
         "host": "root-node.ai",
         "udp_port": 14441
       },
@@ -29,10 +25,6 @@
       },
       {
         "host": "peer2peer.ai",
-        "udp_port": 14441
-      },
-      {
-        "host": "webapp.ai",
         "udp_port": 14441
       },
       {
@@ -63,10 +55,6 @@
         "http_port": 80
       },
       {
-        "host": "bitrex.ai",
-        "http_port": 80
-      },
-      {
         "host": "root-node.ai",
         "http_port": 80
       },
@@ -76,10 +64,6 @@
       },
       {
         "host": "peer2peer.ai",
-        "http_port": 80
-      },
-      {
-        "host": "webapp.ai",
         "http_port": 80
       },
       {
