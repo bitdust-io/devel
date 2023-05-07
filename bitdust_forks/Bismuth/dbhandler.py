@@ -18,7 +18,6 @@ def sql_trace_callback(log, id, statement):
 
 class DbHandler:
     def __init__(self, index_db, ledger_path, hyper_path, ram, ledger_ram_file, logger, trace_db_calls=False):
-        print('DbHandler', index_db, ledger_path, hyper_path, ram, ledger_ram_file)
         self.ram = ram
         self.ledger_ram_file = ledger_ram_file
         self.hyper_path = hyper_path
