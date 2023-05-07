@@ -58,6 +58,7 @@ def shutdown():
 
 def run(data_dir_path):
     global _DataDirPath
+
     from bitdust_forks.Bismuth import mempool as mp
     from bitdust_forks.Bismuth import apihandler
     from bitdust_forks.Bismuth import dbhandler
