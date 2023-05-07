@@ -30,6 +30,7 @@ devops/development_net.txt
 devops/main_net.txt
 .coverage
 .import
+bitdust/blockchain/genesis/
 
 # IDE specific
 .idea

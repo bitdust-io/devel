@@ -10,10 +10,10 @@ class ConnectionManager(threading.Thread):
         self.mp = mp
 
     def run(self):
-
         self.connection_manager()
 
     def connection_manager(self):
+        print('connection_manager', self.name)
         self.node.logger.app_log.warning('Status: Starting connection manager')
         until_purge = 0
 

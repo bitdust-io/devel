@@ -107,6 +107,8 @@ def defaults():
         'services/blockchain/wallet/enabled': TYPE_BOOLEAN,
         'services/blockchain/wallet/port': TYPE_PORT_NUMBER,
         'services/blockchain/miner/enabled': TYPE_BOOLEAN,
+        'services/bismuth-blockchain/enabled': TYPE_BOOLEAN,
+        'services/bismuth-node/enabled': TYPE_BOOLEAN,
         'services/broadcasting/enabled': TYPE_BOOLEAN,
         'services/broadcasting/routing-enabled': TYPE_BOOLEAN,
         'services/broadcasting/max-broadcast-connections': TYPE_NON_ZERO_POSITIVE_INTEGER,

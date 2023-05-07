@@ -95,6 +95,9 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/blockchain/wallet/port', 9280)
     conf_obj.setDefaultValue('services/blockchain/miner/enabled', 'false')
 
+    conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'false')
+    conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')
+
     conf_obj.setDefaultValue('services/broadcasting/enabled', 'false')
     conf_obj.setDefaultValue('services/broadcasting/routing-enabled', 'false')
     conf_obj.setDefaultValue('services/broadcasting/max-broadcast-connections', '3')

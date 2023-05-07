@@ -3,6 +3,8 @@ import os.path as path
 
 __version__ = '0.0.5'
 
+GENESIS_ADDRESS = 'cc846806ba14b8ec5a042d254beeeb637ee91033fa0f84c66063e0a9'
+
 
 class Get:
 
@@ -70,7 +72,7 @@ class Get:
                 setattr(self, key, default)
 
         self.node_ip = '127.0.0.1'
-        self.genesis_conf = '3b9ca99a7804015f8eaebb78d4b50570bd8337e8a8196343dbbb59c4'
+        self.genesis_conf = GENESIS_ADDRESS
         # print(self.__dict__)
 
     def read(self, filename='config.txt', custom_filename='config_custom.txt'):
