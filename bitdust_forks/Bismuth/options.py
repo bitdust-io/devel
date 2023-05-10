@@ -2,6 +2,8 @@ import json
 import os.path as path
 from sys import exit
 
+GENESIS_ADDRESS = 'cc846806ba14b8ec5a042d254beeeb637ee91033fa0f84c66063e0a9'
+
 
 class Get:
     # "param_name":["type"] or "param_name"=["type","property_name"]
@@ -106,7 +108,7 @@ class Get:
                         left = params[1]
                     setattr(self, left, right)
         # Default genesis to keep compatibility
-        self.genesis = '3b9ca99a7804015f8eaebb78d4b50570bd8337e8a8196343dbbb59c4'
+        self.genesis = GENESIS_ADDRESS
         for key, default in self.defaults.items():
             if key not in self.__dict__:
                 setattr(self, key, default)
