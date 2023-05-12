@@ -6,6 +6,9 @@ import socks
 import sqlite3
 import traceback
 
+from twisted.internet.defer import Deferred
+from twisted.internet import reactor
+
 VERSION = '1.0.0.0'
 
 _DataDirPath = None
@@ -14,8 +17,10 @@ _DataDirPath = None
 def init(data_dir_path):
     global _DataDirPath
     _DataDirPath = data_dir_path
-    node_thread = threading.Thread(target=run, args=(data_dir_path, ))
+    starting_defer = Deferred()
+    node_thread = threading.Thread(target=run, args=(data_dir_path, starting_defer, ))
     node_thread.start()
+    return starting_defer
 
 
 def shutdown():
@@ -54,18 +59,20 @@ def shutdown():
             count += 1
 
     s.close()
+    return True
 
 
-def run(data_dir_path):
+def run(data_dir_path, starting_defer):
     global _DataDirPath
-    from bitdust_forks.Bismuth import mempool as mp
+
+    from bitdust_forks.Bismuth import mempool
     from bitdust_forks.Bismuth import apihandler
     from bitdust_forks.Bismuth import dbhandler
     from bitdust_forks.Bismuth import log
     from bitdust_forks.Bismuth import options
     from bitdust_forks.Bismuth import peershandler
     from bitdust_forks.Bismuth import plugins
-    from bitdust_forks.Bismuth import mining_heavy3
+    # from bitdust_forks.Bismuth import mining_heavy3
     from bitdust_forks.Bismuth import node as bismuth_node
     from bitdust_forks.Bismuth.libs import node as _node, logger, keys
     from bitdust_forks.Bismuth.modules import config as modules_config
@@ -149,7 +156,7 @@ def run(data_dir_path):
         bismuth_node.load_keys()
 
         node.logger.app_log.warning(f'Checking Heavy3 file, can take up to 5 minutes...')
-        mining_heavy3.mining_open(node.heavy3_path)
+        # mining_heavy3.mining_open(node.heavy3_path)
         node.logger.app_log.warning(f'Heavy3 file Ok!')
 
         node.logger.app_log.warning(f'Status: Starting node version {VERSION}')
@@ -159,7 +166,7 @@ def run(data_dir_path):
             node.peers = peershandler.Peers(node.logger.app_log, config=config, node=node)
 
             node.apihandler = apihandler.ApiHandler(node.logger.app_log, config)
-            mp.MEMPOOL = mp.Mempool(node.logger.app_log, config, node.db_lock, node.is_testnet, trace_db_calls=node.trace_db_calls)
+            mempool.MEMPOOL = mempool.Mempool(node.logger.app_log, config, node.db_lock, node.is_testnet, trace_db_calls=node.trace_db_calls)
 
             check_db_for_bootstrap(node)
 
@@ -204,25 +211,29 @@ def run(data_dir_path):
                 node.logger.app_log.warning('Status: Not starting a local server to conceal identity on Tor network')
 
             from bitdust_forks.Bismuth import connectionmanager
-            connection_manager = connectionmanager.ConnectionManager(node, mp)
+            connection_manager = connectionmanager.ConnectionManager(node, mempool)
             connection_manager.start()
 
         except Exception as e:
             node.logger.app_log.info(e)
+            reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
             raise
 
     except Exception as e:
         node.logger.app_log.info(e)
+        reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
         raise
 
     node.logger.app_log.warning('Status: Bismuth loop running.')
+
+    reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
 
     while True:
         if node.IS_STOPPING:
             if node.db_lock.locked():
                 time.sleep(0.5)
             else:
-                mining_heavy3.mining_close()
+                # mining_heavy3.mining_close()
                 node.logger.app_log.warning('Status: Securely disconnected main processes, subprocess termination in progress.')
                 break
         time.sleep(0.1)

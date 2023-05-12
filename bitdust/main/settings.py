@@ -449,7 +449,10 @@ def P2PTimeOut():
     """
     global _P2PTimeOut
     if _P2PTimeOut is None:
-        _P2PTimeOut = config.conf().getInt('services/gateway/p2p-timeout', 15)
+        if config.conf():
+            _P2PTimeOut = config.conf().getInt('services/gateway/p2p-timeout', 15)
+        else:
+            _P2PTimeOut = 15
     return _P2PTimeOut
 
 

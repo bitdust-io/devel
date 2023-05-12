@@ -153,7 +153,7 @@ def all_suppliers(as_dict=False):
     result = []
     for suppliers_list in _SuppliersList.values():
         for supplier_idurl in suppliers_list:
-            if supplier_idurl not in result:
+            if id_url.is_cached(supplier_idurl) and supplier_idurl not in result:
                 result.append(supplier_idurl)
     return result
 
