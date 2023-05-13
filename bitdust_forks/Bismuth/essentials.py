@@ -173,14 +173,14 @@ def sign_rsa(timestamp, address, recipient, amount, operation, openfield, key, p
         return False
 
 
-def keys_check(app_log, keyfile_name: str) -> None:
+def keys_check(app_log, keyfile_name: str, data_dir='.') -> None:
     # TODO: move, make use of polysign module
     # key maintenance
-    if os.path.isfile('privkey.der') is True:
+    if os.path.isfile(os.path.join(data_dir, 'privkey.der')) is True:
         app_log.warning('privkey.der found')
-    elif os.path.isfile('privkey_encrypted.der') is True:
+    elif os.path.isfile(os.path.join(data_dir, 'privkey_encrypted.der')) is True:
         app_log.warning('privkey_encrypted.der found')
-        os.rename('privkey_encrypted.der', 'privkey.der')
+        os.rename(os.path.join(data_dir, 'privkey_encrypted.der'), os.path.join(data_dir, 'privkey.der'))
 
     elif os.path.isfile(keyfile_name) is True:
         app_log.warning('{} found'.format(keyfile_name))
@@ -213,11 +213,11 @@ def keys_save(private_key_readable: str, public_key_readable: str, address: str,
         json.dump(wallet_dict, keyfile)
 
 
-def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pubkey.der'):
+def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pubkey.der', wallet_filename: str ='wallet.der'):
     keyfile = 'wallet.der'
-    if os.path.exists('wallet.der'):
+    if wallet_filename and os.path.exists(wallet_filename):
         print('Using modern wallet method')
-        return keys_load_new('wallet.der')
+        return keys_load_new(wallet_filename)
 
     else:
         # print("loaded",privkey, pubkey)
@@ -247,9 +247,9 @@ def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pub
         address = hashlib.sha224(public_key_readable.encode('utf-8')).hexdigest()
 
         print('Upgrading wallet')
-        keys_save(private_key_readable, public_key_readable, address, keyfile)
+        keys_save(private_key_readable, public_key_readable, address, wallet_filename or keyfile)
 
-        return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_b64encoded, address, keyfile
+        return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_b64encoded, address, wallet_filename or keyfile
 
 
 def keys_unlock(private_key_encrypted: str) -> tuple:

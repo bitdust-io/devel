@@ -10,11 +10,12 @@ import mmap
 import os
 import struct
 import sys
+import threading
 from hashlib import sha224
+
 from hmac_drbg import DRBG
 from quantizer import quantize_ten
 from decimal import Decimal
-
 import regnet
 
 from fork import Fork
@@ -23,7 +24,7 @@ fork = Fork()
 
 __version__ = '0.1.4'
 
-print('Mining_Heavy3 v{}'.format(__version__))
+# print('Mining_Heavy3 v{}'.format(__version__))
 
 RND_LEN = 0
 
@@ -45,6 +46,7 @@ def anneal3(mmap, n):
     :param n: a 224 = 7x32 bits
     :return:  56 char in hex encoding.
     """
+    # print('anneal3', threading.current_thread(), mmap, RND_LEN, id(RND_LEN))
     h7 = n & 0xffffffff
     n = n >> 32
     index = ((h7 & ~0x7) % RND_LEN)*4
@@ -150,6 +152,8 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
     except Exception as e:
         # Left for edge cases debug
         print('MH3 check block', e)
+        import traceback
+        traceback.print_exc()
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
@@ -206,6 +210,7 @@ def mining_open(file_name='heavy3a.bin'):
     except Exception as e:
         print('Error while loading Junction file: {}'.format(e))
         sys.exit()
+    print('mining_open', file_name, MMAP, id(MMAP), threading.current_thread())
 
 
 def mining_close():

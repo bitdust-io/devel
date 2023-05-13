@@ -1,21 +1,28 @@
-import hashlib
 import os
 import sys
+import time
+import hashlib
+from decimal import Decimal
 
 import essentials
-import mempool as mp
 import mining_heavy3
-from difficulty import *
+import regnet
+import mempool as mp
+import tokensv2 as tokens
+from difficulty import difficulty
 from essentials import address_is_rsa, checkpoint_set, ledger_balance3
 from polysign.signerfactory import SignerFactory
+from quantizer import quantize_two, quantize_eight
 from fork import Fork
-import tokensv2 as tokens
-from decimal import Decimal
 
 fork = Fork()
 
 
 def digest_block(node, data, sdef, peer_ip, db_handler):
+
+    # if not mining_heavy3.MMAP:
+    #     mining_heavy3.mining_open(node.heavy3_path)
+
     """node param for imports"""
     class Transaction:
         def __init__(self):

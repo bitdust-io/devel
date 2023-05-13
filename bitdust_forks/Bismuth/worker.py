@@ -7,7 +7,7 @@ import socks
 from connections import send, receive
 from decimal import Decimal
 import mempool as mp
-from difficulty import *
+from difficulty import difficulty
 from libs import client
 
 
@@ -53,6 +53,8 @@ def worker(host, port, node):
 
     timeout_operation = 60  # timeout
     timer_operation = time.time()  # start counting
+
+    print('inside worker', threading.current_thread())
 
     try:
 
@@ -285,6 +287,7 @@ def worker(host, port, node):
 
             elif data == 'nonewblk':
                 # send and receive mempool
+                print('nonewblk', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'), threading.current_thread())
                 if mp.MEMPOOL.sendable(peer_ip):
                     mempool_txs = mp.MEMPOOL.tx_to_send(peer_ip)
                     # node.logger.app_log.info("Outbound: Extracted from the mempool: " + str(mempool_txs))  # improve: sync based on signatures only

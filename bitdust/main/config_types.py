@@ -111,6 +111,7 @@ def defaults():
         'services/bismuth-node/enabled': TYPE_BOOLEAN,
         'services/bismuth-wallet/enabled': TYPE_BOOLEAN,
         'services/bismuth-pool/enabled': TYPE_BOOLEAN,
+        'services/bismuth-miner/enabled': TYPE_BOOLEAN,
         'services/broadcasting/enabled': TYPE_BOOLEAN,
         'services/broadcasting/routing-enabled': TYPE_BOOLEAN,
         'services/broadcasting/max-broadcast-connections': TYPE_NON_ZERO_POSITIVE_INTEGER,

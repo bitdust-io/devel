@@ -12,6 +12,9 @@
 
 VERSION = '4.4.0.13'
 
+import os
+import sys
+import time
 import functools
 import glob
 import platform
@@ -20,11 +23,14 @@ import socketserver
 import sqlite3
 import tarfile
 import threading
+import base64
+import hashlib
+
 from sys import version_info
+from decimal import Decimal
 
 import aliases  # PREFORK_ALIASES
 # import aliasesv2 as aliases # POSTFORK_ALIASES
-
 # Bis specific modules
 import apihandler
 import connectionmanager
@@ -33,19 +39,26 @@ import log
 import options
 import peershandler
 import plugins
-# import tokensv2 as tokens  # TODO: unused here
+import essentials
 import wallet_keys
+import regnet
+import mining_heavy3
+import mempool as mp
+import tokensv2 as tokens
+
 from connections import send, receive
-from digest import *
-from essentials import fee_calculate, download_file
+from digest import digest_block
+from difficulty import difficulty
 from libs import node as _node, logger, keys, client
 from fork import Fork
+from quantizer import quantize_two, quantize_eight
+from polysign.signerfactory import SignerFactory
 
 # todo: migrate this to polysign\signer_crw.py
 from Cryptodome.Hash import SHA
 from Cryptodome.PublicKey import RSA
 from Cryptodome.Signature import PKCS1_v1_5
-import base64
+
 # /todo
 
 fork = Fork()
@@ -369,7 +382,7 @@ def balanceget(balance_address, db_handler):
     if base_mempool:
         for x in base_mempool:
             debit_tx = Decimal(x[0])
-            fee = fee_calculate(x[1], x[2], node.last_block)
+            fee = essentials.fee_calculate(x[1], x[2], node.last_block)
             debit_mempool = quantize_eight(debit_mempool + debit_tx + fee)
     else:
         debit_mempool = 0
@@ -759,6 +772,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     # receive theirs
 
                     # execute_param(m, ('SELECT timestamp,address,recipient,amount,signature,public_key,operation,openfield FROM transactions WHERE timeout < ? ORDER BY amount DESC;'), (int(time.time() - 5),))
+                    print('mempool', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'))
                     if mp.MEMPOOL.sendable(peer_ip):
                         # Only send the diff
                         mempool_txs = mp.MEMPOOL.tx_to_send(peer_ip, segments)
@@ -1833,7 +1847,7 @@ def setup_net_type():
                 for file in glob.glob(type):
                     os.remove(file)
                     print(file, 'deleted')
-            download_file('https://bismuth.cz/test.tar.gz', 'static/test.tar.gz')
+            essentials.download_file('https://bismuth.cz/test.tar.gz', 'static/test.tar.gz')
             with tarfile.open('static/test.tar.gz') as tar:
                 tar.extractall('static/')  # NOT COMPATIBLE WITH CUSTOM PATH CONFS
         else:
@@ -1875,7 +1889,7 @@ def node_block_init(database):
 
     node.last_block_timestamp = database.last_block_timestamp()
 
-    checkpoint_set(node)
+    essentials.checkpoint_set(node)
 
     node.logger.app_log.warning('Status: Indexing aliases')
 
@@ -1953,12 +1967,16 @@ def initial_db_check():
             bootstrap()
 
 
-def load_keys():
+def load_keys(data_dir='.', wallet_filename='wallet.der'):
     """Initial loading of crypto keys"""
     # TODO: candidate for single user mode
-    essentials.keys_check(node.logger.app_log, 'wallet.der')
+    essentials.keys_check(node.logger.app_log, wallet_filename, data_dir=data_dir)
 
-    node.keys.key, node.keys.public_key_readable, node.keys.private_key_readable, _, _, node.keys.public_key_b64encoded, node.keys.address, node.keys.keyfile = essentials.keys_load('privkey.der', 'pubkey.der')
+    node.keys.key, node.keys.public_key_readable, node.keys.private_key_readable, _, _, node.keys.public_key_b64encoded, node.keys.address, node.keys.keyfile = essentials.keys_load(
+        os.path.join(data_dir, 'privkey.der'),
+        os.path.join(data_dir, 'pubkey.der'),
+        wallet_filename,
+    )
 
     if node.is_regnet:
         regnet.PRIVATE_KEY_READABLE = node.keys.private_key_readable

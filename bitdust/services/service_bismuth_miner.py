@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_bismuth_pool.py
+# service_bismuth_miner.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_bismuth_pool.py) is part of BitDust Software.
+# This file (service_bismuth_miner.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_bismuth_pool
+module:: service_bismuth_miner
 """
 
 from __future__ import absolute_import
@@ -34,17 +34,17 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return BismuthPoolService()
+    return BismuthMinerService()
 
 
-class BismuthPoolService(LocalService):
+class BismuthMinerService(LocalService):
 
-    service_name = 'service_bismuth_pool'
-    config_path = 'services/bismuth-pool/enabled'
+    service_name = 'service_bismuth_miner'
+    config_path = 'services/bismuth-miner/enabled'
 
     def dependent_on(self):
         return [
-            'service_bismuth_node',
+            'service_bismuth_pool',
         ]
 
     def installed(self):
@@ -52,15 +52,15 @@ class BismuthPoolService(LocalService):
 
     def start(self):
         from bitdust.main import settings
-        from bitdust.blockchain import bismuth_pool
-        bismuth_pool.init(
+        from bitdust.blockchain import bismuth_miner
+        bismuth_miner.init(
             data_dir_path=settings.ServiceDir('bismuth_blockchain'),
-            node_address='127.0.0.1:5658',
+            mining_pool_address='127.0.0.1:8525',
             verbose=True,
         )
         return True
 
     def stop(self):
-        from bitdust.blockchain import bismuth_pool
-        bismuth_pool.shutdown()
+        from bitdust.blockchain import bismuth_miner
+        bismuth_miner.shutdown()
         return True

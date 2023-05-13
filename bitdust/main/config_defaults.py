@@ -99,6 +99,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-wallet/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-pool/enabled', 'false')
+    conf_obj.setDefaultValue('services/bismuth-miner/enabled', 'false')
 
     conf_obj.setDefaultValue('services/broadcasting/enabled', 'false')
     conf_obj.setDefaultValue('services/broadcasting/routing-enabled', 'false')
