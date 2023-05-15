@@ -87,7 +87,7 @@ Single command should make it for you, all required files will be generated in `
         python3 bitdust.py install
 
 
-Last step to make BitDust software ready is to make a short alias in your OS, then you can just type `bitdust` in command line to fast access the program:
+The last step to preparing your BitDust software is to make a short alias in your OS. Then you can type BitDust in the command line to speed up the program access:
 
         sudo ln -s -f /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
 
