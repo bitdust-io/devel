@@ -9,6 +9,23 @@ import traceback
 from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 
+from bitdust_forks.Bismuth import node as bismuth_node
+from bitdust_forks.Bismuth import connectionmanager
+from bitdust_forks.Bismuth import mempool as mp
+from bitdust_forks.Bismuth import apihandler
+from bitdust_forks.Bismuth import dbhandler
+from bitdust_forks.Bismuth import connections
+from bitdust_forks.Bismuth import options
+from bitdust_forks.Bismuth import peershandler
+from bitdust_forks.Bismuth import plugins
+from bitdust_forks.Bismuth import log
+# from bitdust_forks.Bismuth import worker
+# from bitdust_forks.Bismuth import digest
+from bitdust_forks.Bismuth.libs import node as _node
+from bitdust_forks.Bismuth.libs import logger
+from bitdust_forks.Bismuth.libs import keys
+from bitdust_forks.Bismuth.modules import config as modules_config
+
 VERSION = '1.0.0.0'
 
 _DataDirPath = None
@@ -18,16 +35,17 @@ def init(data_dir_path):
     global _DataDirPath
     _DataDirPath = data_dir_path
     starting_defer = Deferred()
-    node_thread = threading.Thread(target=run, args=(data_dir_path, starting_defer, ))
+    node_thread = threading.Thread(target=run, args=(
+        data_dir_path,
+        starting_defer,
+    ))
     node_thread.start()
+    # reactor.callLater(0, run, data_dir_path, starting_defer)  # @UndefinedVariable
     return starting_defer
 
 
 def shutdown():
     global _DataDirPath
-
-    from bitdust_forks.Bismuth import options
-    from bitdust_forks.Bismuth import connections
 
     config_path = os.path.join(_DataDirPath, 'config')
     custom_config_path = os.path.join(_DataDirPath, 'config_custom')
@@ -65,18 +83,6 @@ def shutdown():
 def run(data_dir_path, starting_defer):
     global _DataDirPath
 
-    from bitdust_forks.Bismuth import mempool
-    from bitdust_forks.Bismuth import apihandler
-    from bitdust_forks.Bismuth import dbhandler
-    from bitdust_forks.Bismuth import log
-    from bitdust_forks.Bismuth import options
-    from bitdust_forks.Bismuth import peershandler
-    from bitdust_forks.Bismuth import plugins
-    # from bitdust_forks.Bismuth import mining_heavy3
-    from bitdust_forks.Bismuth import node as bismuth_node
-    from bitdust_forks.Bismuth.libs import node as _node, logger, keys
-    from bitdust_forks.Bismuth.modules import config as modules_config
-
     _DataDirPath = data_dir_path
     if not os.path.exists(data_dir_path):
         os.makedirs(data_dir_path)
@@ -87,8 +93,8 @@ def run(data_dir_path, starting_defer):
     if not os.path.isfile(config_path):
         create_config_file(data_dir_path)
 
-    node = _node.Node()
-    bismuth_node.node = node
+    bismuth_node.node = _node.Node()
+    node = bismuth_node.node
     bismuth_node.bootstrap = bootstrap
 
     options.Get.defaults['heavy3_path'] = os.path.join(data_dir_path, 'heavy3a.bin')
@@ -132,9 +138,9 @@ def run(data_dir_path, starting_defer):
     node.accept_peers = config.accept_peers
     node.full_ledger = config.full_ledger
     node.trace_db_calls = config.trace_db_calls
-    node.heavy3_path = config.heavy3_path
     node.old_sqlite = config.old_sqlite
     node.heavy = config.heavy
+    node.heavy3_path = config.heavy3_path
 
     node.logger.app_log = log.log('node.log', node.debug_level, node.terminal_output)
     node.logger.app_log.warning('Configuration settings loaded')
@@ -153,28 +159,40 @@ def run(data_dir_path, starting_defer):
         extra_commands = node.plugin_manager.execute_filter_hook('extra_commands_prefixes', extra_commands)
 
         setup_net_type(bismuth_node.node, data_dir_path)
-        bismuth_node.load_keys()
+
+        bismuth_node.load_keys(data_dir=data_dir_path, wallet_filename=os.path.join(data_dir_path, 'node_key.der'))
 
         node.logger.app_log.warning(f'Checking Heavy3 file, can take up to 5 minutes...')
-        # mining_heavy3.mining_open(node.heavy3_path)
-        node.logger.app_log.warning(f'Heavy3 file Ok!')
+        t_now = time.time()
+        from bitdust_forks.Bismuth import mining_heavy3
+        from bitdust_forks.Bismuth import digest
+        mining_heavy3.mining_open(node.heavy3_path)
+        digest.mining_heavy3.MMAP = mining_heavy3.MMAP
+        digest.mining_heavy3.RND_LEN = mining_heavy3.RND_LEN
+        node.logger.app_log.warning(f'Heavy3 file is OK, loaded in %s seconds' % (time.time() - t_now))
 
         node.logger.app_log.warning(f'Status: Starting node version {VERSION}')
         node.startup_time = time.time()
         try:
 
-            node.peers = peershandler.Peers(node.logger.app_log, config=config, node=node)
+            node.peers = peershandler.Peers(node.logger.app_log, config=config, node=bismuth_node.node)
+            node.peers.peerfile = bismuth_node.node.peerfile
+            node.peers.suggested_peerfile = bismuth_node.node.peerfile_suggested  # @UndefinedVariable
 
             node.apihandler = apihandler.ApiHandler(node.logger.app_log, config)
-            mempool.MEMPOOL = mempool.Mempool(node.logger.app_log, config, node.db_lock, node.is_testnet, trace_db_calls=node.trace_db_calls)
+            mp.MEMPOOL = mp.Mempool(node.logger.app_log, config, bismuth_node.node.db_lock, bismuth_node.node.is_testnet, trace_db_calls=bismuth_node.node.trace_db_calls)
+            bismuth_node.mp.MEMPOOL = mp.MEMPOOL
+            # worker.mp.MEMPOOL = mp.MEMPOOL
+            # digest.mp.MEMPOOL = mp.MEMPOOL
+            # print('MEMPOOL', mp.MEMPOOL, id(mp.MEMPOOL), threading.current_thread())
 
-            check_db_for_bootstrap(node)
+            check_db_for_bootstrap(bismuth_node.node)
 
-            db_handler_initial = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, node.logger, trace_db_calls=node.trace_db_calls)
+            db_handler_initial = dbhandler.DbHandler(bismuth_node.node.index_db, bismuth_node.node.ledger_path, bismuth_node.node.hyper_path, bismuth_node.node.ram, bismuth_node.node.ledger_ram_file, node.logger, trace_db_calls=bismuth_node.node.trace_db_calls)
             bismuth_node.db_handler_initial = db_handler_initial
 
             try:
-                bismuth_node.ledger_check_heights(node, db_handler_initial)
+                bismuth_node.ledger_check_heights(bismuth_node.node, db_handler_initial)
             except:
                 traceback.print_exc()
 
@@ -210,30 +228,32 @@ def run(data_dir_path, starting_defer):
             else:
                 node.logger.app_log.warning('Status: Not starting a local server to conceal identity on Tor network')
 
-            from bitdust_forks.Bismuth import connectionmanager
-            connection_manager = connectionmanager.ConnectionManager(node, mempool)
+            connection_manager = connectionmanager.ConnectionManager(bismuth_node.node, mp)
             connection_manager.start()
 
         except Exception as e:
             node.logger.app_log.info(e)
             reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
+            # starting_defer.errback(e)
             raise
 
     except Exception as e:
         node.logger.app_log.info(e)
         reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
+        # starting_defer.errback(e)
         raise
 
     node.logger.app_log.warning('Status: Bismuth loop running.')
 
     reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
+    # starting_defer.callback(True)
 
     while True:
         if node.IS_STOPPING:
             if node.db_lock.locked():
                 time.sleep(0.5)
             else:
-                # mining_heavy3.mining_close()
+                mining_heavy3.mining_close()
                 node.logger.app_log.warning('Status: Securely disconnected main processes, subprocess termination in progress.')
                 break
         time.sleep(0.1)
@@ -304,18 +324,16 @@ def setup_net_type(node, data_dir_path):
         node.is_testnet = False
         node.is_mainnet = False
 
-    node.logger.app_log.warning(f'Testnet: {node.is_testnet}')
-    node.logger.app_log.warning(f'Regnet : {node.is_regnet}')
-
-    node.peerfile = os.path.join(data_dir_path, 'peers')
+    node.peerfile = os.path.join(data_dir_path, 'peers.json')
+    node.peerfile_suggested = os.path.join(data_dir_path, 'known_peers.json')
     node.ledger_ram_file = 'file:ledger?mode=memory&cache=shared'
     node.index_db = os.path.join(data_dir_path, 'index.db')
+    if not os.path.isfile(node.peerfile):
+        open(node.peerfile, 'w').write('{"127.0.0.1": "%s"}' % node.port)
 
 
 def bootstrap():
     global _DataDirPath
-    from bitdust_forks.Bismuth import options
-
     try:
         hyper_path = os.path.join(_DataDirPath, 'hyper.db')
         ledger_path = os.path.join(_DataDirPath, 'ledger.db')

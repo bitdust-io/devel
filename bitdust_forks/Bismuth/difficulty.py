@@ -2,9 +2,8 @@ from decimal import Decimal
 import regnet
 import math
 import time
-from fork import *
-from quantizer import quantize_two, quantize_ten
 from fork import Fork
+from quantizer import quantize_two, quantize_ten
 
 
 def difficulty(node, db_handler):
@@ -42,11 +41,16 @@ def difficulty(node, db_handler):
         if node.is_regnet:
             return (float('%.10f' % regnet.REGNET_DIFF), float('%.10f' % (regnet.REGNET_DIFF - 8)), float(time_to_generate), float(regnet.REGNET_DIFF), float(block_time), float(0), float(0), block_height)
 
-        hashrate = pow(2, diff_block_previous/Decimal(2.0))/(block_time*math.ceil(28 - diff_block_previous/Decimal(16.0)))
-        # Calculate new difficulty for desired blocktime of 60 seconds
-        target = Decimal(60.00)
-        ##D0 = diff_block_previous
-        difficulty_new = Decimal((2/math.log(2))*math.log(hashrate*target*math.ceil(28 - diff_block_previous/Decimal(16.0))))
+        try:
+            hashrate = pow(2, diff_block_previous/Decimal(2.0))/(block_time*math.ceil(28 - diff_block_previous/Decimal(16.0)))
+            # Calculate new difficulty for desired blocktime of 60 seconds
+            target = Decimal(60.00)
+            ##D0 = diff_block_previous
+            difficulty_new = Decimal((2/math.log(2))*math.log(hashrate*target*math.ceil(28 - diff_block_previous/Decimal(16.0))))
+        except:
+            hashrate = 1
+            difficulty_new = 10
+
         # Feedback controller
         Kd = 10
         difficulty_new = difficulty_new - Kd*(block_time - block_time_prev)
@@ -98,5 +102,7 @@ def difficulty(node, db_handler):
         )  # need to keep float here for database inserts support
     except Exception as e:  #new chain or regnet
         print('Failed to calculate difficulty (default difficulty will be used):', e)
+        import traceback
+        traceback.print_exc()
         difficulty = [10, 10, 0, 0, 0, 0, 0, 0]
         return difficulty

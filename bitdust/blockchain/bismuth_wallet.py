@@ -1,6 +1,6 @@
 import os
 
-from bitdust_forks.Bismuth.bismuthclient import bismuthclient
+from bitdust_forks.Bismuth.bismuthclient import bismuthclient  # @UnresolvedImport
 
 _BismuthClient = None
 _DataDirPath = None
@@ -32,7 +32,7 @@ def data_dir():
 
 
 def check_create_wallet():
-    file_name = os.path.join(data_dir(), 'wallet.der')
+    file_name = os.path.join(data_dir(), 'wallet_key.der')
     if os.path.isfile(file_name):
         print('Wallet file already exists')
     else:

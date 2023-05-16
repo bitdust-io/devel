@@ -19,10 +19,8 @@ from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 
 from bitdust_forks.Bismuth import connections
-from bitdust_forks.Bismuth import options
 from bitdust_forks.Bismuth import mining_heavy3
 from bitdust_forks.Bismuth import essentials
-
 
 _DataDirPath = None
 
@@ -43,7 +41,7 @@ new_diff = 0
 new_hash = None
 
 address = None
-node_ip_conf = None
+node_ip = None
 node_port = None
 ledger_path_conf = None
 key = None
@@ -54,11 +52,16 @@ shares_db_path = None
 archive_db_path = None
 
 
-def init(data_dir_path, servers_list, verbose=False):
+def init(data_dir_path, node_address, verbose=False):
     global _DataDirPath
     _DataDirPath = data_dir_path
     starting_defer = Deferred()
-    node_thread = threading.Thread(target=run, args=(starting_defer, data_dir_path, servers_list, verbose, ))
+    node_thread = threading.Thread(target=run, args=(
+        starting_defer,
+        data_dir_path,
+        node_address,
+        verbose,
+    ))
     node_thread.start()
     return starting_defer
 
@@ -67,10 +70,10 @@ def shutdown():
     pass
 
 
-def run(starting_defer, data_dir_path, servers_list, verbose=False):
+def run(starting_defer, data_dir_path, node_address, verbose=False):
     global _DataDirPath
     global ledger_path_conf
-    global node_ip_conf
+    global node_ip
     global node_port
     global address
     global key
@@ -84,48 +87,31 @@ def run(starting_defer, data_dir_path, servers_list, verbose=False):
     if not os.path.exists(data_dir_path):
         os.makedirs(data_dir_path)
 
-    config_path = os.path.join(data_dir_path, 'config')
-    custom_config_path = os.path.join(data_dir_path, 'config_custom')
+    pool_key_path = os.path.join(data_dir_path, 'pool_key.der')
 
-    priv_key_path = os.path.join(data_dir_path, 'pool_privkey.der')
-    pub_key_path = os.path.join(data_dir_path, 'pool_privkey.der')
-    m_peer_file = os.path.join(data_dir_path, 'pool_peers')
-    address_path = os.path.join(data_dir_path, 'pool_address')
+    m_peer_file = os.path.join(data_dir_path, 'peers.json')
 
     ledger_path_conf = os.path.join(data_dir_path, 'ledger.db')
     shares_db_path = os.path.join(data_dir_path, 'shares.db')
     archive_db_path = os.path.join(data_dir_path, 'archive.db')
 
-    config = options.Get()
-    config.read(filename=config_path, custom_filename=custom_config_path)
+    node_ip = node_address.split(':')[0]
+    node_port = node_address.split(':')[1]
 
-    node_ip_conf = config.node_ip
-    node_port = config.port
+    if os.path.isfile(pool_key_path):
+        print('Found %s key file' % pool_key_path)
 
-    open(m_peer_file, 'w').write(json.dumps(servers_list))
-
-    if os.path.isfile(priv_key_path):
-        print('Found %s key file' % priv_key_path)
-    
     else:
         # generate key pair and an address
         key = RSA.generate(4096)
         private_key_readable = str(key.exportKey().decode('utf-8'))
         public_key_readable = str(key.publickey().exportKey().decode('utf-8'))
         address = hashlib.sha224(public_key_readable.encode('utf-8')).hexdigest()  # hashed public key
+        essentials.keys_save(private_key_readable, public_key_readable, address, pool_key_path)
 
-        with open(priv_key_path, 'a') as f:
-            f.write(str(private_key_readable))
-    
-        with open(pub_key_path, 'a') as f:
-            f.write(str(public_key_readable))
-    
-        with open(address_path, 'a') as f:
-            f.write('{}\n'.format(address))
+    key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_hashed, address, keyfile = essentials.keys_load(wallet_filename=pool_key_path)
 
-    key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_hashed, address, keyfile = essentials.keys_load(priv_key_path, pub_key_path)
-        
-    print('Pool Address: {}'.format(address))
+    print('Pool address: {}'.format(address))
 
     if not os.path.exists(shares_db_path):
         shares = sqlite3.connect(shares_db_path)
@@ -142,7 +128,8 @@ def run(starting_defer, data_dir_path, servers_list, verbose=False):
         execute(a, 'CREATE TABLE IF NOT EXISTS shares (address, shares, timestamp, paid, rate, name, workers, subname)')
         a.close()
 
-    mining_heavy3.mining_open(config.heavy3_path)
+    heavy3_path = os.path.join(data_dir_path, 'heavy3a.bin')
+    mining_heavy3.mining_open(heavy3_path)
 
     try:
         # Disabling payouts
@@ -155,17 +142,27 @@ def run(starting_defer, data_dir_path, servers_list, verbose=False):
         worker_thread.start()
         time.sleep(10)
 
-        server = ThreadedTCPServer((pool_host, pool_port, ), TCPHandler)
+        server = ThreadedTCPServer((
+            pool_host,
+            pool_port,
+        ), TCPHandler)
         server_ip, server_port = server.server_address
-        print('Started mining pool server at %s:%d' % (server_ip, server_port, ))
+        print('Started mining pool server at %s:%d' % (
+            server_ip,
+            server_port,
+        ))
 
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.daemon = True
         server_thread.start()
 
+        print('Server thread is ready')
         reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
 
         server_thread.join()
+
+        print('Server thread finished')
+
         server.shutdown()
         server.server_close()
 
@@ -194,8 +191,8 @@ def checkdb():
 
 
 def payout(payout_threshold, myfee, othfee):
-    global node_ip_conf
-    global port
+    global node_ip
+    global node_port
 
     print('Minimum payout is {} Bismuth'.format(str(payout_threshold)))
     print('Current pool fee is {} Percent'.format(str(myfee)))
@@ -324,7 +321,7 @@ def payout(payout_threshold, myfee, othfee):
                 tx_submit = (str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), str(keep), str(openfield))  #float kept for compatibility
 
                 t = socks.socksocket()
-                t.connect((node_ip_conf, int(port)))  # connect to local node
+                t.connect((node_ip, int(node_port)))  # connect to local node
 
                 connections.send(t, 'mpinsert', 10)
                 connections.send(t, [tx_submit], 10)
@@ -422,6 +419,7 @@ def execute_param(cursor, what, param):
 
 bin_format_dict = dict((x, format(ord(x), '8b').replace(' ', '0')) for x in '0123456789abcdef')
 
+
 def bin_convert(string):
     return ''.join(bin_format_dict[x] for x in string)
 
@@ -431,7 +429,6 @@ def bin_convert_orig(string):
 
 
 def s_test(testString):
-
     if testString.isalnum():
         if (re.search('[abcdef]', testString)):
             if len(testString) == 56:
@@ -441,7 +438,6 @@ def s_test(testString):
 
 
 def n_test(testString):
-
     if testString.isalnum():
         if (re.search('[abcdef]', testString)):
             if len(testString) < 129:
@@ -474,7 +470,10 @@ def worker(s_time):
     doclean = 0
 
     n = socks.socksocket()
-    n.connect((node_ip_conf, int(node_port)))  # connect to local node
+    n.connect((
+        node_ip,
+        int(node_port),
+    ))  # connect to local node
 
     while True:
 
@@ -504,7 +503,6 @@ def worker(s_time):
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
-
     def handle(self):
         global new_diff
         key = RSA.importKey(private_key_readable)
@@ -586,21 +584,24 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         print('Difficulty requirement satisfied for mining')
                         print('Sending block to nodes')
 
-                        cn = options.Get()
-                        cn.read()
-                        cport = cn.port
-                        try:
-                            cnode_ip_conf = cn.node_ip_conf
-                        except:
-                            cnode_ip_conf = cn.node_ip
+                        # cn = options.Get()
+                        # cn.read()
+                        # cport = cn.port
+                        # try:
+                        #     cnode_ip_conf = cn.node_ip_conf
+                        # except:
+                        #     cnode_ip_conf = cn.node_ip
 
                         #ctor_conf = cn.tor_conf
-                        cversion = cn.version
+                        # cversion = cn.version
 
-                        print('Local node ip {} on port {}'.format(cnode_ip_conf, cport))
+                        print('Local node ip {} on port {}'.format(node_ip, node_port))
 
                         m = socks.socksocket()
-                        m.connect((cnode_ip_conf, int(cport)))  # connect to local node
+                        m.connect((
+                            node_ip,
+                            int(node_port),
+                        ))  # connect to local node
                         connections.send(m, 'api_mempool', 10)
                         result = connections.receive(m, 10)
                         print('I have got to receive mempool')
@@ -647,8 +648,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         with open(m_peer_file) as f:
                             peer_dict = json.load(f)
 
-                            print(peer_dict)
-
                             for k, v in peer_dict.items():
                                 peer_ip = k
                                 # app_log.info(HOST)
@@ -661,7 +660,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                     s.settimeout(0.3)
                                     #if ctor_conf == 1:
                                     #    s.setproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
-                                    s.connect((peer_ip, int(peer_port)))  # connect to node in peerlist
+                                    s.connect((
+                                        peer_ip,
+                                        int(peer_port),
+                                    ))  # connect to node in peerlist
                                     print('Connected')
 
                                     print('Miner: Proceeding to submit mined block')
@@ -720,4 +722,3 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
-

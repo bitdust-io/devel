@@ -22,7 +22,7 @@ from Cryptodome.Protocol.KDF import PBKDF2
 from Cryptodome.Cipher import AES, PKCS1_OAEP
 from Cryptodome.Random import get_random_bytes
 from os import path
-from bismuthclient.simplecrypt import *
+from bismuthclient.simplecrypt import decrypt
 from polysign.signer import SignerType, SignerSubType
 from polysign.signerfactory import SignerFactory
 
@@ -157,16 +157,16 @@ def decrypt_message_with_key(message: str, key) -> str:
     return decoded
 
 
-def keys_check(app_log, keyfile):
+def keys_check(app_log, keyfile, data_dir='.'):
     # key maintenance
-    if os.path.isfile("privkey.der") is True:
+    if os.path.isfile(os.path.join(data_dir, "privkey.der")) is True:
         app_log.warning("privkey.der found")
-    elif os.path.isfile("privkey_encrypted.der") is True:
+    elif os.path.isfile(os.path.join(data_dir, "privkey_encrypted.der")) is True:
         app_log.warning("privkey_encrypted.der found")
-        os.rename("privkey_encrypted.der","privkey.der")
+        os.rename(os.path.join(data_dir, "privkey_encrypted.der"), os.path.join(data_dir, "privkey.der"))
 
-    elif os.path.isfile (keyfile) is True:
-        app_log.warning ("{} found".format(keyfile))
+    elif os.path.isfile(keyfile) is True:
+        app_log.warning("{} found".format(keyfile))
     else:
         # generate key pair and an address
 
@@ -245,11 +245,11 @@ def keys_save(private_key_readable, public_key_readable, address, file):
         json.dump (wallet_dict, keyfile, indent=4)
 
 
-def keys_load(privkey="privkey.der", pubkey="pubkey.der"):
+def keys_load(privkey="privkey.der", pubkey="pubkey.der", wallet_filename="wallet.der"):
     keyfile = "wallet.der"
-    if os.path.exists("wallet.der"):
+    if wallet_filename and os.path.exists(wallet_filename):
         print("Using modern wallet method")
-        return keys_load_new ("wallet.der")
+        return keys_load_new(wallet_filename)
 
     else:
         # print ("loaded",privkey, pubkey)
@@ -277,9 +277,9 @@ def keys_load(privkey="privkey.der", pubkey="pubkey.der"):
         address = hashlib.sha224(public_key_readable.encode('utf-8')).hexdigest()
 
         print("Upgrading wallet")
-        keys_save (private_key_readable, public_key_readable, address, keyfile)
+        keys_save(private_key_readable, public_key_readable, address, wallet_filename or keyfile)
 
-        return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_hashed, address, keyfile
+        return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_hashed, address, wallet_filename or keyfile
 
 
 def keys_unlock(private_key_encrypted):
