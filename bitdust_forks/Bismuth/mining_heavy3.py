@@ -210,7 +210,7 @@ def mining_open(file_name='heavy3a.bin'):
     except Exception as e:
         print('Error while loading Junction file: {}'.format(e))
         sys.exit()
-    print('mining_open', file_name, MMAP, id(MMAP), threading.current_thread())
+    print('mining_open', file_name, threading.current_thread())
 
 
 def mining_close():

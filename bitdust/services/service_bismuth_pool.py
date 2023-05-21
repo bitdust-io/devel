@@ -51,16 +51,9 @@ class BismuthPoolService(LocalService):
         return True
 
     def start(self):
-        from bitdust.main import settings
         from bitdust.blockchain import bismuth_pool
-        bismuth_pool.init(
-            data_dir_path=settings.ServiceDir('bismuth_blockchain'),
-            node_address='127.0.0.1:5658',
-            verbose=True,
-        )
-        return True
+        return bismuth_pool.init()
 
     def stop(self):
         from bitdust.blockchain import bismuth_pool
-        bismuth_pool.shutdown()
-        return True
+        return bismuth_pool.shutdown()

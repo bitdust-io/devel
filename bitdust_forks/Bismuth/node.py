@@ -665,6 +665,7 @@ def sequencing_check(db_handler):
 
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+
     def handle(self):
         # this is a dedicated thread for each client (not ip)
         if node.IS_STOPPING:
@@ -772,7 +773,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     # receive theirs
 
                     # execute_param(m, ('SELECT timestamp,address,recipient,amount,signature,public_key,operation,openfield FROM transactions WHERE timeout < ? ORDER BY amount DESC;'), (int(time.time() - 5),))
-                    print('mempool', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'))
+                    # print('mempool', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'))
                     if mp.MEMPOOL.sendable(peer_ip):
                         # Only send the diff
                         mempool_txs = mp.MEMPOOL.tx_to_send(peer_ip, segments)

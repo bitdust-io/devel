@@ -44,21 +44,16 @@ class BismuthWalletService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_bismuth_node',
+            'service_bismuth_blockchain',
+            'service_identity_propagate',
         ]
 
     def installed(self):
         return True
 
     def start(self):
-        from bitdust.main import settings
         from bitdust.blockchain import bismuth_wallet
-        bismuth_wallet.init(
-            data_dir_path=settings.ServiceDir('bismuth_blockchain'),
-            servers_list=['127.0.0.1:5658', ],
-            verbose=True,
-        )
-        bismuth_wallet.check_create_wallet()
+        bismuth_wallet.init()
         return True
 
     def stop(self):

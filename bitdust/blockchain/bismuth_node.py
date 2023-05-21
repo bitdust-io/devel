@@ -5,6 +5,7 @@ import threading
 import socks
 import sqlite3
 import traceback
+import json
 
 from twisted.internet.defer import Deferred
 from twisted.internet import reactor
@@ -26,21 +27,26 @@ from bitdust_forks.Bismuth.libs import logger
 from bitdust_forks.Bismuth.libs import keys
 from bitdust_forks.Bismuth.modules import config as modules_config
 
+
+from bitdust.main import settings
+from bitdust.blockchain import known_bismuth_nodes
+
+
+_Debug = True
+_DebugLevel = 10
+
+
 VERSION = '1.0.0.0'
 
 _DataDirPath = None
 
 
-def init(data_dir_path):
+def init():
     global _DataDirPath
-    _DataDirPath = data_dir_path
+    _DataDirPath = settings.ServiceDir('bismuth_blockchain')
     starting_defer = Deferred()
-    node_thread = threading.Thread(target=run, args=(
-        data_dir_path,
-        starting_defer,
-    ))
+    node_thread = threading.Thread(target=run, args=(_DataDirPath, starting_defer))
     node_thread.start()
-    # reactor.callLater(0, run, data_dir_path, starting_defer)  # @UndefinedVariable
     return starting_defer
 
 
@@ -52,28 +58,21 @@ def shutdown():
 
     config = options.Get()
     config.read(filename=config_path, custom_filename=custom_config_path)
-    version = config.version
 
     s = socks.socksocket()
     port = config.port
-    if 'testnet' in version:
-        port = 2829
-        print('tesnet mode')
-    elif 'regnet' in version:
-        print('Regtest mode')
-        port = 3030
 
     count = 0
-    while count < 3:
+    while count < 1:
         try:
-            s.connect(('127.0.0.1', port))
+            s.connect(('127.0.0.1', int(port)))
             print('Sending stop command...')
             connections.send(s, 'stop')
             print('Stop command delivered.')
             break
-        except:
-            print('Cannot reach node, retrying...')
-            time.sleep(0.1)
+        except Exception as e:
+            print('Cannot reach node', e)
+            # time.sleep(0.1)
             count += 1
 
     s.close()
@@ -182,9 +181,6 @@ def run(data_dir_path, starting_defer):
             node.apihandler = apihandler.ApiHandler(node.logger.app_log, config)
             mp.MEMPOOL = mp.Mempool(node.logger.app_log, config, bismuth_node.node.db_lock, bismuth_node.node.is_testnet, trace_db_calls=bismuth_node.node.trace_db_calls)
             bismuth_node.mp.MEMPOOL = mp.MEMPOOL
-            # worker.mp.MEMPOOL = mp.MEMPOOL
-            # digest.mp.MEMPOOL = mp.MEMPOOL
-            # print('MEMPOOL', mp.MEMPOOL, id(mp.MEMPOOL), threading.current_thread())
 
             check_db_for_bootstrap(bismuth_node.node)
 
@@ -234,19 +230,16 @@ def run(data_dir_path, starting_defer):
         except Exception as e:
             node.logger.app_log.info(e)
             reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
-            # starting_defer.errback(e)
             raise
 
     except Exception as e:
         node.logger.app_log.info(e)
         reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
-        # starting_defer.errback(e)
         raise
 
     node.logger.app_log.warning('Status: Bismuth loop running.')
 
     reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
-    # starting_defer.callback(True)
 
     while True:
         if node.IS_STOPPING:
@@ -263,7 +256,7 @@ def run(data_dir_path, starting_defer):
 def create_config_file(data_dir_path):
     config_path = os.path.join(data_dir_path, 'config')
     config_src = '''debug=False
-port=5658
+port=15658
 verify=False
 version=mainnet0001
 version_allow=mainnet0001
@@ -298,7 +291,7 @@ heavy3_path={heavy3_path}'''.format(
         hyper_path=os.path.join(data_dir_path, 'hyper.db'),
         ledger_path=os.path.join(data_dir_path, 'ledger.db'),
         heavy3_path=os.path.join(data_dir_path, 'heavy3a.bin'),
-        light_ip='{"127.0.0.1": "5658"}',
+        light_ip='{"127.0.0.1": "15658"}',
     )
     fout = open(config_path, 'w')
     fout.write(config_src)
@@ -328,8 +321,9 @@ def setup_net_type(node, data_dir_path):
     node.peerfile_suggested = os.path.join(data_dir_path, 'known_peers.json')
     node.ledger_ram_file = 'file:ledger?mode=memory&cache=shared'
     node.index_db = os.path.join(data_dir_path, 'index.db')
-    if not os.path.isfile(node.peerfile):
-        open(node.peerfile, 'w').write('{"127.0.0.1": "%s"}' % node.port)
+    peerfile_data = known_bismuth_nodes.nodes_by_host().copy()
+    peerfile_data['127.0.0.1'] = node.port
+    open(node.peerfile, 'w').write(json.dumps(peerfile_data))
 
 
 def bootstrap():

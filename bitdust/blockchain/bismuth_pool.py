@@ -22,6 +22,13 @@ from bitdust_forks.Bismuth import connections
 from bitdust_forks.Bismuth import mining_heavy3
 from bitdust_forks.Bismuth import essentials
 
+from bitdust.main import settings
+
+
+_Debug = True
+_DebugLevel = 10
+
+
 _DataDirPath = None
 
 # TODO: find solution here, need to create some default address
@@ -34,7 +41,7 @@ alt_fee = 1
 worker_time = 10
 
 pool_host = '0.0.0.0'
-pool_port = 8525
+pool_port = 18525
 
 new_time = 0
 new_diff = 0
@@ -52,22 +59,17 @@ shares_db_path = None
 archive_db_path = None
 
 
-def init(data_dir_path, node_address, verbose=False):
+def init():
     global _DataDirPath
-    _DataDirPath = data_dir_path
+    _DataDirPath = settings.ServiceDir('bismuth_blockchain')
     starting_defer = Deferred()
-    node_thread = threading.Thread(target=run, args=(
-        starting_defer,
-        data_dir_path,
-        node_address,
-        verbose,
-    ))
+    node_thread = threading.Thread(target=run, args=(starting_defer, _DataDirPath, '127.0.0.1:15658', _Debug))
     node_thread.start()
     return starting_defer
 
 
 def shutdown():
-    pass
+    return True
 
 
 def run(starting_defer, data_dir_path, node_address, verbose=False):
@@ -142,15 +144,9 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         worker_thread.start()
         time.sleep(10)
 
-        server = ThreadedTCPServer((
-            pool_host,
-            pool_port,
-        ), TCPHandler)
+        server = ThreadedTCPServer((pool_host, pool_port), TCPHandler)
         server_ip, server_port = server.server_address
-        print('Started mining pool server at %s:%d' % (
-            server_ip,
-            server_port,
-        ))
+        print('Started mining, pool server at %s:%d' % (server_ip, server_port))
 
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.daemon = True
@@ -467,22 +463,18 @@ def worker(s_time):
     global new_diff
     global new_hash
     global new_time
-    doclean = 0
+    global node_ip
+    global node_port
 
     n = socks.socksocket()
-    n.connect((
-        node_ip,
-        int(node_port),
-    ))  # connect to local node
+    n.connect((node_ip, int(node_port)))  # connect to local node
 
     while True:
 
         time.sleep(s_time)
-        #doclean +=1
 
         try:
 
-            print('Worker task...')
             connections.send(n, 'blocklast', 10)
             blocklast = connections.receive(n, 10)
 
@@ -493,9 +485,7 @@ def worker(s_time):
             new_time = blocklast[1]
             new_diff = math.floor(diff[1])
 
-            print('Difficulty = {}'.format(str(new_diff)))
-            print('Blockhash = {}'.format(str(new_hash)))
-            # print("Worker")
+            print('Pool: difficulty={} blockhash={}'.format(str(new_diff), str(new_hash)))
 
         except Exception as e:
             print(str(e))
@@ -503,27 +493,36 @@ def worker(s_time):
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
+
     def handle(self):
         global new_diff
+        global node_ip
+        global node_port
+
         key = RSA.importKey(private_key_readable)
 
         self.allow_reuse_address = True
 
-        peer_ip = self.request.getpeername()[0]
+        peer_ip, peer_port = self.request.getpeername()
 
         try:
             data = connections.receive(self.request, 10)
 
-            print('Received: {} from {}'.format(data, peer_ip))  # will add custom ports later
+            print('Pool received: {} from {}:{}'.format(data, peer_ip, peer_port))  # will add custom ports later
 
             if data == 'getwork':  # sends the miner the blockhash and mining diff for shares
 
+                m = socks.socksocket()
+                m.connect((node_ip, int(node_port)))  # connect to local node
+                connections.send(m, 'api_mempool', 10)
+                result = connections.receive(m, 10)
+                m.close()
+            
                 work_send = []
-                work_send.append((new_hash, mdiff, address, mdiff))
+                work_send.append((len(result), new_hash, mdiff, address, mdiff))
 
                 connections.send(self.request, work_send, 10)
-
-                print('Work package sent.... {}'.format(str(new_hash)))
+                # print('Work package sent.... {}'.format(work_send))
 
             elif data == 'block':  # from miner to node
 
@@ -536,6 +535,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                 # receive nonce from miner
                 miner_address = connections.receive(self.request, 10)
+                # print('miner_address', miner_address)
 
                 if not s_test(miner_address):
 
@@ -642,11 +642,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                 block_send = new_list  # make it a list of lists
                                 print(block_send)
 
-                        global peer_dict
                         peer_dict = {}
 
                         with open(m_peer_file) as f:
                             peer_dict = json.load(f)
+                            if '127.0.0.1' in peer_dict:
+                                peer_dict = {'127.0.0.1': peer_dict['127.0.0.1']}
 
                             for k, v in peer_dict.items():
                                 peer_ip = k
@@ -654,27 +655,22 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                 peer_port = int(v)
                                 # app_log.info(PORT)
                                 # connect to all nodes
-
+                                print('Pool: Proceeding to submit mined block to {}:{}'.format(peer_ip, peer_port))
                                 try:
                                     s = socks.socksocket()
                                     s.settimeout(0.3)
                                     #if ctor_conf == 1:
                                     #    s.setproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
-                                    s.connect((
-                                        peer_ip,
-                                        int(peer_port),
-                                    ))  # connect to node in peerlist
-                                    print('Connected')
+                                    s.connect((peer_ip, int(peer_port)))  # connect to node in peerlist
 
-                                    print('Miner: Proceeding to submit mined block')
 
                                     connections.send(s, 'block', 10)
                                     #connections.send(s, address, 10)
                                     connections.send(s, block_send, 10)
 
-                                    print('Miner: Block submitted to {}'.format(peer_ip))
+                                    print('Pool: Block submitted to {}:{}'.format(peer_ip, peer_port))
                                 except Exception as e:
-                                    print('Miner: Could not submit block to {} because {}'.format(peer_ip, e))
+                                    print('Pool: Could not submit block to {}:{} because {}'.format(peer_ip, peer_port, e))
 
                     if diff < mdiff:
                         diff_shares = diff

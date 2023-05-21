@@ -53,8 +53,12 @@ class BismuthBlockchainService(LocalService):
     def start(self):
         import os
         import sys
-        dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-        sys.path.insert(0, os.path.join(dirpath, 'bitdust_forks', 'Bismuth'))
+        from bitdust.main import settings
+        src_dir_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+        sys.path.insert(0, os.path.join(src_dir_path, 'bitdust_forks', 'Bismuth'))
+        data_dir_path = settings.ServiceDir('bismuth_blockchain')
+        if not os.path.exists(data_dir_path):
+            os.makedirs(data_dir_path)
         return True
 
     def stop(self):
