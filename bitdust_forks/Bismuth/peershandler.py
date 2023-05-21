@@ -143,6 +143,7 @@ class Peers:
         try:
             with open(file, 'r') as peer_file:
                 peers_pairs = json.load(peer_file)
+            print('Peers file test', file, peers_pairs, peerdict)
             # TODO: rework, because this takes too much time and freezes the status thread.
             # to be done in a dedicated thread, with one peer per xx seconds, not all at once, and added properties.
             for ip, port in dict(peerdict).items():

@@ -58,8 +58,8 @@ def check_mine_own_coins():
         reactor.callLater(5, check_mine_own_coins)  # @UndefinedVariable
         return
     if cur_balance < 10:
-        mine_few_coins(needed_coins=(10 - bismuth_wallet.my_balance()))
-        reactor.callLater(60, check_mine_own_coins)  # @UndefinedVariable
+        # mine_few_coins(needed_coins=(10 - bismuth_wallet.my_balance()))
+        reactor.callLater(30, check_mine_own_coins)  # @UndefinedVariable
 
 
 def mine_few_coins(needed_coins=1):

@@ -372,7 +372,7 @@ def balanceget(balance_address, db_handler):
     # verify balance
 
     # node.logger.app_log.info("Mempool: Verifying balance")
-    # node.logger.app_log.info("Mempool: Received address: " + str(balance_address))
+    node.logger.app_log.info("Node: Received address for balanceget: " + str(balance_address))
 
     base_mempool = mp.MEMPOOL.mp_get(balance_address)
 
@@ -395,6 +395,7 @@ def balanceget(balance_address, db_handler):
         entries = db_handler.h.fetchall()
     except:
         entries = []
+    print('recipient', debit_mempool, entries)
 
     try:
         for entry in entries:
@@ -411,6 +412,7 @@ def balanceget(balance_address, db_handler):
         entries = db_handler.h.fetchall()
     except:
         entries = []
+    print('to address', entries)
 
     try:
         for entry in entries:
@@ -435,6 +437,7 @@ def balanceget(balance_address, db_handler):
         entries = db_handler.h.fetchall()
     except:
         entries = []
+    print('reward', entries)
 
     try:
         for entry in entries:
@@ -447,6 +450,7 @@ def balanceget(balance_address, db_handler):
     balance = quantize_eight(credit_ledger - debit - fees + rewards)
     balance_no_mempool = float(credit_ledger) - float(debit_ledger) - float(fees) + float(rewards)
     # node.logger.app_log.info("Mempool: Projected transction address balance: " + str(balance))
+    print('balance results', str(balance), str(credit_ledger), str(debit), str(fees), str(rewards), str(balance_no_mempool))
     return str(balance), str(credit_ledger), str(debit), str(fees), str(rewards), str(balance_no_mempool)
 
 

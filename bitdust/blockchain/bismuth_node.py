@@ -318,12 +318,13 @@ def setup_net_type(node, data_dir_path):
         node.is_mainnet = False
 
     node.peerfile = os.path.join(data_dir_path, 'peers.json')
-    node.peerfile_suggested = os.path.join(data_dir_path, 'known_peers.json')
+    node.peerfile_suggested = os.path.join(data_dir_path, 'suggested_peers.json')
     node.ledger_ram_file = 'file:ledger?mode=memory&cache=shared'
     node.index_db = os.path.join(data_dir_path, 'index.db')
     peerfile_data = known_bismuth_nodes.nodes_by_host().copy()
     peerfile_data['127.0.0.1'] = node.port
-    open(node.peerfile, 'w').write(json.dumps(peerfile_data))
+    open(node.peerfile_suggested, 'w').write(json.dumps(peerfile_data))
+    open(node.peerfile, 'w').write(json.dumps({'127.0.0.1': node.port}))
 
 
 def bootstrap():
