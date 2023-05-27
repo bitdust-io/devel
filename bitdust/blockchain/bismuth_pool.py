@@ -716,6 +716,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                         with open(m_peer_file) as f:
                             peer_dict = json.load(f)
+
+                            # if possible, only talk to local node
                             if '127.0.0.1' in peer_dict:
                                 peer_dict = {'127.0.0.1': peer_dict['127.0.0.1']}
 

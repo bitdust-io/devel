@@ -347,8 +347,10 @@ def setup_net_type(node, data_dir_path):
     node.index_db = os.path.join(data_dir_path, 'index.db')
     peerfile_data = known_bismuth_nodes.nodes_by_host().copy()
     peerfile_data['127.0.0.1'] = node.port
-    open(node.peerfile_suggested, 'w').write(json.dumps(peerfile_data))
-    open(node.peerfile, 'w').write(json.dumps({'127.0.0.1': node.port}))
+    if not os.path.isfile(node.peerfile_suggested):
+        open(node.peerfile_suggested, 'w').write(json.dumps(peerfile_data))
+    if not os.path.isfile(node.peerfile):
+        open(node.peerfile, 'w').write(json.dumps({'127.0.0.1': node.port}))
 
 
 def bootstrap():

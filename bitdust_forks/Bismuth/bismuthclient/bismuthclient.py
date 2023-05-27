@@ -395,7 +395,7 @@ class BismuthClient():
         except Exception as e:
             # TODO: Handle retry, at least error message.
             if self.verbose:
-                print(e)
+                print('Command status failed', e)
             status = {}
         return status
 
@@ -554,9 +554,7 @@ class BismuthClient():
             print('Sending Bismuth command', command, self._connection, id(self._connection), threading.current_thread())
         if not self._current_server:
             # TODO: failsafe if can't connect
-            try:
-                self.get_server()
-            except:
-                import traceback
-                traceback.print_exc()
+            self.get_server()
+        if not self._connection:
+            raise Exception('Connection to Bismuth node was not opened')
         return self._connection.command(command, options)

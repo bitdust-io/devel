@@ -6,7 +6,16 @@ from fork import Fork
 from quantizer import quantize_two, quantize_ten
 
 
+_Debug = True
+
+DEFAULT_DIFFICULTY = 10
+
+
 def difficulty(node, db_handler):
+
+    difficulty = [DEFAULT_DIFFICULTY, DEFAULT_DIFFICULTY, 0, 0, 0, 0, 0, 0]
+    return difficulty
+
     try:
         fork = Fork()
 
@@ -87,8 +96,8 @@ def difficulty(node, db_handler):
             diff_dropped = 50
 
         # TODO: Verify!
-        difficulty = 10
-        diff_dropped = 10
+        difficulty = DEFAULT_DIFFICULTY
+        diff_dropped = DEFAULT_DIFFICULTY
 
         return (
             float('%.10f' % difficulty),
@@ -101,8 +110,9 @@ def difficulty(node, db_handler):
             block_height,
         )  # need to keep float here for database inserts support
     except Exception as e:  #new chain or regnet
-        # print('Failed to calculate difficulty (default difficulty will be used):', e)
+        if _Debug:
+            print('Failed to calculate difficulty (default difficulty will be used):', e)
         # import traceback
         # traceback.print_exc()
-        difficulty = [10, 10, 0, 0, 0, 0, 0, 0]
+        difficulty = [DEFAULT_DIFFICULTY, DEFAULT_DIFFICULTY, 0, 0, 0, 0, 0, 0]
         return difficulty
