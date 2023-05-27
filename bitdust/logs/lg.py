@@ -42,6 +42,7 @@ import time
 import datetime
 import threading
 import traceback
+import logging
 import platform
 from io import open
 
@@ -507,7 +508,6 @@ def get_loging_level(level, return_name=False):
         9-10 : DEBUG
         11... : NOTSET
     """
-    import logging
     if level == 0:
         if return_name:
             return 'CRITICAL'

@@ -5,6 +5,7 @@ Database handler module for Bismuth nodes
 import time
 import sqlite3
 import essentials
+import threading
 from quantizer import quantize_two
 import functools
 from fork import Fork
@@ -26,12 +27,15 @@ class DbHandler:
         self.index_db = index_db
         self.ledger_path = ledger_path
 
+        self.dbs = {}
+
         self.index = sqlite3.connect(self.index_db, timeout=1)
         if self.trace_db_calls:
             self.index.set_trace_callback(functools.partial(sql_trace_callback, self.logger.app_log, 'INDEX'))
         self.index.text_factory = str
         self.index.execute('PRAGMA case_sensitive_like = 1;')
         self.index_cursor = self.index.cursor()
+        self.dbs[str(self.index)] = self.index_db
 
         self.hdd = sqlite3.connect(self.ledger_path, timeout=1)
         if self.trace_db_calls:
@@ -39,6 +43,7 @@ class DbHandler:
         self.hdd.text_factory = str
         self.hdd.execute('PRAGMA case_sensitive_like = 1;')
         self.h = self.hdd.cursor()
+        self.dbs[str(self.hdd)] = self.ledger_path
 
         self.hdd2 = sqlite3.connect(self.hyper_path, timeout=1)
         if self.trace_db_calls:
@@ -46,11 +51,13 @@ class DbHandler:
         self.hdd2.text_factory = str
         self.hdd2.execute('PRAGMA case_sensitive_like = 1;')
         self.h2 = self.hdd2.cursor()
+        self.dbs[str(self.hdd2)] = self.hyper_path
 
         if self.ram:
             self.conn = sqlite3.connect(self.ledger_ram_file, uri=True, isolation_level=None, timeout=1)
         else:
             self.conn = sqlite3.connect(self.hyper_path, uri=True, timeout=1)
+        self.dbs[str(self.conn)] = 'ram'
 
         if self.trace_db_calls:
             self.conn.set_trace_callback(functools.partial(sql_trace_callback, self.logger.app_log, 'CONN'))
@@ -330,7 +337,7 @@ class DbHandler:
                 node.hdd_hash = node.last_block_hash
                 self.logger.app_log.warning(f'Chain: Regnet simulated move to HDD')
                 return
-            node.logger.app_log.warning(f'Chain: Moving new data to HDD, {node.hdd_block + 1} to {node.last_block} ')
+            node.logger.app_log.warning(f'Chain: Moving new data to HDD, {node.hdd_block + 1} to {node.last_block} in {threading.current_thread()}')
 
             self.execute_param(
                 self.c,
@@ -368,47 +375,47 @@ class DbHandler:
                 connection.commit()
                 break
             except Exception as e:
-                self.logger.app_log.warning(f'Database connection: {connection}')
-                self.logger.app_log.warning(f'Database retry reason: {e}')
+                self.logger.app_log.warning(f'Database {self.dbs.get(str(connection), "???")} connection error {e} in {threading.current_thread()}')
                 time.sleep(1)
 
     def execute(self, cursor, query):
         """Secure execute for slow nodes"""
+        self.logger.app_log.debug(f'Execute {query} in {threading.current_thread()}')
         while True:
             try:
                 cursor.execute(query)
                 break
             except sqlite3.InterfaceError as e:
                 self.logger.app_log.warning(f'Database query to abort: {cursor} {query[:100]}')
-                self.logger.app_log.warning(f'Database abortion reason: {e}')
+                self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except sqlite3.IntegrityError as e:
                 self.logger.app_log.warning(f'Database query to abort: {cursor} {query[:100]}')
-                self.logger.app_log.warning(f'Database abortion reason: {e}')
+                self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except Exception as e:
                 self.logger.app_log.warning(f'Database query: {cursor} {query[:100]}')
-                self.logger.app_log.warning(f'Database retry reason: {e}')
+                self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
                 time.sleep(1)
 
     def execute_param(self, cursor, query, param):
         """Secure execute w/ param for slow nodes"""
-
+        self.logger.app_log.debug(f'Execute with param {query} in {threading.current_thread()}')
         while True:
             try:
                 cursor.execute(query, param)
                 break
             except sqlite3.InterfaceError as e:
                 self.logger.app_log.warning(f'Database query to abort: {cursor} {str(query)[:100]} {str(param)[:100]}')
-                self.logger.app_log.warning(f'Database abortion reason: {e}')
+                self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except sqlite3.IntegrityError as e:
                 self.logger.app_log.warning(f'Database query to abort: {cursor} {str(query)[:100]}')
-                self.logger.app_log.warning(f'Database abortion reason: {e}')
+                self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except Exception as e:
                 self.logger.app_log.warning(f'Database query: {cursor} {str(query)[:100]} {str(param)[:100]}')
-                self.logger.app_log.warning(f'Database retry reason: {e}')
+                self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
                 time.sleep(1)
 
     def fetchall(self, cursor, query, param=None):
