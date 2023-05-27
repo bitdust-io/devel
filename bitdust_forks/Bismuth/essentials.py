@@ -90,12 +90,12 @@ def download_file(url: str, filename: str) -> None:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     chunkno = chunkno + 1
-                    if chunkno % 10000 == 0:  # every x chunks
-                        print(f'Downloaded {int(100 * (chunkno / total_size))} %')
+                    # if chunkno % 10000 == 0:  # every x chunks
+                    #     print(f'Downloaded {int(100 * (chunkno / total_size))} %')
 
                     fp.write(chunk)
                     fp.flush()
-            print('Downloaded 100 %')
+            # print('Downloaded 100 %')
     except:
         raise
 
@@ -216,7 +216,7 @@ def keys_save(private_key_readable: str, public_key_readable: str, address: str,
 def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pubkey.der', wallet_filename: str ='wallet.der'):
     keyfile = 'wallet.der'
     if wallet_filename and os.path.exists(wallet_filename):
-        print('Using modern wallet method')
+        # print('Using modern wallet method')
         return keys_load_new(wallet_filename)
 
     else:
@@ -246,7 +246,7 @@ def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pub
         public_key_b64encoded = base64.b64encode(public_key_readable.encode('utf-8'))
         address = hashlib.sha224(public_key_readable.encode('utf-8')).hexdigest()
 
-        print('Upgrading wallet')
+        # print('Upgrading wallet')
         keys_save(private_key_readable, public_key_readable, address, wallet_filename or keyfile)
 
         return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_b64encoded, address, wallet_filename or keyfile

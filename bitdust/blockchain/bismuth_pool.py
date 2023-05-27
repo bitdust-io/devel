@@ -15,29 +15,41 @@ from Cryptodome.PublicKey import RSA
 from Cryptodome.Hash import SHA
 from Cryptodome.Signature import PKCS1_v1_5
 
+#------------------------------------------------------------------------------
+
 from twisted.internet.defer import Deferred
 from twisted.internet import reactor
+
+#------------------------------------------------------------------------------
 
 from bitdust_forks.Bismuth import connections
 from bitdust_forks.Bismuth import mining_heavy3
 from bitdust_forks.Bismuth import essentials
 
+#------------------------------------------------------------------------------
+
+from bitdust.logs import lg
 from bitdust.main import settings
 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
+#------------------------------------------------------------------------------
 
 _DataDirPath = None
+_PayDBSingleTask = None
+
+#------------------------------------------------------------------------------
 
 # TODO: find solution here, need to create some default address
 alt_add = '1aae2cfe5d01acc8d7cbc90fcf8bb715ca24927504d0d8071c0979c7'
 
 mdiff = 10
-min_payout = 100000
-pool_fee = 1
-alt_fee = 1
+min_payout = 1
+pool_fee = 0
+alt_fee = 0
 worker_time = 10
 
 pool_host = '0.0.0.0'
@@ -58,6 +70,8 @@ m_peer_file = None
 shares_db_path = None
 archive_db_path = None
 
+#------------------------------------------------------------------------------
+
 
 def init():
     global _DataDirPath
@@ -65,11 +79,18 @@ def init():
     starting_defer = Deferred()
     node_thread = threading.Thread(target=run, args=(starting_defer, _DataDirPath, '127.0.0.1:15658', _Debug))
     node_thread.start()
+    if _Debug:
+        lg.args(_DebugLevel, data_dir_path=_DataDirPath)
     return starting_defer
 
 
 def shutdown():
+    if _Debug:
+        lg.dbg(_DebugLevel, '')
     return True
+
+
+#------------------------------------------------------------------------------
 
 
 def run(starting_defer, data_dir_path, node_address, verbose=False):
@@ -89,7 +110,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
     if not os.path.exists(data_dir_path):
         os.makedirs(data_dir_path)
 
-    pool_key_path = os.path.join(data_dir_path, 'pool_key.der')
+    pool_key_path = os.path.join(data_dir_path, 'pool_key.json')
 
     m_peer_file = os.path.join(data_dir_path, 'peers.json')
 
@@ -101,7 +122,8 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
     node_port = node_address.split(':')[1]
 
     if os.path.isfile(pool_key_path):
-        print('Found %s key file' % pool_key_path)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'found %s key file' % pool_key_path)
 
     else:
         # generate key pair and an address
@@ -110,10 +132,13 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         public_key_readable = str(key.publickey().exportKey().decode('utf-8'))
         address = hashlib.sha224(public_key_readable.encode('utf-8')).hexdigest()  # hashed public key
         essentials.keys_save(private_key_readable, public_key_readable, address, pool_key_path)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'generated new %s key file' % pool_key_path)
 
     key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_hashed, address, keyfile = essentials.keys_load(wallet_filename=pool_key_path)
 
-    print('Pool address: {}'.format(address))
+    if _Debug:
+        lg.args(_DebugLevel, pool_wallet_address=address)
 
     if not os.path.exists(shares_db_path):
         shares = sqlite3.connect(shares_db_path)
@@ -122,6 +147,8 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         execute(s, 'CREATE TABLE IF NOT EXISTS shares (address, shares, timestamp, paid, rate, name, workers, subname)')
         execute(s, 'CREATE TABLE IF NOT EXISTS nonces (nonce)')
         s.close()
+        if _Debug:
+            lg.dbg(_DebugLevel, 'created shares DB in %r' % shares_db_path)
 
     if not os.path.exists(archive_db_path):
         archive = sqlite3.connect(archive_db_path)
@@ -129,40 +156,59 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         a = archive.cursor()
         execute(a, 'CREATE TABLE IF NOT EXISTS shares (address, shares, timestamp, paid, rate, name, workers, subname)')
         a.close()
+        if _Debug:
+            lg.dbg(_DebugLevel, 'created archive DB in %r' % archive_db_path)
 
     heavy3_path = os.path.join(data_dir_path, 'heavy3a.bin')
     mining_heavy3.mining_open(heavy3_path)
 
     try:
-        # Disabling payouts
-        # background_thread = threading.Thread(target=optipoolware.paydb)
-        # background_thread.daemon = True
-        # background_thread.start()
+        background_thread = threading.Thread(target=paydb)
+        background_thread.daemon = True
+        background_thread.start()
 
         worker_thread = threading.Thread(target=worker, args=(worker_time, ))
         worker_thread.daemon = True
         worker_thread.start()
         time.sleep(10)
 
-        server = ThreadedTCPServer((pool_host, pool_port), TCPHandler)
+        attempts = 0
+        server = None
+        while True:
+            if attempts > 30:
+                raise Exception('not able to start mining pool server')
+            try:
+                server = ThreadedTCPServer((pool_host, pool_port), TCPHandler)
+            except Exception as e:
+                lg.warn(e)
+                time.sleep(10)
+                attempts += 1
+                continue
+            break
         server_ip, server_port = server.server_address
-        print('Started mining, pool server at %s:%d' % (server_ip, server_port))
-
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.daemon = True
         server_thread.start()
 
-        print('Server thread is ready')
+        if _Debug:
+            lg.dbg(_DebugLevel, 'started mining pool server at %s:%d' % (server_ip, server_port))
+
+        # print('Server thread is ready')
+
+        reactor.callFromThread(paydb_single)  # @UndefinedVariable
+
         reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
 
         server_thread.join()
 
-        print('Server thread finished')
+        if _Debug:
+            lg.dbg(_DebugLevel, 'mining pool server finished')
 
         server.shutdown()
         server.server_close()
 
     except Exception as e:
+        lg.exc(0)
         reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
 
     finally:
@@ -190,8 +236,9 @@ def payout(payout_threshold, myfee, othfee):
     global node_ip
     global node_port
 
-    print('Minimum payout is {} Bismuth'.format(str(payout_threshold)))
-    print('Current pool fee is {} Percent'.format(str(myfee)))
+    # print('Minimum payout is {} Bismuth'.format(str(payout_threshold)))
+    # print('Current pool fee is {} Percent'.format(str(myfee)))
+    did_payout = False
 
     shares = sqlite3.connect(shares_db_path)
     shares.text_factory = str
@@ -213,13 +260,16 @@ def payout(payout_threshold, myfee, othfee):
     except:
         block_threshold = time.time()
     #get block threshold
+    # print('Pool: block_threshold', block_threshold, 'shares_total', shares_total, 'address', address)
 
     #get eligible blocks
     reward_list = []
     for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address, ) + (block_threshold, )):
         reward_list.append(float(row[9]))
+    # print('reward_list', reward_list)
 
     super_total = sum(reward_list)
+    # print('Pool: super_total', super_total, 'reward_list', reward_list)
     #get eligible blocks
 
     # so now we have sum of shares, total reward, block threshold
@@ -227,6 +277,8 @@ def payout(payout_threshold, myfee, othfee):
     # reduce total rewards by total fees percentage
     reward_total = '%.8f' % (((100 - (myfee + othfee))*super_total)/100)
     reward_total = float(reward_total)
+
+    # print('Pool: reward_total=%r' % reward_total)
 
     if reward_total > 0:
 
@@ -245,6 +297,7 @@ def payout(payout_threshold, myfee, othfee):
 
         shares_threshold = math.floor(payout_threshold/reward_per_share)
 
+        # print('reward_per_share1', reward_per_share, 'shares_threshold', shares_threshold)
         #get unique addresses
         addresses = []
         for row in s.execute('SELECT * FROM shares'):
@@ -252,7 +305,7 @@ def payout(payout_threshold, myfee, othfee):
 
             if shares_address not in addresses:
                 addresses.append(shares_address)
-        print('payout address', addresses)
+        # print('payout address', addresses)
         #get unique addresses
 
         # prepare payout address list with number of shares and new total shares
@@ -264,20 +317,21 @@ def payout(payout_threshold, myfee, othfee):
 
             if shares_sum == None:
                 shares_sum = 0
+            # print(x, shares_sum, shares_threshold)
             if shares_sum > shares_threshold:
                 payadd.append([x, shares_sum])
                 new_sum = new_sum + shares_sum
         #prepare payout address list with number of shares and new total shares
+        # print('payadd', payadd)
 
         # recalculate reward per share now we have removed those below payout threshold
         try:
-
             reward_per_share = reward_total/new_sum
 
         except:
             reward_per_share = 0
 
-        print('reward_per_share', reward_per_share)
+        # print('reward_per_share2', reward_per_share)
 
         paylist = []
         for p in payadd:
@@ -287,9 +341,10 @@ def payout(payout_threshold, myfee, othfee):
         if othfee > 0:
             paylist.append([alt_add, at])
 
+        # print('paylist', paylist)
         payout_passed = 0
         for r in paylist:
-            print(r)
+            # print(r)
             recipient = r[0]
             claim = float(r[1])
 
@@ -307,11 +362,11 @@ def payout(payout_threshold, myfee, othfee):
             signer = PKCS1_v1_5.new(key)
             signature = signer.sign(h)
             signature_enc = base64.b64encode(signature)
-            print('Encoded Signature: {}'.format(signature_enc.decode('utf-8')))
+            # print('Encoded Signature: {}'.format(signature_enc.decode('utf-8')))
 
             verifier = PKCS1_v1_5.new(key)
             if verifier.verify(h, signature) == True:
-                print('The signature is valid, proceeding to send transaction')
+                # print('The signature is valid, proceeding to send transaction')
                 txid = signature_enc[:56]
                 mytxid = txid.decode('utf-8')
                 tx_submit = (str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), str(keep), str(openfield))  #float kept for compatibility
@@ -322,11 +377,12 @@ def payout(payout_threshold, myfee, othfee):
                 connections.send(t, 'mpinsert', 10)
                 connections.send(t, [tx_submit], 10)
                 reply = connections.receive(t, 10)
+                did_payout = True
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'transaction {} sent with reply {}'.format(tx_submit, reply))
             else:
-                print('Invalid signature')
+                # print('Pool: Invalid signature')
                 reply = 'Invalid signature'
-
-                print('Transaction sent with txid: {}'.format(mytxid))
 
             t.close()
 
@@ -366,6 +422,9 @@ def payout(payout_threshold, myfee, othfee):
     #clear nonces
     s.close()
 
+    if did_payout:
+        reactor.callFromThread(paydb_single, delay=2)  # @UndefinedVariable
+
 
 def commit(cursor):
     # secure commit for slow nodes
@@ -375,7 +434,8 @@ def commit(cursor):
             cursor.commit()
             passed = 1
         except Exception as e:
-            print('Retrying database execute due to ' + str(e))
+            lg.exc()
+            # print('Retrying database execute due to ' + str(e))
             time.sleep(random.random())
             # secure commit for slow nodes
 
@@ -391,7 +451,7 @@ def execute(cursor, what):
             cursor.execute(what)
             passed = 1
         except Exception as e:
-            print('Retrying database execute due to {}'.format(e))
+            lg.exc()
             time.sleep(random.random())
             # secure execute for slow nodes
     return cursor
@@ -407,7 +467,7 @@ def execute_param(cursor, what, param):
             cursor.execute(what, param)
             passed = 1
         except Exception as e:
-            print('Retrying database execute due to ' + str(e))
+            lg.exc()
             time.sleep(0.1)
             # secure execute for slow nodes
     return cursor
@@ -445,7 +505,6 @@ def n_test(testString):
 def paydb():
     global new_time
     while True:
-        print('Payout run finished')
         time.sleep(3601)
         #time.sleep(60) # test
         v = float('%.2f' % time.time())
@@ -453,10 +512,19 @@ def paydb():
         v2 = v - v1
 
         if v2 < 100000:
+            # print('Payout running...')
             payout(min_payout, pool_fee, alt_fee)
-            print('Payout running...')
-        else:
-            print('Node over 1 mins out: %r ...payout delayed' % v2)
+        # else:
+        # print('Node over 1 mins out: %r ...payout delayed' % v2)
+
+
+def paydb_single(delay=0):
+    # print('Pool: paydb_single')
+    time.sleep(delay)
+    # reactor.callLater(delay, payout, min_payout, pool_fee, alt_fee)  # @UndefinedVariable
+    background_paydb_single_thread = threading.Thread(target=payout, args=(min_payout, pool_fee, alt_fee))
+    background_paydb_single_thread.daemon = True
+    background_paydb_single_thread.start()
 
 
 def worker(s_time):
@@ -465,6 +533,9 @@ def worker(s_time):
     global new_time
     global node_ip
     global node_port
+
+    if _Debug:
+        lg.dbg(_DebugLevel, 'about to connect to node at {}:{} from {}'.format(node_ip, node_port, threading.current_thread()))
 
     n = socks.socksocket()
     n.connect((node_ip, int(node_port)))  # connect to local node
@@ -485,19 +556,21 @@ def worker(s_time):
             new_time = blocklast[1]
             new_diff = math.floor(diff[1])
 
-            print('Pool: difficulty={} blockhash={}'.format(str(new_diff), str(new_hash)))
+            # print('Pool: difficulty={} blockhash={}'.format(str(new_diff), str(new_hash)))
 
         except Exception as e:
-            print(str(e))
+            lg.exc()
     n.close()
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
-
     def handle(self):
         global new_diff
         global node_ip
         global node_port
+
+        block_submitted = False
+        share_added = False
 
         key = RSA.importKey(private_key_readable)
 
@@ -508,7 +581,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
         try:
             data = connections.receive(self.request, 10)
 
-            print('Pool received: {} from {}:{}'.format(data, peer_ip, peer_port))  # will add custom ports later
+            if _Debug:
+                lg.args(_DebugLevel, data=data, peer_ip=peer_ip, peer_port=peer_port)
+            # print('Pool: received {} from {}:{}'.format(data, peer_ip, peer_port))  # will add custom ports later
 
             if data == 'getwork':  # sends the miner the blockhash and mining diff for shares
 
@@ -517,7 +592,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 connections.send(m, 'api_mempool', 10)
                 result = connections.receive(m, 10)
                 m.close()
-            
+
                 work_send = []
                 work_send.append((len(result), new_hash, mdiff, address, mdiff))
 
@@ -538,14 +613,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 # print('miner_address', miner_address)
 
                 if not s_test(miner_address):
-
-                    print('Bad Miner Address Detected - Changing to default')
+                    lg.err(_DebugLevel, 'bad miner address detected - changing to default')
                     miner_address = alt_add
                     #s1.close()
 
                 else:
 
-                    print('Received a solution from miner {} ({})'.format(peer_ip, miner_address))
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'received a solution from miner {} ({})'.format(peer_ip, miner_address))
 
                     block_nonce = connections.receive(self.request, 10)
                     block_timestamp = (block_nonce[-1][0])
@@ -559,14 +634,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
                     wstr = ((block_nonce[-1][8]))  # worker number
                     wname = '{}{}'.format(bname, wstr)  # worker name
 
-                    print('Mined nonce details: {}'.format(block_nonce))
-                    print('Claimed hash: {}'.format(mine_hash))
-                    print('Claimed diff: {}'.format(sdiffs))
+                    # print('Pool: Mined nonce details: {}'.format(block_nonce))
+                    # print('Pool: Claimed hash: {}'.format(mine_hash))
+                    # print('Pool: Claimed diff: {}'.format(sdiffs))
 
                     if not n_test(nonce):
-                        print('Bad Nonce Format Detected - Closing Connection')
-                        self.close
-                    print('Processing nonce.....')
+                        lg.err('bad nonce format detected - closing connection')
+                        self.close()
+                    # print('Pool: Processing nonce.....')
 
                     diff = new_diff
                     db_block_hash = mine_hash
@@ -578,11 +653,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                     if mining_condition in mining_hash:
                     """
-                    print('Solution has {} difficulty, current difficulty is {}'.format(real_diff, diff))
+                    # print('Pool: Solution has {} difficulty, current difficulty is {}'.format(real_diff, diff))
                     if real_diff >= int(diff):
 
-                        print('Difficulty requirement satisfied for mining')
-                        print('Sending block to nodes')
+                        # print('Pool: Difficulty requirement satisfied for mining')
+                        # print('Pool: Sending block to nodes')
 
                         # cn = options.Get()
                         # cn.read()
@@ -595,16 +670,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         #ctor_conf = cn.tor_conf
                         # cversion = cn.version
 
-                        print('Local node ip {} on port {}'.format(node_ip, node_port))
+                        # print('Pool: Local node ip {} on port {}'.format(node_ip, node_port))
 
                         m = socks.socksocket()
-                        m.connect((
-                            node_ip,
-                            int(node_port),
-                        ))  # connect to local node
+                        m.connect((node_ip, int(node_port)))  # connect to local node
                         connections.send(m, 'api_mempool', 10)
                         result = connections.receive(m, 10)
-                        print('I have got to receive mempool')
+                        # print('I have got to receive mempool')
                         m.close()
 
                         # include data
@@ -612,8 +684,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         del block_send[:]  # empty
                         removal_signature = []
                         del removal_signature[:]  # empty
-
-                        print('prepare empty block and clear data')
 
                         for dbdata in result:
                             transaction = (str(dbdata[0]), str(dbdata[1][:56]), str(dbdata[2][:56]), '%.8f' % float(dbdata[3]), str(dbdata[4]), str(dbdata[5]), str(dbdata[6]), str(dbdata[7]))  # create tuple
@@ -623,7 +693,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         # claim reward
                         transaction_reward = tuple
                         transaction_reward = (str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce))  # only this part is signed!
-                        print('transaction_reward', transaction_reward)
+                        # print('transaction_reward', transaction_reward)
 
                         h = SHA.new(str(transaction_reward).encode('utf-8'))
                         signer = PKCS1_v1_5.new(key)
@@ -631,16 +701,16 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         signature_enc = base64.b64encode(signature)
 
                         if signer.verify(h, signature) == True:
-                            print('Signature valid')
+                            # print('Pool: Signature valid')
 
                             block_send.append((str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')), str(public_key_hashed.decode('utf-8')), '0', str(nonce)))  # mining reward tx
-                            print('Block to send: {}'.format(block_send))
+                            # print('Pool: Block to send: {}'.format(block_send))
 
                             if not any(isinstance(el, list) for el in block_send):  # if it's not a list of lists (only the mining tx and no others)
                                 new_list = []
                                 new_list.append(block_send)
                                 block_send = new_list  # make it a list of lists
-                                print(block_send)
+                                # print(block_send)
 
                         peer_dict = {}
 
@@ -655,7 +725,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                 peer_port = int(v)
                                 # app_log.info(PORT)
                                 # connect to all nodes
-                                print('Pool: Proceeding to submit mined block to {}:{}'.format(peer_ip, peer_port))
+                                # print('Pool: Proceeding to submit mined block to {}:{}'.format(peer_ip, peer_port))
                                 try:
                                     s = socks.socksocket()
                                     s.settimeout(0.3)
@@ -663,14 +733,15 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                     #    s.setproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
                                     s.connect((peer_ip, int(peer_port)))  # connect to node in peerlist
 
-
                                     connections.send(s, 'block', 10)
                                     #connections.send(s, address, 10)
                                     connections.send(s, block_send, 10)
-
-                                    print('Pool: Block submitted to {}:{}'.format(peer_ip, peer_port))
+                                    block_submitted = True
+                                    if _Debug:
+                                        lg.dbg(_DebugLevel, 'block submitted to {}:{}'.format(peer_ip, peer_port))
                                 except Exception as e:
-                                    print('Pool: Could not submit block to {}:{} because {}'.format(peer_ip, peer_port, e))
+                                    lg.exc()
+                                    # print('Pool: Could not submit block to {}:{} because {}'.format(peer_ip, peer_port, e))
 
                     if diff < mdiff:
                         diff_shares = diff
@@ -686,7 +757,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                     try:
                         result = s.fetchone()[0]
-                        print('Miner trying to reuse a share, ignored')
+                        lg.err('Pool: Miner trying to reuse a share, ignored')
+
                     except:
                         # protect against used share resubmission
                         """
@@ -694,7 +766,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         if mining_condition in mining_hash:
                         """
                         if real_diff >= diff_shares:
-                            print('Difficulty requirement satisfied for saving shares \n')
+                            # print('Pool: Difficulty requirement satisfied for saving shares')
 
                             execute_param(s, ('INSERT INTO nonces VALUES (?)'), (nonce, ))
                             commit(shares)
@@ -703,17 +775,34 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                             s.execute('INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)', (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname))
                             shares.commit()
+                            share_added = True
 
-                        else:
-                            print('Difficulty requirement not satisfied for anything \n')
+                            if _Debug:
+                                lg.dbg(_DebugLevel, 'added new share for %r' % miner_address)
+
+                        # else:
+                        # print('Pool: Difficulty requirement not satisfied for anything')
 
                     s.close()
 
             self.request.close()
         except Exception as e:
-            print('Error: {}'.format(e))
+            lg.exc()
+            # print('Pool: Error: {}'.format(e))
 
-    print('Starting up...')
+        if block_submitted and share_added:
+            # background_paydb_single_thread = threading.Thread(target=paydb_single)
+            # background_paydb_single_thread.daemon = True
+            # background_paydb_single_thread.start()
+            reactor.callFromThread(paydb_single, delay=1)  # @UndefinedVariable
+
+        if _Debug:
+            lg.args(_DebugLevel, block_submitted=block_submitted, share_added=share_added)
+
+        # else:
+        # print('Pool: block_submitted=%r share_added=%r' % (block_submitted, share_added))
+
+    # print('Pool: Starting up...')
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

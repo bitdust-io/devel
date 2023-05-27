@@ -36,6 +36,8 @@ class Connection(object):
         self.last_activity = 0
         self.command_lock = threading.Lock()
         self.check_connection()
+        if self.verbose:
+            print('New connection with', self.ipport)
 
     def check_connection(self):
         """Check connection state and reconnect if needed."""
@@ -48,6 +50,8 @@ class Connection(object):
                 self.sdef.connect(self.ipport)
                 self.last_activity = time.time()
             except Exception as e:
+                if self.verbose:
+                    print('Check connection failed with', e)
                 self.close()
                 raise RuntimeError("Connections: {}".format(e))
 
@@ -64,8 +68,8 @@ class Connection(object):
                 print(str(len(sdata)).encode("utf-8").zfill(slen)+sdata.encode("utf-8"))
             self.last_activity = time.time()
             # res is always 0 on linux
-            if self.verbose:
-                print("send ", data)
+            # if self.verbose:
+            #     print("send ", data)
             return True
         except Exception as e:
             # send failed, try to reconnect
@@ -162,11 +166,14 @@ class Connection(object):
 
     def close(self):
         """Close the socket"""
+        if self.verbose:
+            print('Closing connection with', self.ipport)
         if self.sdef:
             try:
                 self.sdef.close()
             except Exception as e:
-                pass
+                if self.verbose:
+                    print('Failed closing connection with', self.ipport, 'because of', e)
             finally:
                 self.sdef = None
 

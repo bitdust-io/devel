@@ -1,6 +1,12 @@
 import os
 
+#------------------------------------------------------------------------------
+
 from bitdust_forks.Bismuth.bismuthclient import bismuthclient  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
+from bitdust.logs import lg
 
 from bitdust.main import settings
 
@@ -8,12 +14,17 @@ from bitdust.blockchain import known_bismuth_nodes
 
 from bitdust.services import driver
 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
+#------------------------------------------------------------------------------
+
 _BismuthClient = None
 _DataDirPath = None
+
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -21,13 +32,15 @@ def init():
     global _DataDirPath
     _DataDirPath = settings.ServiceDir('bismuth_blockchain')
     if driver.is_enabled('service_bismuth_node'):
-        servers_list = ['127.0.0.1:15658', ]
+        servers_list = [
+            '127.0.0.1:15658',
+        ]
     else:
         servers_list = ['{}:{}'.format(k, v) for k, v in known_bismuth_nodes.nodes_by_host().items()]
     _BismuthClient = bismuthclient.BismuthClient(
-        verbose=_Debug,
         servers_list=servers_list,
         wallet_file=wallet_file_path(),
+        verbose=_Debug,
     )
     check_create_wallet()
 
@@ -38,6 +51,9 @@ def shutdown():
     del _BismuthClient
     _BismuthClient = None
     _DataDirPath = None
+
+
+#------------------------------------------------------------------------------
 
 
 def client():
@@ -53,13 +69,14 @@ def data_dir():
 def wallet_file_path(wallet_name=None):
     if not wallet_name:
         wallet_name = 'wallet'
-    return os.path.join(data_dir(), wallet_name + '.der')
+    return os.path.join(data_dir(), wallet_name + '_key.json')
 
 
 def check_create_wallet():
     file_path = wallet_file_path()
     if os.path.isfile(file_path):
-        print('Wallet file already exists')
+        if _Debug:
+            lg.dbg(_DebugLevel, 'wallet file already exists')
     else:
         if client().new_wallet(file_path):
             client().load_wallet(file_path)
@@ -77,5 +94,3 @@ def my_balance():
 
 def latest_transactions(num, offset, for_display, mempool_included):
     return client().latest_transactions(num, offset, for_display, mempool_included)
-
-

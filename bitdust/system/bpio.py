@@ -1236,7 +1236,7 @@ def kill_process_linux(pid):
     """
     try:
         import signal
-        os.kill(pid, signal.SIGTERM)
+        os.kill(pid, signal.SIGKILL)
     except:
         lg.exc()
 

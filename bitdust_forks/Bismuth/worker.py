@@ -54,7 +54,7 @@ def worker(host, port, node):
     timeout_operation = 60  # timeout
     timer_operation = time.time()  # start counting
 
-    print('started Bismuth peer worker', threading.current_thread(), host, port)
+    # print('started Bismuth peer worker', threading.current_thread(), host, port)
 
     try:
 

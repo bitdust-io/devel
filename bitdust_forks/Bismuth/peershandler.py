@@ -143,7 +143,7 @@ class Peers:
         try:
             with open(file, 'r') as peer_file:
                 peers_pairs = json.load(peer_file)
-            print('Peers file test', file, peers_pairs, peerdict)
+            # print('Peers file test', file, len(peers_pairs), len(peerdict))
             # TODO: rework, because this takes too much time and freezes the status thread.
             # to be done in a dedicated thread, with one peer per xx seconds, not all at once, and added properties.
             for ip, port in dict(peerdict).items():
@@ -402,7 +402,7 @@ class Peers:
         if peer_ip in self.peer_opinion_dict:
             try:
                 self.app_log.info(f'Will remove {peer_ip} from consensus pool {self.peer_opinion_dict}')
-                self.peer_opinion_dict.pop(peer_ip)
+                self.peer_opinion_dict.pop(peer_ip, None)
             except:
                 raise
 

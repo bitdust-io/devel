@@ -101,8 +101,8 @@ def difficulty(node, db_handler):
             block_height,
         )  # need to keep float here for database inserts support
     except Exception as e:  #new chain or regnet
-        print('Failed to calculate difficulty (default difficulty will be used):', e)
-        import traceback
-        traceback.print_exc()
+        # print('Failed to calculate difficulty (default difficulty will be used):', e)
+        # import traceback
+        # traceback.print_exc()
         difficulty = [10, 10, 0, 0, 0, 0, 0, 0]
         return difficulty

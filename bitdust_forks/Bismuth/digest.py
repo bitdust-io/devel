@@ -68,7 +68,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
         else:
             if node.last_block > fork.POW_FORK:
                 if not fork.check_postfork_reward(db_handler):
-                    print('Rolling back')
+                    # print('Rolling back')
                     db_handler.rollback_under(fork.POW_FORK - 1)
                     raise ValueError('Rolling back chain due to old fork data')
         # fork handling

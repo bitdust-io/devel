@@ -5,10 +5,15 @@ import threading
 import socks
 import sqlite3
 import traceback
+import logging
 import json
+
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
 from twisted.internet import reactor
+
+#------------------------------------------------------------------------------
 
 from bitdust_forks.Bismuth import node as bismuth_node
 from bitdust_forks.Bismuth import connectionmanager
@@ -19,26 +24,32 @@ from bitdust_forks.Bismuth import connections
 from bitdust_forks.Bismuth import options
 from bitdust_forks.Bismuth import peershandler
 from bitdust_forks.Bismuth import plugins
-from bitdust_forks.Bismuth import log
-# from bitdust_forks.Bismuth import worker
-# from bitdust_forks.Bismuth import digest
 from bitdust_forks.Bismuth.libs import node as _node
 from bitdust_forks.Bismuth.libs import logger
 from bitdust_forks.Bismuth.libs import keys
 from bitdust_forks.Bismuth.modules import config as modules_config
+from bitdust_forks.Bismuth.bismuthclient import rpcconnections
 
+#------------------------------------------------------------------------------
+
+from bitdust.logs import lg
 
 from bitdust.main import settings
+
 from bitdust.blockchain import known_bismuth_nodes
 
+#------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 12
 
+#------------------------------------------------------------------------------
 
 VERSION = '1.0.0.0'
 
 _DataDirPath = None
+
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -66,12 +77,13 @@ def shutdown():
     while count < 1:
         try:
             s.connect(('127.0.0.1', int(port)))
-            print('Sending stop command...')
+            # print('Sending stop command...')
             connections.send(s, 'stop')
-            print('Stop command delivered.')
+            # print('Stop command delivered.')
             break
         except Exception as e:
-            print('Cannot reach node', e)
+            lg.exc()
+            # print('Cannot reach node', e)
             # time.sleep(0.1)
             count += 1
 
@@ -79,8 +91,13 @@ def shutdown():
     return True
 
 
+#------------------------------------------------------------------------------
+
+
 def run(data_dir_path, starting_defer):
     global _DataDirPath
+
+    rpcconnections.LTIMEOUT = 20
 
     _DataDirPath = data_dir_path
     if not os.path.exists(data_dir_path):
@@ -96,6 +113,8 @@ def run(data_dir_path, starting_defer):
     node = bismuth_node.node
     bismuth_node.bootstrap = bootstrap
 
+    node.app_version = VERSION
+
     options.Get.defaults['heavy3_path'] = os.path.join(data_dir_path, 'heavy3a.bin')
     options.Get.defaults['mempool_path'] = os.path.join(data_dir_path, 'mempool.db')
     modules_config.Get.defaults['db_path'] = data_dir_path
@@ -103,7 +122,6 @@ def run(data_dir_path, starting_defer):
 
     node.data_dir_path = data_dir_path
 
-    node.logger = logger.Logger()
     node.keys = keys.Keys()
 
     node.is_testnet = False
@@ -113,10 +131,13 @@ def run(data_dir_path, starting_defer):
     config = options.Get()
     config.read(filename=config_path, custom_filename=custom_config_path)
 
-    node.app_version = VERSION
-
     node.version = config.version
     node.debug_level = config.debug_level
+
+    node.logger = logger.Logger()
+    node.logger.app_log = custom_log(level_input=lg.get_loging_level(max(0, _DebugLevel - 4), return_name=True))
+    node.logger.app_log.warning(f'Python version: {node.py_version}')
+
     node.port = config.port
     node.verify = config.verify
     node.thread_limit = config.thread_limit
@@ -141,9 +162,7 @@ def run(data_dir_path, starting_defer):
     node.heavy = config.heavy
     node.heavy3_path = config.heavy3_path
 
-    node.logger.app_log = log.log('node.log', node.debug_level, node.terminal_output)
-    node.logger.app_log.warning('Configuration settings loaded')
-    node.logger.app_log.warning(f'Python version: {node.py_version}')
+    # node.logger.app_log.warning('Configuration settings loaded')
 
     if not node.full_ledger and os.path.exists(node.ledger_path) and node.is_mainnet:
         os.remove(node.ledger_path)
@@ -159,23 +178,25 @@ def run(data_dir_path, starting_defer):
 
         setup_net_type(bismuth_node.node, data_dir_path)
 
-        bismuth_node.load_keys(data_dir=data_dir_path, wallet_filename=os.path.join(data_dir_path, 'node_key.der'))
+        bismuth_node.load_keys(data_dir=data_dir_path, wallet_filename=os.path.join(data_dir_path, 'node_key.json'))
 
-        node.logger.app_log.warning(f'Checking Heavy3 file, can take up to 5 minutes...')
+        # node.logger.app_log.warning(f'Checking Heavy3 file, can take up to 5 minutes...')
         t_now = time.time()
+
         from bitdust_forks.Bismuth import mining_heavy3
         from bitdust_forks.Bismuth import digest
+
         mining_heavy3.mining_open(node.heavy3_path)
         digest.mining_heavy3.MMAP = mining_heavy3.MMAP
         digest.mining_heavy3.RND_LEN = mining_heavy3.RND_LEN
         node.logger.app_log.warning(f'Heavy3 file is OK, loaded in %s seconds' % (time.time() - t_now))
 
-        node.logger.app_log.warning(f'Status: Starting node version {VERSION}')
+        # node.logger.app_log.warning(f'Status: Starting node version {VERSION}')
         node.startup_time = time.time()
         try:
 
             node.peers = peershandler.Peers(node.logger.app_log, config=config, node=bismuth_node.node)
-            node.peers.peerfile = bismuth_node.node.peerfile
+            node.peers.peerfile = bismuth_node.node.peerfile  # @UndefinedVariable
             node.peers.suggested_peerfile = bismuth_node.node.peerfile_suggested  # @UndefinedVariable
 
             node.apihandler = apihandler.ApiHandler(node.logger.app_log, config)
@@ -184,7 +205,9 @@ def run(data_dir_path, starting_defer):
 
             check_db_for_bootstrap(bismuth_node.node)
 
-            db_handler_initial = dbhandler.DbHandler(bismuth_node.node.index_db, bismuth_node.node.ledger_path, bismuth_node.node.hyper_path, bismuth_node.node.ram, bismuth_node.node.ledger_ram_file, node.logger, trace_db_calls=bismuth_node.node.trace_db_calls)
+            db_handler_initial = dbhandler.DbHandler(
+                bismuth_node.node.index_db, bismuth_node.node.ledger_path, bismuth_node.node.hyper_path, bismuth_node.node.ram, bismuth_node.node.ledger_ram_file, node.logger, trace_db_calls=bismuth_node.node.trace_db_calls
+            )
             bismuth_node.db_handler_initial = db_handler_initial
 
             try:
@@ -237,7 +260,7 @@ def run(data_dir_path, starting_defer):
         reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
         raise
 
-    node.logger.app_log.warning('Status: Bismuth loop running.')
+    # node.logger.app_log.warning('Status: Bismuth loop running.')
 
     reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
 
@@ -250,6 +273,7 @@ def run(data_dir_path, starting_defer):
                 node.logger.app_log.warning('Status: Securely disconnected main processes, subprocess termination in progress.')
                 break
         time.sleep(0.1)
+
     node.logger.app_log.warning('Status: Clean Stop')
 
 
@@ -329,6 +353,7 @@ def setup_net_type(node, data_dir_path):
 
 def bootstrap():
     global _DataDirPath
+
     try:
         hyper_path = os.path.join(_DataDirPath, 'hyper.db')
         ledger_path = os.path.join(_DataDirPath, 'ledger.db')
@@ -430,11 +455,12 @@ def bootstrap():
         index_cursor.execute('CREATE TABLE staking (block_height INTEGER, timestamp NUMERIC, address, balance, ip, port, pos_address)')
         index.commit()
         index.close()
+
         time.sleep(2)
     except:
         traceback.print_exc()
         raise
-    print('Bootstrap successfully finished')
+    # print('Bootstrap successfully finished')
 
 
 def check_db_for_bootstrap(node):
@@ -447,7 +473,49 @@ def check_db_for_bootstrap(node):
             raise Exception()
         upgrade.close()
     except Exception as e:
-        print(e)
+        lg.exc()
         upgrade.close()
-        print('Database needs upgrading, bootstrapping...')
+        lg.warn('Database needs upgrading, bootstrapping...')
         bootstrap()
+
+
+#------------------------------------------------------------------------------
+
+
+class CustomLogHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            if _Debug:
+                lg.out(_DebugLevel, self.format(record))  # record.getMessage()
+        except RecursionError:  # See issue 36272
+            raise
+        except Exception:
+            self.handleError(record)
+
+    def handleError(self, record):
+        lg.err(self.format(record))
+
+
+def custom_log(level_input='NOTSET'):
+    if level_input == 'NOTSET':
+        level = logging.NOTSET
+    if level_input == 'DEBUG':
+        level = logging.DEBUG
+    if level_input == 'INFO':
+        level = logging.INFO
+    if level_input == 'WARNING':
+        level = logging.WARNING
+    if level_input == 'ERROR':
+        level = logging.ERROR
+    if level_input == 'CRITICAL':
+        level = logging.CRITICAL
+
+    log_formatter = logging.Formatter('%(module)s.%(funcName)s %(levelname)s %(message)s')
+    my_handler = CustomLogHandler(level=level)
+    my_handler.setFormatter(log_formatter)
+
+    app_log = logging.getLogger('root')
+    app_log.setLevel(level)
+    app_log.addHandler(my_handler)
+
+    return app_log

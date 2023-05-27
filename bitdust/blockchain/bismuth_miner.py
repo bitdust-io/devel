@@ -7,12 +7,17 @@ import hashlib
 import random
 import traceback
 
+#------------------------------------------------------------------------------
+
 from twisted.internet import reactor
+
+#------------------------------------------------------------------------------
 
 from bitdust_forks.Bismuth import mining_heavy3
 from bitdust_forks.Bismuth import connections
 
 from bitdust.main import settings
+from bitdust.logs import lg
 
 from bitdust.blockchain import known_bismuth_nodes
 from bitdust.blockchain import bismuth_wallet
@@ -21,19 +26,26 @@ from bitdust.services import driver
 
 from bitdust.userid import my_id
 
+#------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 12
 
+#------------------------------------------------------------------------------
 
 _DataDirPath = None
 _MinerWalletAddress = None
 _MinerName = None
+_OwnCoinsLastTime = None
+
+#------------------------------------------------------------------------------
 
 mining_threads = 1
 nonce_time = 10
 max_diff = 150
 hashcount = 20000
+
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -43,31 +55,19 @@ def init():
     _DataDirPath = settings.ServiceDir('bismuth_blockchain')
     _MinerWalletAddress = bismuth_wallet.my_wallet_address()
     _MinerName = my_id.getIDName()
-    check_mine_own_coins()
+    check_start_mining_later(delay=0)
+    if _Debug:
+        lg.args(_DebugLevel, wallet_address=_MinerWalletAddress, miner_name=_MinerName)
     return True
 
 
 def shutdown():
-    pass
+    if _Debug:
+        lg.dbg(_DebugLevel, '')
+    return True
 
 
-def check_mine_own_coins():
-    cur_balance = bismuth_wallet.my_balance()
-    print('My current balance is', cur_balance)
-    if cur_balance == 'N/A':
-        reactor.callLater(5, check_mine_own_coins)  # @UndefinedVariable
-        return
-    if cur_balance < 10:
-        # mine_few_coins(needed_coins=(10 - bismuth_wallet.my_balance()))
-        reactor.callLater(30, check_mine_own_coins)  # @UndefinedVariable
-
-
-def mine_few_coins(needed_coins=1):
-    reactor.callLater(0, run, needed_coins=needed_coins)  # @UndefinedVariable
-
-
-def mine_non_empty_mempool():
-    reactor.callLater(0, run, needed_coins=0)  # @UndefinedVariable
+#------------------------------------------------------------------------------
 
 
 def get_random_mining_pool_host_port():
@@ -77,6 +77,37 @@ def get_random_mining_pool_host_port():
     return one_item[0], one_item[1]
 
 
+#------------------------------------------------------------------------------
+
+
+def check_start_mining_later(delay=30):
+    # TODO: use random delay
+    reactor.callLater(delay, check_start_mining)  # @UndefinedVariable
+
+
+def check_start_mining():
+    global _OwnCoinsLastTime
+    try:
+        cur_balance = bismuth_wallet.my_balance()
+    except:
+        traceback.print_exc()
+        cur_balance = 'N/A'
+    lg.info('my balance is: %r' % cur_balance)
+    if cur_balance == 'N/A':
+        reactor.callLater(10, check_start_mining)  # @UndefinedVariable
+        return
+    try:
+        cur_balance = float(cur_balance)
+    except:
+        reactor.callLater(10, check_start_mining)  # @UndefinedVariable
+        return
+    if cur_balance < 20 and (not _OwnCoinsLastTime or (time.time() - _OwnCoinsLastTime > 60)):
+        _OwnCoinsLastTime = time.time()
+        run(needed_coins=1)
+    else:
+        run(needed_coins=0)
+
+
 def run(needed_coins):
     global _MinerWalletAddress
     global _MinerName
@@ -84,9 +115,8 @@ def run(needed_coins):
 
     mining_pool_host, mining_pool_port = get_random_mining_pool_host_port()
 
-    print('Miner address={} name={} next mining pool host:port is {}:{}'.format(
-        _MinerWalletAddress, _MinerName, mining_pool_host, mining_pool_port,
-    ))
+    if _Debug:
+        lg.args(_DebugLevel, mining_pool_host=mining_pool_host, mining_pool_port=mining_pool_port)
 
     miner_th = threading.Thread(target=miner_thread, args=(
         needed_coins,
@@ -96,23 +126,24 @@ def run(needed_coins):
         _MinerName,
         _DataDirPath,
     ))
+    miner_th.daemon = True
     miner_th.start()
-    print('Miner thread started')
 
 
 def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address, miner_name, data_dir_path):
-    if not mining_heavy3.RND_LEN:
+    if not mining_heavy3.RND_LEN or not mining_heavy3.MMAP:
         mining_heavy3.mining_open(os.path.join(data_dir_path, 'heavy3a.bin'))
 
     mined_coins = 0
+    delay = 0
     while True:
         if needed_coins and mined_coins >= needed_coins:
-            print('Successfully mined %d coins, finishing' % mined_coins)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'successfully mined %d coins, finishing' % mined_coins)
             break
 
-        # print('Starting active mining, requesting work from the mining pool %s:%s' % (
-        #     mining_pool_host,
-        #     int(mining_pool_port)
+        # print('Miner: Starting active mining, progress so far: %d/%d, requesting work from the mining pool: %s:%s' % (
+        #     mined_coins, needed_coins, mining_pool_host, int(mining_pool_port)
         # ))
 
         try:
@@ -122,9 +153,16 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
             work_pack = connections.receive(s, 10)
             mempool_size = (work_pack[-1][0])
             if not needed_coins and not mempool_size:
-                print('Mempool is empty, no need to mine')
-                time.sleep(30)
-                continue
+                if _Debug:
+                    lg.args(_DebugLevel, needed_coins=needed_coins, mempool_size=mempool_size)
+                # print('Miner: Mempool is empty, skip mining')
+                delay = 30
+                break
+                # mining_heavy3.mining_close()
+                # time.sleep(30)
+                # continue
+                # return
+
             db_block_hash = work_pack[-1][1]
             diff = int(work_pack[-1][2])
             pool_address = work_pack[-1][3]
@@ -135,16 +173,17 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
             mining_condition = db_block_hash[0:diff_hex]
 
             h1 = 1
-        
+
             # print('Miner instance started', miner_address, pool_address, db_block_hash, diff, mining_condition, netdiff)
-        
+
             try:
                 tries = 0
-                try_arr = [('%0x' % random.getrandbits(32)) for _ in range(nonce_time * hashcount)]
+                try_arr = [('%0x' % random.getrandbits(32)) for _ in range(nonce_time*hashcount)]
                 address = pool_address
-        
-                while True:
-                    if mined_coins > 0:
+                success = False
+
+                while not success:
+                    if needed_coins and mined_coins >= needed_coins:
                         break
 
                     try:
@@ -160,9 +199,9 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
                         # hash rate calculation
                         try:
                             t2 = time.time()
-                            h1 = int(((nonce_time * hashcount) / (t2 - t1)) / 1000)
+                            h1 = int(((nonce_time*hashcount)/(t2 - t1))/1000)
                         except Exception as e:
-                            print(e)
+                            lg.exc()
                             h1 = 1
                         if possibles:
                             for nonce in possibles:
@@ -173,48 +212,61 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
                                     pass
 
                                 else:
-                                    print('Solved work with difficulty {} in {} cycles - YAY!'.format(xdiffx, tries))
-                                    wname = '{}{}'.format(miner_name, 0)
-                                    print('{} running at {} kh/s'.format(wname, str(h1)))
+                                    # print('Miner: Solved work with difficulty {} in {} cycles - YAY!'.format(xdiffx, tries))
+                                    # wname = '{}{}'.format(miner_name, 0)
+                                    # print('Miner: {} running at {} kh/s'.format(wname, str(h1)))
                                     block_send = []
                                     del block_send[:]  # empty
                                     block_timestamp = '%.2f' % time.time()
                                     block_send.append((block_timestamp, nonce, db_block_hash, netdiff, xdiffx, 0, miner_name, 1, str(1)))
-                                    print('Sending solution: {}'.format(block_send))
+                                    # print('Miner: Sending solution: {}'.format(block_send))
                                     tries = 0
                                     # submit mined nonce to pool
                                     try:
                                         s1 = socks.socksocket()
                                         s1.connect((mining_pool_host, int(mining_pool_port)))  # connect to pool
-                                        print('Miner: connected to pool, proceeding to submit solution miner_address=%s' % miner_address)
+                                        # print('Miner: connected to pool, proceeding to submit solution miner_address=%s' % miner_address)
                                         connections.send(s1, 'block', 10)
                                         connections.send(s1, miner_address, 10)
                                         connections.send(s1, block_send, 10)
                                         time.sleep(0.2)
                                         s1.close()
                                         mined_coins += 1
-                                        print('Miner: solution submitted to pool', mined_coins)
+                                        success = True
+                                        # print('Miner: solution submitted to pool', mined_coins)
+                                        if _Debug:
+                                            lg.args(_DebugLevel, xdiffx=xdiffx, tries=tries, hash_rate=h1, mined_coins=mined_coins)
                                         break
-        
+
                                     except Exception as e:
-                                        print('Miner: Could not submit solution to pool')
+                                        lg.exc()
+                                        # print('Miner: Could not submit solution to pool')
+
                     except Exception as e:
-                        traceback.print_exc()
+                        # traceback.print_exc()
+                        lg.exc()
                         time.sleep(0.1)
                         raise
-        
+
             except Exception as e:
-                print(e)
+                lg.exc()
 
         except Exception as e:
-            print(e)
-            print('Miner: Unable to connect to pool check your connection or IP settings.')
-            time.sleep(1)
+            lg.warn('unable to connect to mining pool: %r' % e)
+            # print('Miner: Unable to connect to pool, check your connection or IP settings', e)
+            time.sleep(5)
 
     mining_heavy3.mining_close()
 
+    # print('Miner: thread finished, mined_coins=%d, needed_coins=%d' % (mined_coins, needed_coins, ))
+    reactor.callFromThread(check_start_mining_later, delay=delay)  # @UndefinedVariable
+
+
+#------------------------------------------------------------------------------
 
 bin_format_dict = dict((x, format(ord(x), '8b').replace(' ', '0')) for x in '0123456789abcdef')
+
+
 def bin_convert(string):
     return ''.join(bin_format_dict[x] for x in string)
 
