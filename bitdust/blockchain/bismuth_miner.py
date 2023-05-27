@@ -92,7 +92,9 @@ def check_start_mining():
     except:
         traceback.print_exc()
         cur_balance = 'N/A'
-    lg.info('my balance is: %r' % cur_balance)
+
+    lg.info('my balance is: %s' % cur_balance)
+
     if cur_balance == 'N/A':
         reactor.callLater(10, check_start_mining)  # @UndefinedVariable
         return

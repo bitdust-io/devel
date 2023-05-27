@@ -26,7 +26,7 @@ def sendsync(sdef, peer_ip, status, node):
     returns None
     """
     # TODO: ERROR, does **not** save anything. code or comment wrong.
-    node.logger.app_log.info(f'Outbound: Synchronization with {peer_ip} finished after: {status}, sending new sync request')
+    node.logger.app_log.debug(f'Outbound: Synchronization with {peer_ip} finished after: {status}, sending new sync request')
     time.sleep(Decimal(node.pause))
     while node.db_lock.locked():
         if node.IS_STOPPING:
@@ -64,7 +64,7 @@ def worker(host, port, node):
             s.setproxy(socks.PROXY_TYPE_SOCKS5, '127.0.0.1', 9050)
         # s.setblocking(0)
         s.connect((host, port))
-        node.logger.app_log.info(f'Outbound: Connected to {this_client}')
+        node.logger.app_log.debug(f'Outbound: Connected to {this_client}')
         client_instance_worker.connected = True
 
         # communication starter
@@ -75,7 +75,7 @@ def worker(host, port, node):
         data = receive(s)
 
         if data == 'ok':
-            node.logger.app_log.info(f'Outbound: Node protocol version of {this_client} matches our client')
+            node.logger.app_log.debug(f'Outbound: Node protocol version of {this_client} matches our client')
         else:
             raise ValueError(f'Outbound: Node protocol version of {this_client} mismatch')
 
@@ -89,7 +89,7 @@ def worker(host, port, node):
         # communication starter
 
     except Exception as e:
-        node.logger.app_log.info(f'Could not connect to {this_client}: {e}')
+        node.logger.app_log.debug(f'Could not connect to {this_client}: {e}')
         return  # can return here, because no lists are affected yet
 
     node.peers.store_mainnet(host, peer_version)
@@ -102,8 +102,8 @@ def worker(host, port, node):
 
     if this_client not in node.peers.connection_pool:
         node.peers.append_client(this_client)
-        node.logger.app_log.info(f'Connected to {this_client}')
-        node.logger.app_log.info(f'Current active pool: {node.peers.connection_pool}')
+        node.logger.app_log.debug(f'Connected to {this_client}')
+        node.logger.app_log.debug(f'Current active pool: {node.peers.connection_pool}')
 
     if not node.peers.is_banned(host) and node.peers.version_allowed(host, node.version_allow) and not node.IS_STOPPING:
         db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, logger)
@@ -135,12 +135,12 @@ def worker(host, port, node):
                     # send block height, receive block height
                     send(s, 'blockheight')
 
-                    node.logger.app_log.info(f'Outbound: Sending block height to compare: {node.hdd_block}')
+                    node.logger.app_log.debug(f'Outbound: Sending block height to compare: {node.hdd_block}')
                     # append zeroes to get static length
                     send(s, node.hdd_block)
 
                     received_block_height = receive(s)  # receive node's block height
-                    node.logger.app_log.info(f'Outbound: Node {peer_ip} is at block height: {received_block_height}')
+                    node.logger.app_log.debug(f'Outbound: Node {peer_ip} is at block height: {received_block_height}')
 
                     if int(received_block_height) < node.hdd_block:
                         node.logger.app_log.warning(f'Outbound: We have a higher block ({node.hdd_block}) than {peer_ip} ({received_block_height}), sending')
@@ -148,7 +148,7 @@ def worker(host, port, node):
                         data = receive(s)  # receive client's last block_hash
 
                         # send all our followup hashes
-                        node.logger.app_log.info(f'Outbound: Will seek the following block: {data}')
+                        node.logger.app_log.debug(f'Outbound: Will seek the following block: {data}')
 
                         # consensus pool 2 (active connection)
                         consensus_blockheight = int(received_block_height)
@@ -176,33 +176,33 @@ def worker(host, port, node):
                                     node.logger.app_log.warning(f'Outbound: Egress disabled for {peer_ip}')
                                     time.sleep(int(node.pause))  # reduce CPU usage
                                 else:
-                                    node.logger.app_log.info(f'Outbound: Node {peer_ip} has the latest block')
+                                    node.logger.app_log.debug(f'Outbound: Node {peer_ip} has the latest block')
                                     # TODO: this is unlikely to happen due to conditions above, consider removing
                                 send(s, 'nonewblk')
 
                             else:
                                 blocks_fetched = db_handler_instance.blocksync(client_block)
 
-                                node.logger.app_log.info(f'Outbound: Selected {blocks_fetched}')
+                                node.logger.app_log.debug(f'Outbound: Selected {blocks_fetched}')
 
                                 send(s, 'blocksfnd')
 
                                 confirmation = receive(s)
 
                                 if confirmation == 'blockscf':
-                                    node.logger.app_log.info('Outbound: Client confirmed they want to sync from us')
+                                    node.logger.app_log.debug('Outbound: Client confirmed they want to sync from us')
                                     send(s, blocks_fetched)
 
                                 elif confirmation == 'blocksrj':
-                                    node.logger.app_log.info("Outbound: Client rejected to sync from us because we're dont have the latest block")
+                                    node.logger.app_log.debug("Outbound: Client rejected to sync from us because we're dont have the latest block")
 
                     elif int(received_block_height) >= node.hdd_block:
                         if int(received_block_height) == node.hdd_block:
-                            node.logger.app_log.info(f'Outbound: We have the same block as {peer_ip} ({received_block_height}), hash will be verified')
+                            node.logger.app_log.debug(f'Outbound: We have the same block as {peer_ip} ({received_block_height}), hash will be verified')
                         else:
                             node.logger.app_log.warning(f'Outbound: We have a lower block ({node.hdd_block}) than {peer_ip} ({received_block_height}), hash will be verified')
 
-                        node.logger.app_log.info(f'Outbound: block_hash to send: {node.hdd_hash}')
+                        node.logger.app_log.debug(f'Outbound: block_hash to send: {node.hdd_hash}')
                         send(s, node.hdd_hash)
 
                         #ensure_good_peer_version(host)
@@ -244,9 +244,9 @@ def worker(host, port, node):
                 sendsync(s, peer_ip, 'Block not found', node)
 
             elif data == 'blocksfnd':
-                node.logger.app_log.info(f'Outbound: Node {peer_ip} has the block(s)')  # node should start sending txs in this step
+                node.logger.app_log.debug(f'Outbound: Node {peer_ip} has the block(s)')  # node should start sending txs in this step
 
-                # node.logger.app_log.info("Inbound: Combined segments: " + segments)
+                # node.logger.app_log.debug("Inbound: Combined segments: " + segments)
                 # print peer_ip
                 if node.db_lock.locked():
                     node.logger.app_log.warning(f'Skipping sync from {peer_ip}, syncing already in progress')
@@ -290,7 +290,7 @@ def worker(host, port, node):
                 # print('nonewblk', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'), threading.current_thread())
                 if mp.MEMPOOL.sendable(peer_ip):
                     mempool_txs = mp.MEMPOOL.tx_to_send(peer_ip)
-                    # node.logger.app_log.info("Outbound: Extracted from the mempool: " + str(mempool_txs))  # improve: sync based on signatures only
+                    # node.logger.app_log.debug("Outbound: Extracted from the mempool: " + str(mempool_txs))  # improve: sync based on signatures only
                     # if len(mempool_txs) > 0: #wont sync mempool until we send something, which is bad
                     # send own
                     send(s, 'mempool')
@@ -299,7 +299,7 @@ def worker(host, port, node):
                     # receive theirs
                     segments = receive(s)
 
-                    node.logger.app_log.info(mp.MEMPOOL.merge(segments, peer_ip, db_handler_instance.c, True))
+                    node.logger.app_log.debug(mp.MEMPOOL.merge(segments, peer_ip, db_handler_instance.c, True))
 
                     # receive theirs
                     # Tell the mempool we just send our pool to a peer
@@ -332,8 +332,8 @@ def worker(host, port, node):
             node.peers.consensus_remove(peer_ip)
             # remove from consensus 2
 
-            node.logger.app_log.info(f'Connection to {this_client} terminated due to {e}')
-            node.logger.app_log.info(f'---thread {threading.currentThread()} ended---')
+            node.logger.app_log.debug(f'Connection to {this_client} terminated due to {e}')
+            node.logger.app_log.debug(f'---thread {threading.currentThread()} ended---')
 
             # properly end the connection
             s.close()
@@ -342,7 +342,7 @@ def worker(host, port, node):
             if node.debug:
                 raise  # major debug client
             else:
-                node.logger.app_log.info(f'Ending thread, because {e}')
+                node.logger.app_log.warning(f'Ending thread, because {e}')
                 return
 
     if not node.peers.version_allowed(host, node.version_allow):

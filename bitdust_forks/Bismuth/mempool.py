@@ -153,7 +153,7 @@ class Mempool:
         Checks if mempool exists, create if not.
         :return:
         """
-        self.app_log.warning('Mempool Check')
+        self.app_log.debug('Mempool Check')
         with self.lock:
             if self.ram:
                 self.db = sqlite3.connect(self.mempool_ram_file, uri=True, timeout=1, isolation_level=None, check_same_thread=False)
@@ -334,7 +334,7 @@ class Mempool:
             # self.app_log.warning('Status: MEMPOOL Live = {}'.format(', '.join(set(self.peers_sent.keys()) - set(frozen))))
             status = self.fetchall(SQL_STATUS)
             count, open_len, senders, recipients = status[0]
-            self.app_log.warning('Status: MEMPOOL {} Txs from {} senders to {} distinct recipients. Openfield len {}'.format(count, senders, recipients, open_len))
+            self.app_log.debug('Status: MEMPOOL {} Txs from {} senders to {} distinct recipients. Openfield len {}'.format(count, senders, recipients, open_len))
             return status[0]
         except:
             return 0

@@ -41,7 +41,6 @@ from bitdust.blockchain import known_bismuth_nodes
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -135,8 +134,11 @@ def run(data_dir_path, starting_defer):
     node.debug_level = config.debug_level
 
     node.logger = logger.Logger()
-    node.logger.app_log = custom_log(level_input=lg.get_loging_level(max(0, _DebugLevel - 4), return_name=True))
-    node.logger.app_log.warning(f'Python version: {node.py_version}')
+    if _Debug:
+        node.logger.app_log = custom_log(level_input=lg.get_loging_level(max(0, lg.get_debug_level() - 6), return_name=True))
+    else:
+        node.logger.app_log = custom_log(level_input='CRITICAL')
+    node.logger.app_log.critical(f'Python version: {node.py_version}')
 
     node.port = config.port
     node.verify = config.verify
@@ -488,7 +490,7 @@ class CustomLogHandler(logging.Handler):
     def emit(self, record):
         try:
             if _Debug:
-                lg.out(_DebugLevel, self.format(record))  # record.getMessage()
+                lg.out(lg.get_debug_level() - 6, self.format(record))  # record.getMessage()
         except RecursionError:  # See issue 36272
             raise
         except Exception:
