@@ -372,7 +372,7 @@ def balanceget(balance_address, db_handler):
     # verify balance
 
     # node.logger.app_log.info("Mempool: Verifying balance")
-    # node.logger.app_log.info("Mempool: Received address: " + str(balance_address))
+    node.logger.app_log.info("Node: Received address for balanceget: " + str(balance_address))
 
     base_mempool = mp.MEMPOOL.mp_get(balance_address)
 
@@ -395,6 +395,7 @@ def balanceget(balance_address, db_handler):
         entries = db_handler.h.fetchall()
     except:
         entries = []
+    # print('recipient', debit_mempool, entries)
 
     try:
         for entry in entries:
@@ -411,6 +412,7 @@ def balanceget(balance_address, db_handler):
         entries = db_handler.h.fetchall()
     except:
         entries = []
+    # print('to address', entries)
 
     try:
         for entry in entries:
@@ -435,6 +437,7 @@ def balanceget(balance_address, db_handler):
         entries = db_handler.h.fetchall()
     except:
         entries = []
+    # print('reward', entries)
 
     try:
         for entry in entries:
@@ -447,6 +450,7 @@ def balanceget(balance_address, db_handler):
     balance = quantize_eight(credit_ledger - debit - fees + rewards)
     balance_no_mempool = float(credit_ledger) - float(debit_ledger) - float(fees) + float(rewards)
     # node.logger.app_log.info("Mempool: Projected transction address balance: " + str(balance))
+    # print('balance results', str(balance), str(credit_ledger), str(debit), str(fees), str(rewards), str(balance_no_mempool))
     return str(balance), str(credit_ledger), str(debit), str(fees), str(rewards), str(balance_no_mempool)
 
 
@@ -665,6 +669,7 @@ def sequencing_check(db_handler):
 
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+
     def handle(self):
         # this is a dedicated thread for each client (not ip)
         if node.IS_STOPPING:
@@ -772,7 +777,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     # receive theirs
 
                     # execute_param(m, ('SELECT timestamp,address,recipient,amount,signature,public_key,operation,openfield FROM transactions WHERE timeout < ? ORDER BY amount DESC;'), (int(time.time() - 5),))
-                    print('mempool', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'))
+                    # print('mempool', mp.MEMPOOL, id(mp.MEMPOOL), getattr(mp.MEMPOOL, 'sendable', '?'))
                     if mp.MEMPOOL.sendable(peer_ip):
                         # Only send the diff
                         mempool_txs = mp.MEMPOOL.tx_to_send(peer_ip, segments)

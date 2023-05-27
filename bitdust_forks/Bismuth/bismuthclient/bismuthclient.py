@@ -5,6 +5,7 @@ A all in one Bismuth Native client that connects to local or distant wallet serv
 import base64
 import json
 import logging
+import threading
 from time import time
 import sys
 import os
@@ -89,7 +90,7 @@ class BismuthClient():
         now = time()
         addresses = set(addresses)  # dedup
         cached = { address: self._alias_cache[address][0] for address in addresses if address in self._alias_cache and self._alias_cache[address][1] > now}
-        print("cached", cached)
+        # print("cached", cached)
         # Ask for the rest.
         unknown = [address for address in addresses if address not in cached]
         aliases = self.command("aliasesget", [unknown])
@@ -218,7 +219,8 @@ class BismuthClient():
                 self._set_cache('balance', balance)
                 balance = self._get_cached('balance')
         except Exception as e:
-            self.app_log.error(e)
+            if self.verbose:
+                print('balance error', e)
             return 'N/A'
         if for_display:
             balance = AmountFormatter(balance).to_string(leading=0)
@@ -267,7 +269,8 @@ class BismuthClient():
                         balances[add['address']] = self.command("balanceget", [add['address']])[0]
             except Exception as e:
                 # TODO: Handle retry, at least error message.
-                print("Error {} all_balances".format(str(e)))
+                if self.verbose:
+                    print("Error {} all_balances".format(str(e)))
 
         if for_display:
             balances = {address: AmountFormatter(balance).to_string(leading=0) for address, balance in balances.items()}
@@ -302,19 +305,21 @@ class BismuthClient():
             if self.verbose:
                 print("Server replied '{}'".format(reply))
             if reply[-1] != "Success":
-                print("Error '{}'".format(reply))
+                if self.verbose:
+                    print("Error '{}'".format(reply))
                 error_reply.append(reply[-1])
                 return None
             if not reply:
-                print("Server timeout")
+                if self.verbose:
+                    print("Server timeout")
                 error_reply.append('Server timeout')
                 return None
             return txid
         except Exception as e:
-            print(str(e))
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+            if self.verbose:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
 
     def sign(self, message: str):
         """
@@ -324,10 +329,10 @@ class BismuthClient():
             signature = bismuthcrypto.sign_message_with_key(message, self._wallet.key)
             return signature
         except Exception as e:
-            print(str(e))
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+            if self.verbose:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
             raise
 
     def encrypt(self, message: str, recipient:str):
@@ -341,10 +346,10 @@ class BismuthClient():
             encrypted = bismuthcrypto.encrypt_message_with_pubkey(message, pubkey)
             return encrypted
         except Exception as e:
-            print(str(e))
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+            if self.verbose:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
             raise
 
     def decrypt(self, message: str):
@@ -355,10 +360,10 @@ class BismuthClient():
             decrypted = bismuthcrypto.decrypt_message_with_key(message, self._wallet.key)
             return decrypted
         except Exception as e:
-            print(str(e))
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+            if self.verbose:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
             raise
 
     def status(self):
@@ -389,7 +394,8 @@ class BismuthClient():
             self._set_cache('status', status)
         except Exception as e:
             # TODO: Handle retry, at least error message.
-            print(e)
+            if self.verbose:
+                print('Command status failed', e)
             status = {}
         return status
 
@@ -476,23 +482,25 @@ class BismuthClient():
         if not len(self.initial_servers_list):
             self.full_servers_list = bismuthapi.get_wallet_servers_legacy(self.initial_servers_list, self.app_log, minver='0.1.5', as_dict=True)
             self.servers_list=["{}:{}".format(server['ip'], server['port']) for server in self.full_servers_list]
+            # print('Client: servers_list=%r full_servers_list=%r' % (self.servers_list, self.full_servers_list))
         else:
             self.servers_list = self.initial_servers_list
             self.full_servers_list = [{"ip": server.split(':')[0], "port": server.split(':')[1],
-                                       'load':'N/A', 'height': 'N/A'}
-                                      for server in self.servers_list]
+                                       'load':'N/A', 'height': 'N/A'} for server in self.servers_list]
+            # print('Client: from initial servers_list=%r full_servers_list=%r' % (self.servers_list, self.full_servers_list))
         # Now try to connect
-        if self.verbose:
-            print("self.servers_list", self.servers_list)
+        # if self.verbose:
+        #     print("self.servers_list", self.servers_list)
         for server in self.servers_list:
-            if self.verbose:
-                print("test server", server)
+            # if self.verbose:
+            #     print("test server", server)
             if lwbench.connectible(server):
                 self._current_server = server
                 # TODO: if self._loop, use async version
-                if self.verbose:
-                    print("connect server", server)
+                # if self.verbose:
+                #     print("connect server", server)
                 self._connection = rpcconnections.Connection(server, verbose=self.verbose)
+                # print('Client: new connection %r to %r' % (self._connection, server))
                 return server
         self._current_server = None
         self._connection = None
@@ -515,6 +523,7 @@ class BismuthClient():
             if not is_there:
                 self.full_servers_list.append(server)
         self.servers_list = ["{}:{}".format(server['ip'], server['port']) for server in self.full_servers_list]
+        # print('Client: refresh servers_list=%r full_servers_list=%r' % (self.servers_list, self.full_servers_list))
 
     def set_server(self, ipport):
         """
@@ -528,8 +537,8 @@ class BismuthClient():
             return False
         self._current_server = ipport
         # TODO: if self._loop, use async version
-        if self.verbose:
-            print("connect server", ipport)
+        # if self.verbose:
+        #     print("connect server", ipport)
         self._connection = rpcconnections.Connection(ipport, verbose=self.verbose)
         return ipport
 
@@ -541,9 +550,11 @@ class BismuthClient():
         :param options: optional options to the command, as a list if needed
         :return: the result as a native structure
         """
+        if self.verbose:
+            print('Sending Bismuth command', command, self._connection, id(self._connection), threading.current_thread())
         if not self._current_server:
             # TODO: failsafe if can't connect
             self.get_server()
-        if self.verbose:
-            print("command {}, {}".format(command, options))
+        if not self._connection:
+            raise Exception('Connection to Bismuth node was not opened')
         return self._connection.command(command, options)

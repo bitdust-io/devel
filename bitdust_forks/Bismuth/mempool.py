@@ -325,13 +325,13 @@ class Mempool:
         try:
             limit = time.time()
             frozen = [peer for peer in self.peers_sent if self.peers_sent[peer] > limit]
-            self.app_log.warning('Status: MEMPOOL Frozen = {}'.format(', '.join(frozen)))
+            # self.app_log.warning('Status: MEMPOOL Frozen = {}'.format(', '.join(frozen)))
             # print(limit, self.peers_sent, frozen)
             # Cleanup old nodes not synced since 15 min
             limit = limit - 15*60
             with self.peers_lock:
                 self.peers_sent = {peer: self.peers_sent[peer] for peer in self.peers_sent if self.peers_sent[peer] > limit}
-            self.app_log.warning('Status: MEMPOOL Live = {}'.format(', '.join(set(self.peers_sent.keys()) - set(frozen))))
+            # self.app_log.warning('Status: MEMPOOL Live = {}'.format(', '.join(set(self.peers_sent.keys()) - set(frozen))))
             status = self.fetchall(SQL_STATUS)
             count, open_len, senders, recipients = status[0]
             self.app_log.warning('Status: MEMPOOL {} Txs from {} senders to {} distinct recipients. Openfield len {}'.format(count, senders, recipients, open_len))
@@ -394,7 +394,7 @@ class Mempool:
             tx_count = len(all)
             tx_list = [tx[1] + ' ' + tx[2] + ' : ' + str(tx[3]) for tx in all]
             # print("I have {} txs for {} but won't send: {}".format(tx_count, peer_ip, "\n".join(tx_list)))
-            print("I have {} txs for {} but won't send".format(tx_count, peer_ip))
+            # print("I have {} txs for {} but won't send".format(tx_count, peer_ip))
             return []
         # Get our raw txs
         if peer_ip not in self.peers_sent:

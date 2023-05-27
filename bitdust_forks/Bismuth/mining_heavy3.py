@@ -151,20 +151,20 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
         return diff_save
     except Exception as e:
         # Left for edge cases debug
-        print('MH3 check block', e)
-        import traceback
-        traceback.print_exc()
+        # print('MH3 check block', e)
+        # import traceback
+        # traceback.print_exc()
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
+        # print(exc_type, fname, exc_tb.tb_lineno)
         raise
 
 
 def create_heavy3a(file_name='heavy3a.bin'):
     if (not heavy) and is_regnet:
-        print('Regnet, no heavy file')
+        # print('Regnet, no heavy file')
         return
-    print('Creating Junction Noise file, this usually takes a few minutes...')
+    # print('Creating Junction Noise file, this usually takes a few minutes...')
     gen = DRBG(b'Bismuth is a chemical element with symbol Bi and atomic number 83. It is a pentavalent post-transition metal and one of the pnictogens with chemical properties resembling its lighter homologs arsenic and antimony.')
     # Size in Gb - No more than 4Gb from a single seed
     GB = 1
@@ -181,7 +181,7 @@ def mining_open(file_name='heavy3a.bin'):
     Opens the Junction MMapped file
     """
     if (not heavy) and is_regnet:
-        print('Regnet, no heavy file to open')
+        # print('Regnet, no heavy file to open')
         return
     global F
     global MMAP
@@ -189,13 +189,14 @@ def mining_open(file_name='heavy3a.bin'):
     if os.path.isfile(file_name):
         size = os.path.getsize(file_name)
         if size != 1073741824:
-            print('Invalid size of heavy file {}.'.format(file_name))
+            # print('Invalid size of heavy file {}.'.format(file_name))
             try:
                 os.remove(file_name)
-                print('Deleted, Will be re-created')
+                # print('Deleted, Will be re-created')
             except Exception as e:
-                print(e)
-                sys.exit()
+                # print('mining_open', e)
+                # sys.exit()
+                raise e
     if not os.path.isfile(file_name):
         create_heavy3a(file_name)
     try:
@@ -208,9 +209,10 @@ def mining_open(file_name='heavy3a.bin'):
         if read_int_from_map(MMAP, 1024) != 1742706086:
             raise ValueError('Wrong file: {}'.format(file_name))
     except Exception as e:
-        print('Error while loading Junction file: {}'.format(e))
-        sys.exit()
-    print('mining_open', file_name, MMAP, id(MMAP), threading.current_thread())
+        # print('error while loading Junction file: {}'.format(e))
+        # sys.exit()
+        raise e
+    # print('mining_open', file_name, threading.current_thread())
 
 
 def mining_close():
@@ -218,7 +220,7 @@ def mining_close():
     Close the MMAP access, HAS to be called at end of program.
     """
     if (not heavy) and is_regnet:
-        print('Regnet, no heavy file to close')
+        # print('Regnet, no heavy file to close')
         return
     global F
     global MMAP
@@ -227,9 +229,11 @@ def mining_close():
         MMAP.close()
     except:
         pass
+    MMAP = None
 
     try:
         assert F
         F.close()
     except:
         pass
+    F = None

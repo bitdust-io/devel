@@ -118,7 +118,7 @@ def generate_one_block(blockhash, mempool_txs, node, db_handler):
                     if signer.verify(hash, signature):
                         node.logger.app_log.warning('Signature valid')
                         block_send.append((str(block_timestamp), str(ADDRESS[:56]), str(ADDRESS[:56]), '%.8f' % float(0), str(signature_enc.decode('utf-8')), str(PUBLIC_KEY_B64ENCODED.decode('utf-8')), '0', str(nonce)))  # mining reward tx
-                        node.logger.app_log.warning('Block to send: {}'.format(block_send))
+                        # node.logger.app_log.warning('Block to send: {}'.format(block_send))
                     # calc hash
 
                     new_hash = DIGEST_BLOCK(node, [block_send], None, 'regtest', db_handler)

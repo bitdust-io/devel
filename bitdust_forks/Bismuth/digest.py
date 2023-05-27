@@ -68,7 +68,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
         else:
             if node.last_block > fork.POW_FORK:
                 if not fork.check_postfork_reward(db_handler):
-                    print('Rolling back')
+                    # print('Rolling back')
                     db_handler.rollback_under(fork.POW_FORK - 1)
                     raise ValueError('Rolling back chain due to old fork data')
         # fork handling
@@ -322,18 +322,18 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 diff = difficulty(node, db_handler)
                 node.difficulty = diff
 
-                node.logger.app_log.warning(f"Time to generate block {node.last_block + 1}: {'%.2f' % diff[2]}")
-                node.logger.app_log.warning(f'Current difficulty: {diff[3]}')
-                node.logger.app_log.warning(f'Current blocktime: {diff[4]}')
-                node.logger.app_log.warning(f'Current hashrate: {diff[5]}')
-                node.logger.app_log.warning(f'Difficulty adjustment: {diff[6]}')
-                node.logger.app_log.warning(f'Difficulty: {diff[0]} {diff[1]}')
+                # node.logger.app_log.warning(f"Time to generate block {node.last_block + 1}: {'%.2f' % diff[2]}")
+                # node.logger.app_log.warning(f'Current difficulty: {diff[3]}')
+                # node.logger.app_log.warning(f'Current blocktime: {diff[4]}')
+                # node.logger.app_log.warning(f'Current hashrate: {diff[5]}')
+                # node.logger.app_log.warning(f'Difficulty adjustment: {diff[6]}')
+                # node.logger.app_log.warning(f'Difficulty: {diff[0]} {diff[1]}')
 
                 block_instance.block_hash = hashlib.sha224((str(block_instance.transaction_list_converted) + node.last_block_hash).encode('utf-8')).hexdigest()
                 del block_instance.transaction_list_converted[:]
 
                 # node.logger.app_log.info("Last block sha_hash: {}".format(block_hash))
-                node.logger.app_log.info(f'Calculated block sha_hash: {block_instance.block_hash}')
+                # node.logger.app_log.info(f'Calculated block sha_hash: {block_instance.block_hash}')
                 # node.logger.app_log.info("Nonce: {}".format(nonce))
 
                 # check if we already have the sha_hash

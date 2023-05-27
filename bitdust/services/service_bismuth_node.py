@@ -51,9 +51,8 @@ class BismuthNodeService(LocalService):
         return True
 
     def start(self):
-        from bitdust.main import settings
         from bitdust.blockchain import bismuth_node
-        return bismuth_node.init(data_dir_path=settings.ServiceDir('bismuth_blockchain'))
+        return bismuth_node.init()
 
     def stop(self):
         from bitdust.blockchain import bismuth_node

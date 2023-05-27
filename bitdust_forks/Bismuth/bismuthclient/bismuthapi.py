@@ -30,15 +30,18 @@ def get_wallet_servers_legacy(light_ip_list='', app_log=None, minver='0', as_dic
             if lwbench.connectible('127.0.0.1:5658'):
                 # No need to go further.
                 return ['127.0.0.1:5658']
+            if lwbench.connectible('127.0.0.1:15658'):
+                # No need to go further.
+                return ['127.0.0.1:15658']
 
         # Then try the new API
         wallets = []
-        try:
-            rep = requests.get("http://api.bismuth.live/servers/wallet/legacy.json")
-            if rep.status_code == 200:
-                wallets = rep.json()
-        except Exception as e:
-            app_log.warning("Error {} getting Server list from API, using lwbench instead".format(e))
+        # try:
+        #     rep = requests.get("http://api.bismuth.live/servers/wallet/legacy.json")
+        #     if rep.status_code == 200:
+        #         wallets = rep.json()
+        # except Exception as e:
+        #     app_log.warning("Error {} getting Server list from API, using lwbench instead".format(e))
 
         if not wallets:
             # no help from api, use previous benchmark

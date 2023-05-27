@@ -34,3 +34,6 @@ bitdust/blockchain/genesis/
 
 # IDE specific
 .idea
+
+.DS_Store
+

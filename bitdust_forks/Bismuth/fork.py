@@ -1,3 +1,4 @@
+
 class Fork():
     def __init__(self):
         self.POW_FORK = 1450000
@@ -9,7 +10,6 @@ class Fork():
         self.PASSED = False
         self.PASSED_TESTNET = False
         self.REWARD_MAX = 6
-
         #self.POW_FORK = 1168860 #HACK
         #self.versions_remove = [] #HACK
         #self.REWARD_MAX = 5 #HACK
@@ -45,7 +45,7 @@ class Fork():
             db_handler.execute_param(db_handler.h, 'SELECT reward FROM transactions WHERE block_height = ? AND reward != 0', (self.POW_FORK_TESTNET + 1, ))
             self.FORK_REWARD_TESTNET = db_handler.h.fetchone()[0]
 
-        print(type(self.FORK_REWARD_TESTNET))
+        # print(type(self.FORK_REWARD_TESTNET))
 
         if self.FORK_REWARD_TESTNET < self.REWARD_MAX:
             self.PASSED_TESTNET = True

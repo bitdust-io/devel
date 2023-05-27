@@ -1,4 +1,52 @@
 {
+  "service_bismuth_blockchain": {
+    "initial_difficulty": 10,
+    "genesis_address": "cc846806ba14b8ec5a042d254beeeb637ee91033fa0f84c66063e0a9",
+    "known_nodes": [
+      {
+        "host": "p2p-id.ru",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "p2p-alice.ai",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "bitdust.ai",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "root-node.ai",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "bahamas.ai",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "peer2peer.ai",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "seed.bitdust.io",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      }
+    ]
+  },
   "service_entangled_dht": {
     "bucket_size": 4,
     "default_age": 43200,

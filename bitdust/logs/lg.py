@@ -110,12 +110,18 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     s = msg
     s_ = s
     level = _DebugLevel
+    if not level:
+        level = 0
     if level < 0:
         level = 0
     if level % 2:
         level -= 1
     if level:
-        s = ' '*level + s
+        lstr = s.lstrip()
+        if lstr.startswith('INFO') or lstr.startswith('DEBUG') or lstr.startswith('DEBUG') or lstr.startswith('WARNING') or lstr.startswith('ERROR'):
+            s = '  ' + lstr
+        else:
+            s = ' '*level + s
     if _IsAndroid is None:
         _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ or 'ANDROID_ROOT' in os.environ))
     if (_ShowTime and level > 0) or showtime:
@@ -489,7 +495,7 @@ def get_debug_level():
     return _GlobalDebugLevel
 
 
-def get_loging_level(level):
+def get_loging_level(level, return_name=False):
     """
     Find corresponding logging level related to BitDust log level:
 
@@ -503,17 +509,31 @@ def get_loging_level(level):
     """
     import logging
     if level == 0:
+        if return_name:
+            return 'CRITICAL'
         return logging.CRITICAL
     if level <= 2:
+        if return_name:
+            return 'FATAL'
         return logging.FATAL
     if level <= 4:
+        if return_name:
+            return 'ERROR'
         return logging.ERROR
     if level <= 6:
+        if return_name:
+            return 'WARNING'
         return logging.WARNING
     if level <= 8:
+        if return_name:
+            return 'INFO'
         return logging.INFO
     if level <= 10:
+        if return_name:
+            return 'DEBUG'
         return logging.DEBUG
+    if return_name:
+        return 'NOTSET'
     return logging.NOTSET
 
 

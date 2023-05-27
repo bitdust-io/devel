@@ -44,20 +44,15 @@ class BismuthMinerService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_bismuth_pool',
+            'service_bismuth_wallet',
         ]
 
     def installed(self):
         return True
 
     def start(self):
-        from bitdust.main import settings
         from bitdust.blockchain import bismuth_miner
-        bismuth_miner.init(
-            data_dir_path=settings.ServiceDir('bismuth_blockchain'),
-            mining_pool_address='127.0.0.1:8525',
-            verbose=True,
-        )
+        bismuth_miner.init()
         return True
 
     def stop(self):
