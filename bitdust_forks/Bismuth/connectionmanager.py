@@ -36,7 +36,7 @@ class ConnectionManager(threading.Thread):
                 # self.node.logger.app_log.info(f'Status: Syncing nodes: {len(self.node.syncing)}/3')
 
                 # Status display for Peers related info
-                self.node.peers.status_log()
+                # self.node.peers.status_log()
                 self.mp.MEMPOOL.status()
                 # last block
                 if self.node.last_block_ago:
@@ -64,7 +64,7 @@ class ConnectionManager(threading.Thread):
                 self.node.plugin_manager.execute_action_hook('status', status)
                 # end status hook
 
-                # logger.app_log.info(threading.enumerate() all threads)
+                self.node.logger.app_log.warning('Current: {} All: {}'.format(threading.current_thread(), threading.enumerate()))
                 # time.sleep(30)
                 for i in range(30):
                     # faster stop
