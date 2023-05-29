@@ -103,7 +103,7 @@ def check_start_mining():
     except:
         reactor.callLater(10, check_start_mining)  # @UndefinedVariable
         return
-    if cur_balance < 20 and (not _OwnCoinsLastTime or (time.time() - _OwnCoinsLastTime > 60)):
+    if cur_balance < 30 and (not _OwnCoinsLastTime or (time.time() - _OwnCoinsLastTime > 60*6)):
         _OwnCoinsLastTime = time.time()
         run(needed_coins=1)
     else:
