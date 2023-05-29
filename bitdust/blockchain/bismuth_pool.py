@@ -39,7 +39,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 _DataDirPath = None
-_PayDBSingleTask = None
+# _PayDBSingleTask = None
 
 #------------------------------------------------------------------------------
 
@@ -195,7 +195,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
 
         # print('Server thread is ready')
 
-        reactor.callFromThread(paydb_single)  # @UndefinedVariable
+        # reactor.callFromThread(paydb_single)  # @UndefinedVariable
 
         reactor.callFromThread(starting_defer.callback, True)  # @UndefinedVariable
 
@@ -244,10 +244,6 @@ def payout(payout_threshold, myfee, othfee):
     shares.text_factory = str
     s = shares.cursor()
 
-    conn = sqlite3.connect(ledger_path_conf, timeout=60.0)
-    conn.text_factory = str
-    c = conn.cursor()
-
     #get sum of all shares not paid
     s.execute('SELECT sum(shares) FROM shares WHERE paid != 1')
     shares_total = s.fetchone()[0]
@@ -263,9 +259,13 @@ def payout(payout_threshold, myfee, othfee):
     # print('Pool: block_threshold', block_threshold, 'shares_total', shares_total, 'address', address)
 
     #get eligible blocks
+    conn = sqlite3.connect(ledger_path_conf)
+    conn.text_factory = str
+    c = conn.cursor()
     reward_list = []
     for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address, ) + (block_threshold, )):
         reward_list.append(float(row[9]))
+    c.close()
     # print('reward_list', reward_list)
 
     super_total = sum(reward_list)
@@ -422,8 +422,8 @@ def payout(payout_threshold, myfee, othfee):
     #clear nonces
     s.close()
 
-    if did_payout:
-        reactor.callFromThread(paydb_single, delay=2)  # @UndefinedVariable
+    # if did_payout:
+    #     reactor.callFromThread(paydb_single, delay=10)  # @UndefinedVariable
 
 
 def commit(cursor):
@@ -504,18 +504,19 @@ def n_test(testString):
 
 def paydb():
     global new_time
+    time.sleep(30)
     while True:
-        time.sleep(3601)
-        #time.sleep(60) # test
-        v = float('%.2f' % time.time())
-        v1 = new_time
-        v2 = v - v1
-
-        if v2 < 100000:
-            # print('Payout running...')
-            payout(min_payout, pool_fee, alt_fee)
+        # time.sleep(3601)
+        # time.sleep(60 * 5)
+        # v = float('%.2f' % time.time())
+        # v1 = new_time
+        # v2 = v - v1
+        # if v2 < 100000:
+        # print('Payout running...')
+        payout(min_payout, pool_fee, alt_fee)
         # else:
         # print('Node over 1 mins out: %r ...payout delayed' % v2)
+        time.sleep(60*5)
 
 
 def paydb_single(delay=0):
@@ -792,11 +793,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
             lg.exc()
             # print('Pool: Error: {}'.format(e))
 
-        if block_submitted and share_added:
-            # background_paydb_single_thread = threading.Thread(target=paydb_single)
-            # background_paydb_single_thread.daemon = True
-            # background_paydb_single_thread.start()
-            reactor.callFromThread(paydb_single, delay=1)  # @UndefinedVariable
+        # if block_submitted and share_added:
+        # background_paydb_single_thread = threading.Thread(target=paydb_single)
+        # background_paydb_single_thread.daemon = True
+        # background_paydb_single_thread.start()
+        # reactor.callFromThread(paydb_single, delay=1)  # @UndefinedVariable
 
         if _Debug:
             lg.args(_DebugLevel, block_submitted=block_submitted, share_added=share_added)

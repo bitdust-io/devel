@@ -771,7 +771,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                     # receive theirs
                     segments = receive(self.request)
-                    node.logger.app_log.debug(mp.MEMPOOL.merge(segments, peer_ip, db_handler_instance.c, False))
+                    # node.logger.app_log.debug(mp.MEMPOOL.merge(segments, peer_ip, db_handler_instance.c, False))
                     #improvement possible - pass peer_ip from worker
 
                     # receive theirs
