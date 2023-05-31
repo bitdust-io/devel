@@ -62,7 +62,7 @@ new_hash = None
 address = None
 node_ip = None
 node_port = None
-ledger_path_conf = None
+# ledger_path_conf = None
 key = None
 public_key_hashed = None
 private_key_readable = None
@@ -95,7 +95,7 @@ def shutdown():
 
 def run(starting_defer, data_dir_path, node_address, verbose=False):
     global _DataDirPath
-    global ledger_path_conf
+    # global ledger_path_conf
     global node_ip
     global node_port
     global address
@@ -114,7 +114,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
 
     m_peer_file = os.path.join(data_dir_path, 'peers.json')
 
-    ledger_path_conf = os.path.join(data_dir_path, 'ledger.db')
+    # ledger_path_conf = os.path.join(data_dir_path, 'ledger.db')
     shares_db_path = os.path.join(data_dir_path, 'shares.db')
     archive_db_path = os.path.join(data_dir_path, 'archive.db')
 
@@ -259,13 +259,25 @@ def payout(payout_threshold, myfee, othfee):
     # print('Pool: block_threshold', block_threshold, 'shares_total', shares_total, 'address', address)
 
     #get eligible blocks
-    conn = sqlite3.connect(ledger_path_conf)
-    conn.text_factory = str
-    c = conn.cursor()
+    # conn = sqlite3.connect(ledger_path_conf)
+    # conn.text_factory = str
+    # c = conn.cursor()
+    # reward_list = []
+    # for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address, ) + (block_threshold, )):
+    #     reward_list.append(float(row[9]))
+    # c.close()
+
+    t = socks.socksocket()
+    t.connect((node_ip, int(node_port)))  # connect to local node
+    connections.send(t, 'listreward', 10)
+    connections.send(t, address, 10)
+    connections.send(t, str(block_threshold), 10)
+    listreward_reply = connections.receive(t, 10)
+    t.close()
     reward_list = []
-    for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address, ) + (block_threshold, )):
+    for row in listreward_reply:
         reward_list.append(float(row[9]))
-    c.close()
+
     # print('reward_list', reward_list)
 
     super_total = sum(reward_list)
@@ -377,14 +389,13 @@ def payout(payout_threshold, myfee, othfee):
                 connections.send(t, 'mpinsert', 10)
                 connections.send(t, [tx_submit], 10)
                 reply = connections.receive(t, 10)
+                t.close()
                 did_payout = True
                 if _Debug:
                     lg.dbg(_DebugLevel, 'transaction {} sent with reply {}'.format(tx_submit, reply))
             else:
                 # print('Pool: Invalid signature')
                 reply = 'Invalid signature'
-
-            t.close()
 
             s.execute('UPDATE shares SET paid = 1 WHERE address = ?', (recipient, ))
             shares.commit()
