@@ -1292,6 +1292,17 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     else:
                         node.logger.app_log.debug(f'{peer_ip} not whitelisted for listlim command')
 
+                elif data == 'listreward':
+                    if node.peers.is_allowed(peer_ip, data):
+                        target_address = receive(self.request)
+                        block_threshold = float(receive(self.request))
+                        # print(address_tx_list_limit)
+                        db_handler_instance.execute_param(db_handler_instance.h, 'SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (target_address, block_threshold, ))
+                        result = db_handler_instance.h.fetchall()
+                        send(self.request, result)
+                    else:
+                        node.logger.app_log.debug(f'{peer_ip} not whitelisted for listreward command')
+
                 elif data == 'addlistlim':
                     if node.peers.is_allowed(peer_ip, data):
                         address_tx_list = receive(self.request)
