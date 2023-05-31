@@ -93,6 +93,13 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
+def nod():
+    return bismuth_node.node
+
+
+#------------------------------------------------------------------------------
+
+
 def run(data_dir_path, starting_defer):
     global _DataDirPath
 
@@ -290,7 +297,7 @@ thread_limit=64
 rebuild_db=True
 debug_level=DEBUG
 purge=True
-pause=6
+pause=1
 hyper_path={hyper_path}
 hyper_recompress=True
 full_ledger=True

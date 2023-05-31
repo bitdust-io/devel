@@ -37,6 +37,8 @@ _DataDirPath = None
 _MinerWalletAddress = None
 _MinerName = None
 _OwnCoinsLastTime = None
+_MiningPoolHost = None
+_MiningPoolPort = None
 
 #------------------------------------------------------------------------------
 
@@ -114,16 +116,18 @@ def run(needed_coins):
     global _MinerWalletAddress
     global _MinerName
     global _DataDirPath
+    global _MiningPoolHost
+    global _MiningPoolPort
 
-    mining_pool_host, mining_pool_port = get_random_mining_pool_host_port()
+    _MiningPoolHost, _MiningPoolPort = get_random_mining_pool_host_port()
 
     if _Debug:
-        lg.args(_DebugLevel, mining_pool_host=mining_pool_host, mining_pool_port=mining_pool_port)
+        lg.args(_DebugLevel, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)
 
     miner_th = threading.Thread(target=miner_thread, args=(
         needed_coins,
-        mining_pool_host,
-        mining_pool_port,
+        _MiningPoolHost,
+        _MiningPoolPort,
         _MinerWalletAddress,
         _MinerName,
         _DataDirPath,

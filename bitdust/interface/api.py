@@ -5788,6 +5788,113 @@ def dht_local_db_dump():
 #------------------------------------------------------------------------------
 
 
+def blockchain_info():
+    """
+    Returns details and brief info about current status of blockchain services.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/blockchain/info/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "blockchain_info", "kwargs": {} }');
+    """
+    if not driver.is_on('service_bismuth_blockchain'):
+        return ERROR('service_bismuth_blockchain() is not started')
+    ret = {}
+    if driver.is_on('service_bismuth_pool'):
+        from bitdust.blockchain import bismuth_pool
+        ret['mining_pool'] = {
+            'address': bismuth_pool.address,
+            'connected_node': '{}:{}'.format(bismuth_pool.node_ip, bismuth_pool.node_port) if bismuth_pool.node_ip else None,
+            'difficulty': bismuth_pool.new_diff,
+        }
+    if driver.is_on('service_bismuth_node'):
+        from bitdust.blockchain import bismuth_node
+        ret['node'] = {
+            'app_version': bismuth_node.nod().app_version,
+            'protocol_version': bismuth_node.nod().version,
+            'port': bismuth_node.nod().port,
+            'difficulty': bismuth_node.nod().difficulty[0],
+            'blocks': bismuth_node.nod().hdd_block,
+            'last_block': bismuth_node.nod().last_block,
+            'last_block_ago': bismuth_node.nod().last_block_ago,
+            'port': bismuth_node.nod().port,
+            'uptime': int(time.time() - bismuth_node.nod().startup_time),
+            'address': bismuth_node.nod().keys.address,
+            'connections': bismuth_node.nod().peers.consensus_size,
+            'connections_list': bismuth_node.nod().peers.peer_opinion_dict,
+            'consensus': bismuth_node.nod().peers.consensus,
+            'consensus_percent': bismuth_node.nod().peers.consensus_percentage,
+        }
+    if driver.is_on('service_bismuth_wallet'):
+        from bitdust.blockchain import bismuth_wallet
+        try:
+            cur_balance = bismuth_wallet.my_balance()
+        except:
+            lg.exc()
+            cur_balance = 'N/A'
+        ret['wallet'] = {
+            'balance': cur_balance,
+            'address': bismuth_wallet.my_wallet_address(),
+        }
+    if driver.is_on('service_bismuth_miner'):
+        from bitdust.blockchain import bismuth_miner
+        ret['miner'] = {
+            'address': bismuth_miner._MinerWalletAddress,
+            'name': bismuth_miner._MinerName,
+            'connected_mining_pool': '{}:{}'.format(bismuth_miner._MiningPoolHost, bismuth_miner._MiningPoolPort) if bismuth_miner._MiningPoolHost else None,
+        }
+    return OK(ret)
+
+
+def blockchain_wallet_balance():
+    """
+    Returns current balance of your current blockchain wallet.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/blockchain/wallet/balance/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "blockchain_wallet_balance", "kwargs": {} }');
+    """
+    if not driver.is_on('service_bismuth_wallet'):
+        return ERROR('service_bismuth_wallet() is not started')
+    from bitdust.blockchain import bismuth_wallet
+    try:
+        cur_balance = bismuth_wallet.my_balance()
+    except:
+        lg.exc()
+        cur_balance = 'N/A'
+    return OK({
+        'balance': cur_balance,
+        'address': bismuth_wallet.my_wallet_address(),
+    })
+
+
+def blockchain_transaction_send(recipient, amount, operation='', data=''):
+    """
+    Prepare and sign blockchain transaction and then send it to one of known blockchain nodes.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/blockchain/transaction/send/v1' -d '{"recipient": "abcd...", "amount": "12.3456"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "blockchain_transaction_send", "kwargs": {"recipient": "abcd...", "amount": "12.3456"} }');
+    """
+    if not driver.is_on('service_bismuth_wallet'):
+        return ERROR('service_bismuth_wallet() is not started')
+    from bitdust.blockchain import bismuth_wallet
+    result = bismuth_wallet.send_transaction(recipient, amount, operation, data)
+    if result and not isinstance(result, list):
+        return OK({
+            'transaction_id': result,
+        })
+    return ERROR(errors=result)
+
+
+#------------------------------------------------------------------------------
+
+
 def automats_list():
     """
     Returns a list of all currently running state machines.
