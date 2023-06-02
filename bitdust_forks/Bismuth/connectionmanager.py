@@ -64,7 +64,7 @@ class ConnectionManager(threading.Thread):
                 self.node.plugin_manager.execute_action_hook('status', status)
                 # end status hook
 
-                self.node.logger.app_log.warning('Current: {} All: {}'.format(threading.current_thread(), threading.enumerate()))
+                # self.node.logger.app_log.warning('Current: {} All: {}'.format(threading.current_thread(), threading.enumerate()))
                 # time.sleep(30)
                 for i in range(30):
                     # faster stop

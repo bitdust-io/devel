@@ -550,8 +550,8 @@ class BismuthClient():
         :param options: optional options to the command, as a list if needed
         :return: the result as a native structure
         """
-        if self.verbose:
-            print('Sending Bismuth command', command, self._connection, id(self._connection), threading.current_thread())
+        # if self.verbose:
+        #     print('Sending Bismuth command', command, self._connection, id(self._connection), threading.current_thread())
         if not self._current_server:
             # TODO: failsafe if can't connect
             self.get_server()

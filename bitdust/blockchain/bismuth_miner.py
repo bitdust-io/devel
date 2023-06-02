@@ -121,8 +121,8 @@ def run(needed_coins):
 
     _MiningPoolHost, _MiningPoolPort = get_random_mining_pool_host_port()
 
-    if _Debug:
-        lg.args(_DebugLevel, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)
+    # if _Debug:
+    #     lg.args(_DebugLevel, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)
 
     miner_th = threading.Thread(target=miner_thread, args=(
         needed_coins,
@@ -159,8 +159,8 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
             work_pack = connections.receive(s, 10)
             mempool_size = (work_pack[-1][0])
             if not needed_coins and not mempool_size:
-                if _Debug:
-                    lg.args(_DebugLevel, needed_coins=needed_coins, mempool_size=mempool_size)
+                # if _Debug:
+                #     lg.args(_DebugLevel, needed_coins=needed_coins, mempool_size=mempool_size)
                 # print('Miner: Mempool is empty, skip mining')
                 delay = 30
                 break

@@ -593,8 +593,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         try:
             data = connections.receive(self.request, 10)
 
-            if _Debug:
-                lg.args(_DebugLevel, data=data, peer_ip=peer_ip, peer_port=peer_port)
+            # if _Debug:
+            #     lg.args(_DebugLevel, data=data, peer_ip=peer_ip, peer_port=peer_port)
             # print('Pool: received {} from {}:{}'.format(data, peer_ip, peer_port))  # will add custom ports later
 
             if data == 'getwork':  # sends the miner the blockhash and mining diff for shares
@@ -810,8 +810,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         # background_paydb_single_thread.start()
         # reactor.callFromThread(paydb_single, delay=1)  # @UndefinedVariable
 
-        if _Debug:
-            lg.args(_DebugLevel, block_submitted=block_submitted, share_added=share_added)
+        # if _Debug:
+        #     lg.args(_DebugLevel, block_submitted=block_submitted, share_added=share_added)
 
         # else:
         # print('Pool: block_submitted=%r share_added=%r' % (block_submitted, share_added))
