@@ -94,3 +94,11 @@ def my_balance():
 
 def latest_transactions(num, offset, for_display, mempool_included):
     return client().latest_transactions(num, offset, for_display, mempool_included)
+
+
+def send_transaction(recipient, amount, operation='', data=''):
+    error_reply = []
+    ret = client().send(recipient=recipient, amount=amount, operation=operation, data=data, error_reply=error_reply)
+    if not ret:
+        return error_reply
+    return ret

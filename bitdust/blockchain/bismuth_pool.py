@@ -238,7 +238,7 @@ def payout(payout_threshold, myfee, othfee):
 
     # print('Minimum payout is {} Bismuth'.format(str(payout_threshold)))
     # print('Current pool fee is {} Percent'.format(str(myfee)))
-    did_payout = False
+    # did_payout = False
 
     shares = sqlite3.connect(shares_db_path)
     shares.text_factory = str
@@ -390,7 +390,7 @@ def payout(payout_threshold, myfee, othfee):
                 connections.send(t, [tx_submit], 10)
                 reply = connections.receive(t, 10)
                 t.close()
-                did_payout = True
+                # did_payout = True
                 if _Debug:
                     lg.dbg(_DebugLevel, 'transaction {} sent with reply {}'.format(tx_submit, reply))
             else:

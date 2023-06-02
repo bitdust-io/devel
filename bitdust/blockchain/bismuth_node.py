@@ -93,6 +93,13 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
+def nod():
+    return bismuth_node.node
+
+
+#------------------------------------------------------------------------------
+
+
 def run(data_dir_path, starting_defer):
     global _DataDirPath
 

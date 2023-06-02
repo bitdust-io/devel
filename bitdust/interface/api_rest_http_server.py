@@ -1023,7 +1023,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/msg/h?')
+    @GET('^/msg/h$')
     @GET('^/v1/message/history$')
     @GET('^/message/history/v1$')
     def message_history_v1(self, request):
@@ -1035,7 +1035,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             limit=int(_request_arg(request, 'limit', '100')),
         )
 
-    @GET('^/msg/c?')
+    @GET('^/msg/c$')
     @GET('^/v1/message/conversation$')
     @GET('^/message/conversation/v1$')
     def message_conversation_v1(self, request):
@@ -1356,6 +1356,32 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/dht/db/dump/v1$')
     def dht_db_dump_v1(self, request):
         return api.dht_local_db_dump()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/b/i$')
+    @GET('^/v1/blockchain/info$')
+    @GET('^/blockchain/info/v1$')
+    def blockchain_info(self, request):
+        return api.blockchain_info()
+
+    @GET('^/b/w/b$')
+    @GET('^/v1/blockchain/wallet/balance$')
+    @GET('^/blockchain/wallet/balance/v1$')
+    def blockchain_wallet_balance(self, request):
+        return api.blockchain_wallet_balance()
+
+    @POST('^/b/t/s$')
+    @POST('^/v1/blockchain/transaction/send$')
+    @POST('^/blockchain/transaction/send/v1$')
+    def blockchain_transaction_send(self, request):
+        data = _request_data(request, mandatory_keys=['recipient', 'amount'])
+        return api.blockchain_transaction_send(
+            recipient=data['recipient'],
+            amount=data['amount'],
+            operation=data.get('operation', '') or '',
+            data=data.get('data', '') or '',
+        )
 
     #------------------------------------------------------------------------------
 
