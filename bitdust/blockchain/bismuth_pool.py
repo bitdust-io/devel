@@ -703,7 +703,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
                             removal_signature.append(str(dbdata[4]))  # for removal after successful mining
 
                         # claim reward
-                        transaction_reward = tuple
                         transaction_reward = (str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce))  # only this part is signed!
                         # print('transaction_reward', transaction_reward)
 

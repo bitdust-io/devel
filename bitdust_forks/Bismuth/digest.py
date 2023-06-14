@@ -17,6 +17,10 @@ from fork import Fork
 
 fork = Fork()
 
+FOUNDATION_MINERS = []
+FOUNDATION_MINER_REWARD = 1000000.0
+REGULAR_MINER_REWARD = 1.0
+
 
 def digest_block(node, data, sdef, peer_ip, db_handler):
 
@@ -220,15 +224,17 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 if tx_index == block_instance.tx_count - 1:
                     db_amount = 0  # prevent spending from another address, because mining txs allow delegation
 
-                    if node.is_testnet and node.last_block >= fork.POW_FORK_TESTNET:
-                        block_instance.mining_reward = 15 - (block_instance.block_height_new - fork.POW_FORK_TESTNET)/1100000 - 9.5
-                    elif node.is_mainnet and node.last_block >= fork.POW_FORK:
-                        block_instance.mining_reward = 15 - (block_instance.block_height_new - fork.POW_FORK)/1100000 - 9.5
-                    else:
-                        block_instance.mining_reward = 15 - (quantize_eight(block_instance.block_height_new)/quantize_eight(1000000/2)) - Decimal('2.4')
-
-                    if block_instance.mining_reward < 0.5:
-                        block_instance.mining_reward = 0.5
+                    # if node.is_testnet and node.last_block >= fork.POW_FORK_TESTNET:
+                    #     block_instance.mining_reward = 15 - (block_instance.block_height_new - fork.POW_FORK_TESTNET)/1100000 - 9.5
+                    # elif node.is_mainnet and node.last_block >= fork.POW_FORK:
+                    #     block_instance.mining_reward = 15 - (block_instance.block_height_new - fork.POW_FORK)/1100000 - 9.5
+                    # else:
+                    #     block_instance.mining_reward = 15 - (quantize_eight(block_instance.block_height_new)/quantize_eight(1000000/2)) - Decimal('2.4')
+                    # if block_instance.mining_reward < 0.5:
+                    #    block_instance.mining_reward = 0.5
+                    block_instance.mining_reward = REGULAR_MINER_REWARD
+                    if miner_tx.miner_address in FOUNDATION_MINERS:
+                        block_instance.mining_reward = FOUNDATION_MINER_REWARD
 
                     reward = '{:.8f}'.format(Decimal(block_instance.mining_reward) + sum(fees_block))
 
@@ -303,7 +309,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 block_instance.block_height_new = node.last_block + 1
                 block_instance.start_time_block = quantize_two(time.time())
 
-                fork_reward_check()
+                # fork_reward_check()
 
                 # sort_transactions also computes several hidden variables, like miner_tx.q_block_timestamp
                 # So it has to be run before the check
