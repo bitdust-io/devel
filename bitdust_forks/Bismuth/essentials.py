@@ -291,6 +291,7 @@ def keys_load_new(keyfile='wallet.der'):
 
 
 def fee_calculate(openfield: str, operation: str = '', block: int = 0) -> Decimal:
+    return quantize_eight(Decimal('0.00'))
     # block var will be removed after HF
     fee = Decimal('0.01') + (Decimal(len(openfield))/Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':

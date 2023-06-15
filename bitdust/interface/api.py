@@ -5892,6 +5892,21 @@ def blockchain_transaction_send(recipient, amount, operation='', data=''):
     return ERROR(errors=result)
 
 
+def blockchain_block_produce():
+    """
+    Will trigger minining one time to produce a single empty block in the blockchain.
+    This way foundation miners can initially generate enough coins to be able to sell those coins to customers.
+
+    This method only make sense to use by foundation miners.
+    If you are not part of the foundation and your wallet address is not on the list, your transaction will be rejected by other nodes.
+    """
+    if not driver.is_on('service_bismuth_miner'):
+        return ERROR('service_bismuth_miner() is not started')
+    from bitdust.blockchain import bismuth_miner
+    bismuth_miner._WantMoreCoins = True
+    return OK()
+
+
 #------------------------------------------------------------------------------
 
 
