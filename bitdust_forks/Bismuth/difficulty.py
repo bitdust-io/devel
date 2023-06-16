@@ -72,9 +72,9 @@ def difficulty(node, db_handler):
         difficulty = difficulty_new_adjusted
 
         #fork handling
-        if node.is_mainnet:
-            if block_height == fork.POW_FORK - fork.FORK_AHEAD:
-                fork.limit_version(node)
+        # if node.is_mainnet:
+        #     if block_height == fork.POW_FORK - fork.FORK_AHEAD:
+        #         fork.limit_version(node)
         #fork handling
 
         diff_drop_time = Decimal(180)

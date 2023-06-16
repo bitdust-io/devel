@@ -1383,6 +1383,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             data=data.get('data', '') or '',
         )
 
+    @GET('^/b/b/p$')
+    @GET('^/v1/blockchain/block/produce$')
+    @GET('^/blockchain/block/produce/v1$')
+    def blockchain_block_produce(self, request):
+        return api.blockchain_block_produce()
+
     #------------------------------------------------------------------------------
 
     @GET('^/st/l$')

@@ -38,6 +38,7 @@ def replace_regex(string, replace):
 
 
 def fee_calculate(openfield, operation='', block=0):
+    return quantize_eight(Decimal('0.00'))
     # block var will be removed after HF
     fee = Decimal('0.01') + (Decimal(len(openfield))/Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':

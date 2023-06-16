@@ -163,9 +163,9 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
     mining_heavy3.mining_open(heavy3_path)
 
     try:
-        background_thread = threading.Thread(target=paydb)
-        background_thread.daemon = True
-        background_thread.start()
+        # background_thread = threading.Thread(target=paydb)
+        # background_thread.daemon = True
+        # background_thread.start()
 
         worker_thread = threading.Thread(target=worker, args=(worker_time, ))
         worker_thread.daemon = True
@@ -363,7 +363,8 @@ def payout(payout_threshold, myfee, othfee):
             payout_passed = 1
             openfield = 'pool'
             keep = 0
-            fee = float('%.8f' % float(0.01 + (float(len(openfield))/100000) + (keep)))  # 0.01 + openfield fee + keep fee
+            fee = 0
+            # fee = float('%.8f' % float(0.01 + (float(len(openfield))/100000) + (keep)))  # 0.01 + openfield fee + keep fee
             #make payout
 
             timestamp = '%.2f' % time.time()
@@ -530,13 +531,13 @@ def paydb():
         time.sleep(60*5)
 
 
-def paydb_single(delay=0):
-    # print('Pool: paydb_single')
-    time.sleep(delay)
-    # reactor.callLater(delay, payout, min_payout, pool_fee, alt_fee)  # @UndefinedVariable
-    background_paydb_single_thread = threading.Thread(target=payout, args=(min_payout, pool_fee, alt_fee))
-    background_paydb_single_thread.daemon = True
-    background_paydb_single_thread.start()
+# def paydb_single(delay=0):
+#     # print('Pool: paydb_single')
+#     time.sleep(delay)
+#     # reactor.callLater(delay, payout, min_payout, pool_fee, alt_fee)  # @UndefinedVariable
+#     background_paydb_single_thread = threading.Thread(target=payout, args=(min_payout, pool_fee, alt_fee))
+#     background_paydb_single_thread.daemon = True
+#     background_paydb_single_thread.start()
 
 
 def worker(s_time):
@@ -703,7 +704,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
                             removal_signature.append(str(dbdata[4]))  # for removal after successful mining
 
                         # claim reward
-                        transaction_reward = tuple
                         transaction_reward = (str(block_timestamp), str(address[:56]), str(address[:56]), '%.8f' % float(0), '0', str(nonce))  # only this part is signed!
                         # print('transaction_reward', transaction_reward)
 

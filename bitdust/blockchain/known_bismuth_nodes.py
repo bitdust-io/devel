@@ -68,3 +68,9 @@ def mining_pools_by_host():
 
 def explorers_by_host():
     return {node['host']: node['explorer_http_port'] for node in by_host().values() if node.get('explorer_http_port')}
+
+
+def foundation_miners():
+    from bitdust.main import network_config
+    network_info = network_config.read_network_config_file()
+    return network_info['service_bismuth_blockchain']['foundation_miners']

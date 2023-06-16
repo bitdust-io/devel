@@ -37,6 +37,7 @@ _DataDirPath = None
 _MinerWalletAddress = None
 _MinerName = None
 _OwnCoinsLastTime = None
+_WantMoreCoins = False
 _MiningPoolHost = None
 _MiningPoolPort = None
 
@@ -89,6 +90,7 @@ def check_start_mining_later(delay=30):
 
 def check_start_mining():
     global _OwnCoinsLastTime
+    global _WantMoreCoins
     try:
         cur_balance = bismuth_wallet.my_balance()
     except:
@@ -105,8 +107,9 @@ def check_start_mining():
     except:
         reactor.callLater(10, check_start_mining)  # @UndefinedVariable
         return
-    if cur_balance < 30 and (not _OwnCoinsLastTime or (time.time() - _OwnCoinsLastTime > 60*6)):
+    if _WantMoreCoins and (not _OwnCoinsLastTime or (time.time() - _OwnCoinsLastTime > 60)):
         _OwnCoinsLastTime = time.time()
+        _WantMoreCoins = False
         run(needed_coins=1)
     else:
         run(needed_coins=0)

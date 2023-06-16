@@ -2,6 +2,11 @@
   "service_bismuth_blockchain": {
     "initial_difficulty": 10,
     "genesis_address": "cc846806ba14b8ec5a042d254beeeb637ee91033fa0f84c66063e0a9",
+    "foundation_miners": [
+        "58d93a558a502effec5319b9cc06dfa9782ba415c2cfa3e57145f565",
+        "c8239409113de42a98c854a105c18335f33116f88533803c76f3a6a3",
+        "7a991e29157e16f1dc7ebbd5c9ba4d282677263d3eeb8558fb69d8bf"
+    ],
     "known_nodes": [
       {
         "host": "p2p-id.ru",
