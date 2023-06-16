@@ -38,6 +38,7 @@ _MinerWalletAddress = None
 _MinerName = None
 _OwnCoinsLastTime = None
 _WantMoreCoins = False
+_MiningIsOn = False
 _MiningPoolHost = None
 _MiningPoolPort = None
 
@@ -91,6 +92,7 @@ def check_start_mining_later(delay=30):
 def check_start_mining():
     global _OwnCoinsLastTime
     global _WantMoreCoins
+    global _MiningIsOn
     try:
         cur_balance = bismuth_wallet.my_balance()
     except:
@@ -121,11 +123,13 @@ def run(needed_coins):
     global _DataDirPath
     global _MiningPoolHost
     global _MiningPoolPort
+    global _MiningIsOn
 
     _MiningPoolHost, _MiningPoolPort = get_random_mining_pool_host_port()
 
     # if _Debug:
     #     lg.args(_DebugLevel, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)
+    _MiningIsOn = True
 
     miner_th = threading.Thread(target=miner_thread, args=(
         needed_coins,
@@ -140,12 +144,17 @@ def run(needed_coins):
 
 
 def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address, miner_name, data_dir_path):
+    global _MiningIsOn
+
     if not mining_heavy3.RND_LEN or not mining_heavy3.MMAP:
         mining_heavy3.mining_open(os.path.join(data_dir_path, 'heavy3a.bin'))
 
     mined_coins = 0
     delay = 0
     while True:
+        if not _MiningIsOn:
+            break
+
         if needed_coins and mined_coins >= needed_coins:
             if _Debug:
                 lg.dbg(_DebugLevel, 'successfully mined %d coins, finishing' % mined_coins)
@@ -192,6 +201,9 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
                 success = False
 
                 while not success:
+                    if not _MiningIsOn:
+                        break
+
                     if needed_coins and mined_coins >= needed_coins:
                         break
 
@@ -266,7 +278,7 @@ def miner_thread(needed_coins, mining_pool_host, mining_pool_port, miner_address
             time.sleep(5)
 
     mining_heavy3.mining_close()
-
+    _MiningIsOn = False
     # print('Miner: thread finished, mined_coins=%d, needed_coins=%d' % (mined_coins, needed_coins, ))
     reactor.callFromThread(check_start_mining_later, delay=delay)  # @UndefinedVariable
 
