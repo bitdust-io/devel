@@ -5904,6 +5904,7 @@ def blockchain_block_produce():
         return ERROR('service_bismuth_miner() is not started')
     from bitdust.blockchain import bismuth_miner
     bismuth_miner._WantMoreCoins = True
+    bismuth_miner._MiningIsOn = False
     return OK()
 
 
