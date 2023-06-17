@@ -72,3 +72,7 @@ class Node:
 
         self.keys = None
         self.linux = self.platform()
+
+        self.FOUNDATION_MINERS = []
+        self.FOUNDATION_MINER_REWARD = 100000.0
+        self.REGULAR_MINER_REWARD = 0.0

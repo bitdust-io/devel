@@ -120,6 +120,8 @@ def run(data_dir_path, starting_defer):
 
     node.app_version = VERSION
 
+    node.FOUNDATION_MINERS = known_bismuth_nodes.foundation_miners()
+
     options.Get.defaults['heavy3_path'] = os.path.join(data_dir_path, 'heavy3a.bin')
     options.Get.defaults['mempool_path'] = os.path.join(data_dir_path, 'mempool.db')
     modules_config.Get.defaults['db_path'] = data_dir_path
@@ -195,7 +197,6 @@ def run(data_dir_path, starting_defer):
         from bitdust_forks.Bismuth import digest
 
         mining_heavy3.mining_open(node.heavy3_path)
-        digest.FOUNDATION_MINERS = known_bismuth_nodes.foundation_miners()
         digest.mining_heavy3.MMAP = mining_heavy3.MMAP
         digest.mining_heavy3.RND_LEN = mining_heavy3.RND_LEN
         node.logger.app_log.warning(f'Heavy3 file is OK, loaded in %s seconds' % (time.time() - t_now))
