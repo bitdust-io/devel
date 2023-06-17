@@ -40,7 +40,8 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 _DataDirPath = None
-# _PayDBSingleTask = None
+_PoolHost = None
+_PoolPort = None
 
 #------------------------------------------------------------------------------
 
@@ -52,9 +53,6 @@ min_payout = 1
 pool_fee = 0
 alt_fee = 0
 worker_time = 10
-
-# pool_host = '127.0.0.0'
-# pool_port = 18525
 
 new_time = 0
 new_diff = 0
@@ -76,9 +74,17 @@ archive_db_path = None
 
 def init():
     global _DataDirPath
+    global _PoolHost
+    global _PoolPort
     _DataDirPath = settings.ServiceDir('bismuth_blockchain')
+    _PoolHost = config.conf().getString('services/bismuth-pool/host', '127.0.0.1')
+    _PoolPort = config.conf().getInt('services/bismuth-pool/tcp-port', 18525)
+    node_host_port = '{}:{}'.format(
+        config.conf().getString('services/bismuth-node/host', '127.0.0.1'),
+        config.conf().getInt('services/bismuth-node/tcp-port', 15658),
+    )
     starting_defer = Deferred()
-    node_thread = threading.Thread(target=run, args=(starting_defer, _DataDirPath, '127.0.0.1:15658', _Debug))
+    node_thread = threading.Thread(target=run, args=(starting_defer, _DataDirPath, node_host_port, _Debug))
     node_thread.start()
     if _Debug:
         lg.args(_DebugLevel, data_dir_path=_DataDirPath)
@@ -96,6 +102,8 @@ def shutdown():
 
 def run(starting_defer, data_dir_path, node_address, verbose=False):
     global _DataDirPath
+    global _PoolHost
+    global _PoolPort
     # global ledger_path_conf
     global node_ip
     global node_port
@@ -178,10 +186,8 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         while True:
             if attempts > 30:
                 raise Exception('not able to start mining pool server')
-            pool_host = config.conf().getString('services/bismuth-pool/host')
-            pool_port = config.conf().getInt('services/bismuth-pool/tcp-port')
             try:
-                server = ThreadedTCPServer((pool_host, pool_port), TCPHandler)
+                server = ThreadedTCPServer((_PoolHost, _PoolPort), TCPHandler)
             except Exception as e:
                 lg.warn(e)
                 time.sleep(10)
