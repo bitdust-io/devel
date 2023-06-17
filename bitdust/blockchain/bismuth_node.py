@@ -67,11 +67,11 @@ def shutdown():
     config_path = os.path.join(_DataDirPath, 'config')
     custom_config_path = os.path.join(_DataDirPath, 'config_custom')
 
-    config = options.Get()
-    config.read(filename=config_path, custom_filename=custom_config_path)
+    conf = options.Get()
+    conf.read(filename=config_path, custom_filename=custom_config_path)
 
     s = socks.socksocket()
-    port = config.port
+    port = conf.port
 
     count = 0
     while count < 1:
@@ -134,11 +134,11 @@ def run(data_dir_path, starting_defer):
     node.is_regnet = False
     node.is_mainnet = True
 
-    config = options.Get()
-    config.read(filename=config_path, custom_filename=custom_config_path)
+    conf = options.Get()
+    conf.read(filename=config_path, custom_filename=custom_config_path)
 
-    node.version = config.version
-    node.debug_level = config.debug_level
+    node.version = conf.version
+    node.debug_level = conf.debug_level
 
     node.logger = logger.Logger()
     if _Debug:
@@ -147,29 +147,29 @@ def run(data_dir_path, starting_defer):
         node.logger.app_log = custom_log(level_input='CRITICAL')
     node.logger.app_log.critical(f'Python version: {node.py_version}')
 
-    node.port = config.port
-    node.verify = config.verify
-    node.thread_limit = config.thread_limit
-    node.rebuild_db = config.rebuild_db
-    node.debug = config.debug
-    node.debug_level = config.debug_level
-    node.pause = config.pause
-    node.ledger_path = config.ledger_path
-    node.hyper_path = config.hyper_path
-    node.hyper_recompress = config.hyper_recompress
-    node.tor = config.tor
-    node.ram = config.ram
-    node.version_allow = config.version_allow
-    node.reveal_address = config.reveal_address
-    node.terminal_output = config.terminal_output
-    node.egress = config.egress
-    node.genesis = config.genesis
-    node.accept_peers = config.accept_peers
-    node.full_ledger = config.full_ledger
-    node.trace_db_calls = config.trace_db_calls
-    node.old_sqlite = config.old_sqlite
-    node.heavy = config.heavy
-    node.heavy3_path = config.heavy3_path
+    node.port = conf.port
+    node.verify = conf.verify
+    node.thread_limit = conf.thread_limit
+    node.rebuild_db = conf.rebuild_db
+    node.debug = conf.debug
+    node.debug_level = conf.debug_level
+    node.pause = conf.pause
+    node.ledger_path = conf.ledger_path
+    node.hyper_path = conf.hyper_path
+    node.hyper_recompress = conf.hyper_recompress
+    node.tor = conf.tor
+    node.ram = conf.ram
+    node.version_allow = conf.version_allow
+    node.reveal_address = conf.reveal_address
+    node.terminal_output = conf.terminal_output
+    node.egress = conf.egress
+    node.genesis = conf.genesis
+    node.accept_peers = conf.accept_peers
+    node.full_ledger = conf.full_ledger
+    node.trace_db_calls = conf.trace_db_calls
+    node.old_sqlite = conf.old_sqlite
+    node.heavy = conf.heavy
+    node.heavy3_path = conf.heavy3_path
 
     # node.logger.app_log.warning('Configuration settings loaded')
 
