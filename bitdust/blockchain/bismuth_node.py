@@ -35,6 +35,7 @@ from bitdust_forks.Bismuth.bismuthclient import rpcconnections
 from bitdust.logs import lg
 
 from bitdust.main import settings
+from bitdust.main import config
 
 from bitdust.blockchain import known_bismuth_nodes
 
@@ -112,8 +113,7 @@ def run(data_dir_path, starting_defer):
     config_path = os.path.join(data_dir_path, 'config')
     custom_config_path = os.path.join(data_dir_path, 'config_custom')
 
-    if not os.path.isfile(config_path):
-        create_config_file(data_dir_path)
+    create_config_file(data_dir_path)
 
     bismuth_node.node = _node.Node()
     node = bismuth_node.node
@@ -238,7 +238,8 @@ def run(data_dir_path, starting_defer):
             bismuth_node.add_indices(db_handler_initial)
 
             if not node.tor:
-                host, port = '0.0.0.0', int(node.port)
+                host = config.conf().getString('services/bismuth-node/host', '0.0.0.0')
+                port = int(node.port)
 
                 bismuth_node.ThreadedTCPServer.allow_reuse_address = True
                 bismuth_node.ThreadedTCPServer.daemon_threads = True
@@ -290,7 +291,7 @@ def run(data_dir_path, starting_defer):
 def create_config_file(data_dir_path):
     config_path = os.path.join(data_dir_path, 'config')
     config_src = '''debug=False
-port=15658
+port={port}
 verify=False
 version=mainnet0001
 version_allow=mainnet0001
@@ -315,13 +316,13 @@ accept_peers=True
 banlist=127.1.2.3
 whitelist=127.0.0.1
 nodes_ban_reset=5
-mempool_allowed=1aae2cfe5d01acc8d7cbc90fcf8bb715ca24927504d0d8071c0979c7
 terminal_output=False
 gui_scaling=adapt
 mempool_ram=False
 egress=True
 trace_db_calls=False
 heavy3_path={heavy3_path}'''.format(
+        port=config.conf().getInt('services/bismuth-node/tcp-port', 15658),
         hyper_path=os.path.join(data_dir_path, 'hyper.db'),
         ledger_path=os.path.join(data_dir_path, 'ledger.db'),
         heavy3_path=os.path.join(data_dir_path, 'heavy3a.bin'),

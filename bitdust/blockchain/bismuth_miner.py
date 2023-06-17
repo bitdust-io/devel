@@ -16,8 +16,9 @@ from twisted.internet import reactor
 from bitdust_forks.Bismuth import mining_heavy3
 from bitdust_forks.Bismuth import connections
 
-from bitdust.main import settings
 from bitdust.logs import lg
+from bitdust.main import settings
+from bitdust.main import config
 
 from bitdust.blockchain import known_bismuth_nodes
 from bitdust.blockchain import bismuth_wallet
@@ -76,7 +77,7 @@ def shutdown():
 
 def get_random_mining_pool_host_port():
     if driver.is_enabled('service_bismuth_pool'):
-        return '127.0.0.1', 18525
+        return config.conf().getString('services/bismuth-pool/host', '127.0.0.1'), config.conf().getInt('services/bismuth-pool/tcp-port', 18525)
     one_item = random.choice(list(known_bismuth_nodes.mining_pools_by_host().items()))
     return one_item[0], one_item[1]
 
