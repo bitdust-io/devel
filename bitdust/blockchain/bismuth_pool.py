@@ -30,6 +30,7 @@ from bitdust_forks.Bismuth import essentials
 
 from bitdust.logs import lg
 from bitdust.main import settings
+from bitdust.main import config
 
 #------------------------------------------------------------------------------
 
@@ -52,8 +53,8 @@ pool_fee = 0
 alt_fee = 0
 worker_time = 10
 
-pool_host = '0.0.0.0'
-pool_port = 18525
+# pool_host = '127.0.0.0'
+# pool_port = 18525
 
 new_time = 0
 new_diff = 0
@@ -177,6 +178,8 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         while True:
             if attempts > 30:
                 raise Exception('not able to start mining pool server')
+            pool_host = config.conf().getString('services/bismuth-pool/host')
+            pool_port = config.conf().getInt('services/bismuth-pool/tcp-port')
             try:
                 server = ThreadedTCPServer((pool_host, pool_port), TCPHandler)
             except Exception as e:
@@ -208,7 +211,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         server.server_close()
 
     except Exception as e:
-        lg.exc(0)
+        lg.exc()
         reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
 
     finally:

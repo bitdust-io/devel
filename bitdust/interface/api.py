@@ -5849,7 +5849,7 @@ def blockchain_info():
 
 def blockchain_wallet_balance():
     """
-    Returns current balance of your current blockchain wallet.
+    Returns current balance of your blockchain wallet.
 
     ###### HTTP
         curl -X GET 'localhost:8180/blockchain/wallet/balance/v1'
@@ -5899,6 +5899,12 @@ def blockchain_block_produce():
 
     This method only make sense to use by foundation miners.
     If you are not part of the foundation and your wallet address is not on the list, your transaction will be rejected by other nodes.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/blockchain/block/produce/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "blockchain_block_produce", "kwargs": {} }');
     """
     if not driver.is_on('service_bismuth_miner'):
         return ERROR('service_bismuth_miner() is not started')
