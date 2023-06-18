@@ -57,9 +57,14 @@ def init():
     global _DataDirPath
     global _MinerName
     global _MinerWalletAddress
+    global _MiningPoolHost
+    global _MiningPoolPort
     _DataDirPath = settings.ServiceDir('bismuth_blockchain')
     _MinerWalletAddress = bismuth_wallet.my_wallet_address()
     _MinerName = my_id.getIDName()
+    if driver.is_enabled('service_bismuth_pool'):
+        _MiningPoolHost = config.conf().getString('services/bismuth-pool/host', '127.0.0.1')
+        _MiningPoolPort = config.conf().getInt('services/bismuth-pool/tcp-port', 18525)
     check_start_mining_later(delay=0)
     if _Debug:
         lg.args(_DebugLevel, wallet_address=_MinerWalletAddress, miner_name=_MinerName)
@@ -76,8 +81,6 @@ def shutdown():
 
 
 def get_random_mining_pool_host_port():
-    if driver.is_enabled('service_bismuth_pool'):
-        return config.conf().getString('services/bismuth-pool/host', '127.0.0.1'), config.conf().getInt('services/bismuth-pool/tcp-port', 18525)
     one_item = random.choice(list(known_bismuth_nodes.mining_pools_by_host().items()))
     return one_item[0], one_item[1]
 
@@ -126,7 +129,8 @@ def run(needed_coins):
     global _MiningPoolPort
     global _MiningIsOn
 
-    _MiningPoolHost, _MiningPoolPort = get_random_mining_pool_host_port()
+    if not _MiningPoolPort or not _MiningPoolHost:
+        _MiningPoolHost, _MiningPoolPort = get_random_mining_pool_host_port()
 
     # if _Debug:
     #     lg.args(_DebugLevel, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)

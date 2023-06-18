@@ -55,6 +55,7 @@ _DataDirPath = None
 def init():
     global _DataDirPath
     _DataDirPath = settings.ServiceDir('bismuth_blockchain')
+    create_config_file(_DataDirPath)
     starting_defer = Deferred()
     node_thread = threading.Thread(target=run, args=(_DataDirPath, starting_defer))
     node_thread.start()
@@ -113,13 +114,13 @@ def run(data_dir_path, starting_defer):
     config_path = os.path.join(data_dir_path, 'config')
     custom_config_path = os.path.join(data_dir_path, 'config_custom')
 
-    create_config_file(data_dir_path)
-
     bismuth_node.node = _node.Node()
     node = bismuth_node.node
     bismuth_node.bootstrap = bootstrap
 
     node.app_version = VERSION
+
+    node.FOUNDATION_MINERS = known_bismuth_nodes.foundation_miners()
 
     options.Get.defaults['heavy3_path'] = os.path.join(data_dir_path, 'heavy3a.bin')
     options.Get.defaults['mempool_path'] = os.path.join(data_dir_path, 'mempool.db')
@@ -196,7 +197,6 @@ def run(data_dir_path, starting_defer):
         from bitdust_forks.Bismuth import digest
 
         mining_heavy3.mining_open(node.heavy3_path)
-        digest.FOUNDATION_MINERS = known_bismuth_nodes.foundation_miners()
         digest.mining_heavy3.MMAP = mining_heavy3.MMAP
         digest.mining_heavy3.RND_LEN = mining_heavy3.RND_LEN
         node.logger.app_log.warning(f'Heavy3 file is OK, loaded in %s seconds' % (time.time() - t_now))
@@ -309,7 +309,7 @@ tor=False
 allowed=127.0.0.1,192.168.0.1,any
 ram=False
 heavy=False
-node_ip=127.0.0.1
+node_ip={node_ip}
 light_ip={light_ip}
 reveal_address=True
 accept_peers=True
@@ -323,6 +323,7 @@ egress=True
 trace_db_calls=False
 heavy3_path={heavy3_path}'''.format(
         port=main_conf.conf().getInt('services/bismuth-node/tcp-port', 15658),
+        node_ip=main_conf.conf().getString('services/bismuth-node/host', '127.0.0.1'),
         hyper_path=os.path.join(data_dir_path, 'hyper.db'),
         ledger_path=os.path.join(data_dir_path, 'ledger.db'),
         heavy3_path=os.path.join(data_dir_path, 'heavy3a.bin'),

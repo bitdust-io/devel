@@ -17,10 +17,6 @@ from fork import Fork
 
 fork = Fork()
 
-FOUNDATION_MINERS = []
-FOUNDATION_MINER_REWARD = 100000.0
-REGULAR_MINER_REWARD = 0.0
-
 
 def digest_block(node, data, sdef, peer_ip, db_handler):
 
@@ -232,9 +228,9 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                     #     block_instance.mining_reward = 15 - (quantize_eight(block_instance.block_height_new)/quantize_eight(1000000/2)) - Decimal('2.4')
                     # if block_instance.mining_reward < 0.5:
                     #    block_instance.mining_reward = 0.5
-                    block_instance.mining_reward = REGULAR_MINER_REWARD
-                    if miner_tx.miner_address in FOUNDATION_MINERS and block_instance.tx_count == 1:
-                        block_instance.mining_reward = FOUNDATION_MINER_REWARD
+                    block_instance.mining_reward = node.REGULAR_MINER_REWARD
+                    if miner_tx.miner_address in node.FOUNDATION_MINERS and block_instance.tx_count == 1:
+                        block_instance.mining_reward = node.FOUNDATION_MINER_REWARD
 
                     reward = '{:.8f}'.format(Decimal(block_instance.mining_reward) + sum(fees_block))
 
@@ -322,8 +318,8 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                     raise ValueError(f'!Block is older {miner_tx.q_block_timestamp} '
                                      f'than the previous one {node.last_block_timestamp} , will be rejected', )
 
-                if miner_tx.miner_address not in FOUNDATION_MINERS:
-                    if len(block) == 1:
+                if len(block) == 1:
+                    if miner_tx.miner_address not in node.FOUNDATION_MINERS:
                         # only allow foundation miners to mine empty blocks
                         raise ValueError('Only foundation miners are allowed to mine empty blocks')
 
