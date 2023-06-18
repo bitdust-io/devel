@@ -119,7 +119,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
     if not os.path.exists(data_dir_path):
         os.makedirs(data_dir_path)
 
-    pool_key_path = os.path.join(data_dir_path, 'pool_key.json')
+    pool_key_path = os.path.join(data_dir_path, 'wallet_key.json')
 
     m_peer_file = os.path.join(data_dir_path, 'peers.json')
 
@@ -299,7 +299,7 @@ def payout(payout_threshold, myfee, othfee):
     reward_total = '%.8f' % (((100 - (myfee + othfee))*super_total)/100)
     reward_total = float(reward_total)
 
-    # print('Pool: reward_total=%r' % reward_total)
+    print('Pool: reward_total=%r' % reward_total)
 
     if reward_total > 0:
 
@@ -338,7 +338,7 @@ def payout(payout_threshold, myfee, othfee):
 
             if shares_sum == None:
                 shares_sum = 0
-            # print(x, shares_sum, shares_threshold)
+            print(x, shares_sum, shares_threshold)
             if shares_sum > shares_threshold:
                 payadd.append([x, shares_sum])
                 new_sum = new_sum + shares_sum
@@ -788,7 +788,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         mining_condition = bin_convert_orig(db_block_hash)[0:diff_shares] #floor set by pool
                         if mining_condition in mining_hash:
                         """
-                        if real_diff >= diff_shares:
+                        if real_diff >= diff_shares and address != miner_address:
                             # print('Pool: Difficulty requirement satisfied for saving shares')
 
                             execute_param(s, ('INSERT INTO nonces VALUES (?)'), (nonce, ))
