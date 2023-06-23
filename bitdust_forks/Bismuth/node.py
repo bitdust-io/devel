@@ -25,6 +25,7 @@ import tarfile
 import threading
 import base64
 import hashlib
+import traceback
 
 from sys import version_info
 from decimal import Decimal
@@ -462,7 +463,7 @@ def blocknf(node, block_hash_delete, peer_ip, db_handler, hyperblocks=False):
     Not trusting hyperblock nodes for old blocks because of trimming,
     they wouldn't find the hash and cause rollback.
     """
-    node.logger.app_log.debug(f'Rollback operation on {block_hash_delete} initiated by {peer_ip}')
+    node.logger.app_log.warning(f'Rollback operation on {block_hash_delete} initiated by {peer_ip}')
 
     my_time = time.time()
 
@@ -520,6 +521,7 @@ def blocknf(node, block_hash_delete, peer_ip, db_handler, hyperblocks=False):
                 tokens.tokens_update(node, db_handler)
 
         except Exception as e:
+            traceback.print_exc()
             node.logger.app_log.warning(e)
 
         finally:
@@ -577,7 +579,7 @@ def sequencing_check(db_handler):
     chains_to_check = [node.ledger_path, node.hyper_path]
 
     for chain in chains_to_check:
-        conn = sqlite3.connect(chain)
+        conn = sqlite3.connect(chain, timeout=1)
         if node.trace_db_calls:
             conn.set_trace_callback(functools.partial(sql_trace_callback, node.logger.app_log, 'SEQUENCE-CHECK-CHAIN'))
         c = conn.cursor()
@@ -594,7 +596,7 @@ def sequencing_check(db_handler):
             if row[0] != y:
 
                 for chain2 in chains_to_check:
-                    conn2 = sqlite3.connect(chain2)
+                    conn2 = sqlite3.connect(chain2, timeout=1)
                     if node.trace_db_calls:
                         conn2.set_trace_callback(functools.partial(sql_trace_callback, node.logger.app_log, 'SEQUENCE-CHECK-CHAIN2'))
                     c2 = conn2.cursor()
@@ -632,7 +634,7 @@ def sequencing_check(db_handler):
             if row[0] != y:
                 # print(row[0], y)
                 for chain2 in chains_to_check:
-                    conn2 = sqlite3.connect(chain2)
+                    conn2 = sqlite3.connect(chain2, timeout=1)
                     if node.trace_db_calls:
                         conn2.set_trace_callback(functools.partial(sql_trace_callback, node.logger.app_log, 'SEQUENCE-CHECK-CHAIN2B'))
                     c2 = conn2.cursor()
@@ -1005,7 +1007,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             elif node.last_block >= node.peers.consensus_max - 3:
                                 mined['result'] = True
                                 node.plugin_manager.execute_action_hook('mined', mined)
-                                node.logger.app_log.debug('Inbound: Processing block from miner')
+                                node.logger.app_log.warning(f'Inbound: Processing block from miner in {threading.current_thread()}')
                                 try:
                                     digest_block(node, segments, self.request, peer_ip, db_handler_instance)
                                 except ValueError as e:
@@ -1667,6 +1669,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if node.peers.is_allowed(peer_ip, data):
                         segments = receive(self.request)
                         address, recipient, operation, openfield, limit, offset = segments
+                        while node.db_lock.locked():
+                            time.sleep(node.pause)
                         result = db_handler_instance.txsearch(address, recipient, operation, openfield, limit, offset)
                         send(self.request, result)
                     else:
@@ -1975,7 +1979,7 @@ def initial_db_check():
         bootstrap()
     # UPDATE mainnet DB if required
     if node.is_mainnet:
-        upgrade = sqlite3.connect(node.ledger_path)
+        upgrade = sqlite3.connect(node.ledger_path, timeout=1)
         if node.trace_db_calls:
             upgrade.set_trace_callback(functools.partial(sql_trace_callback, node.logger.app_log, 'INITIAL_DB_CHECK'))
         u = upgrade.cursor()

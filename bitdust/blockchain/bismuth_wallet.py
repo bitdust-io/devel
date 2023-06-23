@@ -136,13 +136,13 @@ def check_register_my_identity(result_defer):
     )
     if _Debug:
         lg.args(_DebugLevel, my_wallet_address=my_wallet_address(), tx=len(results))
-    if not results:
-        send_transaction(
-            recipient=options.GENESIS_ADDRESS,
-            amount=0,
-            operation='identity1',
-            data=my_pub_key,
-        )
+    # if not results:
+    #     send_transaction(
+    #         recipient=options.GENESIS_ADDRESS,
+    #         amount=0,
+    #         operation='identity1',
+    #         data=my_pub_key,
+    #     )
     result_defer.callback(True)
 
 

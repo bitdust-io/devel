@@ -10,10 +10,11 @@ from quantizer import quantize_two
 import functools
 from fork import Fork
 import sys
+import traceback
 
 
 def sql_trace_callback(log, id, statement):
-    line = f'SQL[{id}] {statement}'
+    line = f'SQL[{id}] {statement} in {threading.current_thread()}'
     log.warning(line)
 
 
@@ -28,6 +29,11 @@ class DbHandler:
         self.ledger_path = ledger_path
 
         self.dbs = {}
+
+        sqlite3.threadsafety = 3
+
+        # if trace_db_calls:
+        #     sqlite3.enable_callback_tracebacks(True)
 
         self.index = sqlite3.connect(self.index_db, timeout=1)
         if self.trace_db_calls:
@@ -68,6 +74,7 @@ class DbHandler:
 
         self.SQL_TO_TRANSACTIONS = 'INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
         self.SQL_TO_MISC = 'INSERT INTO misc VALUES (?,?)'
+        self.logger.app_log.warning(f'Started DbHandler with {self.h.connection} in {threading.current_thread()}')
 
     def last_block_hash(self):
         self.execute(self.c, 'SELECT block_hash FROM transactions WHERE reward != 0 ORDER BY block_height DESC LIMIT 1;')
@@ -144,9 +151,13 @@ class DbHandler:
         params.append(limit)
         sql = 'SELECT * FROM transactions WHERE '
         sql += ' AND '.join(queries)
-        sql += ' LIMIT ?, ?'
-        self.execute_param(self.h, sql, tuple(params))
-        result = self.h.fetchall()
+        sql += ' LIMIT ?, ?;'
+        try:
+            self.execute_param(self.h, sql, tuple(params))
+            result = self.h.fetchall()
+        except:
+            traceback.print_exc()
+            return []
         return result
 
     def block_max_ram(self):
@@ -420,7 +431,7 @@ class DbHandler:
                 self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except Exception as e:
-                self.logger.app_log.warning(f'Database query: {cursor} {query[:100]}')
+                self.logger.app_log.warning(f'Database query: {cursor.connection} {query[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
                 time.sleep(1)
 
@@ -440,7 +451,7 @@ class DbHandler:
                 self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except Exception as e:
-                self.logger.app_log.warning(f'Database query: {cursor} {str(query)[:100]} {str(param)[:100]}')
+                self.logger.app_log.warning(f'Database query: {cursor.connection} {str(query)[:100]} {str(param)[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
                 time.sleep(1)
 
@@ -464,7 +475,11 @@ class DbHandler:
         return None
 
     def close(self):
-        self.index.close()
-        self.hdd.close()
-        self.hdd2.close()
-        self.conn.close()
+        self.logger.app_log.warning(f'Closing DbHandler with {self.h.connection} in {threading.current_thread()}')
+        try:
+            self.index.close()
+            self.hdd.close()
+            self.hdd2.close()
+            self.conn.close()
+        except:
+            traceback.print_exc()

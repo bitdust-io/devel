@@ -323,7 +323,7 @@ terminal_output=False
 gui_scaling=adapt
 mempool_ram=False
 egress=True
-trace_db_calls=False
+trace_db_calls={trace_db_calls}
 heavy3_path={heavy3_path}'''.format(
         port=main_conf.conf().getInt('services/bismuth-node/tcp-port', 15658),
         node_ip=main_conf.conf().getString('services/bismuth-node/host', '127.0.0.1'),
@@ -331,6 +331,7 @@ heavy3_path={heavy3_path}'''.format(
         ledger_path=os.path.join(data_dir_path, 'ledger.db'),
         heavy3_path=os.path.join(data_dir_path, 'heavy3a.bin'),
         light_ip='{"127.0.0.1": "15658"}',
+        trace_db_calls='True' if _Debug else 'False',
     )
     fout = open(config_path, 'w')
     fout.write(config_src)
@@ -481,7 +482,7 @@ def bootstrap():
 
 
 def check_db_for_bootstrap(node):
-    upgrade = sqlite3.connect(node.ledger_path)
+    upgrade = sqlite3.connect(node.ledger_path, timeout=1)
     u = upgrade.cursor()
     try:
         u.execute('SELECT * FROM transactions LIMIT 1;')
