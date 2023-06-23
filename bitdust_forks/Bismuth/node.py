@@ -537,12 +537,14 @@ def blocknf(node, block_hash_delete, peer_ip, db_handler, hyperblocks=False):
                     for tx in backup_data:
                         tx_short = f'{tx[1]} - {tx[2]} to {tx[3]}: {tx[4]} ({tx[11]})'
                         if tx[9] == 0:
+                            miner = tx[3]
+                            height = tx[0]
                             try:
                                 nb_tx += 1
                                 node.logger.app_log.debug(mp.MEMPOOL.merge((tx[1], tx[2], tx[3], tx[4], tx[5], tx[6], tx[10], tx[11]), peer_ip, db_handler.c, False, revert=True))  # will get stuck if you change it to respect node.db_lock
                                 node.logger.app_log.warning(f'Moved tx back to mempool: {tx_short}')
                             except Exception as e:
-                                node.logger.app_log.warning(f'Error during moving tx back to mempool: {e}')
+                                node.logger.app_log.error(f'Error during moving tx back to mempool: {e}')
                         else:
                             # It's the coinbase tx, so we get the miner address
                             miner = tx[3]
@@ -551,7 +553,7 @@ def blocknf(node, block_hash_delete, peer_ip, db_handler, hyperblocks=False):
                     node.plugin_manager.execute_action_hook('rollback', rollback)
 
                 except Exception as e:
-                    node.logger.app_log.warning(f'Error during moving txs back to mempool: {e}')
+                    node.logger.app_log.error(f'Error during moving txs back to mempool: {e}')
 
     else:
         reason = 'Skipping rollback, other ledger operation in progress'
@@ -1660,6 +1662,16 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         send(self.request, status)
                     else:
                         node.logger.app_log.debug(f'{peer_ip} not whitelisted for statusjson command')
+
+                elif data == 'txsearch':
+                    if node.peers.is_allowed(peer_ip, data):
+                        segments = receive(self.request)
+                        address, recipient, operation, openfield, limit, offset = segments
+                        result = db_handler_instance.txsearch(address, recipient, operation, openfield, limit, offset)
+                        send(self.request, result)
+                    else:
+                        node.logger.app_log.debug(f'{peer_ip} not whitelisted for txsearch command')
+
                 elif data[:4] == 'api_':
                     if node.peers.is_allowed(peer_ip, data):
                         try:

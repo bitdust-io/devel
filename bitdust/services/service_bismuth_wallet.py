@@ -53,8 +53,7 @@ class BismuthWalletService(LocalService):
 
     def start(self):
         from bitdust.blockchain import bismuth_wallet
-        bismuth_wallet.init()
-        return True
+        return bismuth_wallet.init()
 
     def stop(self):
         from bitdust.blockchain import bismuth_wallet

@@ -123,6 +123,32 @@ class DbHandler:
             result = 'No announcement'
         return result
 
+    def txsearch(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
+        if not address and not recipient and not operation and not openfield:
+            return []
+        queries = []
+        params = []
+        if address:
+            queries.append('address = ?')
+            params.append(address)
+        if recipient:
+            queries.append('recipient = ?')
+            params.append(recipient)
+        if operation:
+            queries.append('operation = ?')
+            params.append(operation)
+        if openfield:
+            queries.append('openfield = ?')
+            params.append(openfield)
+        params.append(offset)
+        params.append(limit)
+        sql = 'SELECT * FROM transactions WHERE '
+        sql += ' AND '.join(queries)
+        sql += ' LIMIT ?, ?'
+        self.execute_param(self.h, sql, tuple(params))
+        result = self.h.fetchall()
+        return result
+
     def block_max_ram(self):
         self.execute(self.c, 'SELECT * FROM transactions ORDER BY block_height DESC LIMIT 1')
         return essentials.format_raw_tx(self.c.fetchone())

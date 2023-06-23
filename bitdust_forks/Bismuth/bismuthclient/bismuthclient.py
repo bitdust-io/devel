@@ -206,6 +206,18 @@ class BismuthClient():
         self._set_cache(key, json)
         return json
 
+    def search_transactions(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
+        key = "txsearch-{}-{}-{}-{}-{}-{}".format(address or '*', recipient or '*', operation or '*', openfield or '*', limit, offset)
+        cached = self._get_cached(key)
+        if cached:
+            return cached
+        transactions = self.command("txsearch", [(address, recipient, operation, openfield, limit, offset, ), ])
+        if self.verbose:
+            print('Client: search transactions', transactions)
+        json = [TxFormatter(tx).to_json(for_display=True) for tx in transactions]
+        self._set_cache(key, json)
+        return json
+
     def balance(self, for_display=False):
         """
         Returns the current balance for the current address.
@@ -220,7 +232,7 @@ class BismuthClient():
                 balance = self._get_cached('balance')
         except Exception as e:
             if self.verbose:
-                print('balance error', e)
+                print('Client: balance error', e)
             return 'N/A'
         if for_display:
             balance = AmountFormatter(balance).to_string(leading=0)
@@ -270,7 +282,7 @@ class BismuthClient():
             except Exception as e:
                 # TODO: Handle retry, at least error message.
                 if self.verbose:
-                    print("Error {} all_balances".format(str(e)))
+                    print("Client: Error {} all_balances".format(str(e)))
 
         if for_display:
             balances = {address: AmountFormatter(balance).to_string(leading=0) for address, balance in balances.items()}
@@ -303,23 +315,25 @@ class BismuthClient():
                           signature_enc, public_key_encoded, operation, data)
             reply = self.command('mpinsert', [tx_submit])
             if self.verbose:
-                print("Server replied '{}'".format(reply))
+                print("Client: Server replied '{}'".format(reply))
             if reply[-1] != "Success":
                 if self.verbose:
-                    print("Error '{}'".format(reply))
+                    print("Client: Error '{}'".format(reply))
                 error_reply.append(reply[-1])
                 return None
             if not reply:
                 if self.verbose:
-                    print("Server timeout")
+                    print("Client: Server timeout")
                 error_reply.append('Server timeout')
                 return None
             return txid
         except Exception as e:
+            error_reply = str(e)
             if self.verbose:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+                print('Client:', exc_type, fname, exc_tb.tb_lineno)
+            return None
 
     def sign(self, message: str):
         """
@@ -332,7 +346,7 @@ class BismuthClient():
             if self.verbose:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+                print('Client:', exc_type, fname, exc_tb.tb_lineno)
             raise
 
     def encrypt(self, message: str, recipient:str):
@@ -349,7 +363,7 @@ class BismuthClient():
             if self.verbose:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+                print('Client:', exc_type, fname, exc_tb.tb_lineno)
             raise
 
     def decrypt(self, message: str):
@@ -363,7 +377,7 @@ class BismuthClient():
             if self.verbose:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+                print('Client:', exc_type, fname, exc_tb.tb_lineno)
             raise
 
     def status(self):
@@ -395,7 +409,7 @@ class BismuthClient():
         except Exception as e:
             # TODO: Handle retry, at least error message.
             if self.verbose:
-                print('Command status failed', e)
+                print('Client: Command status failed', e)
             status = {}
         return status
 
@@ -489,18 +503,19 @@ class BismuthClient():
                                        'load':'N/A', 'height': 'N/A'} for server in self.servers_list]
             # print('Client: from initial servers_list=%r full_servers_list=%r' % (self.servers_list, self.full_servers_list))
         # Now try to connect
-        # if self.verbose:
-        #     print("self.servers_list", self.servers_list)
+        if self.verbose:
+            print("Client: servers list", self.servers_list)
         for server in self.servers_list:
             # if self.verbose:
             #     print("test server", server)
             if lwbench.connectible(server):
                 self._current_server = server
                 # TODO: if self._loop, use async version
-                # if self.verbose:
-                #     print("connect server", server)
+                if self.verbose:
+                    print("Client: connect server", server)
                 self._connection = rpcconnections.Connection(server, verbose=self.verbose)
-                # print('Client: new connection %r to %r' % (self._connection, server))
+                if self.verbose:
+                    print('Client: new connection %r to %r' % (self._connection, server))
                 return server
         self._current_server = None
         self._connection = None
@@ -523,7 +538,8 @@ class BismuthClient():
             if not is_there:
                 self.full_servers_list.append(server)
         self.servers_list = ["{}:{}".format(server['ip'], server['port']) for server in self.full_servers_list]
-        # print('Client: refresh servers_list=%r full_servers_list=%r' % (self.servers_list, self.full_servers_list))
+        if self.verbose:
+            print('Client: refresh servers_list=%r full_servers_list=%r' % (self.servers_list, self.full_servers_list))
 
     def set_server(self, ipport):
         """

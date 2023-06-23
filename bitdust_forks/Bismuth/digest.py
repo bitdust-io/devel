@@ -320,8 +320,14 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
 
                 if len(block) == 1:
                     if miner_tx.miner_address not in node.FOUNDATION_MINERS:
-                        # only allow foundation miners to mine empty blocks
-                        raise ValueError('Only foundation miners are allowed to mine empty blocks')
+                        transaction = block[0]
+                        received_operation = str(transaction[6])[:30]
+                        received_amount = float(transaction[3])
+                        if received_operation.startswith('identity') and received_amount == 0:
+                            pass
+                        else:
+                            # only allow foundation miners to mine empty blocks
+                            raise ValueError('Only foundation miners are allowed to mine empty blocks')
 
                 check_signature(block)
 

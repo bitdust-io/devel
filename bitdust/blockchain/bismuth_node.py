@@ -42,6 +42,7 @@ from bitdust.blockchain import known_bismuth_nodes
 #------------------------------------------------------------------------------
 
 _Debug = True
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -143,7 +144,9 @@ def run(data_dir_path, starting_defer):
 
     node.logger = logger.Logger()
     if _Debug:
-        node.logger.app_log = custom_log(level_input=lg.get_loging_level(max(0, lg.get_debug_level() - 6), return_name=True))
+        # node.logger.app_log = custom_log(level_input=lg.get_loging_level(max(0, lg.get_debug_level() - 6), return_name=True))
+        node.logger.app_log = custom_log(level_input=lg.get_loging_level(_DebugLevel - 6, return_name=True))
+        # node.logger.app_log = custom_log(level_input='DEBUG')
     else:
         node.logger.app_log = custom_log(level_input='CRITICAL')
     node.logger.app_log.critical(f'Python version: {node.py_version}')
@@ -193,7 +196,7 @@ def run(data_dir_path, starting_defer):
         # node.logger.app_log.warning(f'Checking Heavy3 file, can take up to 5 minutes...')
         t_now = time.time()
 
-        from bitdust_forks.Bismuth import mining_heavy3
+        from bitdust_forks.Bismuth import mining_heavy3  # @UnresolvedImport
         from bitdust_forks.Bismuth import digest
 
         mining_heavy3.mining_open(node.heavy3_path)
