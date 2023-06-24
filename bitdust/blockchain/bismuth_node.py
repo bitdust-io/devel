@@ -197,7 +197,7 @@ def run(data_dir_path, starting_defer):
         t_now = time.time()
 
         from bitdust_forks.Bismuth import mining_heavy3  # @UnresolvedImport
-        from bitdust_forks.Bismuth import digest
+        from bitdust_forks.Bismuth import digest  # @UnresolvedImport
 
         mining_heavy3.mining_open(node.heavy3_path)
         digest.mining_heavy3.MMAP = mining_heavy3.MMAP
@@ -287,6 +287,11 @@ def run(data_dir_path, starting_defer):
                 node.logger.app_log.warning('Status: Securely disconnected main processes, subprocess termination in progress.')
                 break
         time.sleep(0.1)
+
+    try:
+        bismuth_node.db_handler_initial.close()
+    except:
+        pass
 
     node.logger.app_log.warning('Status: Clean Stop')
 

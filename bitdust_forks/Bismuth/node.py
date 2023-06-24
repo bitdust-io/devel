@@ -680,17 +680,19 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             node.logger.app_log.warning('Inbound: Rejected incoming cnx, node is stopping')
             return
 
-        db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, node.logger, trace_db_calls=node.trace_db_calls)
-
         client_instance = client.Client()
 
         try:
-            peer_ip = self.request.getpeername()[0]
+            peer_ip_port = self.request.getpeername()
+            peer_ip = peer_ip_port[0]
+            peer_port = peer_ip_port[1]
         except:
             node.logger.app_log.warning('Inbound: Transport endpoint was not connected')
             return
 
-        threading.current_thread().name = f'in_{peer_ip}'
+        db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, node.logger, trace_db_calls=node.trace_db_calls)
+
+        threading.current_thread().name = f'in_{peer_ip}_{peer_port}'
         # if threading.active_count() < node.thread_limit or peer_ip == "127.0.0.1":
         # Always keep a slot for whitelisted (wallet could be there)
         if threading.active_count() < node.thread_limit/3*2 or node.peers.is_whitelisted(peer_ip):  # inbound
@@ -704,6 +706,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 node.logger.app_log.warning(f'{e}')
                 pass
             finally:
+                try:
+                    db_handler_instance.close()
+                except:
+                    pass
                 return
 
         dict_ip = {'ip': peer_ip}
@@ -737,7 +743,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if node.peers.warning(self.request, peer_ip, 'Operation timeout', 2):
                         node.logger.app_log.warning(f'{peer_ip} banned')
                         break
-
                     raise ValueError(f'Inbound: Operation timeout from {peer_ip}')
 
                 data = receive(self.request)
@@ -747,6 +752,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 if data.startswith('regtest_'):
                     if not node.is_regnet:
                         send(self.request, 'notok')
+                        try:
+                            db_handler_instance.close()
+                        except:
+                            pass
                         return
                     else:
                         db_handler_instance.execute(db_handler_instance.c, 'SELECT block_hash FROM transactions WHERE block_height= (select max(block_height) from transactions)')
@@ -762,6 +771,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if data not in node.version_allow:
                         node.logger.app_log.warning(f'Protocol version mismatch: {data}, should be {node.version_allow}')
                         send(self.request, 'notok')
+                        try:
+                            db_handler_instance.close()
+                        except:
+                            pass
                         return
                     else:
                         node.logger.app_log.warning(f'Inbound: Protocol version matched with {peer_ip}: {data}')
@@ -800,6 +813,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 elif data == 'hello':
                     if node.is_regnet:
                         node.logger.app_log.debug("Inbound: Got hello but I'm in regtest mode, closing.")
+                        try:
+                            db_handler_instance.close()
+                        except:
+                            pass
                         return
 
                     send(self.request, 'peers')
@@ -990,6 +1007,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         except:
                             # Block is sent by miners/pools, we can drop the connection
                             # If there is a reason not to, use "continue" here and below instead of returns.
+                            try:
+                                db_handler_instance.close()
+                            except:
+                                pass
                             return  # missing info, bye
                         if node.is_mainnet:
                             if len(node.peers.connection_pool) < 5 and not node.peers.is_whitelisted(peer_ip):
@@ -997,12 +1018,20 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                 mined['reason'] = reason
                                 node.plugin_manager.execute_action_hook('mined', mined)
                                 node.logger.app_log.debug(reason)
+                                try:
+                                    db_handler_instance.close()
+                                except:
+                                    pass
                                 return
                             elif node.db_lock.locked():
                                 reason = 'Inbound: Block from miner skipped because we are digesting already'
                                 mined['reason'] = reason
                                 node.plugin_manager.execute_action_hook('mined', mined)
                                 node.logger.app_log.warning(reason)
+                                try:
+                                    db_handler_instance.close()
+                                except:
+                                    pass
                                 return
                             elif node.last_block >= node.peers.consensus_max - 3:
                                 mined['result'] = True
@@ -1012,9 +1041,17 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                     digest_block(node, segments, self.request, peer_ip, db_handler_instance)
                                 except ValueError as e:
                                     node.logger.app_log.warning('Inbound: block {}'.format(str(e)))
+                                    try:
+                                        db_handler_instance.close()
+                                    except:
+                                        pass
                                     return
                                 except Exception as e:
                                     node.logger.app_log.error('Inbound: Processing block from miner {}'.format(e))
+                                    try:
+                                        db_handler_instance.close()
+                                    except:
+                                        pass
                                     return
                                 # This new block may change the int(diff). Trigger the hook whether it changed or not.
                                 #node.difficulty = difficulty(node, db_handler_instance)
@@ -1031,9 +1068,17 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                 digest_block(node, segments, self.request, peer_ip, db_handler_instance)
                             except ValueError as e:
                                 node.logger.app_log.warning('Inbound: block {}'.format(str(e)))
+                                try:
+                                    db_handler_instance.close()
+                                except:
+                                    pass
                                 return
                             except Exception as e:
                                 node.logger.app_log.error('Inbound: Processing block from miner {}'.format(e))
+                                try:
+                                    db_handler_instance.close()
+                                except:
+                                    pass
                                 return
                     else:
                         receive(self.request)  # receive block, but do nothing about it
@@ -1792,10 +1837,19 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 if node.debug:
                     raise  # major debug client
                 else:
+                    try:
+                        db_handler_instance.close()
+                    except:
+                        pass
                     return
 
         if not node.peers.version_allowed(peer_ip, node.version_allow):
             node.logger.app_log.warning(f'Inbound: Closing connection to old {peer_ip} node: {node.peers.ip_to_mainnet[peer_ip]}')
+
+        try:
+            db_handler_instance.close()
+        except:
+            pass
         return
 
 

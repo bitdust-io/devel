@@ -105,6 +105,8 @@ def worker(host, port, node):
         node.logger.app_log.debug(f'Connected to {this_client}')
         node.logger.app_log.debug(f'Current active pool: {node.peers.connection_pool}')
 
+    db_handler_instance = None
+
     if not node.peers.is_banned(host) and node.peers.version_allowed(host, node.version_allow) and not node.IS_STOPPING:
         db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, logger)
 
@@ -126,6 +128,10 @@ def worker(host, port, node):
                 try:
                     while len(node.syncing) >= 3:
                         if node.IS_STOPPING:
+                            try:
+                                db_handler_instance.close()
+                            except:
+                                pass
                             return
                         time.sleep(int(node.pause))
 
@@ -321,7 +327,10 @@ def worker(host, port, node):
             print(exc_type, fname, exc_tb.tb_lineno)
             """
 
-            db_handler_instance.close()
+            try:
+                db_handler_instance.close()
+            except:
+                pass
 
             # remove from active pool
             node.peers.remove_client(this_client)
@@ -343,7 +352,16 @@ def worker(host, port, node):
                 raise  # major debug client
             else:
                 node.logger.app_log.warning(f'Ending thread, because {e}')
+                try:
+                    db_handler_instance.close()
+                except:
+                    pass
                 return
 
     if not node.peers.version_allowed(host, node.version_allow):
         node.logger.app_log.warning(f'Outbound: Ending thread, because {host} has too old a version: {node.peers.ip_to_mainnet[host]}')
+
+    try:
+        db_handler_instance.close()
+    except:
+        pass
