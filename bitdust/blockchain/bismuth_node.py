@@ -336,7 +336,7 @@ heavy3_path={heavy3_path}'''.format(
         ledger_path=os.path.join(data_dir_path, 'ledger.db'),
         heavy3_path=os.path.join(data_dir_path, 'heavy3a.bin'),
         light_ip='{"127.0.0.1": "15658"}',
-        trace_db_calls='True' if _Debug else 'False',
+        trace_db_calls='True' if (_Debug and _DebugLevel >= 16) else 'False',
     )
     fout = open(config_path, 'w')
     fout.write(config_src)
