@@ -153,7 +153,7 @@ class Peers:
                     return
                 try:
                     if ip not in peers_pairs:
-                        self.app_log.debug(f'Testing connectivity to: {ip}:{port}')
+                        self.app_log.warning(f'Testing connectivity to: {ip}:{port}')
                         s = socks.socksocket()
                         try:
                             # connect timeout
@@ -169,7 +169,7 @@ class Peers:
                                 if versiongot not in self.config.version_allow:
                                     raise ValueError(f'cannot save {ip}, incompatible protocol version {versiongot} '
                                                      f'not in {self.config.version_allow}', )
-                                self.app_log.debug(f'Inbound: Distant peer {ip}:{port} responding: {versiongot}')
+                                self.app_log.warning(f'Inbound: Distant peer {ip}:{port} responding: {versiongot}')
                             else:
                                 s.connect((ip, int(port)))
                         finally:
@@ -179,22 +179,22 @@ class Peers:
                             except:
                                 pass
                         peers_pairs[ip] = port
-                        self.app_log.debug(f'Inbound: Peer {ip}:{port} saved to peers')
+                        self.app_log.warning(f'Inbound: Peer {ip}:{port} saved to peers')
                         self.peerlist_updated = True
                     else:
-                        self.app_log.debug('Distant peer already in peers')
+                        self.app_log.warning('Distant peer already in peers')
 
                 except Exception as e:
                     # exception for a single peer
-                    self.app_log.debug(f'Inbound: Distant peer not connectible ({e})')
+                    self.app_log.warning(f'Inbound: Distant peer not connectible ({e})')
 
             if self.peerlist_updated:
-                self.app_log.debug(f'{file} peerlist updated ({len(peers_pairs)}) total')  # the whole dict is saved
+                self.app_log.warning(f'{file} peerlist updated ({len(peers_pairs)}) total')  # the whole dict is saved
                 with open(f'{file}.tmp', 'w') as peer_file:
                     json.dump(peers_pairs, peer_file)
                 shutil.move(f'{file}.tmp', file)
             else:
-                self.app_log.debug(f'{file} peerlist update skipped, no changes')
+                self.app_log.warning(f'{file} peerlist update skipped, no changes')
 
         except Exception as e:
             # Exception for the file itself.
@@ -250,7 +250,7 @@ class Peers:
             if not os.path.exists(peer_file):
                 with open(peer_file, 'w') as fp:
                     # was "a": append would risk adding stuff to a file create in the mean time.
-                    self.app_log.warning('Peer file created')
+                    self.app_log.warning(f'Peer file created in {peer_file}')
                     fp.write('{}')  # empty dict. An empty string is not json valid.
             else:
                 with open(peer_file, 'r') as fp:

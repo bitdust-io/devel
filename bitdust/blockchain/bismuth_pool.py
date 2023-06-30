@@ -22,9 +22,9 @@ from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
 
-from bitdust_forks.Bismuth import connections
-from bitdust_forks.Bismuth import mining_heavy3
-from bitdust_forks.Bismuth import essentials
+from bitdust_forks.Bismuth import connections  # @UnresolvedImport
+from bitdust_forks.Bismuth import essentials  # @UnresolvedImport
+from bitdust_forks.Bismuth import mining_heavy3  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -169,9 +169,6 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
         if _Debug:
             lg.dbg(_DebugLevel, 'created archive DB in %r' % archive_db_path)
 
-    heavy3_path = os.path.join(data_dir_path, 'heavy3a.bin')
-    mining_heavy3.mining_open(heavy3_path)
-
     try:
         # background_thread = threading.Thread(target=paydb)
         # background_thread.daemon = True
@@ -220,9 +217,6 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
     except Exception as e:
         lg.exc()
         reactor.callFromThread(starting_defer.errback, e)  # @UndefinedVariable
-
-    finally:
-        mining_heavy3.mining_close()
 
 
 def percentage(percent, whole):
@@ -591,6 +585,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         global new_diff
         global node_ip
         global node_port
+        global _DataDirPath
 
         block_submitted = False
         share_added = False
@@ -669,7 +664,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
                     diff = new_diff
                     db_block_hash = mine_hash
 
+                    heavy3_path = os.path.join(_DataDirPath, 'heavy3a.bin')
+                    mining_heavy3.mining_open(heavy3_path)
                     real_diff = mining_heavy3.diffme_heavy3(address, nonce, db_block_hash)
+                    # mining_heavy3.mining_close()
                     """
                     mining_hash = bin_convert_orig(hashlib.sha224((address + nonce + db_block_hash).encode("utf-8")).hexdigest())
                     mining_condition = bin_convert_orig(db_block_hash)[0:diff]

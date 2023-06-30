@@ -13,6 +13,9 @@ import sys
 import traceback
 
 
+_Debug = False
+
+
 def sql_trace_callback(log, id, statement):
     line = f'SQL[{id}] {statement} in {threading.current_thread()}'
     log.warning(line)
@@ -74,7 +77,8 @@ class DbHandler:
 
         self.SQL_TO_TRANSACTIONS = 'INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
         self.SQL_TO_MISC = 'INSERT INTO misc VALUES (?,?)'
-        self.logger.app_log.warning(f'Started DbHandler with {self.h.connection} in {threading.current_thread()}')
+        if _Debug:
+            self.logger.app_log.warning(f'Started DbHandler with {self.h.connection} in {threading.current_thread()}')
 
     def last_block_hash(self):
         self.execute(self.c, 'SELECT block_hash FROM transactions WHERE reward != 0 ORDER BY block_height DESC LIMIT 1;')
@@ -407,17 +411,21 @@ class DbHandler:
 
     def commit(self, connection):
         """Secure commit for slow nodes"""
+        sleep_delay = 1
         while True:
             try:
                 connection.commit()
                 break
             except Exception as e:
                 self.logger.app_log.warning(f'Database {self.dbs.get(str(connection), "???")} connection error {e} in {threading.current_thread()}')
-                time.sleep(1)
+                self.logger.app_log.warning(f'Current threads: {threading.enumerate()}')
+                time.sleep(sleep_delay)
+                sleep_delay += 1
 
     def execute(self, cursor, query):
         """Secure execute for slow nodes"""
         self.logger.app_log.debug(f'Execute {query} in {threading.current_thread()}')
+        sleep_delay = 1
         while True:
             try:
                 cursor.execute(query)
@@ -433,11 +441,14 @@ class DbHandler:
             except Exception as e:
                 self.logger.app_log.warning(f'Database query: {cursor.connection} {query[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
-                time.sleep(1)
+                self.logger.app_log.warning(f'Current threads: {threading.enumerate()}')
+                time.sleep(sleep_delay)
+                sleep_delay += 1
 
     def execute_param(self, cursor, query, param):
         """Secure execute w/ param for slow nodes"""
         self.logger.app_log.debug(f'Execute with param {query} in {threading.current_thread()}')
+        sleep_delay = 1
         while True:
             try:
                 cursor.execute(query, param)
@@ -453,7 +464,9 @@ class DbHandler:
             except Exception as e:
                 self.logger.app_log.warning(f'Database query: {cursor.connection} {str(query)[:100]} {str(param)[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
-                time.sleep(1)
+                self.logger.app_log.warning(f'Current threads: {threading.enumerate()}')
+                time.sleep(sleep_delay)
+                sleep_delay += 1
 
     def fetchall(self, cursor, query, param=None):
         """Helper to simplify calling code, execute and fetch in a single line instead of 2"""
@@ -475,7 +488,8 @@ class DbHandler:
         return None
 
     def close(self):
-        self.logger.app_log.warning(f'Closing DbHandler with {self.h.connection} in {threading.current_thread()}')
+        if _Debug:
+            self.logger.app_log.warning(f'Closing DbHandler with {self.h.connection} in {threading.current_thread()}')
         try:
             self.index.close()
             self.hdd.close()

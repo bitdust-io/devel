@@ -97,7 +97,7 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')
-    conf_obj.setDefaultValue('services/bismuth-node/host', '0.0.0.0')
+    conf_obj.setDefaultValue('services/bismuth-node/host', '127.0.0.1')
     conf_obj.setDefaultValue('services/bismuth-node/tcp-port', 15658)
     conf_obj.setDefaultValue('services/bismuth-wallet/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-pool/enabled', 'false')

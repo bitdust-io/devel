@@ -1,6 +1,5 @@
 import os
 import time
-import shutil
 import threading
 import socks
 import sqlite3
@@ -15,20 +14,20 @@ from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
 
-from bitdust_forks.Bismuth import node as bismuth_node
-from bitdust_forks.Bismuth import connectionmanager
-from bitdust_forks.Bismuth import mempool as mp
-from bitdust_forks.Bismuth import apihandler
-from bitdust_forks.Bismuth import dbhandler
-from bitdust_forks.Bismuth import connections
-from bitdust_forks.Bismuth import options
-from bitdust_forks.Bismuth import peershandler
-from bitdust_forks.Bismuth import plugins
-from bitdust_forks.Bismuth.libs import node as _node
-from bitdust_forks.Bismuth.libs import logger
-from bitdust_forks.Bismuth.libs import keys
-from bitdust_forks.Bismuth.modules import config as modules_config
-from bitdust_forks.Bismuth.bismuthclient import rpcconnections
+from bitdust_forks.Bismuth import node as bismuth_node  # @UnresolvedImport
+from bitdust_forks.Bismuth import connectionmanager  # @UnresolvedImport
+from bitdust_forks.Bismuth import mempool as mp  # @UnresolvedImport
+from bitdust_forks.Bismuth import apihandler  # @UnresolvedImport
+from bitdust_forks.Bismuth import dbhandler  # @UnresolvedImport
+from bitdust_forks.Bismuth import connections  # @UnresolvedImport
+from bitdust_forks.Bismuth import options  # @UnresolvedImport
+from bitdust_forks.Bismuth import peershandler  # @UnresolvedImport
+from bitdust_forks.Bismuth import plugins  # @UnresolvedImport
+from bitdust_forks.Bismuth.libs import node as _node  # @UnresolvedImport
+from bitdust_forks.Bismuth.libs import logger  # @UnresolvedImport
+from bitdust_forks.Bismuth.libs import keys  # @UnresolvedImport
+from bitdust_forks.Bismuth.modules import config as modules_config  # @UnresolvedImport
+from bitdust_forks.Bismuth.bismuthclient import rpcconnections  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -151,6 +150,7 @@ def run(data_dir_path, starting_defer):
         node.logger.app_log = custom_log(level_input='CRITICAL')
     node.logger.app_log.critical(f'Python version: {node.py_version}')
 
+    node.host = config.node_ip
     node.port = config.port
     node.verify = config.verify
     node.thread_limit = config.thread_limit
@@ -177,19 +177,19 @@ def run(data_dir_path, starting_defer):
 
     # node.logger.app_log.warning('Configuration settings loaded')
 
-    if not node.full_ledger and os.path.exists(node.ledger_path) and node.is_mainnet:
-        os.remove(node.ledger_path)
-        node.logger.app_log.warning('Removed full ledger for hyperblock mode')
-    if not node.full_ledger:
-        node.logger.app_log.warning('Cloning hyperblocks to ledger file')
-        shutil.copy(node.hyper_path, node.ledger_path)
+    # if not node.full_ledger and os.path.exists(node.ledger_path) and node.is_mainnet:
+    #     os.remove(node.ledger_path)
+    #     node.logger.app_log.warning('Removed full ledger for hyperblock mode')
+    # if not node.full_ledger:
+    #     node.logger.app_log.warning('Cloning hyperblocks to ledger file')
+    #     shutil.copy(node.hyper_path, node.ledger_path)
 
     try:
         node.plugin_manager = plugins.PluginManager(app_log=node.logger.app_log, config=config, init=True)
         extra_commands = {}
         extra_commands = node.plugin_manager.execute_filter_hook('extra_commands_prefixes', extra_commands)
 
-        setup_net_type(bismuth_node.node, data_dir_path)
+        setup_net_type(bismuth_node.node, data_dir_path, node.logger.app_log)
 
         bismuth_node.load_keys(data_dir=data_dir_path, wallet_filename=os.path.join(data_dir_path, 'node_key.json'))
 
@@ -197,11 +197,11 @@ def run(data_dir_path, starting_defer):
         t_now = time.time()
 
         from bitdust_forks.Bismuth import mining_heavy3  # @UnresolvedImport
-        from bitdust_forks.Bismuth import digest  # @UnresolvedImport
+        # from bitdust_forks.Bismuth import digest  # @UnresolvedImport
 
         mining_heavy3.mining_open(node.heavy3_path)
-        digest.mining_heavy3.MMAP = mining_heavy3.MMAP
-        digest.mining_heavy3.RND_LEN = mining_heavy3.RND_LEN
+        # digest.mining_heavy3.MMAP = mining_heavy3.MMAP
+        # digest.mining_heavy3.RND_LEN = mining_heavy3.RND_LEN
         node.logger.app_log.warning(f'Heavy3 file is OK, loaded in %s seconds' % (time.time() - t_now))
 
         # node.logger.app_log.warning(f'Status: Starting node version {VERSION}')
@@ -227,6 +227,14 @@ def run(data_dir_path, starting_defer):
                 bismuth_node.ledger_check_heights(bismuth_node.node, db_handler_initial)
             except:
                 traceback.print_exc()
+
+            if node.recompress:
+                #todo: do not close database and move files, swap tables instead
+                db_handler_initial.close()
+                bismuth_node.recompress_ledger(bismuth_node.node)
+                db_handler_initial = dbhandler.DbHandler(
+                    bismuth_node.node.index_db, bismuth_node.node.ledger_path, bismuth_node.node.hyper_path, bismuth_node.node.ram, bismuth_node.node.ledger_ram_file, node.logger, trace_db_calls=bismuth_node.node.trace_db_calls
+                )
 
             bismuth_node.ram_init(db_handler_initial)
             bismuth_node.node_block_init(db_handler_initial)
@@ -298,6 +306,10 @@ def run(data_dir_path, starting_defer):
 
 def create_config_file(data_dir_path):
     config_path = os.path.join(data_dir_path, 'config')
+    node_host = main_conf.conf().getString('services/bismuth-node/host', '127.0.0.1')
+    node_port = main_conf.conf().getInt('services/bismuth-node/tcp-port', 15658)
+    if _Debug:
+        lg.args(_DebugLevel, node_host=node_host, node_port=node_port)
     config_src = '''debug=False
 port={port}
 verify=False
@@ -307,7 +319,7 @@ thread_limit=64
 rebuild_db=True
 debug_level=DEBUG
 purge=True
-pause=1
+pause=5
 hyper_path={hyper_path}
 hyper_recompress=True
 full_ledger=True
@@ -330,12 +342,12 @@ mempool_ram=False
 egress=True
 trace_db_calls={trace_db_calls}
 heavy3_path={heavy3_path}'''.format(
-        port=main_conf.conf().getInt('services/bismuth-node/tcp-port', 15658),
-        node_ip=main_conf.conf().getString('services/bismuth-node/host', '127.0.0.1'),
+        port=node_port,
+        node_ip=node_host,
         hyper_path=os.path.join(data_dir_path, 'hyper.db'),
         ledger_path=os.path.join(data_dir_path, 'ledger.db'),
         heavy3_path=os.path.join(data_dir_path, 'heavy3a.bin'),
-        light_ip='{"127.0.0.1": "15658"}',
+        light_ip='{"%s": "%d"}' % (node_host, node_port),
         trace_db_calls='True' if (_Debug and _DebugLevel >= 16) else 'False',
     )
     fout = open(config_path, 'w')
@@ -344,7 +356,7 @@ heavy3_path={heavy3_path}'''.format(
     fout.close()
 
 
-def setup_net_type(node, data_dir_path):
+def setup_net_type(node, data_dir_path, app_log):
     """
     Adjust globals depending on mainnet, testnet or regnet
     """
@@ -367,11 +379,10 @@ def setup_net_type(node, data_dir_path):
     node.ledger_ram_file = 'file:ledger?mode=memory&cache=shared'
     node.index_db = os.path.join(data_dir_path, 'index.db')
     peerfile_data = known_bismuth_nodes.nodes_by_host().copy()
-    peerfile_data['127.0.0.1'] = node.port
-    if not os.path.isfile(node.peerfile_suggested):
-        open(node.peerfile_suggested, 'w').write(json.dumps(peerfile_data))
-    if not os.path.isfile(node.peerfile):
-        open(node.peerfile, 'w').write(json.dumps({'127.0.0.1': node.port}))
+    app_log.warning(f'node host: {node.host} peerfile_data: {peerfile_data}')
+    peerfile_data.pop(node.host, None)
+    open(node.peerfile_suggested, 'w').write(json.dumps(peerfile_data))
+    open(node.peerfile, 'w').write(json.dumps({'127.0.0.1': node.port}))
 
 
 def bootstrap():

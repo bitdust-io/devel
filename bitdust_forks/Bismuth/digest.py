@@ -355,6 +355,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 if dummy:
                     raise ValueError('Skipping digestion of block {} from {}, because we already have it on block_height {}'.format(block_instance.block_hash[:10], peer_ip, dummy[0]))
 
+                mining_heavy3.mining_open(node.heavy3_path)
                 if node.is_mainnet:
                     diff_save = mining_heavy3.check_block(
                         block_instance.block_height_new,

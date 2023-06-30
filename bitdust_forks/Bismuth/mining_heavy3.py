@@ -186,6 +186,10 @@ def mining_open(file_name='heavy3a.bin'):
     global F
     global MMAP
     global RND_LEN
+    if MMAP:
+        print('Junction memory-map file already loaded')
+        return
+    print('Loading Junction memory-map file from', file_name)
     if os.path.isfile(file_name):
         size = os.path.getsize(file_name)
         if size != 1073741824:
