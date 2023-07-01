@@ -187,6 +187,7 @@ class BaseConfig(object):
         if len(data) < 2:
             return default
         if not (data[0] == data[-1] == '"'):
+            # TODO: decide if we want to have a fallback scenario here
             return default
         data = data[1:-1]
         try:
@@ -504,16 +505,12 @@ class FixedTypesConfig(NotifiableConfig):
             config_types.TYPE_TEXT,
             config_types.TYPE_UNDEFINED,
         ]:
-            self.setData(entryPath, strng.text_type(value))
+            self.setString(entryPath, strng.text_type(value))
         elif typ in [
             config_types.TYPE_BOOLEAN,
         ]:
             if strng.is_string(value):
-                vl = strng.to_text(value).strip().lower() in [
-                    'true',
-                    '1',
-                    'on',
-                ]
+                vl = strng.to_text(value).strip().lower() in ['true', '1', 'on']
             else:
                 vl = bool(value)
             self.setBool(entryPath, vl)

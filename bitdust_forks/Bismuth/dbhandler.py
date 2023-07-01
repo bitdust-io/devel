@@ -3,6 +3,7 @@ Database handler module for Bismuth nodes
 """
 
 import time
+import json
 import sqlite3
 import essentials
 import threading
@@ -77,8 +78,16 @@ class DbHandler:
 
         self.SQL_TO_TRANSACTIONS = 'INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
         self.SQL_TO_MISC = 'INSERT INTO misc VALUES (?,?)'
+
         if _Debug:
-            self.logger.app_log.warning(f'Started DbHandler with {self.h.connection} in {threading.current_thread()}')
+            try:
+                cur_connections_src = open('/tmp/db_connections', 'r').read()
+            except:
+                cur_connections_src = '{"l":[]}'
+            cur_connections = json.loads(cur_connections_src)
+            cur_connections['l'].append(threading.current_thread().name)
+            open('/tmp/db_connections', 'w').write(json.dumps(cur_connections))
+            self.logger.app_log.warning(f'DB_HANDLER OPEN in {threading.current_thread().name} and currently have {len(cur_connections["l"])} opened')
 
     def last_block_hash(self):
         self.execute(self.c, 'SELECT block_hash FROM transactions WHERE reward != 0 ORDER BY block_height DESC LIMIT 1;')
@@ -411,21 +420,21 @@ class DbHandler:
 
     def commit(self, connection):
         """Secure commit for slow nodes"""
-        sleep_delay = 1
+        sleep_delay = 0.5
         while True:
             try:
                 connection.commit()
                 break
             except Exception as e:
                 self.logger.app_log.warning(f'Database {self.dbs.get(str(connection), "???")} connection error {e} in {threading.current_thread()}')
-                self.logger.app_log.warning(f'Current threads: {threading.enumerate()}')
+                self.logger.app_log.warning(f'Current threads: {",".join(map(lambda t: t.name, threading.enumerate()))}')
                 time.sleep(sleep_delay)
-                sleep_delay += 1
+                # sleep_delay += 1
 
     def execute(self, cursor, query):
         """Secure execute for slow nodes"""
         self.logger.app_log.debug(f'Execute {query} in {threading.current_thread()}')
-        sleep_delay = 1
+        sleep_delay = 0.5
         while True:
             try:
                 cursor.execute(query)
@@ -441,14 +450,14 @@ class DbHandler:
             except Exception as e:
                 self.logger.app_log.warning(f'Database query: {cursor.connection} {query[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
-                self.logger.app_log.warning(f'Current threads: {threading.enumerate()}')
+                self.logger.app_log.warning(f'Current threads: {",".join(map(lambda t: t.name, threading.enumerate()))}')
                 time.sleep(sleep_delay)
-                sleep_delay += 1
+                # sleep_delay += 1
 
     def execute_param(self, cursor, query, param):
         """Secure execute w/ param for slow nodes"""
         self.logger.app_log.debug(f'Execute with param {query} in {threading.current_thread()}')
-        sleep_delay = 1
+        sleep_delay = 0.5
         while True:
             try:
                 cursor.execute(query, param)
@@ -464,9 +473,9 @@ class DbHandler:
             except Exception as e:
                 self.logger.app_log.warning(f'Database query: {cursor.connection} {str(query)[:100]} {str(param)[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
-                self.logger.app_log.warning(f'Current threads: {threading.enumerate()}')
+                self.logger.app_log.warning(f'Current threads: {",".join(map(lambda t: t.name, threading.enumerate()))}')
                 time.sleep(sleep_delay)
-                sleep_delay += 1
+                # sleep_delay += 1
 
     def fetchall(self, cursor, query, param=None):
         """Helper to simplify calling code, execute and fetch in a single line instead of 2"""
@@ -488,8 +497,6 @@ class DbHandler:
         return None
 
     def close(self):
-        if _Debug:
-            self.logger.app_log.warning(f'Closing DbHandler with {self.h.connection} in {threading.current_thread()}')
         try:
             self.index.close()
             self.hdd.close()
@@ -497,3 +504,16 @@ class DbHandler:
             self.conn.close()
         except:
             traceback.print_exc()
+
+        if _Debug:
+            try:
+                cur_connections_src = open('/tmp/db_connections', 'r').read()
+            except:
+                cur_connections_src = '{"l":[]}'
+            cur_connections = json.loads(cur_connections_src)
+            if threading.current_thread().name in cur_connections['l']:
+                cur_connections['l'].remove(threading.current_thread().name)
+            else:
+                self.logger.app_log.warning(f'NOT FOUND opened DB connection in {threading.current_thread().name}')
+            open('/tmp/db_connections', 'w').write(json.dumps(cur_connections))
+            self.logger.app_log.warning(f'DB_HANDLER CLOSED in {threading.current_thread().name} and currently have {len(cur_connections["l"])} opened')

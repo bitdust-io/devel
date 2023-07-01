@@ -13,8 +13,8 @@ from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
 
-from bitdust_forks.Bismuth import mining_heavy3
-from bitdust_forks.Bismuth import connections
+from bitdust_forks.Bismuth import mining_heavy3  # @UnresolvedImport
+from bitdust_forks.Bismuth import connections  # @UnresolvedImport
 
 from bitdust.logs import lg
 from bitdust.main import settings

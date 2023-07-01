@@ -3,13 +3,14 @@ import re
 import random
 import hashlib
 import threading
+import traceback
 import time
+import json
 import math
 import sqlite3
 import base64
 import socks
 import socketserver
-import json
 
 from Cryptodome.PublicKey import RSA
 from Cryptodome.Hash import SHA
@@ -67,6 +68,8 @@ key = None
 public_key_hashed = None
 private_key_readable = None
 m_peer_file = None
+
+mempool_db_path = None
 shares_db_path = None
 archive_db_path = None
 
@@ -113,6 +116,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
     global public_key_hashed
     global private_key_readable
     global m_peer_file
+    global mempool_db_path
     global shares_db_path
     global archive_db_path
 
@@ -124,7 +128,7 @@ def run(starting_defer, data_dir_path, node_address, verbose=False):
 
     m_peer_file = os.path.join(data_dir_path, 'peers.json')
 
-    # ledger_path_conf = os.path.join(data_dir_path, 'ledger.db')
+    mempool_db_path = os.path.join(data_dir_path, 'mempool.db')
     shares_db_path = os.path.join(data_dir_path, 'shares.db')
     archive_db_path = os.path.join(data_dir_path, 'archive.db')
 
@@ -223,17 +227,21 @@ def percentage(percent, whole):
     return int((percent*whole)/100)
 
 
-def checkdb():
-    shares = sqlite3.connect(shares_db_path)
-    shares.text_factory = str
-    s = shares.cursor()
-    s.execute('SELECT * FROM shares')
-    present = s.fetchall()
-
-    if not present:
-        return False
-    else:
-        return True
+def read_mempool():
+    mempool_db = sqlite3.connect(mempool_db_path)
+    try:
+        mempool_db.text_factory = str
+        mp = mempool_db.cursor()
+        mp.execute('SELECT * FROM transactions ORDER BY amount DESC')
+        present = mp.fetchall()
+    except:
+        traceback.print_exc()
+        present = None
+    try:
+        mempool_db.close()
+    except:
+        traceback.print_exc()
+    return present
 
 
 def payout(payout_threshold, myfee, othfee):
@@ -520,6 +528,10 @@ def n_test(testString):
 
 def paydb():
     global new_time
+
+    # disabled
+    return True
+
     time.sleep(30)
     while True:
         # time.sleep(3601)
@@ -554,14 +566,14 @@ def worker(s_time):
     if _Debug:
         lg.dbg(_DebugLevel, 'about to connect to node at {}:{} from {}'.format(node_ip, node_port, threading.current_thread()))
 
-    n = socks.socksocket()
-    n.connect((node_ip, int(node_port)))  # connect to local node
-
     while True:
 
         time.sleep(s_time)
 
         try:
+
+            n = socks.socksocket()
+            n.connect((node_ip, int(node_port)))  # connect to local node
 
             connections.send(n, 'blocklast', 10)
             blocklast = connections.receive(n, 10)
@@ -573,11 +585,17 @@ def worker(s_time):
             new_time = blocklast[1]
             new_diff = math.floor(diff[1])
 
+            n.close()
             # print('Pool: difficulty={} blockhash={}'.format(str(new_diff), str(new_hash)))
 
         except Exception as e:
-            lg.exc()
-    n.close()
+            traceback.print_exc()
+
+        finally:
+            try:
+                n.close()
+            except:
+                traceback.print_exc()
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
@@ -605,11 +623,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
             if data == 'getwork':  # sends the miner the blockhash and mining diff for shares
 
-                m = socks.socksocket()
-                m.connect((node_ip, int(node_port)))  # connect to local node
-                connections.send(m, 'api_mempool', 10)
-                result = connections.receive(m, 10)
-                m.close()
+                result = read_mempool()
+                # m = socks.socksocket()
+                # m.connect((node_ip, int(node_port)))  # connect to local node
+                # connections.send(m, 'api_mempool', 10)
+                # result = connections.receive(m, 10)
+                # m.close()
 
                 work_send = []
                 work_send.append((len(result), new_hash, mdiff, address, mdiff))
@@ -693,12 +712,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                         # print('Pool: Local node ip {} on port {}'.format(node_ip, node_port))
 
-                        m = socks.socksocket()
-                        m.connect((node_ip, int(node_port)))  # connect to local node
-                        connections.send(m, 'api_mempool', 10)
-                        result = connections.receive(m, 10)
+                        result = read_mempool()
+                        # m = socks.socksocket()
+                        # m.connect((node_ip, int(node_port)))  # connect to local node
+                        # connections.send(m, 'api_mempool', 10)
+                        # result = connections.receive(m, 10)
                         # print('I have got to receive mempool')
-                        m.close()
+                        # m.close()
 
                         # include data
                         block_send = []
@@ -733,11 +753,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                 # print(block_send)
 
                         peer_dict = {}
+                        # peer_dict[node_ip] = node_port
 
+                        # if True:
                         with open(m_peer_file) as f:
                             peer_dict = json.load(f)
 
-                            # if possible, only talk to local node
                             if '127.0.0.1' in peer_dict:
                                 peer_dict = {'127.0.0.1': peer_dict['127.0.0.1']}
 
@@ -764,6 +785,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                 except Exception as e:
                                     lg.exc()
                                     # print('Pool: Could not submit block to {}:{} because {}'.format(peer_ip, peer_port, e))
+                                finally:
+                                    s.close()
 
                     if diff < mdiff:
                         diff_shares = diff
@@ -772,13 +795,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                     shares = sqlite3.connect(shares_db_path)
                     shares.text_factory = str
-                    s = shares.cursor()
+                    s_cur = shares.cursor()
 
                     # protect against used share resubmission
-                    execute_param(s, ('SELECT nonce FROM nonces WHERE nonce = ?'), (nonce, ))
+                    execute_param(s_cur, ('SELECT nonce FROM nonces WHERE nonce = ?'), (nonce, ))
 
                     try:
-                        result = s.fetchone()[0]
+                        result = s_cur.fetchone()[0]
                         lg.err('Pool: Miner trying to reuse a share, ignored')
 
                     except:
@@ -795,7 +818,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                             timestamp = '%.2f' % time.time()
 
-                            s.execute('INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)', (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname))
+                            s_cur.execute('INSERT INTO shares VALUES (?,?,?,?,?,?,?,?)', (str(miner_address), str(1), timestamp, '0', str(mrate), bname, str(wnum), wname))
                             shares.commit()
                             share_added = True
 
@@ -805,7 +828,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         # else:
                         # print('Pool: Difficulty requirement not satisfied for anything')
 
-                    s.close()
+                    s_cur.close()
 
             self.request.close()
         except Exception as e:

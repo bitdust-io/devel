@@ -502,11 +502,14 @@ class Peers:
                 # it's to make a copy of the dict and avoid "dictionary changed size during iteration"
                 host = key
                 port = int(value)
+                if host == self.node.host:
+                    self.app_log.warning(f'Skip connecting to {host}:{port}')
+                    continue
 
                 if self.is_testnet:
                     port = 2829
                 if threading.active_count()/3 < self.config.thread_limit and self.can_connect_to(host, port):
-                    self.app_log.debug(f'Will attempt to connect to {host}:{port}')
+                    self.app_log.warning(f'Will attempt to connect to {host}:{port}')
                     self.add_try(host, port)
                     t = threading.Thread(target=this_target, args=(host, port, node), name=f'out_{host}_{port}')  # threaded connectivity to nodes here
                     self.app_log.debug(f'---Starting a client thread {threading.currentThread()} ---')

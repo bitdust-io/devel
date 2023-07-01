@@ -11,7 +11,7 @@ import time
 import threading
 
 # Logical timeout
-LTIMEOUT = 45
+LTIMEOUT = 15
 # Fixed header length
 SLEN = 10
 

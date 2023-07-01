@@ -1,7 +1,8 @@
 import select, json, platform
+import threading
 
 # Logical timeout
-LTIMEOUT = 45
+LTIMEOUT = 15
 # Fixed header length
 SLEN = 10
 
@@ -11,9 +12,10 @@ _Debug = False
 def send(sdef, data, slen=SLEN):
     sdef.setblocking(1)
     # Make sure the packet is sent in one call
+    j = json.dumps(data)
     if _Debug:
-        print('        connections.send', sdef.getsockname(), sdef.getpeername(), data)
-    return sdef.sendall(str(len(json.dumps(data))).encode('utf-8').zfill(slen) + json.dumps(data).encode('utf-8'))
+        print(f'  connections.send {sdef.getsockname()} {sdef.getpeername()} <{j[:12]}> in {threading.current_thread().name}')
+    return sdef.sendall(str(len(j)).encode('utf-8').zfill(slen) + j.encode('utf-8'))
 
 
 if 'Linux' in platform.system():
@@ -68,9 +70,11 @@ if 'Linux' in platform.system():
 
             poller.unregister(sdef)
             segments = b''.join(chunks).decode('utf-8')
+            ret = json.loads(segments)
             if _Debug:
-                print('        connections.receive', sdef.getsockname(), sdef.getpeername(), json.loads(segments))
-            return json.loads(segments)
+                print(f'  connections.receive {sdef.getsockname()} {sdef.getpeername()} <{segments[:10]}> in {threading.current_thread().name}')
+            return ret
+
         except Exception as e:
             if _Debug:
                 print('        connections.receive Exception:', sdef.getsockname(), sdef.getpeername(), e)

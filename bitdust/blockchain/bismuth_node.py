@@ -235,6 +235,7 @@ def run(data_dir_path, starting_defer):
                 db_handler_initial = dbhandler.DbHandler(
                     bismuth_node.node.index_db, bismuth_node.node.ledger_path, bismuth_node.node.hyper_path, bismuth_node.node.ram, bismuth_node.node.ledger_ram_file, node.logger, trace_db_calls=bismuth_node.node.trace_db_calls
                 )
+                bismuth_node.db_handler_initial = db_handler_initial
 
             bismuth_node.ram_init(db_handler_initial)
             bismuth_node.node_block_init(db_handler_initial)
@@ -248,8 +249,10 @@ def run(data_dir_path, starting_defer):
 
             bismuth_node.add_indices(db_handler_initial)
 
+            db_handler_initial.close()
+
             if not node.tor:
-                host = main_conf.conf().getString('services/bismuth-node/host', '0.0.0.0')
+                host = '0.0.0.0'
                 port = int(node.port)
 
                 bismuth_node.ThreadedTCPServer.allow_reuse_address = True
@@ -333,8 +336,8 @@ node_ip={node_ip}
 light_ip={light_ip}
 reveal_address=True
 accept_peers=True
-banlist=127.1.2.3
-whitelist=127.0.0.1
+banlist=
+whitelist=
 nodes_ban_reset=5
 terminal_output=False
 gui_scaling=adapt
@@ -383,6 +386,7 @@ def setup_net_type(node, data_dir_path, app_log):
     peerfile_data.pop(node.host, None)
     open(node.peerfile_suggested, 'w').write(json.dumps(peerfile_data))
     open(node.peerfile, 'w').write(json.dumps({'127.0.0.1': node.port}))
+    # open(node.peerfile, 'w').write(json.dumps({}))
 
 
 def bootstrap():
