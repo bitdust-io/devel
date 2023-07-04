@@ -153,7 +153,7 @@ class Peers:
                     return
                 try:
                     if ip not in peers_pairs:
-                        self.app_log.warning(f'Testing connectivity to: {ip}:{port}')
+                        self.app_log.debug(f'Testing connectivity to: {ip}:{port}')
                         s = socks.socksocket()
                         try:
                             # connect timeout
@@ -169,7 +169,7 @@ class Peers:
                                 if versiongot not in self.config.version_allow:
                                     raise ValueError(f'cannot save {ip}, incompatible protocol version {versiongot} '
                                                      f'not in {self.config.version_allow}', )
-                                self.app_log.warning(f'Inbound: Distant peer {ip}:{port} responding: {versiongot}')
+                                self.app_log.debug(f'Inbound: Distant peer {ip}:{port} responding: {versiongot}')
                             else:
                                 s.connect((ip, int(port)))
                         finally:
@@ -179,22 +179,22 @@ class Peers:
                             except:
                                 pass
                         peers_pairs[ip] = port
-                        self.app_log.warning(f'Inbound: Peer {ip}:{port} saved to peers')
+                        self.app_log.debug(f'Inbound: Peer {ip}:{port} saved to peers')
                         self.peerlist_updated = True
                     else:
-                        self.app_log.warning('Distant peer already in peers')
+                        self.app_log.debug('Distant peer already in peers')
 
                 except Exception as e:
                     # exception for a single peer
-                    self.app_log.warning(f'Inbound: Distant peer not connectible ({e})')
+                    self.app_log.debug(f'Inbound: Distant peer not connectible ({e})')
 
             if self.peerlist_updated:
-                self.app_log.warning(f'{file} peerlist updated ({len(peers_pairs)}) total')  # the whole dict is saved
+                self.app_log.debug(f'{file} peerlist updated ({len(peers_pairs)}) total')  # the whole dict is saved
                 with open(f'{file}.tmp', 'w') as peer_file:
                     json.dump(peers_pairs, peer_file)
                 shutil.move(f'{file}.tmp', file)
             else:
-                self.app_log.warning(f'{file} peerlist update skipped, no changes')
+                self.app_log.debug(f'{file} peerlist update skipped, no changes')
 
         except Exception as e:
             # Exception for the file itself.
@@ -503,13 +503,13 @@ class Peers:
                 host = key
                 port = int(value)
                 if host == self.node.host:
-                    self.app_log.warning(f'Skip connecting to {host}:{port}')
+                    self.app_log.debug(f'Skip connecting to {host}:{port}')
                     continue
 
                 if self.is_testnet:
                     port = 2829
                 if threading.active_count()/3 < self.config.thread_limit and self.can_connect_to(host, port):
-                    self.app_log.warning(f'Will attempt to connect to {host}:{port}')
+                    self.app_log.debug(f'Will attempt to connect to {host}:{port}')
                     self.add_try(host, port)
                     t = threading.Thread(target=this_target, args=(host, port, node), name=f'out_{host}_{port}')  # threaded connectivity to nodes here
                     self.app_log.debug(f'---Starting a client thread {threading.currentThread()} ---')
@@ -518,7 +518,7 @@ class Peers:
 
             if len(self.peer_dict) < 6 and int(time() - self.startup_time) > 30:
                 # join in random peers after x seconds
-                self.app_log.warning('Not enough peers in consensus, joining in peers suggested by other nodes')
+                self.app_log.debug('Not enough peers in consensus, joining in peers suggested by other nodes')
                 self.peer_dict.update(self.peers_get(self.suggested_peerfile))
 
             if len(self.connection_pool) < self.config.nodes_ban_reset and int(time() - self.startup_time) > 15:

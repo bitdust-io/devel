@@ -695,7 +695,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
         threading.current_thread().name = f'in_{peer_ip}_{peer_port}'
 
-        node.logger.app_log.warning(f'Incoming connection: {self.request}')
+        node.logger.app_log.debug(f'Incoming connection: {self.request}')
 
         # db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, node.logger, trace_db_calls=node.trace_db_calls)
 
@@ -751,7 +751,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                 data = receive(self.request)
 
-                node.logger.app_log.warning(f'Inbound: Received: {data} from {peer_ip}_{peer_port}')  # will add custom ports later
+                node.logger.app_log.debug(f'Inbound: Received: {data} from {peer_ip}_{peer_port}')  # will add custom ports later
 
                 # threading.current_thread().name = f'in_{peer_ip}_{peer_port}_{data[:20]}'
 
@@ -1186,11 +1186,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if node.peers.is_allowed(peer_ip, data):
                         balance_address = receive(self.request)  # for which address
 
-                        node.logger.app_log.warning(f'BALANCEGET START from {peer_ip}_{peer_port}')
                         db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, node.logger, trace_db_calls=node.trace_db_calls)
                         balanceget_result = balanceget(balance_address, db_handler_instance)
                         db_handler_instance.close()
-                        node.logger.app_log.warning(f'BALANCEGET END from {peer_ip}_{peer_port}')
 
                         send(self.request, balanceget_result)  # return balance of the address to the client, including mempool
                         # send(self.request, balance_pre)  # return balance of the address to the client, no mempool
