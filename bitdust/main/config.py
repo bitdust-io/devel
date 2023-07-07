@@ -179,16 +179,15 @@ class BaseConfig(object):
     def setBool(self, entryPath, value):
         return self._set(entryPath, 'true' if value else 'false')
 
-    def getString(self, entryPath, default=None):
+    def getString(self, entryPath, default=''):
         data = self.getData(entryPath)
         if data is None:
             return default
         data = str(data).strip()
         if len(data) < 2:
             return default
-        if not (data[0] == data[-1] == '"'):
-            return default
-        data = data[1:-1]
+        if data[0] == data[-1] == '"':
+            data = data[1:-1]
         try:
             out = []
             i = 0
@@ -459,7 +458,7 @@ class FixedTypesConfig(NotifiableConfig):
             config_types.TYPE_TEXT,
             config_types.TYPE_UNDEFINED,
         ]:
-            value = self.getData(entryPath)
+            value = self.getString(entryPath)
         elif typ in [
             config_types.TYPE_BOOLEAN,
         ]:
@@ -504,16 +503,12 @@ class FixedTypesConfig(NotifiableConfig):
             config_types.TYPE_TEXT,
             config_types.TYPE_UNDEFINED,
         ]:
-            self.setData(entryPath, strng.text_type(value))
+            self.setString(entryPath, strng.text_type(value))
         elif typ in [
             config_types.TYPE_BOOLEAN,
         ]:
             if strng.is_string(value):
-                vl = strng.to_text(value).strip().lower() in [
-                    'true',
-                    '1',
-                    'on',
-                ]
+                vl = strng.to_text(value).strip().lower() in ['true', '1', 'on']
             else:
                 vl = bool(value)
             self.setBool(entryPath, vl)

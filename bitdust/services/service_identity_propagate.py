@@ -57,7 +57,7 @@ class IdentityPropagateService(LocalService):
     def network_configuration(self):
         import re
         from bitdust.main import config
-        known_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
+        known_identity_servers_str = str(config.conf().getString('services/identity-propagate/known-servers'))
         known_identity_servers = []
         for id_server_str in re.split('\n|;|,| ', known_identity_servers_str):
             if id_server_str.strip():

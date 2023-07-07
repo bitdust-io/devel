@@ -30,6 +30,10 @@ For temp. code compatibility, dup code moved to polysign module
 """
 
 
+DUST_FEE = 0.00001
+OPENFIELD_SIZE = 100000
+
+
 def address_validate(address: str) -> bool:
     return SignerFactory.address_is_valid(address)
 
@@ -291,9 +295,8 @@ def keys_load_new(keyfile='wallet.der'):
 
 
 def fee_calculate(openfield: str, operation: str = '', block: int = 0) -> Decimal:
-    return quantize_eight(Decimal('0.00'))
     # block var will be removed after HF
-    fee = Decimal('0.01') + (Decimal(len(openfield))/Decimal('100000'))  # 0.01 dust
+    fee = Decimal('{}'.format(DUST_FEE)) + (Decimal(len(openfield))/Decimal('{}'.format(OPENFIELD_SIZE)))  # dust + openfield cost
     if operation == 'token:issue':
         fee = Decimal(fee) + Decimal('10')
     if openfield.startswith('alias='):

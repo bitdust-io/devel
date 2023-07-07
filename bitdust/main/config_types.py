@@ -90,7 +90,7 @@ def defaults():
         'paths/messages': TYPE_FOLDER_PATH,
         'paths/receipts': TYPE_FOLDER_PATH,
         'paths/restore': TYPE_FOLDER_PATH,
-        'personal/private-key-size': TYPE_STRING,
+        'personal/private-key-size': TYPE_POSITIVE_INTEGER,
         'services/accountant/enabled': TYPE_BOOLEAN,
         'services/backup-db/enabled': TYPE_BOOLEAN,
         'services/backups/block-size': TYPE_DISK_SPACE,

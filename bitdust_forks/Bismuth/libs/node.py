@@ -42,6 +42,7 @@ class Node:
 
         self.version = None
         self.debug_level = None
+        self.host = None
         self.port = None
         self.verify = None
         self.thread_limit = None
@@ -75,4 +76,4 @@ class Node:
 
         self.FOUNDATION_MINERS = []
         self.FOUNDATION_MINER_REWARD = 100000.0
-        self.REGULAR_MINER_REWARD = 0.0
+        self.REGULAR_MINER_REWARD = 0.0000001

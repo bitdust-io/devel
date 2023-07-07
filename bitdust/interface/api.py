@@ -1110,7 +1110,7 @@ def configs_list(sort=False, include_info=False):
     if _Debug:
         lg.out(_DebugLevel, 'api.configs_list')
     r = config.conf().cache()
-    r = [config.conf().toJson(key, include_info=include_info) for key in list(r.keys())]
+    r = [config.conf().toJson(key, include_info=include_info) for key in list(r.keys()) if config.conf().getType(key)]
     if sort:
         r = sorted(r, key=lambda i: i['key'])
     return RESULT(r)
@@ -5883,6 +5883,10 @@ def blockchain_transaction_send(recipient, amount, operation='', data=''):
     """
     if not driver.is_on('service_bismuth_wallet'):
         return ERROR('service_bismuth_wallet() is not started')
+    try:
+        amount = float(amount)
+    except:
+        return ERROR(errors=['amount must be a number'])
     from bitdust.blockchain import bismuth_wallet
     result = bismuth_wallet.send_transaction(recipient, amount, operation, data)
     if result and not isinstance(result, list):
@@ -5912,6 +5916,29 @@ def blockchain_block_produce():
     bismuth_miner._WantMoreCoins = True
     bismuth_miner._MiningIsOn = False
     return OK()
+
+
+#------------------------------------------------------------------------------
+
+
+def billing_info():
+    return ERROR('method is not implemented yet')
+
+
+def billing_offers_list():
+    return ERROR('method is not implemented yet')
+
+
+def billing_offer_create():
+    return ERROR('method is not implemented yet')
+
+
+def billing_bid_create():
+    return ERROR('method is not implemented yet')
+
+
+def billing_bid_accept():
+    return ERROR('method is not implemented yet')
 
 
 #------------------------------------------------------------------------------

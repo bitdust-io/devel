@@ -46,7 +46,7 @@ def is_in_ledger(txid):
     """
 	If txid is in ledger, sends back details of the tx and number of confirmations
 	"""
-    ledger = sqlite3.connect(ledger_path)
+    ledger = sqlite3.connect(ledger_path, timeout=1)
     ledger.text_factory = str
     m = ledger.cursor()
     m.execute('SELECT timestamp, address, recipient, amount, openfield, block_height FROM transactions WHERE signature like ?;', (txid + '%', ))

@@ -3,6 +3,7 @@ Database handler module for Bismuth nodes
 """
 
 import time
+import json
 import sqlite3
 import essentials
 import threading
@@ -10,10 +11,14 @@ from quantizer import quantize_two
 import functools
 from fork import Fork
 import sys
+import traceback
+
+
+_Debug = False
 
 
 def sql_trace_callback(log, id, statement):
-    line = f'SQL[{id}] {statement}'
+    line = f'SQL[{id}] {statement} in {threading.current_thread()}'
     log.warning(line)
 
 
@@ -28,6 +33,11 @@ class DbHandler:
         self.ledger_path = ledger_path
 
         self.dbs = {}
+
+        sqlite3.threadsafety = 3
+
+        # if trace_db_calls:
+        #     sqlite3.enable_callback_tracebacks(True)
 
         self.index = sqlite3.connect(self.index_db, timeout=1)
         if self.trace_db_calls:
@@ -68,6 +78,16 @@ class DbHandler:
 
         self.SQL_TO_TRANSACTIONS = 'INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
         self.SQL_TO_MISC = 'INSERT INTO misc VALUES (?,?)'
+
+        if _Debug:
+            try:
+                cur_connections_src = open('/tmp/db_connections', 'r').read()
+            except:
+                cur_connections_src = '{"l":[]}'
+            cur_connections = json.loads(cur_connections_src)
+            cur_connections['l'].append(threading.current_thread().name)
+            open('/tmp/db_connections', 'w').write(json.dumps(cur_connections))
+            self.logger.app_log.warning(f'DB_HANDLER OPEN in {threading.current_thread().name} and currently have {len(cur_connections["l"])} opened')
 
     def last_block_hash(self):
         self.execute(self.c, 'SELECT block_hash FROM transactions WHERE reward != 0 ORDER BY block_height DESC LIMIT 1;')
@@ -121,6 +141,36 @@ class DbHandler:
             result = self.h.fetchone()[0]
         except:
             result = 'No announcement'
+        return result
+
+    def txsearch(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
+        if not address and not recipient and not operation and not openfield:
+            return []
+        queries = []
+        params = []
+        if address:
+            queries.append('address = ?')
+            params.append(address)
+        if recipient:
+            queries.append('recipient = ?')
+            params.append(recipient)
+        if operation:
+            queries.append('operation = ?')
+            params.append(operation)
+        if openfield:
+            queries.append('openfield = ?')
+            params.append(openfield)
+        params.append(offset)
+        params.append(limit)
+        sql = 'SELECT * FROM transactions WHERE '
+        sql += ' AND '.join(queries)
+        sql += ' LIMIT ?, ?;'
+        try:
+            self.execute_param(self.h, sql, tuple(params))
+            result = self.h.fetchall()
+        except:
+            traceback.print_exc()
+            return []
         return result
 
     def block_max_ram(self):
@@ -370,17 +420,21 @@ class DbHandler:
 
     def commit(self, connection):
         """Secure commit for slow nodes"""
+        sleep_delay = 0.5
         while True:
             try:
                 connection.commit()
                 break
             except Exception as e:
                 self.logger.app_log.warning(f'Database {self.dbs.get(str(connection), "???")} connection error {e} in {threading.current_thread()}')
-                time.sleep(1)
+                self.logger.app_log.warning(f'Current threads: {",".join(map(lambda t: t.name, threading.enumerate()))}')
+                time.sleep(sleep_delay)
+                # sleep_delay += 1
 
     def execute(self, cursor, query):
         """Secure execute for slow nodes"""
         self.logger.app_log.debug(f'Execute {query} in {threading.current_thread()}')
+        sleep_delay = 0.5
         while True:
             try:
                 cursor.execute(query)
@@ -394,13 +448,16 @@ class DbHandler:
                 self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except Exception as e:
-                self.logger.app_log.warning(f'Database query: {cursor} {query[:100]}')
+                self.logger.app_log.warning(f'Database query: {cursor.connection} {query[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
-                time.sleep(1)
+                self.logger.app_log.warning(f'Current threads: {",".join(map(lambda t: t.name, threading.enumerate()))}')
+                time.sleep(sleep_delay)
+                # sleep_delay += 1
 
     def execute_param(self, cursor, query, param):
         """Secure execute w/ param for slow nodes"""
         self.logger.app_log.debug(f'Execute with param {query} in {threading.current_thread()}')
+        sleep_delay = 0.5
         while True:
             try:
                 cursor.execute(query, param)
@@ -414,9 +471,11 @@ class DbHandler:
                 self.logger.app_log.warning(f'Database abortion reason: {e} in {threading.current_thread()}')
                 break
             except Exception as e:
-                self.logger.app_log.warning(f'Database query: {cursor} {str(query)[:100]} {str(param)[:100]}')
+                self.logger.app_log.warning(f'Database query: {cursor.connection} {str(query)[:100]} {str(param)[:100]}')
                 self.logger.app_log.warning(f'Database retry reason: {e} in {threading.current_thread()}')
-                time.sleep(1)
+                self.logger.app_log.warning(f'Current threads: {",".join(map(lambda t: t.name, threading.enumerate()))}')
+                time.sleep(sleep_delay)
+                # sleep_delay += 1
 
     def fetchall(self, cursor, query, param=None):
         """Helper to simplify calling code, execute and fetch in a single line instead of 2"""
@@ -438,7 +497,23 @@ class DbHandler:
         return None
 
     def close(self):
-        self.index.close()
-        self.hdd.close()
-        self.hdd2.close()
-        self.conn.close()
+        try:
+            self.index.close()
+            self.hdd.close()
+            self.hdd2.close()
+            self.conn.close()
+        except:
+            traceback.print_exc()
+
+        if _Debug:
+            try:
+                cur_connections_src = open('/tmp/db_connections', 'r').read()
+            except:
+                cur_connections_src = '{"l":[]}'
+            cur_connections = json.loads(cur_connections_src)
+            if threading.current_thread().name in cur_connections['l']:
+                cur_connections['l'].remove(threading.current_thread().name)
+            else:
+                self.logger.app_log.warning(f'NOT FOUND opened DB connection in {threading.current_thread().name}')
+            open('/tmp/db_connections', 'w').write(json.dumps(cur_connections))
+            self.logger.app_log.warning(f'DB_HANDLER CLOSED in {threading.current_thread().name} and currently have {len(cur_connections["l"])} opened')

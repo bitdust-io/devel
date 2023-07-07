@@ -52,7 +52,7 @@ class EntangledDHTService(LocalService):
         import re
         from bitdust.main import config
         from bitdust_forks.entangled.kademlia import constants  # @UnresolvedImport
-        known_dht_nodes_str = config.conf().getData('services/entangled-dht/known-nodes').strip()
+        known_dht_nodes_str = config.conf().getString('services/entangled-dht/known-nodes').strip()
         known_dht_nodes = []
         if known_dht_nodes_str:
             for dht_node_str in re.split('\n|;|,| ', known_dht_nodes_str):
@@ -146,7 +146,7 @@ class EntangledDHTService(LocalService):
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
         known_seeds = known_nodes.nodes()
         dl = []
-        attached_layers = conf().getData('services/entangled-dht/attached-layers', default='')
+        attached_layers = conf().getString('services/entangled-dht/attached-layers', default='')
         if attached_layers:
             attached_layers = list(filter(None, map(lambda v: int(str(v).strip()), attached_layers.split(','))))
         else:

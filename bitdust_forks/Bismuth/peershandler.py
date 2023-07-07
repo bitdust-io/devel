@@ -250,7 +250,7 @@ class Peers:
             if not os.path.exists(peer_file):
                 with open(peer_file, 'w') as fp:
                     # was "a": append would risk adding stuff to a file create in the mean time.
-                    self.app_log.warning('Peer file created')
+                    self.app_log.warning(f'Peer file created in {peer_file}')
                     fp.write('{}')  # empty dict. An empty string is not json valid.
             else:
                 with open(peer_file, 'r') as fp:
@@ -502,6 +502,9 @@ class Peers:
                 # it's to make a copy of the dict and avoid "dictionary changed size during iteration"
                 host = key
                 port = int(value)
+                if host == self.node.host:
+                    self.app_log.debug(f'Skip connecting to {host}:{port}')
+                    continue
 
                 if self.is_testnet:
                     port = 2829
@@ -515,7 +518,7 @@ class Peers:
 
             if len(self.peer_dict) < 6 and int(time() - self.startup_time) > 30:
                 # join in random peers after x seconds
-                self.app_log.warning('Not enough peers in consensus, joining in peers suggested by other nodes')
+                self.app_log.debug('Not enough peers in consensus, joining in peers suggested by other nodes')
                 self.peer_dict.update(self.peers_get(self.suggested_peerfile))
 
             if len(self.connection_pool) < self.config.nodes_ban_reset and int(time() - self.startup_time) > 15:

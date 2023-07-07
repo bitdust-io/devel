@@ -13,8 +13,8 @@ from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
 
-from bitdust_forks.Bismuth import mining_heavy3
-from bitdust_forks.Bismuth import connections
+from bitdust_forks.Bismuth import mining_heavy3  # @UnresolvedImport
+from bitdust_forks.Bismuth import connections  # @UnresolvedImport
 
 from bitdust.logs import lg
 from bitdust.main import settings
@@ -103,7 +103,9 @@ def check_start_mining():
         traceback.print_exc()
         cur_balance = 'N/A'
 
-    lg.info('my balance is: %s' % cur_balance)
+    lg.info('my wallet address is %s and current balance is %s' % (bismuth_wallet.my_wallet_address(), cur_balance))
+    if _Debug:
+        lg.args(_DebugLevel, MiningIsOn=_MiningIsOn, WantMoreCoins=_WantMoreCoins, OwnCoinsLastTime=_OwnCoinsLastTime)
 
     if cur_balance == 'N/A':
         reactor.callLater(10, check_start_mining)  # @UndefinedVariable
@@ -132,8 +134,8 @@ def run(needed_coins):
     if not _MiningPoolPort or not _MiningPoolHost:
         _MiningPoolHost, _MiningPoolPort = get_random_mining_pool_host_port()
 
-    # if _Debug:
-    #     lg.args(_DebugLevel, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)
+    if _Debug:
+        lg.args(_DebugLevel, needed_coins=needed_coins, mining_pool_host=_MiningPoolHost, mining_pool_port=_MiningPoolPort)
     _MiningIsOn = True
 
     miner_th = threading.Thread(target=miner_thread, args=(

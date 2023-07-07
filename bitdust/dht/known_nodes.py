@@ -91,7 +91,7 @@ def nodes():
     from bitdust.lib import strng
 
     try:
-        overridden_dht_nodes_str = str(config.conf().getData('services/entangled-dht/known-nodes'))
+        overridden_dht_nodes_str = str(config.conf().getString('services/entangled-dht/known-nodes'))
     except:
         overridden_dht_nodes_str = ''
 

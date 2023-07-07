@@ -2,6 +2,8 @@ import os
 import sys
 import time
 import hashlib
+import threading
+
 from decimal import Decimal
 
 import essentials
@@ -320,8 +322,14 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
 
                 if len(block) == 1:
                     if miner_tx.miner_address not in node.FOUNDATION_MINERS:
-                        # only allow foundation miners to mine empty blocks
-                        raise ValueError('Only foundation miners are allowed to mine empty blocks')
+                        transaction = block[0]
+                        received_operation = str(transaction[6])[:30]
+                        received_amount = float(transaction[3])
+                        if received_operation.startswith('identity') and received_amount == 0:
+                            pass
+                        else:
+                            # only allow foundation miners to mine empty blocks
+                            raise ValueError('Only foundation miners are allowed to mine empty blocks')
 
                 check_signature(block)
 
@@ -349,6 +357,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 if dummy:
                     raise ValueError('Skipping digestion of block {} from {}, because we already have it on block_height {}'.format(block_instance.block_hash[:10], peer_ip, dummy[0]))
 
+                mining_heavy3.mining_open(node.heavy3_path)
                 if node.is_mainnet:
                     diff_save = mining_heavy3.check_block(
                         block_instance.block_height_new,
@@ -474,6 +483,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
             print(exc_type, fname, exc_tb.tb_lineno)
             raise
 
+    #--- digest start
     # TODO: no def in def, unreadable. we are 10 screens down the prototype of that function.
     # digestion begins here
     if node.peers.is_banned(peer_ip):
@@ -488,7 +498,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
     if not node.db_lock.locked():
 
         node.db_lock.acquire()
-        node.logger.app_log.warning(f'Database lock acquired')
+        node.logger.app_log.warning(f'Database lock acquired in {threading.current_thread().name}')
 
         while mp.MEMPOOL.lock.locked():
             time.sleep(0.1)
@@ -533,7 +543,7 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
             db_handler.db_to_drive(node)
 
             node.db_lock.release()
-            node.logger.app_log.warning(f'Database lock released')
+            node.logger.app_log.warning(f'Database lock released in {threading.current_thread().name}')
 
             delta_t = time.time() - float(block_instance.start_time_block)
             # node.logger.app_log.warning("Block: {}: {} digestion completed in {}s."
@@ -543,3 +553,4 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
     else:
         node.logger.app_log.warning(f'Chain: Skipping processing from {peer_ip}, someone delivered data faster')
         node.plugin_manager.execute_action_hook('digestblock', {'failed': 'skipped', 'ip': peer_ip})
+    #--- digest end
