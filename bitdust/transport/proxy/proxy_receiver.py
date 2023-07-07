@@ -827,7 +827,7 @@ class ProxyReceiver(automat.Automat):
 
     def _find_random_node(self, attempts):
         preferred_routers = []
-        preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
+        preferred_routers_raw = config.conf().getString('services/proxy-transport/preferred-routers').strip()
         if preferred_routers_raw:
             preferred_routers_list = re.split('\n|,|;| ', preferred_routers_raw)
             preferred_routers.extend(preferred_routers_list)

@@ -78,7 +78,7 @@ def by_host():
         return _KnownServers
 
     try:
-        overridden_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
+        overridden_identity_servers_str = str(config.conf().getString('services/identity-propagate/known-servers'))
     except:
         overridden_identity_servers_str = ''
 

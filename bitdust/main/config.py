@@ -460,7 +460,7 @@ class FixedTypesConfig(NotifiableConfig):
             config_types.TYPE_TEXT,
             config_types.TYPE_UNDEFINED,
         ]:
-            value = self.getData(entryPath)
+            value = self.getString(entryPath)
         elif typ in [
             config_types.TYPE_BOOLEAN,
         ]:

@@ -366,7 +366,7 @@ class IdRegistrator(automat.Automat):
             self.known_servers = known_servers.by_host()
         if not self.preferred_servers:
             try:
-                for srv in strng.to_text(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
+                for srv in strng.to_text(config.conf().getString('services/identity-propagate/preferred-servers')).split(','):
                     if srv.strip():
                         self.preferred_servers.append(srv.strip())
             except:

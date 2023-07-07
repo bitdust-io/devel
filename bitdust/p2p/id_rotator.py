@@ -246,7 +246,7 @@ class IdRotator(automat.Automat):
         self.rotated = False
         if not self.preferred_servers:
             try:
-                for srv in strng.to_text(config.conf().getData('services/identity-propagate/known-servers')).split(','):
+                for srv in strng.to_text(config.conf().getString('services/identity-propagate/known-servers')).split(','):
                     if srv.strip():
                         parts = srv.strip().split(':')
                         if len(parts) == 2:

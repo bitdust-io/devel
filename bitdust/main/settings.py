@@ -1386,11 +1386,11 @@ def enableFTPServer(enable=None):
 
 
 def getIdServerHost():
-    return config.conf().getData('services/identity-server/host').strip()
+    return config.conf().getString('services/identity-server/host').strip()
 
 
 def setIdServerHost(hostname_or_ip):
-    return config.conf().setData('services/identity-server/host', hostname_or_ip)
+    return config.conf().setString('services/identity-server/host', hostname_or_ip)
 
 
 def getIdServerWebPort():

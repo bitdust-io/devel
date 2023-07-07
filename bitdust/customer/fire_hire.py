@@ -645,7 +645,7 @@ class FireHire(automat.Automat):
             self.automat('search-failed')
             return
         from bitdust.customer import supplier_finder
-        for idurl_txt in strng.to_text(config.conf().getData('services/employer/candidates')).split(','):
+        for idurl_txt in strng.to_text(config.conf().getString('services/employer/candidates')).split(','):
             if idurl_txt.strip():
                 supplier_finder.AddSupplierToHire(idurl_txt)
         self.hire_list.append(position_for_new_supplier)
