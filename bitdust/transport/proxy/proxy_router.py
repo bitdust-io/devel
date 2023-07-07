@@ -1300,7 +1300,7 @@ class ProxyRouter(automat.Automat):
 
     def _load_routes(self):
         # TODO: move services/proxy-server/current-routes out from settings into a separate file
-        src = config.conf().getData('services/proxy-server/current-routes')
+        src = config.conf().getString('services/proxy-server/current-routes')
         if src is None:
             lg.warn('setting [services/proxy-server/current-routes] not exist')
             return
@@ -1323,13 +1323,13 @@ class ProxyRouter(automat.Automat):
 
     def _clear_routes(self):
         # TODO: move services/proxy-server/current-routes out from settings into a separate file
-        config.conf().setData('services/proxy-server/current-routes', '{}')
+        config.conf().setString('services/proxy-server/current-routes', '{}')
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._clear_routes')
 
     def _write_route(self, user_idurl):
         # TODO: move services/proxy-server/current-routes out from settings into a separate file
-        src = config.conf().getData('services/proxy-server/current-routes')
+        src = config.conf().getString('services/proxy-server/current-routes')
         try:
             dct = serialization.BytesToDict(strng.to_bin(src), keys_to_text=True, values_to_text=True)
         except:
@@ -1337,13 +1337,13 @@ class ProxyRouter(automat.Automat):
         user_idurl_txt = strng.to_text(id_url.field(user_idurl).original())
         dct[user_idurl_txt] = self.routes[id_url.field(user_idurl).original()]
         newsrc = strng.to_text(serialization.DictToBytes(dct, keys_to_text=True, values_to_text=True))
-        config.conf().setData('services/proxy-server/current-routes', newsrc)
+        config.conf().setString('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc))
 
     def _remove_route(self, user_idurl):
         # TODO: move services/proxy-server/current-routes out from settings into a separate file
-        src = config.conf().getData('services/proxy-server/current-routes')
+        src = config.conf().getString('services/proxy-server/current-routes')
         try:
             dct = serialization.BytesToDict(strng.to_bin(src), keys_to_text=True, values_to_text=True)
         except:
@@ -1352,7 +1352,7 @@ class ProxyRouter(automat.Automat):
         if user_idurl_txt in dct:
             dct.pop(user_idurl_txt)
             newsrc = strng.to_text(serialization.DictToBytes(dct, keys_to_text=True, values_to_text=True))
-            config.conf().setData('services/proxy-server/current-routes', newsrc)
+            config.conf().setString('services/proxy-server/current-routes', newsrc)
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc))
 

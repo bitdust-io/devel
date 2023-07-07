@@ -925,7 +925,7 @@ class GroupMember(automat.Automat):
         if self.dead_broker_id:
             exclude_brokers.add(id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False)))
         preferred_brokers = []
-        preferred_brokers_raw = config.conf().getData('services/private-groups/preferred-brokers').strip()
+        preferred_brokers_raw = config.conf().getString('services/private-groups/preferred-brokers').strip()
         if preferred_brokers_raw:
             preferred_brokers_list = re.split('\n|,|;| ', preferred_brokers_raw)
             preferred_brokers.extend(preferred_brokers_list)

@@ -507,7 +507,7 @@ class BrokerNegotiator(automat.Automat):
         exclude_brokers = list(id_url.to_bin_list(filter(None, self.dht_brokers.values())))
         exclude_brokers.extend(list(id_url.to_bin_list(filter(None, self.requestor_known_brokers.values()))))
         preferred_brokers = []
-        preferred_brokers_raw = config.conf().getData('services/message-broker/preferred-brokers').strip()
+        preferred_brokers_raw = config.conf().getString('services/message-broker/preferred-brokers').strip()
         if preferred_brokers_raw:
             preferred_brokers_list = re.split('\n|,|;| ', preferred_brokers_raw)
             preferred_brokers.extend(preferred_brokers_list)
