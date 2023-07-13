@@ -574,5 +574,7 @@ class BismuthClient():
         if not self._connection:
             raise Exception('Connection to Bismuth node was not opened')
         ret = self._connection.command(command, options)
+        if self.verbose:
+            print('Client: command=%s ret=%r options=%r' % (command, ret, options))
         self._connection.close()
         return ret

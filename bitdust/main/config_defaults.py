@@ -95,6 +95,8 @@ def reset(conf_obj):
     # conf_obj.setDefaultValue('services/blockchain/wallet/port', 9280)
     # conf_obj.setDefaultValue('services/blockchain/miner/enabled', 'false')
 
+    conf_obj.setDefaultValue('services/blockchain-id/enabled', 'true')
+
     conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-node/host', '127.0.0.1')

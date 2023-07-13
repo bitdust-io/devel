@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_bismuth_wallet.py
+# service_blockchain_id.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_bismuth_wallet.py) is part of BitDust Software.
+# This file (service_blockchain_id.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_bismuth_wallet
+module:: service_blockchain_id
 """
 
 from __future__ import absolute_import
@@ -34,27 +34,34 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return BismuthWalletService()
+    return BlockchainIDService()
 
 
-class BismuthWalletService(LocalService):
+class BlockchainIDService(LocalService):
 
-    service_name = 'service_bismuth_wallet'
-    config_path = 'services/bismuth-wallet/enabled'
+    service_name = 'service_blockchain_id'
+    config_path = 'services/blockchain-id/enabled'
 
     def dependent_on(self):
         return [
-            'service_bismuth_blockchain',
+            'service_bismuth_wallet',
+            'service_identity_propagate',
+            'service_entangled_dht',
         ]
 
     def installed(self):
         return True
 
     def start(self):
-        from bitdust.blockchain import bismuth_wallet
-        return bismuth_wallet.init()
+        from twisted.internet.defer import Deferred
+        from bitdust.logs import lg
+        from bitdust.blockchain import bismuth_identity
+        self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        bismuth_identity.A('start', result_defer=self.starting_deferred)
+        return self.starting_deferred
 
     def stop(self):
-        from bitdust.blockchain import bismuth_wallet
-        bismuth_wallet.shutdown()
+        from bitdust.blockchain import bismuth_identity
+        bismuth_identity.A('shutdown')
         return True
