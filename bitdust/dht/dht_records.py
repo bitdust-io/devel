@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -425,37 +425,55 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
 
 
 def get_bismuth_identity_request(position, use_cache=False):
+    time_shift = int(utime.get_sec1970()/(60*60))
+    dht_key = dht_service.make_key(
+        key=time_shift,
+        index=position,
+        prefix='blockchain_identity',
+    )
     ret = dht_service.get_valid_data(
-        key=dht_service.make_key(
-            key='request',
-            index=position,
-            prefix='blockchain_identity',
-        ),
+        key=dht_key,
         rules=get_rules('bismuth_identity_request'),
         use_cache_ttl=RELATION_RECORD_CACHE_TTL['bismuth_identity_request'] if use_cache else None,
     )
     if _Debug:
-        lg.args(_DebugLevel, position=position, ret=ret)
+        lg.args(_DebugLevel, dht_key=dht_key, ret=ret)
     return ret
 
 
-def set_bismuth_identity_request(position, idurl, public_key):
+def set_bismuth_identity_request(position, idurl, public_key, wallet_address):
     json_data = {
         'type': 'bismuth_identity_request',
         'timestamp': utime.get_sec1970(),
         'idurl': idurl.to_bin(),
         'public_key': public_key,
+        'wallet_address': wallet_address,
         'position': position,
     }
+    time_shift = int(utime.get_sec1970()/(60*60))
+    dht_key = dht_service.make_key(
+        key=time_shift,
+        index=position,
+        prefix='blockchain_identity',
+    )
     ret = dht_service.set_valid_data(
-        key=dht_service.make_key(
-            key='request',
-            index=position,
-            prefix='blockchain_identity',
-        ),
+        key=dht_key,
         json_data=json_data,
         rules=get_rules('bismuth_identity_request'),
     )
     if _Debug:
-        lg.args(_DebugLevel, pos=position, idurl=idurl)
+        lg.args(_DebugLevel, dht_key=dht_key, idurl=idurl, wallet_address=wallet_address, ret=ret)
+    return ret
+
+
+def erase_bismuth_identity_request(position):
+    time_shift = int(utime.get_sec1970()/(60*60))
+    dht_key = dht_service.make_key(
+        key=time_shift,
+        index=position,
+        prefix='blockchain_identity',
+    )
+    ret = dht_service.delete_key(key=dht_key)
+    if _Debug:
+        lg.args(_DebugLevel, dht_key=dht_key, ret=ret)
     return ret

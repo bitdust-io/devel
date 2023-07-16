@@ -96,6 +96,10 @@ def reset(conf_obj):
     # conf_obj.setDefaultValue('services/blockchain/miner/enabled', 'false')
 
     conf_obj.setDefaultValue('services/blockchain-id/enabled', 'true')
+    conf_obj.setDefaultValue('services/blockchain-authority/enabled', 'false')
+    conf_obj.setDefaultValue('services/blockchain-authority/registration-bonus-coins', 100)
+    conf_obj.setDefaultValue('services/blockchain-authority/requests-reading-offset', 0)
+    conf_obj.setDefaultValue('services/blockchain-authority/requests-reading-limit', 50)
 
     conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')
@@ -106,6 +110,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/bismuth-pool/host', '127.0.0.1')
     conf_obj.setDefaultValue('services/bismuth-pool/tcp-port', 18525)
     conf_obj.setDefaultValue('services/bismuth-miner/enabled', 'false')
+    conf_obj.setDefaultValue('services/bismuth-identity/enabled', 'true')
 
     conf_obj.setDefaultValue('services/broadcasting/enabled', 'false')
     conf_obj.setDefaultValue('services/broadcasting/routing-enabled', 'false')

@@ -39,8 +39,8 @@ def create_service():
 
 class BlockchainIDService(LocalService):
 
-    service_name = 'service_blockchain_id'
-    config_path = 'services/blockchain-id/enabled'
+    service_name = 'service_blockchain_authority'
+    config_path = 'services/blockchain-authority/enabled'
 
     def dependent_on(self):
         return [
@@ -51,15 +51,11 @@ class BlockchainIDService(LocalService):
         return True
 
     def start(self):
-        from twisted.internet.defer import Deferred
-        from bitdust.logs import lg
-        from bitdust.blockchain import blockchain_registrator
-        self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
-        blockchain_registrator.A('start', result_defer=self.starting_deferred)
-        return self.starting_deferred
+        from bitdust.blockchain import authority_node
+        authority_node.A('init')
+        return True
 
     def stop(self):
-        from bitdust.blockchain import blockchain_registrator
-        blockchain_registrator.A('shutdown')
+        from bitdust.blockchain import authority_node
+        authority_node.A('shutdown')
         return True

@@ -1,23 +1,28 @@
 #!/usr/bin/env python
-# bismuth_identity.py
+# blockchain_registrator.py
 #
 """
-.. module:: bismuth_identity
+.. module:: blockchain_registrator
 .. role:: red
 
-BitDust bismuth_identity() Automat
+BitDust blockchain_registrator() Automat
 
 EVENTS:
     * :red:`dht-read-failed`
     * :red:`dht-read-success`
     * :red:`dht-write-failed`
     * :red:`dht-write-success`
+    * :red:`record-already-exist`
     * :red:`shutdown`
     * :red:`start`
     * :red:`timer-5min`
     * :red:`tx-not-found`
     * :red:`valid-tx-found`
 """
+
+#------------------------------------------------------------------------------
+
+import random
 
 #------------------------------------------------------------------------------
 
@@ -41,24 +46,24 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-_BismuthIdentity = None
+_BlockchainRegistrator = None
 
 #------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
     """
-    Access method to interact with `bismuth_identity()` machine.
+    Access method to interact with `blockchain_registrator()` machine.
     """
-    global _BismuthIdentity
+    global _BlockchainRegistrator
     if event is None:
-        return _BismuthIdentity
-    if _BismuthIdentity is None:
+        return _BlockchainRegistrator
+    if _BlockchainRegistrator is None:
         if event == 'shutdown':
-            return _BismuthIdentity
+            return _BlockchainRegistrator
         # TODO: set automat name and starting state here
-        _BismuthIdentity = BismuthIdentity(
-            name='bismuth_identity',
+        _BlockchainRegistrator = BlockchainRegistrator(
+            name='blockchain_registrator',
             state='AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=_Debug,
@@ -66,13 +71,13 @@ def A(event=None, *args, **kwargs):
             publish_events=False,
         )
     if event is not None:
-        _BismuthIdentity.automat(event, *args, **kwargs)
-    return _BismuthIdentity
+        _BlockchainRegistrator.automat(event, *args, **kwargs)
+    return _BlockchainRegistrator
 
 
-class BismuthIdentity(automat.Automat):
+class BlockchainRegistrator(automat.Automat):
     """
-    This class implements all the functionality of ``bismuth_identity()`` state machine.
+    This class implements all the functionality of ``blockchain_registrator()`` state machine.
     """
 
     timers = {
@@ -81,24 +86,34 @@ class BismuthIdentity(automat.Automat):
 
     def __init__(self, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
-        Builds `bismuth_identity()` state machine.
+        Builds `blockchain_registrator()` state machine.
         """
-        super(BismuthIdentity, self).__init__(debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+        self.dht_position = 1
+        super(BlockchainRegistrator, self).__init__(
+            debug_level=debug_level,
+            log_events=log_events,
+            log_transitions=log_transitions,
+            publish_events=publish_events,
+            **kwargs,
+        )
+
+    def __repr__(self):
+        return '%s[%d](%s)' % (self.id, self.dht_position, self.state)
 
     def init(self):
         """
         Method to initialize additional variables and flags
-        at creation phase of `bismuth_identity()` machine.
+        at creation phase of `blockchain_registrator()` machine.
         """
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        Method to catch the moment when `bismuth_identity()` state were changed.
+        Method to catch the moment when `blockchain_registrator()` state were changed.
         """
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when some event was fired in the `bismuth_identity()`
+        This method intended to catch the moment when some event was fired in the `blockchain_registrator()`
         but automat state was not changed.
         """
 
@@ -111,18 +126,19 @@ class BismuthIdentity(automat.Automat):
             if event == 'start':
                 self.state = 'BLOCKCHAIN_READ'
                 self.doInit(*args, **kwargs)
-                self.doBlockchainTxSearch(*args, **kwargs)
+                self.doSearchTransaction(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'dht-read-failed':
                 self.state = 'DHT_WRITE'
-                self.doDHTWriteKey(*args, **kwargs)
-            elif event == 'dht-read-success' and self.isMyOwnKey(*args, **kwargs):
+                self.doDHTWrite(*args, **kwargs)
+            elif event == 'dht-read-success':
                 self.state = 'BLOCKCHAIN_READ'
-            elif event == 'dht-read-success' and not self.isMyOwnKey(*args, **kwargs):
+            elif event == 'record-already-exist':
                 self.doNextPosition(*args, **kwargs)
-                self.doDHTReadKey(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
             elif event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
@@ -133,57 +149,62 @@ class BismuthIdentity(automat.Automat):
                 self.state = 'DHT_READ'
                 self.Attempts += 1
                 self.doNextPosition(*args, **kwargs)
-                self.doDHTReadKey(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
             elif event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
         #---BLOCKCHAIN_READ---
         elif self.state == 'BLOCKCHAIN_READ':
             if event == 'tx-not-found':
                 self.state = 'DHT_READ'
                 self.Attempts = 0
-                self.doDHTReadKey(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
             elif event == 'valid-tx-found':
                 self.state = 'READY'
+                self.doDHTErase(*args, **kwargs)
                 self.doReportReady(*args, **kwargs)
             elif event == 'timer-5min':
-                self.doBlockchainTxSearch(*args, **kwargs)
+                self.doSearchTransaction(*args, **kwargs)
             elif event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
         #---READY---
         elif self.state == 'READY':
             if event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
-
-    def isMyOwnKey(self, *args, **kwargs):
-        """
-        Condition method.
-        """
-        return id_url.to_bin(args[0]) == my_id.getIDURL().to_bin()
 
     def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         self.result_defer = kwargs.get('result_defer')
-        self.dht_position = 0
+        self.dht_position = 1
         self.dht_read_defer = None
-        self.my_pub_key = my_id.getIDName() + ':' + strng.to_text(my_id.getLocalIdentity().getPublicKey()).replace('ssh-rsa ', '')
 
     def doNextPosition(self, *args, **kwargs):
         """
         Action method.
         """
-        self.dht_position += 1
+        current_position = self.dht_position
+        max_position = self.dht_position*2 + 1
+        self.dht_position += random.randint(current_position + 1, max_position)
+        if self.dht_position > 500:
+            self.dht_position = 1
 
-    def doBlockchainTxSearch(self, *args, **kwargs):
+    def doSearchTransaction(self, *args, **kwargs):
         """
         Action method.
         """
+        clean_public_key = strng.to_text(my_id.getLocalIdentity().getPublicKey())[:10000].replace('ssh-rsa ', '')
         results = bismuth_wallet.client().search_transactions(
             recipient=bismuth_wallet.my_wallet_address(),
             operation='identity',
-            openfield=self.my_pub_key,
+            openfield=clean_public_key,
         )
         if _Debug:
             lg.args(_DebugLevel, my_wallet_address=bismuth_wallet.my_wallet_address(), results=results)
@@ -192,7 +213,7 @@ class BismuthIdentity(automat.Automat):
         else:
             self.automat('tx-not-found')
 
-    def doDHTReadKey(self, *args, **kwargs):
+    def doDHTRead(self, *args, **kwargs):
         """
         Action method.
         """
@@ -200,24 +221,31 @@ class BismuthIdentity(automat.Automat):
             self.dht_read_defer.pause()
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
-        d = dht_records.get_bismuth_identity_request(position=self.dht_position, use_cache=False)
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='bismuth_identity.doDHTReadKey')
-        d.addCallback(self._dht_read_result, self.dht_position)
-        d.addErrback(self._dht_read_failed)
-        self.dht_read_defer = d
+        self.dht_read_defer = dht_records.get_bismuth_identity_request(position=self.dht_position, use_cache=False)
+        self.dht_read_defer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='blockchain_registrator.doDHTReadKey')
+        self.dht_read_defer.addCallback(self._dht_read_result, self.dht_position)
+        self.dht_read_defer.addErrback(self._dht_read_failed)
 
-    def doDHTWriteKey(self, *args, **kwargs):
+    def doDHTWrite(self, *args, **kwargs):
         """
         Action method.
         """
+        clean_public_key = strng.to_text(my_id.getLocalIdentity().getPublicKey())[:10000].replace('ssh-rsa ', '')
         d = dht_records.set_bismuth_identity_request(
             position=self.dht_position,
             idurl=my_id.getIDURL(),
-            public_key=self.my_pub_key,
+            public_key=clean_public_key,
+            wallet_address=bismuth_wallet.my_wallet_address(),
         )
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='bismuth_identity.doDHTWriteKey')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='blockchain_registrator.doDHTWriteKey')
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda err: self.automat('dht-write-failed', err))
+
+    def doDHTErase(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        dht_records.erase_bismuth_identity_request(position=self.dht_position)
 
     def doReportReady(self, *args, **kwargs):
         """
@@ -231,6 +259,9 @@ class BismuthIdentity(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.destroy()
+        global _BlockchainRegistrator
+        del _BlockchainRegistrator
+        _BlockchainRegistrator = None
 
     def _dht_read_result(self, value, position):
         if _Debug:
@@ -240,14 +271,18 @@ class BismuthIdentity(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            v = id_url.field(value['idurl'])
+            idurl_at_position = id_url.field(value['idurl'])
         except:
-            if _Debug:
-                lg.out(_DebugLevel, '%r' % value)
             lg.exc()
             self.automat('dht-read-failed')
             return
-        self.automat('dht-read-success', v)
+        if id_url.is_the_same(idurl_at_position, my_id.getIDURL()):
+            if value['wallet_address'] != bismuth_wallet.my_wallet_address():
+                self.automat('dht-read-failed')
+            else:
+                self.automat('dht-read-success', value)
+        else:
+            self.automat('record-already-exist', value)
 
     def _dht_read_failed(self, result):
         if _Debug:

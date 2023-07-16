@@ -213,7 +213,7 @@ class BismuthClient():
             return cached
         transactions = self.command("txsearch", [(address, recipient, operation, openfield, limit, offset, ), ])
         if self.verbose:
-            print('Client: search transactions', transactions)
+            print('Client: search transactions', key, transactions)
         json = [TxFormatter(tx).to_json(for_display=True) for tx in transactions]
         self._set_cache(key, json)
         return json

@@ -72,8 +72,6 @@ def init():
 
 
 def shutdown():
-    if _Debug:
-        lg.dbg(_DebugLevel, '')
     return True
 
 
