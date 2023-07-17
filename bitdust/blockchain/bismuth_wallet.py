@@ -138,3 +138,21 @@ def send_transaction(recipient, amount, operation='', data=''):
     if not ret:
         return error_reply
     return ret
+
+
+def find_transaction(address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
+    try:
+        ret = client().search_transactions(
+            address=address,
+            recipient=recipient,
+            operation=operation,
+            openfield=openfield,
+            limit=limit,
+            offset=offset,
+        )
+    except:
+        lg.exc()
+        return []
+    if _Debug:
+        lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=openfield, lim=limit, ofs=offset, ret=ret)
+    return ret

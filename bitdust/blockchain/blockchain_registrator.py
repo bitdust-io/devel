@@ -201,13 +201,11 @@ class BlockchainRegistrator(automat.Automat):
         Action method.
         """
         clean_public_key = strng.to_text(my_id.getLocalIdentity().getPublicKey())[:10000].replace('ssh-rsa ', '')
-        results = bismuth_wallet.client().search_transactions(
+        results = bismuth_wallet.find_transaction(
             recipient=bismuth_wallet.my_wallet_address(),
             operation='identity',
-            openfield=clean_public_key,
+            openfield='{}:{}'.format(my_id.getIDName(), clean_public_key),
         )
-        if _Debug:
-            lg.args(_DebugLevel, my_wallet_address=bismuth_wallet.my_wallet_address(), results=results)
         if results:
             self.automat('valid-tx-found')
         else:

@@ -230,13 +230,11 @@ class AuthorityNode(automat.Automat):
         """
         clean_public_key = strng.to_text(self.dht_last_value['public_key'])[:10000].replace('ssh-rsa ', '')
         idurl = id_url.field(self.dht_last_value['idurl'])
-        results = bismuth_wallet.client().search_transactions(
+        results = bismuth_wallet.find_transaction(
             recipient=self.dht_last_value['wallet_address'],
             operation='identity',
             openfield='{}:{}'.format(idurl.username, clean_public_key),
         )
-        if _Debug:
-            lg.args(_DebugLevel, my_wallet_address=bismuth_wallet.my_wallet_address(), results=results)
         if results:
             self.automat('valid-tx-found')
         else:
@@ -250,7 +248,7 @@ class AuthorityNode(automat.Automat):
         clean_public_key = strng.to_text(self.dht_last_value['public_key'])[:10000].replace('ssh-rsa ', '')
         idurl = id_url.field(self.dht_last_value['idurl'])
         try:
-            tx_id = bismuth_wallet.client().send(
+            tx_id = bismuth_wallet.send_transaction(
                 recipient=self.dht_last_value['wallet_address'],
                 amount=registration_bonus_coins,
                 operation='identity',
