@@ -786,7 +786,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.username, latest_username))
+            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.current, self.latest))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         self.latest_host = latest_host
@@ -942,7 +942,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.username, latest_username))
+            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.current, self.latest))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         self.latest_host = latest_host

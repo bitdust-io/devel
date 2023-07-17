@@ -545,70 +545,63 @@ class identity(object):
         """
         This is to load identity fields from DOM object - used during ``unserialize`` procedure.
         """
-        if root_node is None:
-            return False
-        try:
-            for xsection in root_node.childNodes:
-                if xsection.nodeType != Node.ELEMENT_NODE:
-                    continue
-                if xsection.tagName == 'sources':
-                    for xsources in xsection.childNodes:
-                        for xsource in xsources.childNodes:
-                            if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(id_url.ID_URL_FIELD(xsource.wholeText.strip()))
-                                break
-                elif xsection.tagName == 'contacts':
-                    for xcontacts in xsection.childNodes:
-                        for xcontact in xcontacts.childNodes:
-                            if (xcontact.nodeType == Node.TEXT_NODE):
-                                self.contacts.append(strng.to_bin(xcontact.wholeText.strip()))
-                                break
-                elif xsection.tagName == 'certificates':
-                    for xcertificates in xsection.childNodes:
-                        for xcertificate in xcertificates.childNodes:
-                            if (xcertificate.nodeType == Node.TEXT_NODE):
-                                self.certificates.append(strng.to_bin(xcertificate.wholeText.strip()))
-                                break
-                elif xsection.tagName == 'scrubbers':
-                    for xscrubbers in xsection.childNodes:
-                        for xscrubber in xscrubbers.childNodes:
-                            if (xscrubber.nodeType == Node.TEXT_NODE):
-                                self.scrubbers.append(strng.to_bin(xscrubber.wholeText.strip()))
-                                break
-                elif xsection.tagName == 'postage':
-                    for xpostage in xsection.childNodes:
-                        if (xpostage.nodeType == Node.TEXT_NODE):
-                            self.postage = strng.to_bin(xpostage.wholeText.strip())
+        for xsection in root_node.childNodes:
+            if xsection.nodeType != Node.ELEMENT_NODE:
+                continue
+            if xsection.tagName == 'sources':
+                for xsources in xsection.childNodes:
+                    for xsource in xsources.childNodes:
+                        if (xsource.nodeType == Node.TEXT_NODE):
+                            self.sources.append(id_url.ID_URL_FIELD(xsource.wholeText.strip()))
                             break
-                elif xsection.tagName == 'date':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.date = strng.to_bin(xkey.wholeText.strip())
+            elif xsection.tagName == 'contacts':
+                for xcontacts in xsection.childNodes:
+                    for xcontact in xcontacts.childNodes:
+                        if (xcontact.nodeType == Node.TEXT_NODE):
+                            self.contacts.append(strng.to_bin(xcontact.wholeText.strip()))
                             break
-                elif xsection.tagName == 'version':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.version = strng.to_bin(xkey.wholeText.strip())
+            elif xsection.tagName == 'certificates':
+                for xcertificates in xsection.childNodes:
+                    for xcertificate in xcertificates.childNodes:
+                        if (xcertificate.nodeType == Node.TEXT_NODE):
+                            self.certificates.append(strng.to_bin(xcertificate.wholeText.strip()))
                             break
-                elif xsection.tagName == 'revision':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.revision = strng.to_bin(xkey.wholeText.strip())
+            elif xsection.tagName == 'scrubbers':
+                for xscrubbers in xsection.childNodes:
+                    for xscrubber in xscrubbers.childNodes:
+                        if (xscrubber.nodeType == Node.TEXT_NODE):
+                            self.scrubbers.append(strng.to_bin(xscrubber.wholeText.strip()))
                             break
-                elif xsection.tagName == 'publickey':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.publickey = strng.to_bin(xkey.wholeText.strip())
-                            break
-                elif xsection.tagName == 'signature':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.signature = strng.to_bin(xkey.wholeText.strip())
-                            break
-        except:
-            lg.exc()
-            return False
-        return True
+            elif xsection.tagName == 'postage':
+                for xpostage in xsection.childNodes:
+                    if (xpostage.nodeType == Node.TEXT_NODE):
+                        self.postage = strng.to_bin(xpostage.wholeText.strip())
+                        break
+            elif xsection.tagName == 'date':
+                for xkey in xsection.childNodes:
+                    if (xkey.nodeType == Node.TEXT_NODE):
+                        self.date = strng.to_bin(xkey.wholeText.strip())
+                        break
+            elif xsection.tagName == 'version':
+                for xkey in xsection.childNodes:
+                    if (xkey.nodeType == Node.TEXT_NODE):
+                        self.version = strng.to_bin(xkey.wholeText.strip())
+                        break
+            elif xsection.tagName == 'revision':
+                for xkey in xsection.childNodes:
+                    if (xkey.nodeType == Node.TEXT_NODE):
+                        self.revision = strng.to_bin(xkey.wholeText.strip())
+                        break
+            elif xsection.tagName == 'publickey':
+                for xkey in xsection.childNodes:
+                    if (xkey.nodeType == Node.TEXT_NODE):
+                        self.publickey = strng.to_bin(xkey.wholeText.strip())
+                        break
+            elif xsection.tagName == 'signature':
+                for xkey in xsection.childNodes:
+                    if (xkey.nodeType == Node.TEXT_NODE):
+                        self.signature = strng.to_bin(xkey.wholeText.strip())
+                        break
 
     #------------------------------------------------------------------------------
 
