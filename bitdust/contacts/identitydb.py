@@ -307,8 +307,12 @@ def get_ident(idurl):
         if _Debug:
             lg.out(_DebugLevel, 'identitydb.get_ident %s not found' % nameurl.GetName(idurl))
         return None
-    idobj = identity.identity(xmlsrc=idxml)
-    idurl_orig = idobj.getIDURL()
+    try:
+        idobj = identity.identity(xmlsrc=idxml)
+        idurl_orig = idobj.getIDURL()
+    except:
+        lg.exc()
+        return None
     if idurl == idurl_orig.original():
         idset(idurl, idobj)
         return idobj

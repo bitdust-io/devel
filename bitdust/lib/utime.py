@@ -59,7 +59,7 @@ def sec1970_to_datetime_utc(seconds=-1):
 
 def utcnow_to_sec1970():
     """
-    Returns how much seconds passed since 1970 till current moment depend on
+    Returns how much seconds passed since 1970 till current moment counting from
     UTC timezone.
     """
     return datetime_to_sec1970(datetime.datetime.utcnow())
@@ -83,3 +83,17 @@ def make_timestamp():
     if not ampm:
         ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
     return time.strftime('%Y%m%d%I%M%S', time_st) + ampm
+
+
+def pack_time(seconds=-1):
+    """
+    Converts seconds since 1970 year to ISO formatted string.
+    """
+    return sec1970_to_datetime_utc(seconds).isoformat(timespec='microseconds')
+
+
+def unpack_time(text):
+    """
+    Converts ISO formatted string to seconds since 1970 year.
+    """
+    return datetime_to_sec1970(datetime.datetime.fromisoformat(text))

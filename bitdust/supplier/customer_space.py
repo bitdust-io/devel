@@ -53,10 +53,14 @@ from bitdust.logs import lg
 from bitdust.lib import strng
 from bitdust.lib import packetid
 from bitdust.lib import serialization
+from bitdust.lib import utime
+from bitdust.lib import jsn
 
 from bitdust.system import bpio
+from bitdust.system import local_fs
 
 from bitdust.main import settings
+from bitdust.main import config
 from bitdust.main import events
 
 from bitdust.contacts import contactsdb
@@ -69,11 +73,17 @@ from bitdust.p2p import commands
 from bitdust.storage import accounting
 
 from bitdust.crypt import signed
+from bitdust.crypt import key
 from bitdust.crypt import my_keys
 
 from bitdust.transport import gateway
+from bitdust.transport import callback
 
 from bitdust.stream import p2p_queue
+
+from bitdust.dht import dht_service
+from bitdust.dht import dht_records
+from bitdust.dht import known_nodes
 
 from bitdust.supplier import list_files
 from bitdust.supplier import local_tester
@@ -86,6 +96,62 @@ from bitdust.userid import my_id
 
 _SupplierFileModifiedLatest = {}
 _SupplierFileModifiedNotifyTasks = {}
+
+#------------------------------------------------------------------------------
+
+
+def init():
+    callback.append_inbox_callback(on_inbox_packet_received)
+    events.add_subscriber(on_identity_url_changed, 'identity-url-changed')
+    events.add_subscriber(on_customer_accepted, 'existing-customer-accepted')
+    events.add_subscriber(on_customer_accepted, 'new-customer-accepted')
+    events.add_subscriber(on_customer_terminated, 'existing-customer-denied')
+    events.add_subscriber(on_customer_terminated, 'existing-customer-terminated')
+    space_dict, _ = accounting.read_customers_quotas()
+    for customer_idurl in contactsdb.customers():
+        known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
+        # yapf: disable
+        events.send('existing-customer-accepted', data=dict(
+            idurl=customer_idurl,
+            allocated_bytes=space_dict.get(customer_idurl.to_bin()),
+            ecc_map=known_customer_meta_info.get('ecc_map'),
+            position=known_customer_meta_info.get('position'),
+        ))
+        # yapf: enable
+    if driver.is_on('service_entangled_dht'):
+        connect_suppliers_dht_layer()
+    else:
+        lg.warn('service service_entangled_dht is OFF')
+    events.add_subscriber(on_dht_layer_connected, 'dht-layer-connected')
+
+
+def shutdown():
+    events.remove_subscriber(on_dht_layer_connected, 'dht-layer-connected')
+    if driver.is_on('service_entangled_dht'):
+        dht_service.suspend(layer_id=dht_records.LAYER_SUPPLIERS)
+    events.remove_subscriber(on_customer_accepted, 'existing-customer-accepted')
+    events.remove_subscriber(on_customer_accepted, 'new-customer-accepted')
+    events.remove_subscriber(on_customer_terminated, 'existing-customer-denied')
+    events.remove_subscriber(on_customer_terminated, 'existing-customer-terminated')
+    events.remove_subscriber(on_identity_url_changed, 'identity-url-changed')
+    callback.remove_inbox_callback(on_inbox_packet_received)
+
+
+#------------------------------------------------------------------------------
+
+
+def connect_suppliers_dht_layer():
+    known_seeds = known_nodes.nodes()
+    d = dht_service.open_layer(
+        layer_id=dht_records.LAYER_SUPPLIERS,
+        seed_nodes=known_seeds,
+        connect_now=True,
+        attach=True,
+    )
+    d.addCallback(on_suppliers_dht_layer_connected)
+    d.addErrback(lambda *args: lg.err(str(args)))
+    return d
+
 
 #------------------------------------------------------------------------------
 
@@ -243,6 +309,244 @@ def make_valid_filename(customerIDURL, glob_path):
     #             glob_path['idurl'], customerIDURL))
     filename = make_filename(customerGlobID, filePath, keyAlias)
     return filename
+
+
+#------------------------------------------------------------------------------
+
+
+def get_customer_contracts_dir(customer_idurl):
+    customer_idurl = id_url.field(customer_idurl)
+    customer_contracts_prefix = '{}_{}'.format(
+        customer_idurl.username,
+        strng.to_text(key.HashSHA(customer_idurl.to_public_key(), hexdigest=True)),
+    )
+    return os.path.join(settings.ServiceDir('service_supplier_contracts'), customer_contracts_prefix)
+
+
+def get_current_customer_contract(customer_idurl):
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
+    current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
+    if not os.path.isfile(current_customer_contract_path):
+        return None
+    json_data = jsn.loads_text(local_fs.ReadTextFile(current_customer_contract_path))
+    if not json_data:
+        return None
+    if not accounting.verify_storage_contract(json_data):
+        lg.err('current storage contract with %r is not valid' % customer_idurl)
+        return None
+    return json_data
+
+
+def list_customer_contracts(customer_idurl):
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
+    customer_contracts = {}
+    latest_contract = None
+    latest_contract_state = None
+    latest_contract_started_time = -1
+    latest_paid_contract = None
+    latest_paid_contract_time = -1
+    completed_contracts_total_GBH_value = 0
+    paid_contracts_total_GBH_value = 0
+    for fname in os.listdir(customer_contracts_dir):
+        if fname == 'current':
+            continue
+        try:
+            started_time = int(fname.split('.')[0])
+            contract_state = fname.split('.')[1]
+        except:
+            lg.exc()
+            continue
+        contract_path = os.path.join(customer_contracts_dir, fname)
+        json_data = jsn.loads_text(local_fs.ReadTextFile(contract_path))
+        if not accounting.verify_storage_contract(json_data):
+            lg.warn('invalid storage contract found: %r' % fname)
+            continue
+        customer_contracts[started_time] = json_data
+        if started_time > latest_contract_started_time:
+            latest_contract_started_time = started_time
+            latest_contract = json_data
+            latest_contract_state = contract_state
+        if contract_state == 'paid':
+            if started_time > latest_paid_contract_time:
+                latest_paid_contract = json_data
+        if contract_state == 'completed':
+            completed_contracts_total_GBH_value += json_data['value']
+        elif contract_state == 'paid':
+            paid_contracts_total_GBH_value += json_data['value']
+        else:
+            raise Exception('unknown state of the contract')
+    customer_contracts['latest'] = latest_contract
+    customer_contracts['latest_state'] = latest_contract_state
+    customer_contracts['latest_paid_contract'] = latest_paid_contract
+    customer_contracts['completed_value'] = completed_contracts_total_GBH_value
+    customer_contracts['paid_value'] = paid_contracts_total_GBH_value
+    return customer_contracts
+
+
+def prepare_customer_contract(customer_idurl, details):
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
+    now = utime.utcnow_to_sec1970()
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
+    current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
+    # previous_customer_contract = None
+    if not os.path.isfile(current_customer_contract_path):
+        # SCENARIO 2: no current contract found
+        pass
+    else:
+        current_contract = jsn.loads_text(local_fs.ReadTextFile(current_customer_contract_path))
+        if current_contract:
+            if not accounting.verify_storage_contract(current_contract):
+                lg.err('current storage contract with %r is not valid' % customer_idurl)
+            else:
+                if now > utime.unpack_time(current_contract['complete_after']):
+                    # SCENARIO 1: found that previous contract was active but finished now
+                    lg.warn('current contract with %r already ended' % customer_idurl)
+                    # previous_customer_contract = current_contract
+                    complete_current_customer_contract(customer_idurl)
+                else:
+                    # SCENARIO 3: there is already a contract started with this customer and not yet completed
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'valid customer contract with %r already exists' % customer_idurl)
+                    return change_current_customer_contract(customer_idurl, details)
+    customer_contracts_list_and_details = list_customer_contracts(customer_idurl)
+    latest_contract = customer_contracts_list_and_details['latest']
+    latest_contract_state = customer_contracts_list_and_details['latest_state']
+    latest_paid_contract = customer_contracts_list_and_details['latest_paid_contract']
+    completed_value = customer_contracts_list_and_details['completed_value']
+    # paid_value = customer_contracts['paid_value']
+    billing_period_seconds = settings.SupplierContractBillingPeriodDays()*24*60*60
+    new_raise_factor = config.conf().getFloat('services/supplier-contracts/duration-raise-factor')
+    new_duration_hours = None
+    if latest_contract:
+        new_duration_hours = int(latest_contract['duration_hours']*latest_contract['raise_factor'])
+        if latest_contract_state == 'completed':
+            if latest_paid_contract:
+                new_pay_before_time = utime.unpack_time(latest_paid_contract['started']) + latest_paid_contract['duration_hours']*60*60 + billing_period_seconds
+                if new_pay_before_time < now + new_duration_hours*60*60:
+                    # SCENARIO 8: the previous contract is completed and some contracts are paid, but there is still no trust to this customer
+                    lg.warn('customer %r paid before, but yet did not pay for previously completed contracts' % customer_idurl)
+                    return {
+                        'deny': True,
+                        'reason': 'unpaid',
+                        'value': completed_value,
+                    }
+                else:
+                    # SCENARIO 4: no active contract, the previos contract is completed and there is also a paid contract before
+                    pass
+            else:
+                new_pay_before_time = utime.unpack_time(latest_contract['pay_before'])
+                if new_pay_before_time < now + new_duration_hours*60*60:
+                    # SCENARIO 7: the previous contract is completed, but there is no trust to this customer
+                    lg.warn('customer %r yet did not pay for previously completed contract' % customer_idurl)
+                    return {
+                        'deny': True,
+                        'reason': 'unpaid',
+                        'value': completed_value,
+                    }
+                else:
+                    # SCENARIO 6: no active contract, the previos contract is completed but there were no payments yet done
+                    pass
+        elif latest_contract_state == 'paid':
+            # SCENARIO 5: currently there is no active contract, but the previos contract is completed and paid
+            new_duration_hours = config.conf().getInt('services/supplier-contracts/initial-duration-hours')
+            new_pay_before_time = now + billing_period_seconds
+    else:
+        # SCENARIO 2: this is a new customer - there were no contracts signed with him yet
+        new_duration_hours = config.conf().getInt('services/supplier-contracts/initial-duration-hours')
+        new_pay_before_time = now + int(billing_period_seconds/2.0)
+    new_complete_after_time = now + new_duration_hours*60*60
+    json_data = {
+        'started': utime.pack_time(now),
+        'complete_after': utime.pack_time(new_complete_after_time),
+        'pay_before': utime.pack_time(new_pay_before_time),
+        'value': int(new_duration_hours*(details['allocated_bytes']/(1024.0*1024.0))),
+        'allocated_bytes': details['allocated_bytes'],
+        'duration_hours': new_duration_hours,
+        'my_position': details['my_position'],
+        'ecc_map': details['ecc_map'],
+        'raise_factor': new_raise_factor,
+    }
+    local_fs.WriteTextFile(current_customer_contract_path, jsn.dumps(json_data))
+    return json_data
+
+
+def cancel_customer_contract(customer_idurl):
+    settings.ServiceDir('service_supplier')
+    return
+
+
+def change_current_customer_contract(customer_idurl, details):
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
+    current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
+    if not os.path.isfile(current_customer_contract_path):
+        lg.err('current storage contract with %r not found' % customer_idurl)
+        return {
+            'deny': True,
+            'reason': 'current storage contract not found',
+        }
+    current_contract = jsn.loads_text(local_fs.ReadTextFile(current_customer_contract_path))
+    if not current_contract:
+        lg.err('current storage contract with %r read failed' % customer_idurl)
+        return {
+            'deny': True,
+            'reason': 'current storage contract not found',
+        }
+    if details.get('ecc_map'):
+        current_contract['ecc_map'] = details['ecc_map']
+    if details.get('my_position') is not None:
+        current_contract['my_position'] = details['my_position']
+    if details['allocated_bytes'] != current_contract['allocated_bytes']:
+        current_value = current_contract['value']
+        new_duration_hours = int(current_value/(details['allocated_bytes']/(1024.0*1024.0)))
+        new_complete_after_time = utime.unpack_time(current_contract['started']) + new_duration_hours*60*60
+        if new_complete_after_time > utime.unpack_time(current_contract['pay_before']):
+            return {
+                'deny': True,
+                'reason': 'contract duration change limit exceeded',
+            }
+        current_contract['allocated_bytes'] = details['allocated_bytes']
+        current_contract['duration_hours'] = new_duration_hours
+        current_contract['complete_after'] = utime.pack_time(new_complete_after_time)
+    local_fs.WriteTextFile(current_customer_contract_path, jsn.dumps(current_contract))
+    return current_contract
+
+
+def complete_current_customer_contract(customer_idurl):
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
+    current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
+    if not os.path.isfile(current_customer_contract_path):
+        return False
+    current_contract = jsn.loads_text(local_fs.ReadTextFile(current_customer_contract_path))
+    if not current_contract:
+        return False
+    if not accounting.verify_storage_contract(current_contract):
+        lg.err('current contract with %r is not valid' % customer_idurl)
+        return False
+    # rename "current" file to "<started_time>.completed"
+    contract_path_new = os.path.join(customer_contracts_dir, '{}.completed'.format(utime.unpack_time(current_contract['started'])))
+    os.rename(current_customer_contract_path, contract_path_new)
+    if _Debug:
+        lg.args(_DebugLevel, old_path=current_customer_contract_path, new_path=contract_path_new)
+    return True
 
 
 #------------------------------------------------------------------------------
@@ -791,3 +1095,243 @@ def on_identity_url_changed(evt):
     # update customer idurl in "spaceused" file
     local_tester.TestSpaceTime()
     return True
+
+
+#------------------------------------------------------------------------------
+
+
+def on_service_supplier_request(json_payload, newpacket, info):
+    customer_idurl = newpacket.OwnerID
+    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    bytes_for_customer = 0
+    try:
+        bytes_for_customer = int(json_payload['needed_bytes'])
+    except:
+        lg.exc()
+        return p2p_service.SendFail(newpacket, 'invalid payload')
+    try:
+        customer_public_key = json_payload['customer_public_key']
+        customer_public_key_id = customer_public_key['key_id']
+    except:
+        customer_public_key = None
+        customer_public_key_id = None
+    data_owner_idurl = None
+    target_customer_idurl = None
+    family_position = json_payload.get('position')
+    ecc_map = json_payload.get('ecc_map')
+    family_snapshot = json_payload.get('family_snapshot')
+    if family_snapshot:
+        family_snapshot = id_url.to_bin_list(family_snapshot)
+    target_customer_id = json_payload.get('customer_id')
+    key_id = my_keys.latest_key_id(json_payload.get('key_id'))
+    if key_id:
+        # this is a request from external user to access shared data stored by one of my customers
+        # this is "second" customer requesting data from "first" customer
+        if not key_id or not my_keys.is_valid_key_id(key_id):
+            lg.warn('missed or invalid key id')
+            return p2p_service.SendFail(newpacket, 'invalid key id')
+        target_customer_idurl = global_id.GlobalUserToIDURL(target_customer_id)
+        if not contactsdb.is_customer(target_customer_idurl):
+            lg.warn('target user %s is not a customer' % target_customer_id)
+            return p2p_service.SendFail(newpacket, 'not a customer')
+        if target_customer_idurl == customer_idurl:
+            lg.warn('customer %s requesting shared access to own files' % customer_idurl)
+            return p2p_service.SendFail(newpacket, 'invalid case')
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('key not registered: %s' % key_id)
+            p2p_service.SendFail(newpacket, 'key not registered')
+            return False
+        data_owner_idurl = my_keys.split_key_id(key_id)[1]
+        if not id_url.is_the_same(data_owner_idurl, target_customer_idurl) and not id_url.is_the_same(data_owner_idurl, customer_idurl):
+            # pretty complex scenario:
+            # external customer requesting access to data which belongs not to that customer
+            # this is "third" customer accessing data belongs to "second" customer
+            # TODO: for now just refuse it
+            lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (key_id, customer_idurl, target_customer_idurl))
+            p2p_service.SendFail(newpacket, 'under construction')
+            return False
+        register_customer_key(customer_public_key_id, customer_public_key)
+        # do not create connection with that customer, only accept the request
+        lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id))
+        return p2p_service.SendAck(newpacket, 'accepted')
+    # key_id is not present in the request:
+    # this is a request to connect new customer (or reconnect existing one) to that supplier
+    if not bytes_for_customer or bytes_for_customer < 0:
+        lg.warn('wrong payload : %s' % newpacket.Payload)
+        return p2p_service.SendFail(newpacket, 'wrong storage value')
+    current_customers = contactsdb.customers()
+    if accounting.check_create_customers_quotas():
+        lg.info('created new customers quotas file')
+    space_dict, free_space = accounting.read_customers_quotas()
+    try:
+        free_bytes = int(free_space)
+    except:
+        lg.exc()
+        return p2p_service.SendFail(newpacket, 'broken quotas file')
+    if (customer_idurl not in current_customers and customer_idurl.to_bin() in list(space_dict.keys())):
+        lg.err('broken quotas file: %r is not a customer, but found in the quotas file' % customer_idurl.to_bin())
+        return p2p_service.SendFail(newpacket, 'broken quotas file')
+    if (customer_idurl in current_customers and customer_idurl.to_bin() not in list(space_dict.keys())):
+        # seems like customer's idurl was rotated, but space file still have the old idurl
+        # need to find that old idurl value and replace with the new one
+        for other_customer_idurl in space_dict.keys():
+            if other_customer_idurl and other_customer_idurl != 'free' and id_url.field(other_customer_idurl) == customer_idurl:
+                lg.info('found rotated customer identity in space file, switching: %r -> %r' % (other_customer_idurl, customer_idurl.to_bin()))
+                space_dict[customer_idurl.to_bin()] = space_dict.pop(other_customer_idurl)
+                break
+        if customer_idurl.to_bin() not in list(space_dict.keys()):
+            lg.err('broken customers file: %r is a customer, but not found in the quotas file' % customer_idurl.to_bin())
+            return p2p_service.SendFail(newpacket, 'broken customers file')
+    # check/verify/create/update contract with requestor customer
+    # the contracts are needed to keep track of consumed resources
+    current_contract = {}
+    if driver.is_on('service_supplier_contracts'):
+        try:
+            current_contract = prepare_customer_contract(customer_idurl)
+        except:
+            lg.exc()
+            current_contract = {}
+        if current_contract and current_contract.get('deny'):
+            lg.warn('contract processing denied with user %s' % customer_idurl)
+            return p2p_service.SendFail(newpacket, 'deny:' + jsn.dumps(current_contract))
+    # check if this is a new customer or an existing one
+    # for existing one, we have to first release currently allocated resources
+    if customer_idurl in current_customers:
+        current_allocated_byes = int(space_dict.get(customer_idurl.to_bin(), 0))
+        free_bytes += current_allocated_byes
+        current_customers.remove(customer_idurl)
+        space_dict.pop(customer_idurl.to_bin())
+        new_customer = False
+    else:
+        new_customer = True
+    # lg.args(8, new_customer=new_customer, current_allocated_bytes=space_dict.get(customer_idurl.to_bin()))
+    if free_bytes <= bytes_for_customer:
+        contactsdb.remove_customer_meta_info(customer_idurl)
+        accounting.write_customers_quotas(space_dict, free_bytes)
+        contactsdb.update_customers(current_customers)
+        contactsdb.save_customers()
+        if customer_public_key_id:
+            my_keys.erase_key(customer_public_key_id)
+        reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
+        if new_customer:
+            lg.info('NEW CUSTOMER: DENIED     not enough space available')
+            events.send('new-customer-denied', data=dict(idurl=customer_idurl))
+        else:
+            lg.info('OLD CUSTOMER: DENIED     not enough space available')
+            events.send('existing-customer-denied', data=dict(idurl=customer_idurl))
+        return p2p_service.SendAck(newpacket, 'deny:{"reason": "not enough space available"}')
+    free_bytes = free_bytes - bytes_for_customer
+    current_customers.append(customer_idurl)
+    space_dict[customer_idurl.to_bin()] = bytes_for_customer
+    contactsdb.add_customer_meta_info(customer_idurl, {
+        'ecc_map': ecc_map,
+        'position': family_position,
+        'family_snapshot': family_snapshot,
+    })
+    accounting.write_customers_quotas(space_dict, free_bytes)
+    contactsdb.update_customers(current_customers)
+    contactsdb.save_customers()
+    register_customer_key(customer_public_key_id, customer_public_key)
+    reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
+    if new_customer:
+        lg.info('NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
+        events.send(
+            'new-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                family_snapshot=family_snapshot,
+                key_id=customer_public_key_id,
+                contract=current_contract,
+            )
+        )
+    else:
+        lg.info('EXISTING CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
+        events.send(
+            'existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                key_id=customer_public_key_id,
+                family_snapshot=family_snapshot,
+                contract=current_contract,
+            )
+        )
+    if current_contract:
+        return p2p_service.SendAck(newpacket, 'accepted:' + jsn.dumps(current_contract))
+    return p2p_service.SendAck(newpacket, 'accepted')
+
+
+def on_service_supplier_cancel(json_payload, newpacket, info):
+    customer_idurl = newpacket.OwnerID
+    try:
+        customer_public_key = json_payload['customer_public_key']
+        customer_public_key_id = customer_public_key['key_id']
+    except:
+        customer_public_key = None
+        customer_public_key_id = None
+    customer_ecc_map = json_payload.get('ecc_map')
+    if driver.is_on('service_supplier_contracts'):
+        cancel_customer_contract(customer_idurl)
+    if not contactsdb.is_customer(customer_idurl):
+        lg.warn('got packet from %s, but he is not a customer' % customer_idurl)
+        return p2p_service.SendFail(newpacket, 'not a customer')
+    if accounting.check_create_customers_quotas():
+        lg.info('created a new space file')
+    space_dict, free_space = accounting.read_customers_quotas()
+    if customer_idurl.to_bin() not in list(space_dict.keys()):
+        lg.warn('got packet from %s, but not found him in space dictionary' % customer_idurl)
+        return p2p_service.SendFail(newpacket, 'not a customer')
+    try:
+        free_bytes = int(free_space)
+        free_space = free_bytes + int(space_dict[customer_idurl.to_bin()])
+    except:
+        lg.exc()
+        return p2p_service.SendFail(newpacket, 'broken quotas file')
+    new_customers = list(contactsdb.customers())
+    new_customers.remove(customer_idurl)
+    space_dict.pop(customer_idurl.to_bin())
+    accounting.write_customers_quotas(space_dict, free_space)
+    contactsdb.remove_customer_meta_info(customer_idurl)
+    contactsdb.update_customers(new_customers)
+    contactsdb.save_customers()
+    if customer_public_key_id:
+        my_keys.erase_key(customer_public_key_id)
+    # TODO: erase customer's groups keys also
+    reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
+    lg.info('EXISTING CUSTOMER TERMINATED %r' % customer_idurl)
+    events.send('existing-customer-terminated', data=dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
+    return p2p_service.SendAck(newpacket, 'accepted')
+
+
+#------------------------------------------------------------------------------
+
+
+def on_inbox_packet_received(newpacket, info, status, error_message):
+    if newpacket.Command == commands.DeleteFile():
+        return on_delete_file(newpacket)
+    elif newpacket.Command == commands.DeleteBackup():
+        return on_delete_backup(newpacket)
+    elif newpacket.Command == commands.Retrieve():
+        return on_retrieve(newpacket)
+    elif newpacket.Command == commands.Data():
+        return on_data(newpacket)
+    elif newpacket.Command == commands.ListFiles():
+        return on_list_files(newpacket)
+    return False
+
+
+def on_suppliers_dht_layer_connected(ok):
+    lg.info('connected to DHT layer for suppliers: %r' % ok)
+    if my_id.getIDURL():
+        dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_SUPPLIERS)
+    return ok
+
+
+def on_dht_layer_connected(evt):
+    if evt.data['layer_id'] == 0:
+        connect_suppliers_dht_layer()
+    elif evt.data['layer_id'] == dht_records.LAYER_SUPPLIERS:
+        on_suppliers_dht_layer_connected(True)

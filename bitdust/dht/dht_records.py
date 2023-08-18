@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ RELATION_RECORD_CACHE_TTL = {
     'identity': 60*60,
     'suppliers': 60*60*12,
     'message_broker': 60*60*12,
+    'bismuth_identity_request': 60*60,
 }
 
 _Rules = {
@@ -210,7 +211,36 @@ _Rules = {
                 'op': 'exist',
             },
         ],  # 'archive_folder_path': [{'op': 'exist', }, ],
-    },  # customers relations are not stored, so this is actually not needed, but decided to leave it here just in case:
+    },
+    'bismuth_identity_request': {
+        'type': [
+            {
+                'op': 'equal',
+                'arg': 'bismuth_identity_request',
+            },
+        ],
+        'timestamp': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'idurl': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'public_key': [
+            {
+                'op': 'exist',
+            },
+        ],
+        'position': [
+            {
+                'op': 'exist',
+            },
+        ],
+    },
+    # customers relations are not stored, so this is actually not needed, but decided to leave it here just in case:
     # 'customers': {
     #     'key': [{'op': 'exist', }, ],
     #     'type': [{'op': 'equal', 'arg': 'customers', }, ],
@@ -389,3 +419,61 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
         expire=expire,
         collect_results=True,
     )
+
+
+#------------------------------------------------------------------------------
+
+
+def get_bismuth_identity_request(position, use_cache=False):
+    time_shift = int(utime.get_sec1970()/(60*60))
+    dht_key = dht_service.make_key(
+        key=time_shift,
+        index=position,
+        prefix='blockchain_identity',
+    )
+    ret = dht_service.get_valid_data(
+        key=dht_key,
+        rules=get_rules('bismuth_identity_request'),
+        use_cache_ttl=RELATION_RECORD_CACHE_TTL['bismuth_identity_request'] if use_cache else None,
+    )
+    if _Debug:
+        lg.args(_DebugLevel, dht_key=dht_key, ret=ret)
+    return ret
+
+
+def set_bismuth_identity_request(position, idurl, public_key, wallet_address):
+    json_data = {
+        'type': 'bismuth_identity_request',
+        'timestamp': utime.get_sec1970(),
+        'idurl': idurl.to_bin(),
+        'public_key': public_key,
+        'wallet_address': wallet_address,
+        'position': position,
+    }
+    time_shift = int(utime.get_sec1970()/(60*60))
+    dht_key = dht_service.make_key(
+        key=time_shift,
+        index=position,
+        prefix='blockchain_identity',
+    )
+    ret = dht_service.set_valid_data(
+        key=dht_key,
+        json_data=json_data,
+        rules=get_rules('bismuth_identity_request'),
+    )
+    if _Debug:
+        lg.args(_DebugLevel, dht_key=dht_key, idurl=idurl, wallet_address=wallet_address, ret=ret)
+    return ret
+
+
+def erase_bismuth_identity_request(position):
+    time_shift = int(utime.get_sec1970()/(60*60))
+    dht_key = dht_service.make_key(
+        key=time_shift,
+        index=position,
+        prefix='blockchain_identity',
+    )
+    ret = dht_service.delete_key(key=dht_key)
+    if _Debug:
+        lg.args(_DebugLevel, dht_key=dht_key, ret=ret)
+    return ret

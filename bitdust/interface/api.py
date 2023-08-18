@@ -1090,6 +1090,7 @@ def config_set(key, value):
     typ_label = config.conf().getTypeLabel(key)
     if _Debug:
         lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
+    # TODO: verify value against type of the field
     config.conf().setValueOfType(key, value)
     v.update(config.conf().toJson(key, include_info=False))
     return RESULT([

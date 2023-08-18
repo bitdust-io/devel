@@ -712,12 +712,14 @@ def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
     return results
 
 
-def idurl_to_id(idurl_text):
+def idurl_to_id(idurl_text, by_parts=False):
     """
     Translates raw IDURL string (not ID_URL_FIELD) into global id short form:
         "http://somehost.com/alice.xml" -> "alice@somehost.com"
     """
     if not idurl_text:
+        if by_parts:
+            return '', ''
         return idurl_text
     _, host, port, _, filename = nameurl.UrlParseFast(idurl_text)
     if filename.count('.'):
@@ -726,6 +728,8 @@ def idurl_to_id(idurl_text):
         username = filename
     if port:
         host = '%s_%s' % (host, port)
+    if by_parts:
+        return username, host
     return '%s@%s' % (username, host)
 
 
@@ -733,6 +737,23 @@ def idurl_to_id(idurl_text):
 
 
 class ID_URL_FIELD(object):
+    """
+    A class represents a valid, verified and synced IDURL identifier of a device.
+    The IDURL is always corresponds to your own identity file.
+
+    When your identity file is updated due to rotation to another identity server,
+    the "host" component of your IDURL is changed:
+        `http://old-server/alice.xml` will become `http://new-server.org/alice.xml`
+
+    The IDURL can also be presented in a shorter form, which is also called global user ID, so:
+        `alice@old-server.com` will become `alice@new-server.org`
+
+    All that is handled automatically and your instance of `ID_URL_FIELD` will receive updated info automatically.
+    When incoming identity files are first received, processed and cached your `ID_URL_FIELD` variable is
+    automatically synchornized using `ID_URL_FIELD.refresh()` method.
+
+    This is why you can always trust and be able to compare two user IDs and verify recipient/sender identity.
+    """
     def __init__(self, idurl):
         self.current = b''
         self.current_as_string = ''
@@ -749,13 +770,27 @@ class ID_URL_FIELD(object):
             else:
                 self.current = strng.to_bin(idurl.strip())
         self.current_as_string = strng.to_text(self.current)
-        self.current_id = idurl_to_id(self.current)
+        username, current_host = idurl_to_id(self.current, by_parts=True)
+        self.username = username
+        self.current_host = current_host
+        self.current_id = '%s@%s' % (self.username, self.current_host)
         self.latest, self.latest_revision = get_latest_revision(self.current)
         if not self.latest:
             self.latest = self.current
             self.latest_revision = -1
         self.latest_as_string = strng.to_text(self.latest)
-        self.latest_id = idurl_to_id(self.latest)
+        latest_username, latest_host = idurl_to_id(self.latest, by_parts=True)
+        if latest_username != self.username:
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
+            if caller_method.count('lambda') or caller_method == 'field':
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.current, self.latest))
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
+            raise exc
+        self.latest_host = latest_host
+        self.latest_id = '%s@%s' % (self.username, self.latest_host)
         if _Debug:
             lg.out(_DebugLevel*2, 'NEW ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
 
@@ -900,7 +935,18 @@ class ID_URL_FIELD(object):
             self.latest = self.current
             self.latest_revision = -1
         self.latest_as_string = strng.to_text(self.latest)
-        self.latest_id = idurl_to_id(self.latest)
+        latest_username, latest_host = idurl_to_id(self.latest, by_parts=True)
+        if latest_username != self.username:
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
+            if caller_method.count('lambda') or caller_method == 'field':
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.current, self.latest))
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
+            raise exc
+        self.latest_host = latest_host
+        self.latest_id = '%s@%s' % (self.username, self.latest_host)
         if replace_original:
             self.current = self.latest
             self.current_as_string = self.latest_as_string

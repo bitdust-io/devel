@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_supplier_contracts.py
+# service_bismuth_identity.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_supplier_contracts.py) is part of BitDust Software.
+# This file (service_bismuth_identity.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_supplier_contracts
+module:: service_bismuth_identity
 """
 
 from __future__ import absolute_import
@@ -34,18 +34,23 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return SupplierContractsService()
+    return BismuthIdentityService()
 
 
-class SupplierContractsService(LocalService):
+class BismuthIdentityService(LocalService):
 
-    service_name = 'service_supplier_contracts'
-    config_path = 'services/supplier-contracts/enabled'
+    service_name = 'service_bismuth_identity'
+    config_path = 'services/bismuth-identity/enabled'
 
     def dependent_on(self):
         return [
-            'service_supplier',
+            'service_bismuth_wallet',
+            'service_identity_propagate',
+            'service_entangled_dht',
         ]
+
+    def installed(self):
+        return True
 
     def start(self):
         return True

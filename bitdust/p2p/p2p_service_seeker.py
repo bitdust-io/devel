@@ -331,33 +331,22 @@ class P2PServiceSeeker(automat.Automat):
         if not strng.to_text(response.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with "service denied" response: %r %r' % (response, info))
-            self.automat(
-                'service-denied',
-                (
-                    response,
-                    info,
-                ),
-                reason='service-denied',
-            )
+            self.automat('service-denied', (
+                response,
+                info,
+            ), reason='service-denied')
             return
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
-        self.automat('service-accepted', (
-            response,
-            info,
-        ))
+        self.automat('service-accepted', (response, info))
 
     def _node_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
-        self.automat(
-            'service-denied',
-            (
-                response,
-                info,
-            ),
-            reason='service-denied',
-        )
+        self.automat('service-denied', (
+            response,
+            info,
+        ), reason='service-denied')
 
     def _node_timed_out(self, pkt_out):
         if _Debug:

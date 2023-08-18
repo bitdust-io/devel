@@ -359,10 +359,7 @@ class SupplierFinder(automat.Automat):
     def _supplier_connector_state(self, supplier_idurl, newstate, **kwargs):
         if id_url.field(supplier_idurl) != self.target_idurl:
             return
-        if newstate in [
-            'DISCONNECTED',
-            'NO_SERVICE',
-        ]:
+        if newstate in ['DISCONNECTED', 'NO_SERVICE']:
             self.automat('supplier-not-connected')
             return
         if newstate != 'CONNECTED':

@@ -213,7 +213,7 @@ class BismuthClient():
             return cached
         transactions = self.command("txsearch", [(address, recipient, operation, openfield, limit, offset, ), ])
         if self.verbose:
-            print('Client: search transactions', transactions)
+            print('Client: search transactions', key, transactions)
         json = [TxFormatter(tx).to_json(for_display=True) for tx in transactions]
         self._set_cache(key, json)
         return json
@@ -574,5 +574,7 @@ class BismuthClient():
         if not self._connection:
             raise Exception('Connection to Bismuth node was not opened')
         ret = self._connection.command(command, options)
+        if self.verbose:
+            print('Client: command=%s ret=%r options=%r' % (command, ret, options))
         self._connection.close()
         return ret

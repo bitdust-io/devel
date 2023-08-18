@@ -9,21 +9,16 @@ from twisted.internet.defer import Deferred
 #------------------------------------------------------------------------------
 
 from bitdust_forks.Bismuth.bismuthclient import bismuthclient  # @UnresolvedImport
-from bitdust_forks.Bismuth import options  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
 from bitdust.logs import lg
-
-from bitdust.lib import strng
 
 from bitdust.main import settings
 
 from bitdust.blockchain import known_bismuth_nodes
 
 from bitdust.services import driver
-
-from bitdust.userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -122,27 +117,6 @@ def check_create_wallet(result_defer):
     if not success:
         result_defer.errback(Exception('error connecting to Bismuth node'))
         return
-
-    reactor.callLater(0, check_register_my_identity, result_defer)  # @UndefinedVariable
-
-
-def check_register_my_identity(result_defer):
-    my_pub_key = my_id.getIDName() + ':' + strng.to_text(my_id.getLocalIdentity().getPublicKey()).replace('ssh-rsa ', '')
-    results = client().search_transactions(
-        address=my_wallet_address(),
-        recipient=options.GENESIS_ADDRESS,
-        operation='identity1',
-        openfield=my_pub_key,
-    )
-    if _Debug:
-        lg.args(_DebugLevel, my_wallet_address=my_wallet_address(), tx=len(results))
-    # if not results:
-    #     send_transaction(
-    #         recipient=options.GENESIS_ADDRESS,
-    #         amount=0,
-    #         operation='identity1',
-    #         data=my_pub_key,
-    #     )
     result_defer.callback(True)
 
 
@@ -163,4 +137,22 @@ def send_transaction(recipient, amount, operation='', data=''):
     ret = client().send(recipient=recipient, amount=amount, operation=operation, data=data, error_reply=error_reply)
     if not ret:
         return error_reply
+    return ret
+
+
+def find_transaction(address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
+    try:
+        ret = client().search_transactions(
+            address=address,
+            recipient=recipient,
+            operation=operation,
+            openfield=openfield,
+            limit=limit,
+            offset=offset,
+        )
+    except:
+        lg.exc()
+        return []
+    if _Debug:
+        lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=openfield, lim=limit, ofs=offset, ret=ret)
     return ret

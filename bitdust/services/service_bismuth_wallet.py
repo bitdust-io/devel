@@ -45,7 +45,6 @@ class BismuthWalletService(LocalService):
     def dependent_on(self):
         return [
             'service_bismuth_blockchain',
-            'service_identity_propagate',
         ]
 
     def installed(self):

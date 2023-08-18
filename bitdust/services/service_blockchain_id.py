@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_supplier_contracts.py
+# service_blockchain_id.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_supplier_contracts.py) is part of BitDust Software.
+# This file (service_blockchain_id.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_supplier_contracts
+module:: service_blockchain_id
 """
 
 from __future__ import absolute_import
@@ -34,21 +34,32 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return SupplierContractsService()
+    return BlockchainIDService()
 
 
-class SupplierContractsService(LocalService):
+class BlockchainIDService(LocalService):
 
-    service_name = 'service_supplier_contracts'
-    config_path = 'services/supplier-contracts/enabled'
+    service_name = 'service_blockchain_id'
+    config_path = 'services/blockchain-id/enabled'
 
     def dependent_on(self):
         return [
-            'service_supplier',
+            'service_bismuth_identity',
         ]
 
-    def start(self):
+    def installed(self):
         return True
 
+    def start(self):
+        from twisted.internet.defer import Deferred
+        from bitdust.logs import lg
+        from bitdust.blockchain import blockchain_registrator
+        self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        blockchain_registrator.A('start', result_defer=self.starting_deferred)
+        return self.starting_deferred
+
     def stop(self):
+        from bitdust.blockchain import blockchain_registrator
+        blockchain_registrator.A('shutdown')
         return True
