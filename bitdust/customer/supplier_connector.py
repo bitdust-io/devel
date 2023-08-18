@@ -68,6 +68,7 @@ from bitdust.logs import lg
 from bitdust.automats import automat
 
 from bitdust.system import bpio
+from bitdust.system import local_fs
 
 from bitdust.main import settings
 from bitdust.main import events
@@ -75,14 +76,22 @@ from bitdust.main import events
 from bitdust.lib import strng
 from bitdust.lib import nameurl
 from bitdust.lib import diskspace
+from bitdust.lib import utime
+from bitdust.lib import jsn
+
+from bitdust.crypt import key
 
 from bitdust.contacts import contactsdb
+
+from bitdust.services import driver
 
 from bitdust.p2p import commands
 from bitdust.p2p import p2p_service
 from bitdust.p2p import online_status
 
 from bitdust.raid import eccmap
+
+from bitdust.storage import accounting
 
 from bitdust.userid import id_url
 from bitdust.userid import global_id
@@ -158,6 +167,25 @@ def total_connectors():
 #------------------------------------------------------------------------------
 
 
+def get_supplier_contracts_dir(supplier_idurl):
+    supplier_idurl = id_url.field(supplier_idurl)
+    supplier_contracts_prefix = '{}_{}'.format(
+        supplier_idurl.username,
+        strng.to_text(key.HashSHA(supplier_idurl.to_public_key(), hexdigest=True)),
+    )
+    return os.path.join(settings.ServiceDir('service_customer_contracts'), supplier_contracts_prefix)
+
+
+def save_storage_contract(supplier_idurl, json_data):
+    supplier_contracts_dir = get_supplier_contracts_dir(supplier_idurl)
+    contract_path = os.path.join(supplier_contracts_dir, utime.unpack_time(json_data['started']))
+    local_fs.WriteTextFile(contract_path, jsn.dumps(json_data))
+    return contract_path
+
+
+#------------------------------------------------------------------------------
+
+
 class SupplierConnector(automat.Automat):
     """
     This class implements all the functionality of the ``supplier_connector()``
@@ -185,6 +213,7 @@ class SupplierConnector(automat.Automat):
         )
         self.request_packet_id = None
         self.request_queue_packet_id = None
+        self.latest_supplier_ack = None
         self.callbacks = {}
         try:
             st = bpio.ReadTextFile(settings.SupplierServiceFilename(
@@ -239,6 +268,9 @@ class SupplierConnector(automat.Automat):
                 newstate,
             )
         if newstate == 'CONNECTED':
+            if id_url.is_the_same(self.customer_idurl, my_id.getIDURL()):
+                #TODO: receive and process contract details: "pay_before" field
+                pass
             if not self._supplier_connected_event_sent:
                 self._supplier_connected_event_sent = True
                 events.send('supplier-connected', data=dict(
@@ -311,9 +343,6 @@ class SupplierConnector(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -376,6 +405,9 @@ class SupplierConnector(automat.Automat):
             elif not self.GoDisconnect and (event == 'queue-ack' or event == 'queue-fail' or event == 'queue-skip' or event == 'timer-10sec'):
                 self.state = 'CONNECTED'
                 self.doReportConnect(*args, **kwargs)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
 
     def isServiceAccepted(self, *args, **kwargs):
@@ -399,7 +431,7 @@ class SupplierConnector(automat.Automat):
         if newpacket.Command == commands.Ack():
             if strng.to_text(newpacket.Payload).startswith('accepted'):
                 if _Debug:
-                    lg.out(6, 'supplier_connector.isServiceCancelled !!! supplier %s disconnected' % self.supplier_idurl)
+                    lg.out(_DebugLevel, 'supplier_connector.isServiceCancelled !!! supplier %s disconnected' % self.supplier_idurl)
                 return True
         return False
 
@@ -590,6 +622,7 @@ class SupplierConnector(automat.Automat):
             callback_method=self._on_online_status_state_changed,
         )
         connectors(self.customer_idurl).pop(self.supplier_idurl)
+        self.latest_supplier_ack = None
         self.request_packet_id = None
         self.request_queue_packet_id = None
         self.supplier_idurl = None
@@ -604,8 +637,23 @@ class SupplierConnector(automat.Automat):
         if response.PacketID != self.request_packet_id:
             lg.warn('received "unexpected" response : %r' % response)
             return
-        if _Debug:
-            lg.args(_DebugLevel, response=response, info=info)
+        self.latest_supplier_ack = response
+        if driver.is_on('service_customer_contracts'):
+            storage_contract = None
+            try:
+                if strng.to_text(response.Payload).startswith('accepted:{'):
+                    storage_contract = jsn.loads(strng.to_text(response.Payload)[9:])
+            except:
+                lg.exc()
+            if _Debug:
+                lg.args(_DebugLevel, response=response, info=info)
+            if storage_contract:
+                if not accounting.verify_storage_contract(storage_contract):
+                    lg.err('received storage contract from %r is not valid' % self.supplier_idurl)
+                    self.latest_supplier_ack = None
+                    self.automat('fail', None)
+                    return
+                save_storage_contract(self.supplier_idurl, storage_contract)
         self.automat('ack', response)
 
     def _supplier_service_failed(self, response, info):
@@ -633,10 +681,7 @@ class SupplierConnector(automat.Automat):
         self.automat('queue-fail', response or None)
 
     def _on_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
-        if oldstate != newstate and newstate in [
-            'CONNECTED',
-            'OFFLINE',
-        ]:
+        if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE']:
             if not (oldstate == 'PING?' and newstate == 'OFFLINE'):
                 if _Debug:
                     lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (self.supplier_idurl, oldstate, newstate))
@@ -649,8 +694,10 @@ class SupplierConnector(automat.Automat):
             lg.warn('supplier idurl is empty, SKIP sending supplier_service request')
             return
         service_info = {
-            'needed_bytes': self.needed_bytes,
             'customer_id': self.customer_id,
+            'needed_bytes': self.needed_bytes,
+            'minimum_duration_hours': 6,
+            'maximum_duration_hours': 24*30,
         }
         # TODO: re-think again about the customer key, do we really need it?
         # my_customer_key_id = my_id.getGlobalID(key_alias='customer')

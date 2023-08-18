@@ -323,3 +323,17 @@ def report_local_storage():
     except:
         r['diskfree_percent'] = ''
     return r
+
+
+#------------------------------------------------------------------------------
+
+
+def verify_storage_contract(json_data):
+    try:
+        gbh = int(json_data['duration_hours']*(json_data['allocated_bytes']/(1024.0*1024.0)))
+        if json_data['value'] != gbh:
+            raise Exception('invalid contract GBH value')
+    except:
+        lg.exc()
+        return False
+    return True

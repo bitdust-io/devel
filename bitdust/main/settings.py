@@ -572,6 +572,15 @@ def BackupDBSynchronizeDelay():
     return 60*5
 
 
+def SupplierContractBillingPeriodDays():
+    """
+    To prevent overhead on blockchain transactions, there is a limit.
+    To pay for storage, you can send only one transaction to any user per billing period.
+    So multiple contracts are paid at once.
+    """
+    return 30
+
+
 #------------------------------------------------------------------------------
 #---CONSTANTS ( STRINGS ) -----------------------------------------------------
 #------------------------------------------------------------------------------

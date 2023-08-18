@@ -71,11 +71,11 @@ class CustomerFamilyService(LocalService):
                 fm = family_member.create_family(customer_idurl)
             fm.automat('init')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-            reactor.callLater(
+            reactor.callLater(  # @UndefinedVariable
                 0,
                 fm.automat,
                 'family-join',
-                {  # @UndefinedVariable
+                {
                     'supplier_idurl': my_id.getIDURL().to_bin(),
                     'ecc_map': local_customer_meta_info.get('ecc_map'),
                     'position': local_customer_meta_info.get('position', -1),
@@ -113,11 +113,11 @@ class CustomerFamilyService(LocalService):
             fm.automat('init')
         else:
             lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
-        reactor.callLater(
+        reactor.callLater(  # @UndefinedVariable
             0,
             fm.automat,
             'family-join',
-            {  # @UndefinedVariable
+            {
                 'supplier_idurl': my_id.getIDURL().to_bin(),
                 'ecc_map': evt.data.get('ecc_map'),
                 'position': evt.data.get('position', -1),
@@ -142,11 +142,11 @@ class CustomerFamilyService(LocalService):
         if not fm:
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
-        reactor.callLater(
+        reactor.callLater(  # @UndefinedVariable
             0,
             fm.automat,
             'family-join',
-            {  # @UndefinedVariable
+            {
                 'supplier_idurl': my_id.getIDURL().to_bin(),
                 'ecc_map': evt.data.get('ecc_map'),
                 'position': evt.data.get('position'),
@@ -167,11 +167,11 @@ class CustomerFamilyService(LocalService):
         if not fm:
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
-        reactor.callLater(
+        reactor.callLater(  # @UndefinedVariable
             0,
             fm.automat,
             'family-leave',
-            {  # @UndefinedVariable
+            {
                 'supplier_idurl': my_id.getIDURL().to_bin(),
                 'ecc_map': evt.data.get('ecc_map'),
             },
@@ -215,11 +215,11 @@ class CustomerFamilyService(LocalService):
             if not fm:
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (newpacket, info, customer_idurl))
                 return False
-            reactor.callLater(
+            reactor.callLater(  # @UndefinedVariable
                 0,
                 fm.automat,
                 'contacts-received',
-                {  # @UndefinedVariable
+                {
                     'type': contacts_type,
                     'packet': newpacket,
                     'customer_idurl': customer_idurl,
@@ -247,11 +247,11 @@ class CustomerFamilyService(LocalService):
             if not fm:
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (newpacket, info, customer_idurl))
                 return False
-            reactor.callLater(
+            reactor.callLater(  # @UndefinedVariable
                 0,
                 fm.automat,
                 'contacts-received',
-                {  # @UndefinedVariable
+                {
                     'type': contacts_type,
                     'packet': newpacket,
                     'customer_idurl': customer_idurl,

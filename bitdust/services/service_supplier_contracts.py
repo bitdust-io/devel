@@ -45,31 +45,10 @@ class SupplierContractsService(LocalService):
     def dependent_on(self):
         return [
             'service_supplier',
-            'service_contract_chain',
         ]
 
-    def installed(self):
-        # TODO: to be continue...
-        return False
-
     def start(self):
-        from bitdust.main import events
-        from bitdust.contacts import contactsdb
-        from coins import supplier_contract_executor
-        for customer_idurl in contactsdb.customers():
-            supplier_contract_executor.init_contract(customer_idurl)
-        events.add_subscriber(self._on_customer_modified, 'customer-modified')
         return True
 
     def stop(self):
-        from bitdust.main import events
-        from coins import supplier_contract_executor
-        events.remove_subscriber(self._on_customer_modified, 'customer-modified')
-        for customer_idurl in list(supplier_contract_executor.all_contracts.keys()):
-            supplier_contract_executor.shutdown_contract(customer_idurl)
         return True
-
-    def _on_customer_modified(self, evt):
-        from coins import supplier_contract_executor
-        if evt.data.get('idurl'):
-            supplier_contract_executor.recheck_contract(evt.data['idurl'])

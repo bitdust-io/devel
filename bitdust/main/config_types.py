@@ -42,6 +42,9 @@ TYPE_COMBO_BOX = 9
 TYPE_PASSWORD = 10
 TYPE_DISK_SPACE = 11
 TYPE_PORT_NUMBER = 12
+TYPE_FLOATING_POINT = 13
+TYPE_POSITIVE_FLOATING_POINT = 14
+TYPE_NON_ZERO_POSITIVE_FLOATING_POINT = 15
 
 
 def labels():
@@ -59,6 +62,9 @@ def labels():
         TYPE_PASSWORD: 'password',
         TYPE_DISK_SPACE: 'disk space',
         TYPE_PORT_NUMBER: 'port number',
+        TYPE_FLOATING_POINT: 'floating point',
+        TYPE_POSITIVE_FLOATING_POINT: 'non negative floating point',
+        TYPE_NON_ZERO_POSITIVE_FLOATING_POINT: 'non zero positive floating point',
     }
 
 
@@ -216,6 +222,8 @@ def defaults():
         'services/supplier/donated-space': TYPE_DISK_SPACE,
         'services/supplier/enabled': TYPE_BOOLEAN,
         'services/supplier-contracts/enabled': TYPE_BOOLEAN,
+        'services/supplier-contracts/initial-duration-hours': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/supplier-contracts/duration-raise-factor': TYPE_NON_ZERO_POSITIVE_FLOATING_POINT,
         'services/tcp-connections/enabled': TYPE_BOOLEAN,
         'services/tcp-connections/tcp-port': TYPE_PORT_NUMBER,
         'services/tcp-connections/upnp-enabled': TYPE_BOOLEAN,
