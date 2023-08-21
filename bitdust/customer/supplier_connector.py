@@ -178,7 +178,9 @@ def get_supplier_contracts_dir(supplier_idurl):
 
 def save_storage_contract(supplier_idurl, json_data):
     supplier_contracts_dir = get_supplier_contracts_dir(supplier_idurl)
-    contract_path = os.path.join(supplier_contracts_dir, utime.unpack_time(json_data['started']))
+    if not os.path.isdir(supplier_contracts_dir):
+        bpio._dirs_make(supplier_contracts_dir)
+    contract_path = os.path.join(supplier_contracts_dir, str(utime.unpack_time(json_data['started'])))
     local_fs.WriteTextFile(contract_path, jsn.dumps(json_data))
     return contract_path
 
@@ -642,7 +644,7 @@ class SupplierConnector(automat.Automat):
             storage_contract = None
             try:
                 if strng.to_text(response.Payload).startswith('accepted:{'):
-                    storage_contract = jsn.loads(strng.to_text(response.Payload)[9:])
+                    storage_contract = jsn.loads_text(strng.to_text(response.Payload)[9:])
             except:
                 lg.exc()
             if _Debug:

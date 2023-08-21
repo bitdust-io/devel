@@ -44,7 +44,7 @@ class EmployerService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_customer',
+            'service_customer_contracts',
             'service_nodes_lookup',
         ]
 

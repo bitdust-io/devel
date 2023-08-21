@@ -29,12 +29,8 @@
 
 #------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-
-#------------------------------------------------------------------------------
-
-_Debug = False
-_DebugLevel = 6
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -341,6 +337,16 @@ def get_current_customer_contract(customer_idurl):
     return json_data
 
 
+def is_current_customer_contract_active(customer_idurl):
+    current_contract = get_current_customer_contract(customer_idurl)
+    if not current_contract:
+        return False
+    now = utime.utcnow_to_sec1970()
+    if now > utime.unpack_time(current_contract['complete_after']):
+        return False
+    return True
+
+
 def list_customer_contracts(customer_idurl):
     customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
     if _Debug:
@@ -348,6 +354,7 @@ def list_customer_contracts(customer_idurl):
     if not os.path.isdir(customer_contracts_dir):
         bpio._dirs_make(customer_contracts_dir)
     customer_contracts = {}
+    current_contract = None
     latest_contract = None
     latest_contract_state = None
     latest_contract_started_time = -1
@@ -357,6 +364,9 @@ def list_customer_contracts(customer_idurl):
     paid_contracts_total_GBH_value = 0
     for fname in os.listdir(customer_contracts_dir):
         if fname == 'current':
+            current_contract = jsn.loads_text(local_fs.ReadTextFile(os.path.join(customer_contracts_dir, 'current')))
+            if not accounting.verify_storage_contract(current_contract):
+                lg.err('current storage contract is invalid')
             continue
         try:
             started_time = int(fname.split('.')[0])
@@ -367,7 +377,7 @@ def list_customer_contracts(customer_idurl):
         contract_path = os.path.join(customer_contracts_dir, fname)
         json_data = jsn.loads_text(local_fs.ReadTextFile(contract_path))
         if not accounting.verify_storage_contract(json_data):
-            lg.warn('invalid storage contract found: %r' % fname)
+            lg.err('invalid storage contract found: %r' % fname)
             continue
         customer_contracts[started_time] = json_data
         if started_time > latest_contract_started_time:
@@ -383,11 +393,14 @@ def list_customer_contracts(customer_idurl):
             paid_contracts_total_GBH_value += json_data['value']
         else:
             raise Exception('unknown state of the contract')
+    customer_contracts['current'] = current_contract
     customer_contracts['latest'] = latest_contract
     customer_contracts['latest_state'] = latest_contract_state
     customer_contracts['latest_paid_contract'] = latest_paid_contract
     customer_contracts['completed_value'] = completed_contracts_total_GBH_value
     customer_contracts['paid_value'] = paid_contracts_total_GBH_value
+    if _Debug:
+        lg.args(_DebugLevel, r=customer_contracts)
     return customer_contracts
 
 
@@ -399,7 +412,6 @@ def prepare_customer_contract(customer_idurl, details):
     if not os.path.isdir(customer_contracts_dir):
         bpio._dirs_make(customer_contracts_dir)
     current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
-    # previous_customer_contract = None
     if not os.path.isfile(current_customer_contract_path):
         # SCENARIO 2: no current contract found
         pass
@@ -411,8 +423,7 @@ def prepare_customer_contract(customer_idurl, details):
             else:
                 if now > utime.unpack_time(current_contract['complete_after']):
                     # SCENARIO 1: found that previous contract was active but finished now
-                    lg.warn('current contract with %r already ended' % customer_idurl)
-                    # previous_customer_contract = current_contract
+                    lg.warn('current storage contract with %r already ended' % customer_idurl)
                     complete_current_customer_contract(customer_idurl)
                 else:
                     # SCENARIO 3: there is already a contract started with this customer and not yet completed
@@ -478,11 +489,14 @@ def prepare_customer_contract(customer_idurl, details):
         'raise_factor': new_raise_factor,
     }
     local_fs.WriteTextFile(current_customer_contract_path, jsn.dumps(json_data))
+    if _Debug:
+        lg.args(_DebugLevel, c=json_data)
     return json_data
 
 
 def cancel_customer_contract(customer_idurl):
-    settings.ServiceDir('service_supplier')
+    # TODO: ...
+    # settings.ServiceDir('service_supplier')
     return
 
 
@@ -522,6 +536,8 @@ def change_current_customer_contract(customer_idurl, details):
         current_contract['allocated_bytes'] = details['allocated_bytes']
         current_contract['duration_hours'] = new_duration_hours
         current_contract['complete_after'] = utime.pack_time(new_complete_after_time)
+    if _Debug:
+        lg.args(_DebugLevel, c=current_contract)
     local_fs.WriteTextFile(current_customer_contract_path, jsn.dumps(current_contract))
     return current_contract
 
@@ -544,9 +560,32 @@ def complete_current_customer_contract(customer_idurl):
     # rename "current" file to "<started_time>.completed"
     contract_path_new = os.path.join(customer_contracts_dir, '{}.completed'.format(utime.unpack_time(current_contract['started'])))
     os.rename(current_customer_contract_path, contract_path_new)
+    events.send('customer-contract-completed', data=dict(contract=current_contract))
     if _Debug:
         lg.args(_DebugLevel, old_path=current_customer_contract_path, new_path=contract_path_new)
     return True
+
+
+def verify_all_current_customers_contracts():
+    rejected_customers = []
+    now = utime.utcnow_to_sec1970()
+    for customer_idurl in contactsdb.customers():
+        contracts_list = list_customer_contracts(customer_idurl)
+        latest_contract = contracts_list['latest']
+        if contracts_list['current']:
+            if now > utime.unpack_time(contracts_list['current']['complete_after']):
+                lg.warn('current storage contract with %r already ended' % customer_idurl)
+                complete_current_customer_contract(customer_idurl)
+                latest_contract = contracts_list['current']
+        if not latest_contract:
+            rejected_customers.append(customer_idurl)
+            lg.warn('rejecting customer %r because of missing contract' % customer_idurl)
+        else:
+            next_complete_after_time = utime.unpack_time(latest_contract['complete_after']) + latest_contract['raise_factor']*latest_contract['duration_hours']*60*60
+            if now > next_complete_after_time:
+                lg.warn('rejecting customer %r because of finished contract' % customer_idurl)
+                rejected_customers.append(customer_idurl)
+    return rejected_customers
 
 
 #------------------------------------------------------------------------------
@@ -1187,7 +1226,11 @@ def on_service_supplier_request(json_payload, newpacket, info):
     current_contract = {}
     if driver.is_on('service_supplier_contracts'):
         try:
-            current_contract = prepare_customer_contract(customer_idurl)
+            current_contract = prepare_customer_contract(customer_idurl, details={
+                'allocated_bytes': bytes_for_customer,
+                'my_position': family_position,
+                'ecc_map': ecc_map,
+            })
         except:
             lg.exc()
             current_contract = {}

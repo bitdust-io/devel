@@ -122,7 +122,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/customer/needed-space', diskspace.MakeStringFromBytes(settings.DefaultNeededBytes()))
     conf_obj.setDefaultValue('services/customer/suppliers-number', settings.DefaultDesiredSuppliers())
 
-    conf_obj.setDefaultValue('services/customer-contracts/enabled', 'false')
+    conf_obj.setDefaultValue('services/customer-contracts/enabled', 'true')
 
     conf_obj.setDefaultValue('services/customer-family/enabled', 'true')
 
@@ -245,7 +245,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/supplier/enabled', 'true')
     conf_obj.setDefaultValue('services/supplier/donated-space', diskspace.MakeStringFromBytes(settings.DefaultDonatedBytes()))
 
-    conf_obj.setDefaultValue('services/supplier-contracts/enabled', 'false')
+    conf_obj.setDefaultValue('services/supplier-contracts/enabled', 'true')
     conf_obj.setDefaultValue('services/supplier-contracts/initial-duration-hours', 6)
     conf_obj.setDefaultValue('services/supplier-contracts/duration-raise-factor', 2.0)
 

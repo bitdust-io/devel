@@ -57,6 +57,7 @@ from bitdust.system import diskusage
 from bitdust.lib import misc
 from bitdust.lib import strng
 from bitdust.lib import jsn
+from bitdust.lib import utime
 
 from bitdust.main import settings
 
@@ -329,6 +330,19 @@ def report_local_storage():
 
 
 def verify_storage_contract(json_data):
+    try:
+        utime.unpack_time(json_data['started'])
+        utime.unpack_time(json_data['complete_after'])
+        utime.unpack_time(json_data['pay_before'])
+        int(json_data['value'])
+        int(json_data['allocated_bytes'])
+        int(json_data['duration_hours'])
+        int(json_data['my_position'])
+        str(json_data['ecc_map'])
+        float(json_data['raise_factor'])
+    except:
+        lg.exc()
+        return False
     try:
         gbh = int(json_data['duration_hours']*(json_data['allocated_bytes']/(1024.0*1024.0)))
         if json_data['value'] != gbh:

@@ -539,7 +539,8 @@ class Automat(object):
         if self.fast:
             self.event(event, *args, **kwargs)
         else:
-            reactor.callLater(0, self.event, event, *args, **kwargs)  # @UndefinedVariable
+            delay = kwargs.pop('delay', 0)
+            reactor.callLater(delay, self.event, event, *args, **kwargs)  # @UndefinedVariable
         return self
 
     def event(self, event, *args, **kwargs):
