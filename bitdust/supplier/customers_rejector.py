@@ -33,16 +33,22 @@ BitDust customers_rejector() Automat
     </a>
 
 EVENTS:
+    * :red:`contracts-verified`
     * :red:`customers-rejected`
     * :red:`found-idle-customers`
+    * :red:`found-unpaid-customers`
     * :red:`no-idle-customers`
     * :red:`restart`
     * :red:`space-enough`
     * :red:`space-overflow`
     * :red:`start`
+    * :red:`timer-1hour`
 """
 
-from __future__ import absolute_import
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -61,14 +67,13 @@ from bitdust.contacts import contactsdb
 
 from bitdust.lib import utime
 
+from bitdust.services import driver
+
 from bitdust.p2p import ratings
 
 from bitdust.storage import accounting
 
-#------------------------------------------------------------------------------
-
-_Debug = False
-_DebugLevel = 8
+from bitdust.supplier import customer_space
 
 #------------------------------------------------------------------------------
 
@@ -84,7 +89,13 @@ def A(event=None, *args, **kwargs):
     global _CustomersRejector
     if _CustomersRejector is None:
         # set automat name and starting state here
-        _CustomersRejector = CustomersRejector('customers_rejector', 'READY', 4)
+        _CustomersRejector = CustomersRejector(
+            name='customers_rejector',
+            state='READY',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _CustomersRejector.automat(event, *args, **kwargs)
     return _CustomersRejector
@@ -107,6 +118,11 @@ class CustomersRejector(automat.Automat):
     This class implements all the functionality of the ``customers_rejector()``
     state machine.
     """
+
+    timers = {
+        'timer-1hour': (3600, ['READY']),
+    }
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -116,17 +132,17 @@ class CustomersRejector(automat.Automat):
     def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
-            if event == 'start' or event == 'restart':
+            if event == 'timer-1hour' or event == 'start' or event == 'restart':
                 self.state = 'CAPACITY?'
                 self.doTestMyCapacity(*args, **kwargs)
         #---CAPACITY?---
         elif self.state == 'CAPACITY?':
-            if event == 'space-enough':
-                self.state = 'IDLE?'
-                self.doTestIdleDays(*args, **kwargs)
-            elif event == 'space-overflow':
+            if event == 'space-overflow':
                 self.state = 'REJECT!'
                 self.doRemoveCustomers(*args, **kwargs)
+            elif event == 'space-enough':
+                self.state = 'CONTRACTS?'
+                self.doVerifyStorageContracts(*args, **kwargs)
         #---REJECT!---
         elif self.state == 'REJECT!':
             if event == 'restart':
@@ -135,6 +151,7 @@ class CustomersRejector(automat.Automat):
             elif event == 'customers-rejected':
                 self.state = 'READY'
                 self.doRestartLocalTester(*args, **kwargs)
+                self.doRestartLater(*args, **kwargs)
         #---IDLE?---
         elif self.state == 'IDLE?':
             if event == 'found-idle-customers':
@@ -145,6 +162,15 @@ class CustomersRejector(automat.Automat):
                 self.doTestMyCapacity(*args, **kwargs)
             elif event == 'no-idle-customers':
                 self.state = 'READY'
+                self.doCountStatistics(*args, **kwargs)
+        #---CONTRACTS?---
+        elif self.state == 'CONTRACTS?':
+            if event == 'found-unpaid-customers':
+                self.state = 'REJECT!'
+                self.doRemoveCustomers(*args, **kwargs)
+            elif event == 'contracts-verified':
+                self.state = 'IDLE?'
+                self.doTestIdleDays(*args, **kwargs)
         return None
 
     def doTestMyCapacity(self, *args, **kwargs):
@@ -160,6 +186,7 @@ class CustomersRejector(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'customers_rejector.doTestMyCapacity')
         if bpio.Android():
+            #TODO:
             self.automat('space-enough')
             return
         failed_customers = set()
@@ -212,6 +239,9 @@ class CustomersRejector(automat.Automat):
             self.automat('no-idle-customers')
             return
         for customer_idurl in contactsdb.customers():
+            if driver.is_on('service_supplier_contracts'):
+                if customer_space.is_current_customer_contract_active(customer_idurl):
+                    continue
             connected_time = ratings.connected_time(customer_idurl.to_bin())
             if connected_time is None:
                 lg.warn('last connected_time for customer %r is unknown, rejecting customer' % customer_idurl)
@@ -227,6 +257,38 @@ class CustomersRejector(automat.Automat):
             lg.info('all customers has some activity recently, no idle customers found')
             self.automat('no-idle-customers')
 
+    def doRestartLocalTester(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        from bitdust.supplier import local_tester
+        local_tester.TestSpaceTime()
+
+    def doRestartLater(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.automat('restart', delay=5)
+
+    def doVerifyStorageContracts(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        rejected_customers = []
+        if driver.is_on('service_supplier_contracts'):
+            rejected_customers = customer_space.verify_all_current_customers_contracts()
+        if rejected_customers:
+            lg.warn('found unpaid customers: %r' % rejected_customers)
+            self.automat('found-unpaid-customers', rejected_customers)
+        else:
+            lg.info('all customers have valid contracts')
+            self.automat('contracts-verified')
+
+    def doCountStatistics(self, *args, **kwargs):
+        """
+        Action method.
+        """
+
     def doRemoveCustomers(self, *args, **kwargs):
         """
         Action method.
@@ -235,10 +297,3 @@ class CustomersRejector(automat.Automat):
         for customer_idurl in removed_customers:
             api.customer_reject(customer_id=customer_idurl, erase_customer_key=True)
         self.automat('customers-rejected', removed_customers)
-
-    def doRestartLocalTester(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        from bitdust.supplier import local_tester
-        local_tester.TestSpaceTime()
