@@ -344,7 +344,7 @@ def verify_storage_contract(json_data):
         lg.exc()
         return False
     try:
-        gbh = int(json_data['duration_hours']*(json_data['allocated_bytes']/(1024.0*1024.0)))
+        gbh = float(json_data['duration_hours'])*(json_data['allocated_bytes']/(1024.0*1024.0*1024.0))
         if json_data['value'] != gbh:
             raise Exception('invalid contract GBH value')
     except:

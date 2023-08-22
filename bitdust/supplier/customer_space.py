@@ -63,6 +63,8 @@ from bitdust.contacts import contactsdb
 
 from bitdust.services import driver
 
+from bitdust.blockchain import bismuth_wallet
+
 from bitdust.p2p import p2p_service
 from bitdust.p2p import commands
 
@@ -481,12 +483,13 @@ def prepare_customer_contract(customer_idurl, details):
         'started': utime.pack_time(now),
         'complete_after': utime.pack_time(new_complete_after_time),
         'pay_before': utime.pack_time(new_pay_before_time),
-        'value': int(new_duration_hours*(details['allocated_bytes']/(1024.0*1024.0))),
+        'value': float(new_duration_hours)*(details['allocated_bytes']/(1024.0*1024.0*1024.0)),
         'allocated_bytes': details['allocated_bytes'],
         'duration_hours': new_duration_hours,
         'my_position': details['my_position'],
         'ecc_map': details['ecc_map'],
         'raise_factor': new_raise_factor,
+        'wallet_address': bismuth_wallet.my_wallet_address(),
     }
     local_fs.WriteTextFile(current_customer_contract_path, jsn.dumps(json_data))
     if _Debug:
@@ -526,7 +529,7 @@ def change_current_customer_contract(customer_idurl, details):
         current_contract['my_position'] = details['my_position']
     if details['allocated_bytes'] != current_contract['allocated_bytes']:
         current_value = current_contract['value']
-        new_duration_hours = int(current_value/(details['allocated_bytes']/(1024.0*1024.0)))
+        new_duration_hours = int(current_value/(details['allocated_bytes']/(1024.0*1024.0*1024.0)))
         new_complete_after_time = utime.unpack_time(current_contract['started']) + new_duration_hours*60*60
         if new_complete_after_time > utime.unpack_time(current_contract['pay_before']):
             return {

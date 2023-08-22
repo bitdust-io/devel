@@ -45,10 +45,20 @@ class CustomerContractsService(LocalService):
     def dependent_on(self):
         return [
             'service_customer',
+            'service_blockchain_id',
         ]
 
     def start(self):
+        from twisted.internet import task
+        self.payment_loop = task.LoopingCall(self.on_payment_task)
+        self.start(60*60)
         return True
 
     def stop(self):
+        self.payment_loop.stop()
+        self.payment_loop = None
         return True
+
+    def on_payment_task(self):
+        from bitdust.customer import payment
+        payment.pay_for_storage()

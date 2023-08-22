@@ -45,6 +45,7 @@ class SupplierContractsService(LocalService):
     def dependent_on(self):
         return [
             'service_supplier',
+            'service_blockchain_id',
         ]
 
     def start(self):
