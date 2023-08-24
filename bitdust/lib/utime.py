@@ -26,9 +26,33 @@ module:: utime
 """
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+import sys
 import time
 import datetime
 import calendar
+
+#------------------------------------------------------------------------------
+
+_fromisoformat = datetime.datetime.fromisoformat
+
+if sys.version_info < (3, 7):
+
+    def old_fromisoformat(text):
+        """ for python versions < 3.7 get datetime from isoformat """
+        d, t = text.split('T')
+        year, month, day = d.split('-')
+        hours, minutes, seconds = t.split(':')
+        seconds = float(seconds[0:-1])
+        sec = int(seconds)
+        microseconds = int((seconds - sec)*1e6)
+        return datetime.datetime(int(year), int(month), int(day), int(hours), int(minutes), sec, microseconds)
+
+    _fromisoformat = old_fromisoformat
+
+#------------------------------------------------------------------------------
 
 
 def utc_timestamp(d):
@@ -85,15 +109,15 @@ def make_timestamp():
     return time.strftime('%Y%m%d%I%M%S', time_st) + ampm
 
 
-def pack_time(seconds=-1):
+def pack_time(seconds=-1, timespec='seconds'):
     """
     Converts seconds since 1970 year to ISO formatted string.
     """
-    return sec1970_to_datetime_utc(seconds).isoformat(timespec='microseconds')
+    return sec1970_to_datetime_utc(seconds).isoformat(timespec=timespec)
 
 
 def unpack_time(text):
     """
     Converts ISO formatted string to seconds since 1970 year.
     """
-    return datetime_to_sec1970(datetime.datetime.fromisoformat(text))
+    return datetime_to_sec1970(_fromisoformat(text))

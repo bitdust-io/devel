@@ -47,7 +47,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -72,8 +72,6 @@ from bitdust.services import driver
 from bitdust.p2p import ratings
 
 from bitdust.storage import accounting
-
-from bitdust.supplier import customer_space
 
 #------------------------------------------------------------------------------
 
@@ -240,7 +238,8 @@ class CustomersRejector(automat.Automat):
             return
         for customer_idurl in contactsdb.customers():
             if driver.is_on('service_supplier_contracts'):
-                if customer_space.is_current_customer_contract_active(customer_idurl):
+                from bitdust.supplier import storage_contract
+                if storage_contract.is_current_customer_contract_active(customer_idurl):
                     continue
             connected_time = ratings.connected_time(customer_idurl.to_bin())
             if connected_time is None:
@@ -276,7 +275,8 @@ class CustomersRejector(automat.Automat):
         """
         rejected_customers = []
         if driver.is_on('service_supplier_contracts'):
-            rejected_customers = customer_space.verify_all_current_customers_contracts()
+            from bitdust.supplier import storage_contract
+            rejected_customers = storage_contract.verify_all_current_customers_contracts()
         if rejected_customers:
             lg.warn('found unpaid customers: %r' % rejected_customers)
             self.automat('found-unpaid-customers', rejected_customers)
