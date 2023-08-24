@@ -511,7 +511,7 @@ def check_db_for_bootstrap(node):
             raise Exception()
         upgrade.close()
     except Exception as e:
-        lg.exc()
+        lg.warn(str(e))
         upgrade.close()
         lg.warn('Database needs upgrading, bootstrapping...')
         bootstrap()

@@ -650,21 +650,21 @@ class SupplierConnector(automat.Automat):
             return
         self.latest_supplier_ack = response
         if driver.is_on('service_customer_contracts'):
-            storage_contract = None
+            the_contract = None
             try:
                 if strng.to_text(response.Payload).startswith('accepted:{'):
-                    storage_contract = jsn.loads_text(strng.to_text(response.Payload)[9:])
+                    the_contract = jsn.loads_text(strng.to_text(response.Payload)[9:])
             except:
                 lg.exc()
             if _Debug:
                 lg.args(_DebugLevel, response=response, info=info)
-            if storage_contract:
-                if not accounting.verify_storage_contract(storage_contract):
+            if the_contract:
+                if not accounting.verify_storage_contract(the_contract):
                     lg.err('received storage contract from %r is not valid' % self.supplier_idurl)
                     self.latest_supplier_ack = None
                     self.automat('fail', None)
                     return
-                save_storage_contract(self.supplier_idurl, storage_contract)
+                save_storage_contract(self.supplier_idurl, the_contract)
         self.automat('ack', response)
 
     def _supplier_service_failed(self, response, info):
