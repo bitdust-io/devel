@@ -48,6 +48,9 @@ class BlockchainIDService(LocalService):
         ]
 
     def installed(self):
+        from bitdust.main import config
+        if config.conf().getBool('services/blockchain-authority/enabled'):
+            return False
         return True
 
     def start(self):
