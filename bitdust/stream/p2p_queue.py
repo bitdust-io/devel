@@ -1044,7 +1044,7 @@ class QueueMessage(object):
         self.message_id = make_message_id()
         self.producer_id = producer_id
         self.queue_id = queue_id
-        self.created = created or utime.get_sec1970()
+        self.created = created or utime.utcnow_to_sec1970()
         self.payload = jsn.dict_items_to_text(json_data)
         self.state = 'CREATED'
         self.notifications = {}

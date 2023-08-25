@@ -548,11 +548,11 @@ def RunOfflineChecks():
             # if no checks done yet but he is offline: ping user
             o_status.automat('offline-check')
             continue
-        if utime.get_sec1970() - o_status.latest_check_time > 10*60:
+        if utime.utcnow_to_sec1970() - o_status.latest_check_time > 10*60:
             # user is offline and latest check was sent a while ago: lets try to ping user again
             o_status.automat('offline-check')
             continue
-        if o_status.latest_inbox_time and utime.get_sec1970() - o_status.latest_inbox_time < 60:
+        if o_status.latest_inbox_time and utime.utcnow_to_sec1970() - o_status.latest_inbox_time < 60:
             # user is offline, but we know that he was online recently: lets try to ping him again
             o_status.automat('offline-check')
             continue
@@ -729,7 +729,7 @@ class OnlineStatus(automat.Automat):
             return True
         if not self.latest_inbox_time:
             return False
-        return utime.get_sec1970() - self.latest_inbox_time > 60
+        return utime.utcnow_to_sec1970() - self.latest_inbox_time > 60
 
     def doInit(self, *args, **kwargs):
         """
@@ -801,17 +801,17 @@ class OnlineStatus(automat.Automat):
         """
         to_be_remembered = True
         if self.latest_inbox_time:
-            if utime.get_sec1970() - self.latest_inbox_time < 5*60:
+            if utime.utcnow_to_sec1970() - self.latest_inbox_time < 5*60:
                 to_be_remembered = False
         if to_be_remembered:
             ratings.remember_connected_time(self.idurl.to_bin())
-        self.latest_inbox_time = utime.get_sec1970()
+        self.latest_inbox_time = utime.utcnow_to_sec1970()
 
     def doRememberCheckTime(self, *args, **kwargs):
         """
         Action method.
         """
-        self.latest_check_time = utime.get_sec1970()
+        self.latest_check_time = utime.utcnow_to_sec1970()
 
     def doReportAlreadyConnected(self, *args, **kwargs):
         """

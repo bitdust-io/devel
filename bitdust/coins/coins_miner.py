@@ -308,7 +308,7 @@ class CoinsMiner(automat.Automat):
         """
         Action method.
         """
-        self.mining_started = utime.get_sec1970()
+        self.mining_started = utime.utcnow_to_sec1970()
         d = self._start(args[0])
         d.addCallback(self._on_coin_mined)
         d.addErrback(lambda err: self.automat('stop'))
@@ -404,7 +404,7 @@ class CoinsMiner(automat.Automat):
             return True
         if self.mining_counts >= self.max_mining_counts:
             return True
-        if utime.get_sec1970() - self.mining_started > self.max_mining_seconds:
+        if utime.utcnow_to_sec1970() - self.mining_started > self.max_mining_seconds:
             return True
         self.mining_counts += 1
         return False

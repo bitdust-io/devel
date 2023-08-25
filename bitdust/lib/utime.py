@@ -70,7 +70,7 @@ def datetime_to_sec1970(dt):
     """
     Converts datetime object to seconds since 1970 year.
     """
-    return int(time.mktime(dt.timetuple()))
+    return int(calendar.timegm(dt.timetuple()))
 
 
 def sec1970_to_datetime_utc(seconds=-1):

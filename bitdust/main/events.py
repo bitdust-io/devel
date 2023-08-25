@@ -106,7 +106,7 @@ class Event(object):
     def __init__(self, event_id, data=None, created=None):
         self.event_id = event_id
         self.data = data
-        self.created = created or utime.get_sec1970()
+        self.created = created or utime.utcnow_to_sec1970()
 
     def __repr__(self):
         return '<Event({})>'.format(self.event_id)
