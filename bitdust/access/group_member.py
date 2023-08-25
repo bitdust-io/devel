@@ -693,7 +693,7 @@ class GroupMember(automat.Automat):
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'consume',
-                'created': utime.get_sec1970(),
+                'created': utime.utcnow_to_sec1970(),
                 'last_sequence_id': self.last_sequence_id,
                 'queue_id': self.active_queue_id,
                 'consumer_id': self.member_id,
@@ -1154,11 +1154,11 @@ class GroupMember(automat.Automat):
                 self.automat('push-message-failed')
                 return
             if self.outgoing_messages[outgoing_counter]['last_attempt'] is not None:
-                if utime.get_sec1970() - self.outgoing_messages[outgoing_counter]['last_attempt'] < config.conf().getInt('services/private-groups/message-ack-timeout'):
+                if utime.utcnow_to_sec1970() - self.outgoing_messages[outgoing_counter]['last_attempt'] < config.conf().getInt('services/private-groups/message-ack-timeout'):
                     lg.warn('pending message %d already made attempt to send recently' % outgoing_counter)
                     return
             self.outgoing_messages[outgoing_counter]['attempts'] += 1
-            self.outgoing_messages[outgoing_counter]['last_attempt'] = utime.get_sec1970()
+            self.outgoing_messages[outgoing_counter]['last_attempt'] = utime.utcnow_to_sec1970()
             json_payload = self.outgoing_messages[outgoing_counter]['payload']
             if self.outgoing_messages[outgoing_counter]['attempts'] >= 1:
                 require_handshake = True
@@ -1182,7 +1182,7 @@ class GroupMember(automat.Automat):
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'produce',
-                'created': utime.get_sec1970(),
+                'created': utime.utcnow_to_sec1970(),
                 'payload': encrypted_payload,
                 'queue_id': self.active_queue_id,
                 'producer_id': self.member_id,

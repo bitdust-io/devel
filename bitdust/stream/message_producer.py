@@ -504,7 +504,7 @@ class MessageProducer(automat.Automat):
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'produce',
-                'created': utime.get_sec1970(),
+                'created': utime.utcnow_to_sec1970(),
                 'payload': encrypted_payload,
                 'queue_id': self.active_queue_id,
                 'producer_id': self.producer_id,

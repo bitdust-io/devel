@@ -431,7 +431,7 @@ def on_consumer_notify(message_info):
         json_data={
             'msg_type': 'queue_message',
             'action': 'read',
-            'created': utime.get_sec1970(),
+            'created': utime.utcnow_to_sec1970(),
             'items': [
                 {
                     'sequence_id': sequence_id,
@@ -505,7 +505,7 @@ def store_message(queue_id, sequence_id, producer_id, payload, created, processe
         stored_json_message['attempts'].append({
             'message_id': payload['message_id'],
             'started': None,
-            'finished': utime.get_sec1970(),
+            'finished': utime.utcnow_to_sec1970(),
             'failed_consumers': [],
         })
         stored_json_message['processed'] = processed
@@ -529,7 +529,7 @@ def update_processed_message(queue_id, sequence_id):
     if not stored_json_message:
         lg.err('failed reading message %d from %r' % (sequence_id, queue_id))
         return False
-    stored_json_message['processed'] = utime.get_sec1970()
+    stored_json_message['processed'] = utime.utcnow_to_sec1970()
     if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
         return False
     return True
@@ -616,7 +616,7 @@ def register_delivery(queue_id, sequence_id, message_id):
         return False
     stored_json_message['attempts'].append({
         'message_id': message_id,
-        'started': utime.get_sec1970(),
+        'started': utime.utcnow_to_sec1970(),
         'finished': None,
         'failed_consumers': [],
     })
@@ -645,7 +645,7 @@ def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
     if found_attempt_number is None:
         return False
     stored_json_message['attempts'][found_attempt_number].update({
-        'finished': utime.get_sec1970(),
+        'finished': utime.utcnow_to_sec1970(),
         'failed_consumers': failed_consumers,
     })
     if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
@@ -1572,7 +1572,7 @@ class MessagePeddler(automat.Automat):
                 if id_url.is_not_in(my_id.getIDURL(), json_value['cooperated_brokers'].values(), as_field=False):
                     lg.warn('did not found my own idurl in the stored cooperated brokers list')
                     continue
-                if utime.get_sec1970() - json_value['time'] > 60*60*2:
+                if utime.utcnow_to_sec1970() - json_value['time'] > 60*60*2:
                     lg.warn('skip restoring queue_keeper for %s because stored state is too old' % customer_id)
                     continue
                 customer_idurl = global_id.glob2idurl(customer_id)
@@ -1608,7 +1608,7 @@ class MessagePeddler(automat.Automat):
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'read',
-                'created': utime.get_sec1970(),
+                'created': utime.utcnow_to_sec1970(),
                 'items': list_messages,
                 'last_sequence_id': latest_sequence_id,
             },

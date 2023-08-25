@@ -480,7 +480,7 @@ class QueueKeeper(automat.Automat):
                 'position': self.known_position,
                 'cooperated_brokers': self.cooperated_brokers,
                 'streams': self.known_streams,
-                'time': utime.get_sec1970(),
+                'time': utime.utcnow_to_sec1970(),
             },
         )
 

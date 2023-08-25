@@ -87,7 +87,7 @@ class Snapshot(object):
         self.model_name = model_name
         self.snap_id = snap_id
         self.data = data
-        self.created = created or utime.get_sec1970()
+        self.created = created or utime.utcnow_to_sec1970()
         self.deleted = deleted
 
     def __repr__(self):
@@ -101,7 +101,7 @@ class Snapshot(object):
             'created': self.created,
         }
         if self.deleted:
-            j['deleted'] = utime.get_sec1970()
+            j['deleted'] = utime.utcnow_to_sec1970()
         return j
 
 

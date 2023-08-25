@@ -617,16 +617,18 @@ def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_
     for consumers_callback_id in consumers_callbacks().keys():
         if consumers_callback_id not in message_queue():
             message_queue()[consumers_callback_id] = []
-        message_queue()[consumers_callback_id].append({
-            'type': msg_type,
-            'dir': direction,
-            'to': recipient_id,
-            'from': sender_id,
-            'data': json_message,
-            'packet_id': packet_id,
-            'owner_idurl': owner_idurl,
-            'time': utime.get_sec1970(),
-        })
+        message_queue()[consumers_callback_id].append(
+            {
+                'type': msg_type,
+                'dir': direction,
+                'to': recipient_id,
+                'from': sender_id,
+                'data': json_message,
+                'packet_id': packet_id,
+                'owner_idurl': owner_idurl,
+                'time': utime.utcnow_to_sec1970(),
+            }
+        )
         if _Debug:
             lg.args(_DebugLevel, dir=direction, msg_type=msg_type, to_id=recipient_id, from_id=sender_id, cb=consumers_callback_id, pending=len(message_queue()[consumers_callback_id]))
     if not run_consumers:

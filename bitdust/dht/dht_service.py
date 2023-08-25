@@ -1189,7 +1189,7 @@ def load_cache(cache_dir_path):
 def store_cached_key(hash_key, json_value, layer_id=0, timestamp=None):
     global _Cache
     if not timestamp:
-        timestamp = utime.get_sec1970()
+        timestamp = utime.utcnow_to_sec1970()
     if layer_id not in _Cache:
         _Cache[layer_id] = {}
     cached_json_record = {
@@ -1231,7 +1231,7 @@ def get_cached_json_value(key, layer_id=0, cache_ttl=DEFAULT_CACHE_TTL):
     cached_record = get_cached_value(hash_key)
     if not cached_record:
         return get_json_value(key, layer_id=layer_id, update_cache=True)
-    if utime.get_sec1970() - int(cached_record['t']) > cache_ttl:
+    if utime.utcnow_to_sec1970() - int(cached_record['t']) > cache_ttl:
         return get_json_value(key, layer_id=layer_id, update_cache=True)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_cached_json_value key=[%r] layer_id=%d cache_ttl=%d' % (key, layer_id, cache_ttl))
@@ -1289,7 +1289,7 @@ class DHTNode(MultiLayerNode):
         self._counter = None
 
     def expire(self):
-        now = utime.get_sec1970()
+        now = utime.utcnow_to_sec1970()
         for layer_id in self._dataStores.keys():
             expired_keys = []
             for key in self._dataStores[layer_id].keys():

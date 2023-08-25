@@ -129,7 +129,7 @@ class FileUp(automat.Automat):
         self.ackTime = None
         self.sendTimeout = 10*2*(max(int(self.fileSize/settings.SendingSpeedLimit()), 5) + 5)  # maximum 5 seconds to get an Ack
         self.result = ''
-        self.created = utime.get_sec1970()
+        self.created = utime.utcnow_to_sec1970()
         super(FileUp, self).__init__(
             name='file_up_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions,
             publish_events=publish_events, **kwargs

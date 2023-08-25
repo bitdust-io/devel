@@ -290,7 +290,7 @@ def set_nickname(key, idurl):
     nickname, _, pos = key.partition(':')
     json_data = {
         'type': 'nickname',
-        'timestamp': utime.get_sec1970(),
+        'timestamp': utime.utcnow_to_sec1970(),
         'idurl': idurl.to_bin(),
         'nickname': nickname,
         'position': pos,
@@ -323,7 +323,7 @@ def set_identity(idurl, raw_xml_data):
         key=idurl,
         json_data={
             'type': 'identity',
-            'timestamp': utime.get_sec1970(),
+            'timestamp': utime.utcnow_to_sec1970(),
             'idurl': strng.to_text(idurl),
             'identity': strng.to_text(raw_xml_data),
         },
@@ -369,7 +369,7 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
         ),
         json_data={
             'type': 'suppliers',
-            'timestamp': utime.get_sec1970(),
+            'timestamp': utime.utcnow_to_sec1970(),
             'revision': 0 if revision is None else revision,
             'publisher_idurl': publisher_idurl.to_text() if publisher_idurl else None,
             'customer_idurl': customer_idurl.to_text(),
@@ -409,7 +409,7 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
         ),
         json_data={
             'type': 'message_broker',
-            'timestamp': utime.get_sec1970(),
+            'timestamp': utime.utcnow_to_sec1970(),
             'revision': 0 if revision is None else revision,
             'customer_idurl': customer_idurl.to_text(),
             'broker_idurl': broker_idurl.to_text(),  # 'archive_folder_path': archive_folder_path,
@@ -425,7 +425,7 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
 
 
 def get_bismuth_identity_request(position, use_cache=False):
-    time_shift = int(utime.get_sec1970()/(60*60))
+    time_shift = int(utime.utcnow_to_sec1970()/(60*60))
     dht_key = dht_service.make_key(
         key=time_shift,
         index=position,
@@ -444,13 +444,13 @@ def get_bismuth_identity_request(position, use_cache=False):
 def set_bismuth_identity_request(position, idurl, public_key, wallet_address):
     json_data = {
         'type': 'bismuth_identity_request',
-        'timestamp': utime.get_sec1970(),
+        'timestamp': utime.utcnow_to_sec1970(),
         'idurl': idurl.to_bin(),
         'public_key': public_key,
         'wallet_address': wallet_address,
         'position': position,
     }
-    time_shift = int(utime.get_sec1970()/(60*60))
+    time_shift = int(utime.utcnow_to_sec1970()/(60*60))
     dht_key = dht_service.make_key(
         key=time_shift,
         index=position,
@@ -467,7 +467,7 @@ def set_bismuth_identity_request(position, idurl, public_key, wallet_address):
 
 
 def erase_bismuth_identity_request(position):
-    time_shift = int(utime.get_sec1970()/(60*60))
+    time_shift = int(utime.utcnow_to_sec1970()/(60*60))
     dht_key = dht_service.make_key(
         key=time_shift,
         index=position,

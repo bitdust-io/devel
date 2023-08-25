@@ -120,7 +120,7 @@ class FileDown(automat.Automat):
         self.fileReceivedTime = None
         self.requestTimeout = max(30, 2*int(settings.getBackupBlockSize()/settings.SendingSpeedLimit()))
         self.result = ''
-        self.created = utime.get_sec1970()
+        self.created = utime.utcnow_to_sec1970()
         super(FileDown, self).__init__(
             name='file_down_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions,
             publish_events=publish_events, **kwargs
