@@ -163,6 +163,7 @@ def prepare_customer_contract(customer_idurl, details):
     if _Debug:
         lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
     now = utime.utcnow_to_sec1970()
+    started_time = now
     if not os.path.isdir(customer_contracts_dir):
         bpio._dirs_make(customer_contracts_dir)
     current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
@@ -193,12 +194,13 @@ def prepare_customer_contract(customer_idurl, details):
     new_raise_factor = config.conf().getFloat('services/supplier-contracts/duration-raise-factor')
     new_duration_hours = None
     if latest_contract:
+        started_time = utime.unpack_time(latest_contract['complete_after'])
         new_duration_hours = int(latest_contract['duration_hours']*latest_contract['raise_factor'])
         if latest_contract_state == 'completed':
             if latest_paid_contract:
                 new_pay_before_time = utime.unpack_time(latest_paid_contract['started']) + latest_paid_contract['duration_hours']*60*60 + billing_period_seconds
-                if new_pay_before_time < now + new_duration_hours*60*60:
-                    # SCENARIO 8: the previous contract is completed and some contracts are paid, but there is still no trust to this customer
+                if new_pay_before_time < started_time + new_duration_hours*60*60:
+                    # SCENARIO 8: the previous contract is completed and some contracts already paid, but there is still no trust to this customer
                     lg.warn('customer %r paid before, but yet did not pay for previously completed contracts' % customer_idurl)
                     return {
                         'deny': True,
@@ -224,14 +226,14 @@ def prepare_customer_contract(customer_idurl, details):
         elif latest_contract_state == 'paid':
             # SCENARIO 5: currently there is no active contract, but the previos contract is completed and paid
             new_duration_hours = config.conf().getInt('services/supplier-contracts/initial-duration-hours')
-            new_pay_before_time = now + billing_period_seconds
+            new_pay_before_time = started_time + billing_period_seconds
     else:
-        # SCENARIO 2: this is a new customer - there were no contracts signed with him yet
+        # SCENARIO 2: this is a new customer - there were no contracts signed yet
         new_duration_hours = config.conf().getInt('services/supplier-contracts/initial-duration-hours')
-        new_pay_before_time = now + int(billing_period_seconds/2.0)
-    new_complete_after_time = now + new_duration_hours*60*60
+        new_pay_before_time = started_time + int(billing_period_seconds/2.0)
+    new_complete_after_time = started_time + new_duration_hours*60*60
     json_data = {
-        'started': utime.pack_time(now),
+        'started': utime.pack_time(started_time),
         'complete_after': utime.pack_time(new_complete_after_time),
         'pay_before': utime.pack_time(new_pay_before_time),
         'value': float(new_duration_hours)*(details['allocated_bytes']/(1024.0*1024.0*1024.0)),

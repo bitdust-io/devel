@@ -36,8 +36,6 @@ import calendar
 
 #------------------------------------------------------------------------------
 
-_fromisoformat = datetime.datetime.fromisoformat
-
 if sys.version_info < (3, 7):
 
     def old_fromisoformat(text):
@@ -51,6 +49,9 @@ if sys.version_info < (3, 7):
         return datetime.datetime(int(year), int(month), int(day), int(hours), int(minutes), sec, microseconds)
 
     _fromisoformat = old_fromisoformat
+
+else:
+    _fromisoformat = datetime.datetime.fromisoformat
 
 #------------------------------------------------------------------------------
 
