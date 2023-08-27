@@ -243,7 +243,7 @@ def prepare_customer_contract(customer_idurl, details):
                 local_fs.WriteTextFile(contract_path_new, jsn.dumps(latest_contract))
                 started_time = now
                 new_duration_hours = initial_duration_hours
-                new_pay_before_time = latest_completed_contract['pay_before']
+                new_pay_before_time = utime.unpack_time(latest_completed_contract['pay_before'])
             else:
                 if latest_paid_contract:
                     # SCENARIO 12: latest contract was cancelled and already expired, other contracts was paid
