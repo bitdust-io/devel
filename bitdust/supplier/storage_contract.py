@@ -352,8 +352,12 @@ def cancel_customer_contract(customer_idurl):
     current_contract['completed_value'] = completed_value
     current_contract['cancelled'] = utime.pack_time(cancelled_time)
     # rename "current" file to "<started_time>.cancelled"
+    try:
+        os.remove(current_customer_contract_path)
+    except:
+        lg.exc()
     contract_path_new = os.path.join(customer_contracts_dir, '{}.cancelled'.format(utime.unpack_time(current_contract['started'])))
-    os.rename(current_customer_contract_path, contract_path_new)
+    local_fs.WriteTextFile(contract_path_new, jsn.dumps(current_contract))
     if _Debug:
         lg.args(_DebugLevel, old_path=current_customer_contract_path, new_path=contract_path_new)
     current_contract['customer'] = customer_idurl
