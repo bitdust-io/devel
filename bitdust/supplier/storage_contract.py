@@ -103,8 +103,6 @@ def is_current_customer_contract_active(customer_idurl):
 
 def list_customer_contracts(customer_idurl):
     customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
-    if _Debug:
-        lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
     if not os.path.isdir(customer_contracts_dir):
         bpio._dirs_make(customer_contracts_dir)
     customer_contracts = {}
@@ -162,7 +160,7 @@ def list_customer_contracts(customer_idurl):
     customer_contracts['completed_value'] = completed_contracts_total_GBH_value
     customer_contracts['paid_value'] = paid_contracts_total_GBH_value
     if _Debug:
-        lg.args(_DebugLevel, r=customer_contracts)
+        lg.args(_DebugLevel, completed_value=completed_contracts_total_GBH_value, paid_value=paid_contracts_total_GBH_value)
     return customer_contracts
 
 
@@ -304,9 +302,9 @@ def prepare_customer_contract(customer_idurl, details):
     return start_current_customer_contract(
         customer_idurl=customer_idurl,
         details=details,
-        started_time=utime.pack_time(started_time),
-        complete_after_time=utime.pack_time(started_time + new_duration_hours*60*60),
-        pay_before_time=utime.pack_time(new_pay_before_time),
+        started_time=started_time,
+        complete_after_time=started_time + new_duration_hours*60*60,
+        pay_before_time=new_pay_before_time,
         duration_hours=new_duration_hours,
         raise_factor=new_raise_factor,
     )
