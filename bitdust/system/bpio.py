@@ -79,7 +79,7 @@ def init():
     correct encoding.
     """
     InstallLocale()
-    if Linux() or Mac():
+    if Linux() or Mac() or Android():
         lg.setup_unbuffered_stdout()
         lg.setup_unbuffered_stderr()
     if Windows():

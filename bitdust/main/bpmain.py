@@ -700,10 +700,13 @@ def main(executable_path=None, start_reactor=True, appdir=None):
 
     #---BitDust Home
     try:
-        deploy.init_base_dir(base_dir=_AppDataDir)
+        result_app_dir = deploy.init_base_dir(base_dir=_AppDataDir)
     except Exception as e:
-        print_text('failed to initialize application data folder: %r' % e)
+        print_text('failed to initialize application data folder: %e' % e)
         return 1
+
+    if _Debug:
+        print_text('app data dir prepared in %s' % result_app_dir)
 
     from bitdust.logs import lg
 
@@ -714,9 +717,12 @@ def main(executable_path=None, start_reactor=True, appdir=None):
     appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'processid'))
 
     if bpio.Android():
-        lg.close_intercepted_log_file()
         from android.storage import app_storage_path  # @UnresolvedImport
-        lg.open_intercepted_log_file(os.path.join(app_storage_path(), '.bitdust', 'logs', 'android.log'))
+        android_log_file = os.path.join(app_storage_path(), '.bitdust', 'logs', 'android.log')
+        if _Debug:
+            print_text('redirecting log output to %s' % android_log_file)
+        lg.close_intercepted_log_file()
+        lg.open_intercepted_log_file(android_log_file)
 
     # sys.excepthook = lg.exception_hook
 
