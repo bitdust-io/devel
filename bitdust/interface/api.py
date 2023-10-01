@@ -4544,7 +4544,6 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
         if global_id.IsValidGlobalUser(new_supplier_id):
             new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_id, as_field=False)
         new_supplier_idurl = strng.to_bin(new_supplier_idurl)
-
         if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
             return ERROR('user %s is already a known supplier' % new_supplier_idurl)
     ret = Deferred()
@@ -4557,9 +4556,9 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
         if new_supplier_idurl is not None:
-            ret.callback(OK(message='supplier %s will be replaced by %s' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
+            ret.callback(OK(message='supplier %s will be replaced by %s' % (strng.to_text(supplier_idurl), strng.to_text(new_supplier_idurl)), api_method='supplier_change'))
         else:
-            ret.callback(OK(message='supplier %s will be replaced by a randomly selected user' % supplier_idurl, api_method='supplier_change'))
+            ret.callback(OK(message='supplier %s will be replaced by a randomly selected user' % strng.to_text(supplier_idurl), api_method='supplier_change'))
         return None
 
     if new_supplier_id is None:

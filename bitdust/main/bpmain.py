@@ -699,7 +699,11 @@ def main(executable_path=None, start_reactor=True, appdir=None):
         print_text('default_base_dir_portable(): %s' % deploy.default_base_dir_portable())
 
     #---BitDust Home
-    deploy.init_base_dir(base_dir=_AppDataDir)
+    try:
+        deploy.init_base_dir(base_dir=_AppDataDir)
+    except Exception as e:
+        print_text('failed to initialize application data folder: %r' % e)
+        return 1
 
     from bitdust.logs import lg
 
