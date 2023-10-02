@@ -19,7 +19,10 @@ from __future__ import absolute_import
 try:
     from UserDict import DictMixin
 except ImportError:
-    from collections import MutableMapping as DictMixin
+    try:
+        from collections.abc import MutableMapping as DictMixin
+    except:
+        from collections import MutableMapping as DictMixin
 
 import sqlite3
 import os

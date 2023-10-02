@@ -681,7 +681,7 @@ class Automat(object):
         exc_traceback = _tb if exc_traceback is None else exc_traceback
         e = ''
         if exc_value is not None or exc_traceback is not None:
-            e = traceback.format_exception(etype=exc_type, value=exc_value, tb=exc_traceback)
+            e = traceback.format_exception(exc_type, value=exc_value, tb=exc_traceback)
         else:
             e = traceback.format_exc()
         if to_logfile and _LogFile is not None:

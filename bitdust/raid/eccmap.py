@@ -669,8 +669,11 @@ class eccmap:
                     if (len(bestParityMap) == 0) or (len(Parity) < len(bestParityMap)):
                         bestParityNum = paritynum
                         bestParityMap = Parity
-        if _Debug:
-            open('/tmp/raid.log', 'a').write(u'GetDataFixPath bestParityNum=%d\n' % bestParityNum)
+        # if _Debug:
+        #     try:
+        #         open('/tmp/raid.log', 'a').write(u'GetDataFixPath bestParityNum=%d\n' % bestParityNum)
+        #     except:
+        #         pass
         return bestParityNum, bestParityMap
 
 
