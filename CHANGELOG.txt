@@ -1,6 +1,49 @@
 Change Log
 ==========
 
+2023-10-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* removed two seed nodes from the default_network.json file
+* initial implementation of Bismuth blockchain node, miner, wallet and mining pool
+* introducing a solution for foundation miners
+* introducing storage contract between customer and supplier
+* built multiple new service_bismuth_*() services
+* built new service_blockchain_id() service
+* built new service_blockchain_authority() service
+* built new blockchain_registrator() automat
+* built new authority_node() automat
+* built new api.blockchain_*() methods
+* added new module in bitdust/supplier/storage_contract.py
+* added new module in bitdust/customer/payment.py
+* added new module in bitdust/blockchain/known_bismuth_nodes.py
+* added new settings for blockchain management
+* make possible to register user identity in blockchain
+* make sure to use UTC-based timestamps
+* changes for Android, always use bz2 compression, minor API update (#182)
+* use SIGKILL instead of SIGTERM for closing the main process
+* renamed main process to BitDust-node for OSX release
+* use same Bismuth wallet address for pool and miner
+* use fixed mining difficulty
+* use custom port numbers for Bismuth blockchain TCP connections
+* modifications in Bismuth mining pool, switching off payouts
+* modifications in Bismuth mining, disabled mining rewards
+* updated default settings for few services
+* updated customers_rejector() automat
+* updated code to match config type changes
+* Bump cryptography from 39.0.0 to 41.0.4
+* Bump requests from 2.30.0 to 2.31.0
+* solved relations issue between service_blockchain_id() should not start when service_blockchain_authority() is enabled
+* solved issue in bitdust/userid/id_url.py
+* bug fixes with config string types
+* bug fix in lib.utime.unpack_time()
+* bug fix in service_message_history() and group_member() (#184)
+* bug fix in service_message_history()
+* bug fix in group_member()
+* bug fix python3.10 logging
+* bug fix logging issue on Android
+* Update README.md
+
+
 
 2023-02-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
