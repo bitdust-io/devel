@@ -235,26 +235,26 @@ class BismuthMultiWallet():
         return True
         """
 
-    def new_address(self, label: str='', password: str='', salt: str='', type="RSA"):
-        """
-        Add a new address to the wallet (and save it)
-        """
-        if type != "RSA":
-            raise RuntimeError("Only RSA is available for now")
-        if self._infos['encrypted'] and self._locked:
-            raise RuntimeError("Wallet must be unlocked")
-        keys = bismuthcrypto.keys_gen(password=password, salt=salt)
-        keys['label'] = label
-        keys['timestamp'] = int(time())
-        self._addresses.append(keys)
-        if self._infos['encrypted']:
-            content = json.dumps(keys)
-            encrypted = b64encode(encrypt(self._master_password, content, level=1)).decode('utf-8')
-            self._data['addresses'].append(encrypted)
-        else:
-            print('1')
-            self._data['addresses'].append(keys)
-        self.save()
+    # def new_address(self, label: str='', password: str='', salt: str='', type="RSA"):
+    #     """
+    #     Add a new address to the wallet (and save it)
+    #     """
+    #     if type != "RSA":
+    #         raise RuntimeError("Only RSA is available for now")
+    #     if self._infos['encrypted'] and self._locked:
+    #         raise RuntimeError("Wallet must be unlocked")
+    #     keys = bismuthcrypto.keys_gen(password=password, salt=salt)
+    #     keys['label'] = label
+    #     keys['timestamp'] = int(time())
+    #     self._addresses.append(keys)
+    #     if self._infos['encrypted']:
+    #         content = json.dumps(keys)
+    #         encrypted = b64encode(encrypt(self._master_password, content, level=1)).decode('utf-8')
+    #         self._data['addresses'].append(encrypted)
+    #     else:
+    #         print('1')
+    #         self._data['addresses'].append(keys)
+    #     self.save()
 
     def set_label(self, address:str ='', label: str=''):
         """

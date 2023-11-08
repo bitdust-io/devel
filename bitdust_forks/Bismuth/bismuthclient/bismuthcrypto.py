@@ -199,37 +199,37 @@ def keys_new(keyfile):
     return True
 
 
-def keys_gen(password: str='', salt: str='', count=10000, verbose=False):
-    """
-    Optionnally deterministic RSA Key generation from password and salt. To be used by tests only atm.
-    :param password:
-    :param salt:
-    :param count:
-    :param verbose:
-    :return:
-    """
-    if password:
-        def my_rand(n):
-            # kluge: use PBKDF2 with count=1 and incrementing salt as deterministic PRNG
-            my_rand.counter += 1
-            return PBKDF2(master_key, "my_rand:%d" % my_rand.counter, dkLen=n, count=1)
-        if verbose:
-            print("Generating master key")
-        master_key = PBKDF2(password, salt, count=count)
-        my_rand.counter = 0
-        if verbose:
-            print("Generating RSA key")
-        key = RSA.generate(4096, randfunc=my_rand)
-    else:
-        if verbose:
-            print("Generating RSA key")
-        key = RSA.generate(4096)
-    # public_key = key.publickey()
-    private_key_readable = key.exportKey().decode("utf-8")
-    public_key_readable = key.publickey().exportKey().decode("utf-8")
-    address = hashlib.sha224(public_key_readable.encode("utf-8")).hexdigest()  # hashed public key
-    # export to single file
-    return {'private_key': private_key_readable, 'public_key': public_key_readable, 'address': address}
+# def keys_gen(password: str='', salt: str='', count=10000, verbose=False):
+#     """
+#     Optionnally deterministic RSA Key generation from password and salt. To be used by tests only atm.
+#     :param password:
+#     :param salt:
+#     :param count:
+#     :param verbose:
+#     :return:
+#     """
+#     if password:
+#         def my_rand(n):
+#             # kluge: use PBKDF2 with count=1 and incrementing salt as deterministic PRNG
+#             my_rand.counter += 1
+#             return PBKDF2(master_key, "my_rand:%d" % my_rand.counter, dkLen=n, count=1)
+#         if verbose:
+#             print("Generating master key")
+#         master_key = PBKDF2(password, salt, count=count)
+#         my_rand.counter = 0
+#         if verbose:
+#             print("Generating RSA key")
+#         key = RSA.generate(4096, randfunc=my_rand)
+#     else:
+#         if verbose:
+#             print("Generating RSA key")
+#         key = RSA.generate(4096)
+#     # public_key = key.publickey()
+#     private_key_readable = key.exportKey().decode("utf-8")
+#     public_key_readable = key.publickey().exportKey().decode("utf-8")
+#     address = hashlib.sha224(public_key_readable.encode("utf-8")).hexdigest()  # hashed public key
+#     # export to single file
+#     return {'private_key': private_key_readable, 'public_key': public_key_readable, 'address': address}
 
 
 def keys_save(private_key_readable, public_key_readable, address, file):
