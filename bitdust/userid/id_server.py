@@ -244,10 +244,14 @@ class IdServer(automat.Automat):
             lg.warn('input file too small - ignoring')
             tmpfile.erase('idsrv', inputfilename, 'input file too small')
             return
+        if not newxml.startswith('<?xml version="1.0" encoding="utf-8"?>'):
+            lg.warn('input file is not an XML - ignoring')
+            tmpfile.erase('idsrv', inputfilename, 'input file is not an XML')
+            return
         try:
             newidentity = identity.identity(xmlsrc=newxml)
         except:
-            lg.warn('input file is wrong - ignoring ')
+            lg.warn('input file is wrong - ignoring')
             tmpfile.erase('idsrv', inputfilename, 'input file is wrong')
             return
         tmpfile.erase('idsrv', inputfilename, 'id received')
