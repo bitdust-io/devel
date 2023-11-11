@@ -1877,7 +1877,7 @@ class MessagePeddler(automat.Automat):
             try:
                 evt, args, kwargs = err.value.args
             except:
-                lg.exc()
+                lg.exc(msg=repr(err))
                 return None
             if _Debug:
                 lg.args(_DebugLevel, event=evt, args=args, kwargs=kwargs)

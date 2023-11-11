@@ -281,7 +281,10 @@ def run(args):
             python_exe = current_python
         make_venv_cmd = '{} -m virtualenv --system-site-packages {}'.format(python_exe, venv_path)
     if on_mac:
-        make_venv_cmd = '{} -m virtualenv --clear --always-copy {}'.format(current_python, venv_path)
+        if sys.version_info >= (3, 11):
+            make_venv_cmd = '{} -m venv --clear --copies {}'.format(current_python, venv_path)
+        else:
+            make_venv_cmd = '{} -m virtualenv --clear --always-copy {}'.format(current_python, venv_path)
 
     print_text('\n***** Executing "{}"'.format(make_venv_cmd))
     status = os.system(make_venv_cmd)

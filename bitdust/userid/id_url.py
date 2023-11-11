@@ -101,6 +101,8 @@ def init():
     for_cleanup = []
     for one_user_dir in os.listdir(_IdentityHistoryDir):
         one_user_dir_path = os.path.join(_IdentityHistoryDir, one_user_dir)
+        if not os.path.isdir(one_user_dir_path):
+            continue
         one_user_identity_files = []
         for one_filename in os.listdir(one_user_dir_path):
             try:
