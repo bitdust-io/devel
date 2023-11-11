@@ -193,7 +193,7 @@ def verify_ownership(newpacket, raise_exception=False):
     if _Debug:
         lg.args(_DebugLevel, owner_id=owner_id, creator_id=creator_id, customer_id=packet_owner_id, key_registered=packet_key_id_registered)
     if newpacket.Command == commands.Data():
-        if owner_idurl == creator_idurl:
+        if id_url.is_the_same(owner_idurl, creator_idurl):
             if contactsdb.is_customer(creator_idurl):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'OK, scenario 1: customer is sending own data to own supplier')
