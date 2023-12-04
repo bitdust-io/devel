@@ -120,23 +120,6 @@ When critical amount of your suppliers become unreliable - your uploaded data is
 Enable this option to wait for 24 hours after any file upload and perform an extra check of all suppliers before cleaning up the local copy.
 This is a compromise solution that does not sacrifice reliability but also decrease local storage consumption.
 
-{services/blockchain/enabled} enable blockchain
-The service is under development.
-
-{services/blockchain/host}
-
-{services/blockchain/port}
-
-{services/blockchain/explorer/enabled}
-
-{services/blockchain/explorer/port}
-
-{services/blockchain/wallet/enabled}
-
-{services/blockchain/wallet/port}
-
-{services/blockchain/miner/enabled}
-
 {services/broadcasting/enabled} send & receive encrypted broadcast messages
 The service is under development.
 

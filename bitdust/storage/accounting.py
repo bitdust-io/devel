@@ -337,11 +337,13 @@ def verify_storage_contract(json_data):
         int(json_data['value'])
         int(json_data['allocated_bytes'])
         int(json_data['duration_hours'])
-        int(json_data['my_position'])
-        str(json_data['ecc_map'])
+        if json_data.get('my_position'):
+            int(json_data['my_position'])
+        if json_data.get('ecc_map'):
+            str(json_data['ecc_map'])
         float(json_data['raise_factor'])
     except:
-        lg.exc()
+        lg.exc(repr(json_data))
         return False
     try:
         gbh = float(json_data['duration_hours'])*(json_data['allocated_bytes']/(1024.0*1024.0*1024.0))
