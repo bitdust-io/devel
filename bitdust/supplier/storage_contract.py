@@ -318,7 +318,7 @@ def start_current_customer_contract(customer_idurl, details, started_time, compl
         'value': float(duration_hours)*(details['allocated_bytes']/(1024.0*1024.0*1024.0)),
         'allocated_bytes': details['allocated_bytes'],
         'duration_hours': duration_hours,
-        'my_position': details['my_position'],
+        'ecc_position': details['ecc_position'],
         'ecc_map': details['ecc_map'],
         'raise_factor': raise_factor,
         'wallet_address': bismuth_wallet.my_wallet_address(),
@@ -387,8 +387,8 @@ def change_current_customer_contract(customer_idurl, details):
         }
     if details.get('ecc_map'):
         current_contract['ecc_map'] = details['ecc_map']
-    if details.get('my_position') is not None:
-        current_contract['my_position'] = details['my_position']
+    if details.get('ecc_position') is not None:
+        current_contract['ecc_position'] = details['ecc_position']
     if details['allocated_bytes'] != current_contract['allocated_bytes']:
         current_value = current_contract['value']
         new_duration_hours = int(current_value/(details['allocated_bytes']/(1024.0*1024.0*1024.0)))

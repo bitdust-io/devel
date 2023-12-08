@@ -61,4 +61,4 @@ def pay_for_storage():
             for unpaid_contract in unpaid_contracts:
                 sum_to_pay += unpaid_contract['value']
             if _Debug:
-                lg.args(_DebugLevel, to_pay=sum_to_pay, pay_before_earliest=utime.pack_time(pay_before_earliest), pay_before_latest=utime.pack_time(pay_before_latest))
+                lg.args(_DebugLevel, s=supplier_idurl, to_pay=sum_to_pay, pay_before_earliest=utime.pack_time(pay_before_earliest), pay_before_latest=utime.pack_time(pay_before_latest))
