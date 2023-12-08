@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+2023-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in bitdust/system/deploy.py related to python3.11
+* IDURL fix in bitdust/supplier/customer_space.py
+* bug fix in butdust/userid/id_url.py
+* disabled un-used Bismuth crypto methods
+* Bump twisted from 22.4.0 to 23.8.0
+
+
+
 2023-10-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * removed bitdust_forks/Bismuth/wallet/

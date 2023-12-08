@@ -51,8 +51,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 16
+_Debug = True
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -229,6 +229,7 @@ class SupplierConnector(automat.Automat):
         self.request_queue_packet_id = None
         self.latest_supplier_ack = None
         self.callbacks = {}
+        self.storage_contract = None
         try:
             st = bpio.ReadTextFile(settings.SupplierServiceFilename(
                 idurl=self.supplier_idurl,
@@ -296,7 +297,8 @@ class SupplierConnector(automat.Automat):
     def set_callback(self, name, cb):
         if name not in self.callbacks:
             self.callbacks[name] = []
-        self.callbacks[name].append(cb)
+        if cb not in self.callbacks[name]:
+            self.callbacks[name].append(cb)
 
     def remove_callback(self, name, cb=None):
         if name in self.callbacks:
@@ -657,7 +659,8 @@ class SupplierConnector(automat.Automat):
             except:
                 lg.exc()
             if _Debug:
-                lg.args(_DebugLevel, response=response, info=info)
+                lg.args(_DebugLevel, response=response, info=info, contract=the_contract)
+            self.storage_contract = the_contract
             if the_contract:
                 if not accounting.verify_storage_contract(the_contract):
                     lg.err('received storage contract from %r is not valid' % self.supplier_idurl)

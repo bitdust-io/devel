@@ -85,16 +85,6 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/backups/keep-local-copies-enabled', 'true')
     conf_obj.setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
 
-    # conf_obj.setDefaultValue('services/blockchain/enabled', 'false')
-    # conf_obj.setDefaultValue('services/blockchain/host', '127.0.0.1')
-    # conf_obj.setDefaultValue('services/blockchain/port', 9100)
-    # conf_obj.setDefaultValue('services/blockchain/seeds', '')
-    # conf_obj.setDefaultValue('services/blockchain/explorer/enabled', 'true')
-    # conf_obj.setDefaultValue('services/blockchain/explorer/port', 9180)
-    # conf_obj.setDefaultValue('services/blockchain/wallet/enabled', 'true')
-    # conf_obj.setDefaultValue('services/blockchain/wallet/port', 9280)
-    # conf_obj.setDefaultValue('services/blockchain/miner/enabled', 'false')
-
     conf_obj.setDefaultValue('services/blockchain-id/enabled', 'false')
 
     conf_obj.setDefaultValue('services/blockchain-authority/enabled', 'false')

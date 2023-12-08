@@ -29,7 +29,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -944,7 +944,7 @@ def on_service_supplier_request(json_payload, newpacket, info):
         try:
             current_contract = storage_contract.prepare_customer_contract(customer_idurl, details={
                 'allocated_bytes': bytes_for_customer,
-                'my_position': family_position,
+                'ecc_position': family_position,
                 'ecc_map': ecc_map,
             })
         except:

@@ -3715,7 +3715,7 @@ def friends_list():
     result = []
     for idurl, alias in contactsdb.correspondents():
         glob_id = global_id.ParseIDURL(idurl)
-        contact_status = 'offline'
+        # contact_status = 'offline'
         contact_state = 'OFFLINE'
         friend = {
             'idurl': idurl,
@@ -3723,7 +3723,7 @@ def friends_list():
             'idhost': glob_id['idhost'],
             'username': glob_id['user'],
             'alias': alias,
-            'contact_status': contact_status,
+            # 'contact_status': contact_status,
             'contact_state': contact_state,
         }
         if driver.is_on('service_identity_propagate'):
@@ -3731,7 +3731,7 @@ def friends_list():
             state_machine_inst = online_status.getInstance(idurl, autocreate=False)
             if state_machine_inst:
                 friend.update(state_machine_inst.to_json())
-                friend['contact_status'] = online_status.stateToLabel(state_machine_inst.state)
+                # friend['contact_status'] = online_status.stateToLabel(state_machine_inst.state)
                 friend['contact_state'] = state_machine_inst.state
         result.append(friend)
     return RESULT(result)
@@ -3921,7 +3921,7 @@ def user_status(user_id):
     # if not state_machine_inst:
     #     return ERROR('error fetching user status')
     return OK({
-        'contact_status': online_status.getStatusLabel(idurl),
+        # 'contact_status': online_status.getStatusLabel(idurl),
         'contact_state': online_status.getCurrentState(idurl),
         'idurl': idurl,
         'global_id': global_id.UrlToGlobalID(idurl),
@@ -3961,7 +3961,7 @@ def user_status_check(user_id, timeout=None):
                 idurl=idurl,
                 global_id=global_id.UrlToGlobalID(idurl),
                 contact_state=peer_status.state,
-                contact_status=online_status.stateToLabel(peer_status.state),
+                # contact_status=online_status.stateToLabel(peer_status.state),
             ),
             api_method='user_status_check',
         ))
@@ -4474,22 +4474,25 @@ def suppliers_list(customer_id=None, verbose=False):
                 'global_id': '',
                 'supplier_state': None,
                 'connected': None,
-                'contact_status': 'offline',
+                # 'contact_status': 'offline',
                 'contact_state': 'OFFLINE',
             }
             results.append(r)
             continue
+        sc = None
+        if supplier_connector.is_supplier(supplier_idurl, customer_idurl):
+            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl)
         r = {
             'position': pos,
             'idurl': supplier_idurl,
             'global_id': global_id.UrlToGlobalID(supplier_idurl),
-            'supplier_state': None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl) else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
+            'supplier_state': None if not sc else sc.state,
             'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
-            'contact_status': 'offline',
+            # 'contact_status': 'offline',
             'contact_state': 'OFFLINE',
         }
         if online_status.isKnown(supplier_idurl):
-            r['contact_status'] = online_status.getStatusLabel(supplier_idurl)
+            # r['contact_status'] = online_status.getStatusLabel(supplier_idurl)
             r['contact_state'] = online_status.getCurrentState(supplier_idurl)
         # if contact_status.isKnown(supplier_idurl):
         #     cur_state = contact_status.getInstance(supplier_idurl).state
@@ -4497,12 +4500,13 @@ def suppliers_list(customer_id=None, verbose=False):
         #     r['contact_state'] = cur_state
         if verbose:
             _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
-            r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl)
+            r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')
             r['fragments'] = {
                 'items': _files,
                 'files': _total,
                 'details': _report,
             }
+            r['contract'] = None if not sc else sc.storage_contract
         results.append(r)
     return RESULT(results)
 
@@ -4642,6 +4646,10 @@ def customers_list(verbose=False):
     if driver.is_on('service_customer_support'):
         service_customer_support_on = True
         from bitdust.supplier import customer_assistant
+    service_supplier_contracts_on = False
+    if driver.is_on('service_supplier_contracts'):
+        service_supplier_contracts_on = True
+        from bitdust.supplier import storage_contract
     from bitdust.contacts import contactsdb
     from bitdust.p2p import online_status
     from bitdust.userid import global_id
@@ -4652,9 +4660,9 @@ def customers_list(verbose=False):
                 'position': pos,
                 'global_id': '',
                 'idurl': '',
-                'contact_status': 'offline',
+                # 'contact_status': 'offline',
                 'contact_state': 'OFFLINE',
-                'customer_assistant_state': 'OFFLINE',
+                # 'customer_assistant_state': 'OFFLINE',
             }
             results.append(r)
             continue
@@ -4662,17 +4670,20 @@ def customers_list(verbose=False):
             'position': pos,
             'global_id': global_id.UrlToGlobalID(customer_idurl),
             'idurl': customer_idurl,
-            'contact_status': 'offline',
+            # 'contact_status': 'offline',
             'contact_state': 'OFFLINE',
-            'customer_assistant_state': 'OFFLINE',
+            # 'customer_assistant_state': 'OFFLINE',
         }
         if online_status.isKnown(customer_idurl):
-            r['contact_status'] = online_status.getStatusLabel(customer_idurl)
+            # r['contact_status'] = online_status.getStatusLabel(customer_idurl)
             r['contact_state'] = online_status.getCurrentState(customer_idurl)
-        if service_customer_support_on:
-            assistant = customer_assistant.by_idurl(customer_idurl)
-            if assistant:
-                r['customer_assistant_state'] = assistant.state
+        if verbose:
+            if service_customer_support_on:
+                assistant = customer_assistant.by_idurl(customer_idurl)
+                if assistant:
+                    r['customer_assistant_state'] = assistant.state
+            if service_supplier_contracts_on:
+                r['contract'] = storage_contract.get_current_customer_contract(customer_idurl)
         results.append(r)
     return RESULT(results)
 

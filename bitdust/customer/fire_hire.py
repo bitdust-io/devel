@@ -93,7 +93,7 @@ EVENTS:
     * :red:`search-failed`
     * :red:`supplier-connected`
     * :red:`supplier-state-changed`
-    * :red:`timer-15sec`
+    * :red:`timer-25sec`
 """
 
 #------------------------------------------------------------------------------
@@ -103,8 +103,8 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 8
+_Debug = True
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -126,6 +126,7 @@ from bitdust.automats import automat
 from bitdust.lib import misc
 from bitdust.lib import diskspace
 from bitdust.lib import strng
+from bitdust.lib import utime
 
 from bitdust.main import config
 from bitdust.main import settings
@@ -230,7 +231,7 @@ class FireHire(automat.Automat):
     fast = False
 
     timers = {
-        'timer-15sec': (25.0, ['FIRE_MANY', 'SUPPLIERS?']),
+        'timer-25sec': (25.0, ['FIRE_MANY', 'SUPPLIERS?']),
     }
 
     def init(self):
@@ -271,12 +272,12 @@ class FireHire(automat.Automat):
                 self.NeedRestart = False
         #---READY---
         elif self.state == 'READY':
-            if (event == 'restart' or (event == 'instant' and self.NeedRestart)) and self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs):
+            if (event == 'restart' or (event == 'instant' and self.NeedRestart)) and (self.isConfigChanged(*args, **kwargs) or self.isContractExpiring(*args, **kwargs)) and self.isExistSomeSuppliers(*args, **kwargs):
                 self.state = 'SUPPLIERS?'
                 self.NeedRestart = False
                 self.doSaveConfig(*args, **kwargs)
                 self.doConnectSuppliers(*args, **kwargs)
-            elif (event == 'restart' or (event == 'instant' and self.NeedRestart)) and not (self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs)):
+            elif (event == 'restart' or (event == 'instant' and self.NeedRestart)) and not ((self.isConfigChanged(*args, **kwargs) or self.isContractExpiring(*args, **kwargs)) and self.isExistSomeSuppliers(*args, **kwargs)):
                 self.state = 'DECISION?'
                 self.NeedRestart = False
                 self.doDecideToDismiss(*args, **kwargs)
@@ -322,12 +323,7 @@ class FireHire(automat.Automat):
                 self.doScheduleNextRestart(*args, **kwargs)
         #---FIRE_MANY---
         elif self.state == 'FIRE_MANY':
-            if event == 'timer-15sec':
-                self.state = 'READY'
-                self.doCloseConnectors(*args, **kwargs)
-                self.doClearDismissList(*args, **kwargs)
-                self.doNotifySuppliersChanged(*args, **kwargs)
-            elif event == 'supplier-state-changed' and not self.isAllDismissed(*args, **kwargs):
+            if event == 'supplier-state-changed' and not self.isAllDismissed(*args, **kwargs):
                 self.doCloseConnector(*args, **kwargs)
             elif event == 'restart':
                 self.NeedRestart = True
@@ -336,11 +332,16 @@ class FireHire(automat.Automat):
                 self.doCloseConnector(*args, **kwargs)
                 self.doClearDismissList(*args, **kwargs)
                 self.doNotifySuppliersChanged(*args, **kwargs)
+            elif event == 'timer-25sec':
+                self.state = 'READY'
+                self.doCloseConnectors(*args, **kwargs)
+                self.doClearDismissList(*args, **kwargs)
+                self.doNotifySuppliersChanged(*args, **kwargs)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'restart':
                 self.NeedRestart = True
-            elif (event == 'supplier-state-changed' and self.isAllReady(*args, **kwargs)) or event == 'timer-15sec':
+            elif (event == 'supplier-state-changed' and self.isAllReady(*args, **kwargs)) or event == 'timer-25sec':
                 self.state = 'DECISION?'
                 self.doDecideToDismiss(*args, **kwargs)
         return None
@@ -421,10 +422,15 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        if None in self.configs:
-            return True
-        curconfigs = (settings.getSuppliersNumberDesired(), diskspace.GetBytesFromString(settings.getNeededString()))
-        return self.configs[0] != curconfigs[0] or self.configs[1] != curconfigs[1]
+        return self._is_config_changed()
+
+    def isContractExpiring(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        if not driver.is_on('service_customer_contracts'):
+            return False
+        return len(self._get_suppliers_with_expired_contracts()) > 0
 
     def isExistSomeSuppliers(self, *args, **kwargs):
         """
@@ -450,10 +456,17 @@ class FireHire(automat.Automat):
         from bitdust.p2p import online_status
         self.connect_list = []
         my_current_family = contactsdb.suppliers()
+        if self._is_config_changed():
+            target_suppliers = list(my_current_family)
+        else:
+            # only select suppliers with expired contracts
+            target_suppliers = self._get_suppliers_with_expired_contracts()
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
             if self.configs[0] and pos >= self.configs[0]:
+                continue
+            if not id_url.is_in(supplier_idurl, target_suppliers):
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
@@ -550,10 +563,7 @@ class FireHire(automat.Automat):
                 potentialy_fired.add(supplier_idurl)
             elif sc.state == 'CONNECTED':
                 connected_suppliers.add(supplier_idurl)
-            elif sc.state in [
-                'DISCONNECTED',
-                'REFUSE',
-            ]:
+            elif sc.state in ['DISCONNECTED', 'REFUSE']:
                 disconnected_suppliers.add(supplier_idurl)
 #             elif sc.state in ['QUEUE?', 'REQUEST', ]:
 #                 requested_suppliers.add(supplier_idurl)
@@ -602,12 +612,9 @@ class FireHire(automat.Automat):
         # only replace suppliers one by one at the moment
         result = list(potentialy_fired)
         lg.info('will replace supplier %s' % result[0])
-        self.automat(
-            'made-decision',
-            [
-                result[0],
-            ],
-        )
+        self.automat('made-decision', [
+            result[0],
+        ])
 
     def doRememberSuppliers(self, *args, **kwargs):
         """
@@ -860,6 +867,27 @@ class FireHire(automat.Automat):
         if driver.is_on('service_backups'):
             from bitdust.storage import backup_monitor
             backup_monitor.A('fire-hire-finished')
+
+    def _is_config_changed(self):
+        if None in self.configs:
+            return True
+        curconfigs = (settings.getSuppliersNumberDesired(), diskspace.GetBytesFromString(settings.getNeededString()))
+        return self.configs[0] != curconfigs[0] or self.configs[1] != curconfigs[1]
+
+    def _get_suppliers_with_expired_contracts(self):
+        from bitdust.customer import supplier_connector
+        now = utime.utcnow_to_sec1970()
+        ret = []
+        for supplier_idurl in contactsdb.suppliers():
+            if supplier_idurl:
+                sc = supplier_connector.by_idurl(supplier_idurl)
+                if sc:
+                    if sc.state == 'CONNECTED':
+                        if sc.storage_contract:
+                            if now > utime.unpack_time(sc.storage_contract['complete_after']):
+                                lg.warn('storage contract with %s is expired' % supplier_idurl)
+                                ret.append(supplier_idurl)
+        return ret
 
     def _scheduled_restart(self):
         self.restart_task = None

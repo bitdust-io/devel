@@ -37,6 +37,14 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 14
+
+#------------------------------------------------------------------------------
+
 from io import BytesIO
 
 #------------------------------------------------------------------------------
@@ -93,7 +101,7 @@ def A(event=None, *args, **kwargs):
         _IdServer = IdServer(
             name='id_server',
             state='AT_STARTUP',
-            debug_level=2,
+            debug_level=_Debug,
             log_events=True,
             log_transitions=True,
         )
@@ -176,41 +184,50 @@ class IdServer(automat.Automat):
             self.hostname = strng.to_bin(misc.readExternalIP())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
-        lg.out(4, 'id_server.doSetUp hostname=%s' % strng.to_text(self.hostname))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_server.doSetUp hostname=%s' % strng.to_text(self.hostname))
         if not os.path.isdir(settings.IdentityServerDir()):
             os.makedirs(settings.IdentityServerDir())
-            lg.out(4, '            created a folder %s' % settings.IdentityServerDir())
+            if _Debug:
+                lg.out(_DebugLevel, '            created a folder %s' % settings.IdentityServerDir())
         root = WebRoot()
         root.putChild(b'', WebMainPage())
         try:
             self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())  # @UndefinedVariable
-            lg.out(4, '            identity server listen on TCP port %d started' % (self.tcp_port))
+            if _Debug:
+                lg.out(_DebugLevel, '            identity server listen on TCP port %d started' % (self.tcp_port))
         except:
-            lg.out(4, 'id_server.set_up ERROR exception trying to listen on port ' + str(self.tcp_port))
+            if _Debug:
+                lg.out(_DebugLevel, 'id_server.set_up ERROR exception trying to listen on port ' + str(self.tcp_port))
             lg.exc()
         try:
             self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))  # @UndefinedVariable
-            lg.out(4, '            have started web server at port %d   hostname=%s' % (self.web_port, strng.to_text(self.hostname)))
+            if _Debug:
+                lg.out(_DebugLevel, '            have started web server at port %d   hostname=%s' % (self.web_port, strng.to_text(self.hostname)))
         except:
-            lg.out(4, 'id_server.set_up ERROR exception trying to listen on port ' + str(self.web_port))
+            if _Debug:
+                lg.out(_DebugLevel, 'id_server.set_up ERROR exception trying to listen on port ' + str(self.web_port))
             lg.exc()
 
     def doSetDown(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.out(4, 'id_server.doSetDown')
+        if _Debug:
+            lg.out(_DebugLevel, 'id_server.doSetDown')
         shutlist = []
         if self.web_listener:
             d = self.web_listener.stopListening()
             if d:
                 shutlist.append(d)
-            lg.out(4, '            stopped web listener')
+            if _Debug:
+                lg.out(_DebugLevel, '            stopped web listener')
         if self.tcp_listener:
             d = self.tcp_listener.stopListening()
             if d:
                 shutlist.append(d)
-            lg.out(4, '            stopped TCP listener')
+            if _Debug:
+                lg.out(_DebugLevel, '            stopped TCP listener')
         self.web_listener = None
         self.tcp_listener = None
         DeferredList(shutlist).addBoth(lambda x: self.automat('server-down'))
@@ -234,7 +251,8 @@ class IdServer(automat.Automat):
     def _save_identity(self, inputfilename):
         """
         """
-        lg.out(6, 'id_server._save_identity ' + inputfilename)
+        if _Debug:
+            lg.out(_DebugLevel, 'id_server._save_identity ' + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
             lg.warn('input file too big - ignoring')
             tmpfile.erase('idsrv', inputfilename, 'input file too big')
@@ -265,7 +283,8 @@ class IdServer(automat.Automat):
         for idurl_bin in newidentity.getSources(as_originals=True):
             protocol, host, port, filename = nameurl.UrlParse(idurl_bin)
             if strng.to_text(host) == strng.to_text(self.hostname):
-                lg.out(4, 'id_server._save_identity found match for us')
+                if _Debug:
+                    lg.out(_DebugLevel, 'id_server._save_identity found match for us')
                 matchid = idurl_bin
                 break
         if not matchid:
@@ -291,7 +310,8 @@ class IdServer(automat.Automat):
         oldxml = ''
         # need to make sure id was not already used by different key - which would mean someone is trying to steal identity
         if os.path.exists(localfilename):
-            lg.out(6, 'id_server._save_identity was already an identity with this name ' + localfilename)
+            if _Debug:
+                lg.out(_DebugLevel, 'id_server._save_identity was already an identity with this name ' + localfilename)
             oldxml = bpio.ReadTextFile(localfilename)
             oldidentity = identity.identity(xmlsrc=oldxml)
             if oldidentity.publickey != newidentity.publickey:
@@ -299,7 +319,8 @@ class IdServer(automat.Automat):
                 return
         if newxml != oldxml:
             if not os.path.exists(localfilename):
-                lg.out(6, 'id_server._save_identity will save NEW Identity: ' + filename)
+                if _Debug:
+                    lg.out(_DebugLevel, 'id_server._save_identity will save NEW Identity: ' + filename)
             bpio.WriteTextFile(localfilename, newxml)
 
 

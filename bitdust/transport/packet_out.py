@@ -502,7 +502,8 @@ class PacketOut(automat.Automat):
     def set_callback(self, command, cb):
         if command not in self.callbacks.keys():
             self.callbacks[command] = []
-        self.callbacks[command].append(cb)
+        if cb not in self.callbacks[command]:
+            self.callbacks[command].append(cb)
 
     def A(self, event, *args, **kwargs):
         #---SENDING---
