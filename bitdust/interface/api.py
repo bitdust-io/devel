@@ -4829,7 +4829,7 @@ def space_local():
 #------------------------------------------------------------------------------
 
 
-def services_list(with_configs=False):
+def services_list(with_configs=False, as_tree=False):
     """
     Returns detailed info about all currently running network services.
 
@@ -4844,13 +4844,19 @@ def services_list(with_configs=False):
         websocket.send('{"command": "api_call", "method": "services_list", "kwargs": {"with_configs": 1} }');
     """
     result = []
-    for _, svc in sorted(list(driver.services().items()), key=lambda i: i[0]):
+    if as_tree:
+        ordered = sorted(list(driver.services().items()), key=lambda i: driver.root_distance(i[0]))
+    else:
+        ordered = sorted(list(driver.services().items()), key=lambda i: i[0])
+    for svc_name, svc in ordered:
         svc_info = svc.to_json()
         if with_configs:
             svc_configs = []
             for child in config.conf().listEntries(svc.config_path.replace('/enabled', '')):
                 svc_configs.append(config.conf().toJson(child, include_info=False))
             svc_info['configs'] = svc_configs
+        if as_tree:
+            svc_info['root_distance'] = driver.root_distance(svc_name)
         result.append(svc_info)
     if _Debug:
         lg.out(_DebugLevel, 'api.services_list responded with %d items' % len(result))

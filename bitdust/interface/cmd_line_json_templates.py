@@ -135,7 +135,9 @@ TPL_AUTOMATS = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {id}({
 
 #------------------------------------------------------------------------------
 
-TPL_SERVICES = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {name}({state}) {enabled_label}, {num_depends} depends\n'), tpl_errors)
+TPL_SERVICES = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {name}({state}) {enabled_label}, with {num_depends} dependencies\n'), tpl_errors)
+
+TPL_SERVICES_TREE = tpl_4_items.format(tpl_status, tpl_execution, ls('{offset}{name}({state}) {enabled_label} [{depends}]\n'), tpl_errors)
 
 TPL_SERVICE_INFO = tpl_4_items.format(
     tpl_status,
