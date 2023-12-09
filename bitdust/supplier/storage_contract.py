@@ -88,6 +88,9 @@ def get_current_customer_contract(customer_idurl):
     if not accounting.verify_storage_contract(json_data):
         lg.err('current storage contract with %r is not valid' % customer_idurl)
         return None
+    if json_data.get('my_position'):
+        # TODO: remove later...
+        json_data['ecc_position'] = json_data.pop('my_position')
     return json_data
 
 

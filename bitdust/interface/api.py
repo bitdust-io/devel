@@ -4454,7 +4454,7 @@ def suppliers_list(customer_id=None, verbose=False):
     from bitdust.userid import my_id
     from bitdust.userid import id_url
     from bitdust.userid import global_id
-    from bitdust.storage import backup_matrix
+    # from bitdust.storage import backup_matrix
     customer_idurl = strng.to_bin(customer_id)
     if not customer_idurl:
         customer_idurl = my_id.getIDURL().to_bin()
@@ -4499,13 +4499,14 @@ def suppliers_list(customer_id=None, verbose=False):
         #     r['contact_status'] = contact_status.stateToLabel(cur_state)
         #     r['contact_state'] = cur_state
         if verbose:
-            _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
+            # TODO: create separate api method for that: api.supplier_list_files()
+            # _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
             # r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')
-            r['fragments'] = {
-                'items': _files,
-                'files': _total,
-                'details': _report,
-            }
+            # r['fragments'] = {
+            #     'items': _files,
+            #     'files': _total,
+            #     'details': _report,
+            # }
             r['contract'] = None if not sc else sc.storage_contract
         results.append(r)
     return RESULT(results)
