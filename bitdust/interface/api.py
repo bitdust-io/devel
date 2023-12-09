@@ -4500,7 +4500,7 @@ def suppliers_list(customer_id=None, verbose=False):
         #     r['contact_state'] = cur_state
         if verbose:
             _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
-            r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')
+            # r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')
             r['fragments'] = {
                 'items': _files,
                 'files': _total,
