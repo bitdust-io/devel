@@ -831,7 +831,7 @@ def pathIsDir(localpath):
     if Linux():
         try:
             import stat
-            st = os.path.stat(localpath)
+            st = os.path.stat(localpath)  # @UndefinedVariable
             return stat.S_ISDIR(st.st_mode)
         except:
             return False
