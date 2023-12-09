@@ -337,7 +337,7 @@ def verify_storage_contract(json_data):
         int(json_data['value'])
         int(json_data['allocated_bytes'])
         int(json_data['duration_hours'])
-        if json_data.get('ecc_position'):
+        if 'ecc_position' in json_data:
             int(json_data['ecc_position'])
         if json_data.get('ecc_map'):
             str(json_data['ecc_map'])
