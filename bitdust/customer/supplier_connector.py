@@ -237,7 +237,7 @@ class SupplierConnector(automat.Automat):
             )).strip()
         except:
             lg.exc()
-            st = 'DISCONNECTED'
+        st = st or 'DISCONNECTED'
         automat.Automat.__init__(
             self,
             name,
