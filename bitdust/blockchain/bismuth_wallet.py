@@ -3,8 +3,8 @@ import time
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.defer import Deferred  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

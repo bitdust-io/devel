@@ -52,7 +52,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -232,11 +232,12 @@ class SupplierConnector(automat.Automat):
         self.storage_contract = None
         try:
             st = bpio.ReadTextFile(settings.SupplierServiceFilename(
-                idurl=self.supplier_idurl,
+                supplier_idurl=self.supplier_idurl,
                 customer_idurl=self.customer_idurl,
             )).strip()
         except:
-            st = 'DISCONNECTED'
+            lg.exc()
+        st = st or 'DISCONNECTED'
         automat.Automat.__init__(
             self,
             name,
@@ -276,7 +277,7 @@ class SupplierConnector(automat.Automat):
                     lg.exc()
                     return
             bpio.WriteTextFile(
-                settings.SupplierServiceFilename(self.supplier_idurl, customer_idurl=self.customer_idurl),
+                settings.SupplierServiceFilename(supplier_idurl=self.supplier_idurl, customer_idurl=self.customer_idurl),
                 newstate,
             )
         if newstate == 'CONNECTED':
@@ -297,16 +298,15 @@ class SupplierConnector(automat.Automat):
     def set_callback(self, name, cb):
         if name not in self.callbacks:
             self.callbacks[name] = []
-        if cb not in self.callbacks[name]:
-            self.callbacks[name].append(cb)
+        if cb in self.callbacks[name]:
+            lg.warn('callback %r is already registered in %r with name %s' % (cb, self, name))
+        self.callbacks[name].append(cb)
 
     def remove_callback(self, name, cb=None):
         if name in self.callbacks:
             if cb:
-                if cb in self.callbacks[name]:
+                while cb in self.callbacks[name]:
                     self.callbacks[name].remove(cb)
-                else:
-                    lg.warn('callback %r not registered in %r with name %s' % (cb, self, name))
             else:
                 self.callbacks.pop(name)
         else:
@@ -710,8 +710,8 @@ class SupplierConnector(automat.Automat):
         service_info = {
             'customer_id': self.customer_id,
             'needed_bytes': self.needed_bytes,
-            'minimum_duration_hours': 6,
-            'maximum_duration_hours': 24*30,
+            # 'minimum_duration_hours': 6,
+            # 'maximum_duration_hours': 24*30,
         }
         # TODO: re-think again about the customer key, do we really need it?
         # my_customer_key_id = my_id.getGlobalID(key_alias='customer')

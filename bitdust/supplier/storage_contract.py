@@ -88,6 +88,9 @@ def get_current_customer_contract(customer_idurl):
     if not accounting.verify_storage_contract(json_data):
         lg.err('current storage contract with %r is not valid' % customer_idurl)
         return None
+    if 'my_position' in json_data:
+        # TODO: remove later...
+        json_data['ecc_position'] = json_data.pop('my_position')
     return json_data
 
 
@@ -122,6 +125,9 @@ def list_customer_contracts(customer_idurl):
             if not accounting.verify_storage_contract(current_contract):
                 current_contract = None
                 lg.err('current storage contract is invalid')
+            if 'my_position' in current_contract:
+                # TODO: remove later...
+                current_contract['ecc_position'] = current_contract.pop('my_position')
             continue
         try:
             started_time = int(fname.split('.')[0])
@@ -134,6 +140,9 @@ def list_customer_contracts(customer_idurl):
         if not accounting.verify_storage_contract(json_data):
             lg.err('invalid storage contract found: %r' % fname)
             continue
+        if 'my_position' in json_data:
+            # TODO: remove later...
+            json_data['ecc_position'] = json_data.pop('my_position')
         json_data['filename'] = fname
         customer_contracts[started_time] = json_data
         if started_time > latest_contract_started_time:

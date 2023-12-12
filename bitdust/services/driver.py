@@ -70,6 +70,7 @@ from bitdust.main import listeners
 
 _Services = {}
 _BootUpOrder = []
+_RootDistanceDict = {}
 _EnabledServices = set()
 _DisabledServices = set()
 _StartingDeferred = None
@@ -96,6 +97,11 @@ def disabled_services():
 def boot_up_order():
     global _BootUpOrder
     return _BootUpOrder
+
+
+def root_distance(service_name):
+    global _RootDistanceDict
+    return _RootDistanceDict.get(service_name, 0)
 
 
 def is_on(name):
@@ -281,6 +287,7 @@ def shutdown():
 
 def build_order():
     global _BootUpOrder
+    global _RootDistanceDict
     order = list(enabled_services())
     progress = True
     fail = False
@@ -313,7 +320,26 @@ def build_order():
                 progress = True
                 break
     _BootUpOrder = order
+    for service_name in services().keys():
+        _RootDistanceDict[service_name] = find_root_distance(service_name)
     return order
+
+
+def find_root_distance(service_name):
+    svc = services().get(service_name)
+    if not svc:
+        return 0
+    if not svc.dependent_on():
+        return 0
+    max_root_distance = 0
+    for depend_name in svc.dependent_on():
+        depend_service = services().get(depend_name, None)
+        if not depend_service:
+            raise ServiceNotFound(depend_name)
+        depend_service_root_distance = find_root_distance(depend_name)
+        if depend_service_root_distance > max_root_distance:
+            max_root_distance = depend_service_root_distance
+    return max_root_distance + 1
 
 
 def start(services_list=[]):

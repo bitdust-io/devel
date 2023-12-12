@@ -1127,6 +1127,20 @@ def cmd_services(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_SERVICES)
         return call_websocket_method_transform_template_and_stop('services_list', tpl, _services_update)
 
+    if len(args) == 2 and args[1] in ['tree', 'tr']:
+
+        def _services_update(result):
+            for i in range(len(result['result'])):
+                r = result['result'][i]
+                r['enabled_label'] = 'ENABLED' if r['enabled'] else 'DISABLED'
+                r['depends'] = ', '.join(r['depends']) if r['depends'] else 'no dependencies'
+                r['offset'] = '| '*r['root_distance']
+                result['result'][i] = r
+            return result
+
+        tpl = jsontemplate.Template(templ.TPL_SERVICES_TREE)
+        return call_websocket_method_transform_template_and_stop('services_list', tpl, _services_update, as_tree=True)
+
     if len(args) >= 3 and args[1] in ['start', 'enable', 'on']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_start', tpl, service_name=args[2])

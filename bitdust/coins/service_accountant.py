@@ -44,8 +44,8 @@ class AccountantService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_broadcasting',
-            'service_blockchain',
+            # 'service_broadcasting',
+            # 'service_blockchain',
         ]
 
     def installed(self):

@@ -55,7 +55,7 @@ class PersonalMessagesService(LocalService):
 
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
-        from twisted.internet.defer import Deferred
+        from twisted.internet.defer import Deferred  # @UnresolvedImport
         from bitdust.logs import lg
         from bitdust.main import settings
         from bitdust.access import groups
@@ -89,7 +89,7 @@ class PersonalMessagesService(LocalService):
         return self.starting_deferred
 
     def stop(self):
-        from bitdust.interface import api
+        # from bitdust.interface import api
         # api.group_leave(self.personal_group_key_id, erase_key=False)
         return True
 

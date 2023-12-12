@@ -86,7 +86,7 @@ class MyIPPortService(LocalService):
 
     def _on_stun_result(self, stun_result, nat_type, my_ip, details):
         from bitdust.logs import lg
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         if stun_result != 'stun-success' or not my_ip or my_ip == '127.0.0.1':
             lg.warn('stun my external IP failed, retry after 10 seconds')
             reactor.callLater(10, self._do_stun)  # @UndefinedVariable
