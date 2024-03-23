@@ -104,6 +104,9 @@ class BaseConfig(object):
     def exist(self, entryPath):
         return self._get(entryPath) is not None
 
+    def registered(self, entryPath):
+        return self._exists(entryPath)
+
     def remove(self, entryPath):
         elemList = self._parseEntryPath(entryPath)
         fpath = os.path.join(self.configDir, *elemList)
@@ -285,6 +288,15 @@ class BaseConfig(object):
         self._validateElemList(elemList)
         return elemList
 
+    def _exists(self, entryPath):
+        elemList = self._parseEntryPath(entryPath)
+        fpath = os.path.join(self.configDir, *elemList)
+        if os.path.isdir(fpath):
+            return True
+        elif os.path.isfile(fpath):
+            return True
+        return False
+
     def _get(self, entryPath):
         elemList = self._parseEntryPath(entryPath)
         fpath = os.path.join(self.configDir, *elemList)
@@ -405,9 +417,6 @@ class FixedTypesConfig(NotifiableConfig):
         except:
             self._types = {}
             self._labels = {}
-
-    def types(self):
-        return
 
     def listKnownTypes(self):
         return list(self._types.keys())
