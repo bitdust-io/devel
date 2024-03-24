@@ -169,7 +169,10 @@ def set_suppliers(idlist, customer_idurl=None):
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
         lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
-    _SuppliersList[customer_idurl] = id_url.fields_list(idlist)
+    try:
+        _SuppliersList[customer_idurl] = id_url.fields_list(idlist)
+    except:
+        pass
     if _Debug:
         lg.args(_DebugLevel, suppliers=_SuppliersList[customer_idurl], customer_idurl=customer_idurl)
 
@@ -308,7 +311,10 @@ def set_customers(idlist):
     Set customers list.
     """
     global _CustomersList
-    _CustomersList = id_url.fields_list(idlist)
+    try:
+        _CustomersList = id_url.fields_list(idlist)
+    except:
+        pass
 
 
 def update_customers(idslist):

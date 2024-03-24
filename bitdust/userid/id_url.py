@@ -741,7 +741,7 @@ def idurl_to_id(idurl_text, by_parts=False):
 class ID_URL_FIELD(object):
     """
     A class represents a valid, verified and synced IDURL identifier of a device.
-    The IDURL is always corresponds to your own identity file.
+    The IDURL is always corresponding to the identity file.
 
     When your identity file is updated due to rotation to another identity server,
     the "host" component of your IDURL is changed:
@@ -944,7 +944,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method == 'field':
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.current, self.latest))
+            exc = ValueError('while refreshing tried to modify username of the identity %r -> %r' % (self.current, self.latest))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         self.latest_host = latest_host

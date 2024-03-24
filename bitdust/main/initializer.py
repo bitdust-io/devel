@@ -228,7 +228,13 @@ def A(event=None, *args, **kwargs):
     """
     global _Initializer
     if _Initializer is None:
-        _Initializer = Initializer('initializer', 'AT_STARTUP', 2, True)
+        _Initializer = Initializer(
+            name='initializer',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         if kwargs.get('use_reactor', True):
             _Initializer.automat(event, *args, **kwargs)

@@ -1049,12 +1049,10 @@ def config_get(key, include_info=False):
         return ERROR('empty key')
     if _Debug:
         lg.out(_DebugLevel, 'api.config_get [%s]' % key)
-    if not config.conf().exist(key):
+    if not config.conf().registered(key):
         return ERROR('option %s does not exist' % key)
     if not config.conf().hasChilds(key):
-        return RESULT([
-            config.conf().toJson(key, include_info=include_info),
-        ])
+        return RESULT([config.conf().toJson(key, include_info=include_info)])
     known_childs = sorted(config.conf().listEntries(key))
     if key.startswith('services/') and key.count('/') == 1:
         svc_enabled_key = key + '/enabled'
@@ -1085,6 +1083,8 @@ def config_set(key, value):
     """
     key = strng.to_text(key)
     v = {}
+    if not config.conf().registered(key):
+        return ERROR('option %s does not exist' % key)
     if config.conf().exist(key):
         v['old_value'] = config.conf().getValueOfType(key)
     typ_label = config.conf().getTypeLabel(key)

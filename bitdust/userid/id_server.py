@@ -101,9 +101,9 @@ def A(event=None, *args, **kwargs):
         _IdServer = IdServer(
             name='id_server',
             state='AT_STARTUP',
-            debug_level=_Debug,
-            log_events=True,
-            log_transitions=True,
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
         )
     if event is None:
         return _IdServer
