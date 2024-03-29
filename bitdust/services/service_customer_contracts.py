@@ -51,7 +51,7 @@ class CustomerContractsService(LocalService):
     def start(self):
         from twisted.internet import task  # @UnresolvedImport
         self.payment_loop = task.LoopingCall(self.on_payment_task)
-        self.payment_loop.start(60*60)
+        self.payment_loop.start(60*60, now=True)
         return True
 
     def stop(self):

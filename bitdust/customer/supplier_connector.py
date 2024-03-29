@@ -68,7 +68,6 @@ from bitdust.logs import lg
 from bitdust.automats import automat
 
 from bitdust.system import bpio
-from bitdust.system import local_fs
 
 from bitdust.main import settings
 from bitdust.main import events
@@ -76,10 +75,7 @@ from bitdust.main import events
 from bitdust.lib import strng
 from bitdust.lib import nameurl
 from bitdust.lib import diskspace
-from bitdust.lib import utime
 from bitdust.lib import jsn
-
-from bitdust.crypt import key
 
 from bitdust.contacts import contactsdb
 
@@ -92,6 +88,8 @@ from bitdust.p2p import online_status
 from bitdust.raid import eccmap
 
 from bitdust.storage import accounting
+
+from bitdust.customer import payment
 
 from bitdust.userid import id_url
 from bitdust.userid import global_id
@@ -162,39 +160,6 @@ def total_connectors():
     for suppliers_list in _SuppliersConnectors.values():
         count += len(suppliers_list)
     return count
-
-
-#------------------------------------------------------------------------------
-
-
-def get_supplier_contracts_dir(supplier_idurl):
-    supplier_idurl = id_url.field(supplier_idurl)
-    supplier_contracts_prefix = '{}_{}'.format(
-        supplier_idurl.username,
-        strng.to_text(key.HashSHA(supplier_idurl.to_public_key(), hexdigest=True)),
-    )
-    return os.path.join(settings.ServiceDir('service_customer_contracts'), supplier_contracts_prefix)
-
-
-def save_storage_contract(supplier_idurl, json_data):
-    supplier_contracts_dir = get_supplier_contracts_dir(supplier_idurl)
-    if not os.path.isdir(supplier_contracts_dir):
-        bpio._dirs_make(supplier_contracts_dir)
-    contract_path = os.path.join(supplier_contracts_dir, str(utime.unpack_time(json_data['started'])))
-    local_fs.WriteTextFile(contract_path, jsn.dumps(json_data))
-    return contract_path
-
-
-def list_storage_contracts(supplier_idurl):
-    supplier_contracts_dir = get_supplier_contracts_dir(supplier_idurl)
-    if not os.path.isdir(supplier_contracts_dir):
-        return []
-    l = []
-    for contract_filename in os.listdir(supplier_contracts_dir):
-        contract_path = os.path.join(supplier_contracts_dir, contract_filename)
-        json_data = jsn.loads_text(local_fs.ReadTextFile(contract_path))
-        l.append(json_data)
-    return l
 
 
 #------------------------------------------------------------------------------
@@ -667,7 +632,7 @@ class SupplierConnector(automat.Automat):
                     self.latest_supplier_ack = None
                     self.automat('fail', None)
                     return
-                save_storage_contract(self.supplier_idurl, the_contract)
+                payment.save_storage_contract(self.supplier_idurl, the_contract)
         self.automat('ack', response)
 
     def _supplier_service_failed(self, response, info):

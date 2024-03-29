@@ -768,6 +768,7 @@ def cmd_api(opts, args, overDict, executablePath):
                 'jsn',
                 'json',
                 'gc',
+                'config',
             ]:
                 continue
             method = getattr(api, item, None)
