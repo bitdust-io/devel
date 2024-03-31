@@ -521,6 +521,7 @@ def check_db_for_bootstrap(node):
 
 
 class CustomLogHandler(logging.Handler):
+
     def emit(self, record):
         try:
             if _Debug:

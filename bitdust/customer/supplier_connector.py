@@ -89,8 +89,6 @@ from bitdust.raid import eccmap
 
 from bitdust.storage import accounting
 
-from bitdust.customer import payment
-
 from bitdust.userid import id_url
 from bitdust.userid import global_id
 from bitdust.userid import my_id
@@ -632,6 +630,7 @@ class SupplierConnector(automat.Automat):
                     self.latest_supplier_ack = None
                     self.automat('fail', None)
                     return
+                from bitdust.customer import payment
                 payment.save_storage_contract(self.supplier_idurl, the_contract)
         self.automat('ack', response)
 

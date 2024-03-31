@@ -64,6 +64,7 @@ from twisted.web import server, resource, static
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', '..')))
 
 #------------------------------------------------------------------------------
 
@@ -78,6 +79,8 @@ from bitdust.lib import strng
 from bitdust.lib import nameurl
 from bitdust.lib import misc
 from bitdust.lib import net_misc
+
+from bitdust.interface import web_html_template
 
 from bitdust.main import settings
 
@@ -111,10 +114,12 @@ def A(event=None, *args, **kwargs):
 
 
 class IdServer(automat.Automat):
+
     """
     This class implements all the functionality of the ``id_server()`` state
     machine.
     """
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -328,6 +333,7 @@ class IdServer(automat.Automat):
 
 
 class IdServerProtocol(basic.Int32StringReceiver):
+
     def __init__(self):
         self.fpath = None  # string with path/filename
         self.fin = None  # integer file descriptor like os.open() returns
@@ -398,6 +404,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
 
 class IdServerFactory(ServerFactory):
+
     def buildProtocol(self, addr):
         p = IdServerProtocol()
         p.factory = self
@@ -408,6 +415,7 @@ class IdServerFactory(ServerFactory):
 
 
 class WebMainPage(resource.Resource):
+
     def render_POST(self, request):
         inp = BytesIO(request.content.read())
         fin, fpath = tmpfile.make('idsrv', extension='.xml')
@@ -461,7 +469,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
             url = '/' + filename
             name = filename[:-4]
             src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (strng.to_text(url), strng.to_text(name))
-        src += '</td>\n</tr>\n</table>\n</td>\n</tr>\n<tr><td align=left>'
+        src += '</td>\n</tr>\n</table>\n'
         src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (strng.to_text(A().hostname), len(files))
         src += '<p>Other known identity servers:\n'
         for idhost in sorted(known_servers.by_host().keys()):
@@ -480,6 +488,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 
 
 class WebRoot(resource.Resource):
+
     def getChild(self, path, request):
         if not path:
             return self
@@ -502,27 +511,102 @@ class WebRoot(resource.Resource):
 #------------------------------------------------------------------------------
 
 
+class KnownIDServersWebRoot(resource.Resource):
+
+    def getChild(self, path, request):
+        if not path:
+            return self
+        return resource.NoResource('Not found')
+
+
+class KnownIDServersWebMainPage(resource.Resource):
+
+    def render_GET(self, request):
+        src = ''
+        src += '<div id="ui-blockchain-explorer" class="section bg-light">\n'
+        src += '<div class="container">\n'
+        src += '<div class="ui-card">\n'
+        src += '<div class="card-body">\n'
+
+        src += '<div class="row justify-content-center">\n'
+        src += '<h1 align=center>BitDust identity servers</h1>\n'
+        src += '</div><br>\n'
+
+        src += '<div class="row">\n'
+        for idhost in sorted(known_servers.by_host().keys()):
+            idport = known_servers.by_host()[idhost][0]
+            if idport != 80:
+                idhost += ':%d' % idport
+            src += '<div class="col-4">\n'
+            src += '<div class="ui-card ui-action-card ui-accordion shadow-sm" data-target="http://%s/">\n' % strng.to_text(idhost)
+            src += '<div class="card-body">\n'
+            src += '<h5 align=center><a class="card-link" href="http://%s/">%s</a></h5>\n' % (strng.to_text(idhost), strng.to_text(idhost))
+            src += '</div>\n'
+            src += '</div>\n'
+            src += '</div>\n'
+        src += '</div>\n'
+
+        src += '</div>\n'
+        src += '</div>\n'
+        src += '</div>\n'
+        src += '</div>\n'
+
+        html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
+            title='BitDust identity servers',
+            site_url='https://bitdust.io',
+            basepath='https://bitdust.io/',
+            wikipath='https://bitdust.io/wiki/',
+            idserverspath='https://identities.bitdust.io/',
+            blockchainpath='https://blockchain.bitdust.io/',
+            div_main_class='main idservers',
+            div_main_body=src,
+            google_analytics='',
+        )
+        return strng.to_bin(html_src)
+
+
+def render_known_id_servers(web_port):
+    root = KnownIDServersWebRoot()
+    root.putChild(b'', KnownIDServersWebMainPage())
+    reactor.listenTCP(web_port, server.Site(root))  # @UndefinedVariable
+
+
+#------------------------------------------------------------------------------
+
+
 def main():
     bpio.init()
     settings.init()
+    lg.set_debug_level(_DebugLevel)
+
+    serve_known_id_servers = False
     if len(sys.argv) > 1:
-        web_port = int(sys.argv[1])
+        if sys.argv[1].strip() == 'known_id_servers':
+            serve_known_id_servers = True
+            web_port = settings.getIdServerWebPort()
+        else:
+            web_port = int(sys.argv[1])
     else:
         web_port = settings.getIdServerWebPort()
     if len(sys.argv) > 2:
         tcp_port = int(sys.argv[2])
     else:
         tcp_port = settings.getIdServerTCPPort()
-    lg.set_debug_level(20)
-    lg.out(2, 'starting ID server ...')
-    reactor.addSystemEventTrigger(  # @UndefinedVariable
-        'before',
-        'shutdown',
-        A().automat,
-        'shutdown',
-    )
-    reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
-    reactor.callLater(0, A, 'start')  # @UndefinedVariable
+
+    if serve_known_id_servers:
+        web_port = int(sys.argv[2])
+        lg.out(2, 'serving known ID servers web_port=%d' % web_port)
+        reactor.callWhenRunning(render_known_id_servers, web_port)  # @UndefinedVariable
+
+    else:
+        lg.out(2, 'starting ID server web_port=%d tcp_port=%d' % (
+            web_port,
+            tcp_port,
+        ))
+        reactor.addSystemEventTrigger('before', 'shutdown', A().automat, 'shutdown')  # @UndefinedVariable
+        reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
+        reactor.callLater(0, A, 'start')  # @UndefinedVariable
+
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
     lg.out(2, 'reactor stopped, EXIT')
