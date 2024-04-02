@@ -903,7 +903,7 @@ class ID_URL_FIELD(object):
     def __repr__(self):
         if _Debug:
             lg.args(_DebugLevel*2, latest_as_string=self.latest_as_string)
-        return '[%s%s]' % ('' if self.is_latest() else '*', self.latest_as_string)
+        return '{%s%s}' % ('' if self.is_latest() else '*', self.latest_as_string)
 
     def __str__(self):
         if _Debug:

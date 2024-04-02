@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_customer_contracts.py
+# service_blockchain_explorer.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_customer_contracts.py) is part of BitDust Software.
+# This file (service_blockchain_explorer.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_customer_contracts
+module:: service_blockchain_explorer
 """
 
 from __future__ import absolute_import
@@ -34,31 +34,26 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return CustomerContractsService()
+    return BlockchainExplorerService()
 
 
-class CustomerContractsService(LocalService):
+class BlockchainExplorerService(LocalService):
 
-    service_name = 'service_customer_contracts'
-    config_path = 'services/customer-contracts/enabled'
+    service_name = 'service_blockchain_explorer'
+    config_path = 'services/blockchain-explorer/enabled'
 
     def dependent_on(self):
         return [
-            'service_customer',
-            'service_blockchain_id',
+            'service_bismuth_node',
         ]
 
-    def start(self):
-        from twisted.internet import task  # @UnresolvedImport
-        self.payment_loop = task.LoopingCall(self.on_payment_task)
-        self.payment_loop.start(60*60, now=True)
+    def installed(self):
         return True
+
+    def start(self):
+        from bitdust.blockchain import blockchain_explorer
+        return blockchain_explorer.init()
 
     def stop(self):
-        self.payment_loop.stop()
-        self.payment_loop = None
-        return True
-
-    def on_payment_task(self):
-        from bitdust.customer import payment
-        payment.pay_for_storage()
+        from bitdust.blockchain import blockchain_explorer
+        return blockchain_explorer.shutdown()

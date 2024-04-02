@@ -77,6 +77,8 @@ def sec1970_to_datetime_utc(seconds=-1):
     """
     Converts seconds since 1970 year to datetime object in UTC form.
     """
+    if seconds is None:
+        return None
     if seconds == -1:
         seconds = utcnow_to_sec1970()
     return datetime.datetime.utcfromtimestamp(seconds)
@@ -114,6 +116,8 @@ def pack_time(seconds=-1, timespec='seconds'):
     """
     Converts seconds since 1970 year to ISO formatted string.
     """
+    if seconds is None:
+        return None
     return sec1970_to_datetime_utc(seconds).isoformat(timespec=timespec)
 
 
@@ -121,4 +125,6 @@ def unpack_time(text):
     """
     Converts ISO formatted string to seconds since 1970 year.
     """
+    if text is None:
+        return None
     return datetime_to_sec1970(_fromisoformat(text))

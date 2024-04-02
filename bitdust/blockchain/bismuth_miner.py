@@ -5,7 +5,6 @@ import time
 import socks
 import hashlib
 import random
-import traceback
 
 #------------------------------------------------------------------------------
 
@@ -95,11 +94,8 @@ def check_start_mining():
     global _OwnCoinsLastTime
     global _WantMoreCoins
     global _MiningIsOn
-    try:
-        cur_balance = bismuth_wallet.my_balance()
-    except:
-        traceback.print_exc()
-        cur_balance = 'N/A'
+
+    cur_balance = bismuth_wallet.my_balance()
 
     lg.info('my wallet address is %s and current balance is %s' % (bismuth_wallet.my_wallet_address(), cur_balance))
     if _Debug:
@@ -108,11 +104,7 @@ def check_start_mining():
     if cur_balance == 'N/A':
         reactor.callLater(10, check_start_mining)  # @UndefinedVariable
         return
-    try:
-        cur_balance = float(cur_balance)
-    except:
-        reactor.callLater(10, check_start_mining)  # @UndefinedVariable
-        return
+
     if _WantMoreCoins and (not _OwnCoinsLastTime or (time.time() - _OwnCoinsLastTime > 60)):
         _OwnCoinsLastTime = time.time()
         _WantMoreCoins = False

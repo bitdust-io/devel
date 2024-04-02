@@ -92,6 +92,10 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/blockchain-authority/requests-reading-offset', 0)
     conf_obj.setDefaultValue('services/blockchain-authority/requests-reading-limit', 50)
 
+    conf_obj.setDefaultValue('services/blockchain-explorer/enabled', 'false')
+    conf_obj.setDefaultValue('services/blockchain-explorer/host', '127.0.0.1')
+    conf_obj.setDefaultValue('services/blockchain-explorer/web-port', 19080)
+
     conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'false')
 
     conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')

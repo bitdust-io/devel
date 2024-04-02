@@ -166,7 +166,7 @@ class DbHandler:
         sql += ' AND '.join(queries)
         sql += ' LIMIT ?, ?;'
         try:
-            print('DB:txsearch', sql, params)
+            # print('DB:txsearch', sql, params)
             self.execute_param(self.h, sql, tuple(params))
             result = self.h.fetchall()
         except:

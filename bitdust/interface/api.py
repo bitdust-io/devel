@@ -5846,11 +5846,7 @@ def blockchain_info():
         }
     if driver.is_on('service_bismuth_wallet'):
         from bitdust.blockchain import bismuth_wallet
-        try:
-            cur_balance = bismuth_wallet.my_balance()
-        except:
-            lg.exc()
-            cur_balance = 'N/A'
+        cur_balance = bismuth_wallet.my_balance()
         ret['wallet'] = {
             'balance': cur_balance,
             'address': bismuth_wallet.my_wallet_address(),
@@ -5878,11 +5874,7 @@ def blockchain_wallet_balance():
     if not driver.is_on('service_bismuth_wallet'):
         return ERROR('service_bismuth_wallet() is not started')
     from bitdust.blockchain import bismuth_wallet
-    try:
-        cur_balance = bismuth_wallet.my_balance()
-    except:
-        lg.exc()
-        cur_balance = 'N/A'
+    cur_balance = bismuth_wallet.my_balance()
     return OK({
         'balance': cur_balance,
         'address': bismuth_wallet.my_wallet_address(),

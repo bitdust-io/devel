@@ -703,7 +703,7 @@ class ApiHandler:
             if self.config.old_sqlite:
                 db_handler.execute_param(db_handler.h, 'SELECT * FROM transactions WHERE signature like ?1', (transaction_id + '%', ))
             else:
-                db_handler.execute_param(db_handler.h, 'SELECT * FROM transactions WHERE substr(signature,1,4)=substr(?1,1,4) and  signature like ?1', (transaction_id + '%', ))
+                db_handler.execute_param(db_handler.h, 'SELECT * FROM transactions WHERE substr(signature,1,4)=substr(?1,1,4) and signature like ?1', (transaction_id + '%', ))
             raw = db_handler.h.fetchone()
             if not format:
                 connections.send(socket_handler, raw)

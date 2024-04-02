@@ -27,11 +27,11 @@ def sendsync(sdef, peer_ip, status, node):
     """
     # TODO: ERROR, does **not** save anything. code or comment wrong.
     node.logger.app_log.debug(f'Outbound: Synchronization with {peer_ip} finished after: {status}, sending new sync request')
-    time.sleep(Decimal(node.pause))
+    time.sleep(int(node.pause))
     while node.db_lock.locked():
         if node.IS_STOPPING:
             return
-        time.sleep(Decimal(node.pause))
+        time.sleep(int(node.pause))
     send(sdef, 'sendsync')
 
 
@@ -332,6 +332,8 @@ def worker(host, port, node):
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
             """
+            import traceback
+            traceback.print_exc()
 
             # remove from active pool
             node.peers.remove_client(this_client)

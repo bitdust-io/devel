@@ -125,17 +125,24 @@ def my_wallet_address():
 
 
 def my_balance():
-    return client().balance()
+    try:
+        _balance = float(client().balance())
+    except:
+        lg.exc()
+        return 'N/A'
+    return _balance
 
 
 def latest_transactions(num, offset, for_display, mempool_included):
     return client().latest_transactions(num, offset, for_display, mempool_included)
 
 
-def send_transaction(recipient, amount, operation='', data=''):
+def send_transaction(recipient, amount, operation='', data='', raise_errors=False):
     error_reply = []
     ret = client().send(recipient=recipient, amount=amount, operation=operation, data=data, error_reply=error_reply)
     if not ret:
+        if raise_errors:
+            raise Exception(error_reply)
         return error_reply
     return ret
 
