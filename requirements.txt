@@ -21,7 +21,7 @@ coverage==6.2
 cryptography==39.0.0
 ed25519==1.5
 hyperlink==21.0.0
-idna==3.4
+idna==3.7
 incremental==22.10.0
 mock==5.0.1
 psutil==5.9.4
