@@ -491,6 +491,7 @@ class WebMainPage(resource.Resource):
             div_main_class='main idservers',
             div_main_body=src,
             google_analytics='',
+            pre_footer='',
         )
         return strng.to_bin(html_src)
 
@@ -572,6 +573,7 @@ class KnownIDServersWebMainPage(resource.Resource):
             div_main_class='main idservers',
             div_main_body=src,
             google_analytics='',
+            pre_footer=web_html_template.pre_footer % dict(basepath='https://identities.bitdust.io/'),
         )
         return strng.to_bin(html_src)
 

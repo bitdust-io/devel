@@ -292,6 +292,7 @@ class BlockchainMainPage(resource.Resource):
             div_main_class='main blockchain',
             div_main_body=src,
             google_analytics='',
+            pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
         )
         return strng.to_bin(html_src)
 
@@ -330,6 +331,7 @@ class BlockchainTransactionPage(resource.Resource):
                 div_main_class='main blockchain-transaction',
                 div_main_body=src,
                 google_analytics='',
+                pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
             )
             return strng.to_bin(html_src)
 
@@ -358,6 +360,7 @@ class BlockchainTransactionPage(resource.Resource):
                 div_main_class='main blockchain-transaction',
                 div_main_body=src,
                 google_analytics='',
+                pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
             )
             return strng.to_bin(html_src)
 
@@ -387,6 +390,7 @@ class BlockchainTransactionPage(resource.Resource):
             div_main_class='main blockchain-transaction',
             div_main_body=src,
             google_analytics='',
+            pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
         )
         return strng.to_bin(html_src)
 
