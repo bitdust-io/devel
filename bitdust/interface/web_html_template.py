@@ -16,15 +16,16 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
 
     <title data-content="pageTitle">%(title)s</title>
 
+    <link rel="manifest" href="%(basepath)ssite.webmanifest"/>
     <link rel="apple-touch-icon" sizes="180x180" href="%(basepath)slogos/logo-pictogram-color.png"/>
     <link rel="icon" type="image/png" sizes="32x32" href="%(basepath)slogos/logo-pictogram-color.png"/>
     <link rel="icon" type="image/png" sizes="16x16" href="%(basepath)slogos/logo-pictogram-color.png"/>
-    <link rel="manifest" href="%(basepath)ssite.webmanifest"/>
     <link rel="mask-icon" href="%(basepath)slogos/logo-pictogram-color.svg" color="#5bbad5"/>
     <link rel="stylesheet" href="%(basepath)scss/font_sans_pro_600_700.css" type="text/css"/>
     <link rel="stylesheet" href="%(basepath)scss/font_open_sans_600.css" type="text/css"/>
+    <link rel="stylesheet" href="%(basepath)scss/automat.css" type="text/css"/>
+    <link rel="stylesheet" href="%(basepath)scss/bootstrap.min.css" type="text/css"/>
     <link rel="stylesheet" href="%(basepath)sassets/css/applify.min.css" type="text/css"/>
-    <link rel="stylesheet" href="%(basepath)scss/automat.css" type="text/css">
 
 </head>
 
@@ -46,27 +47,27 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
             <ul class="nav navbar-nav">
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#product">Product</a>
+                    <a href="%(site_url)s/index.html#product">Product</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#problem">Problem</a>
+                    <a href="%(site_url)s/index.html#problem">Problem</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#solution">Solution</a>
+                    <a href="%(site_url)s/index.html#solution">Solution</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#ecosystem">Ecosystem</a>
+                    <a href="%(site_url)s/index.html#ecosystem">Ecosystem</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#roadmap">Roadmap</a>
+                    <a href="%(site_url)s/index.html#roadmap">Roadmap</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#team">Team</a>
+                    <a href="%(site_url)s/index.html#team">Team</a>
                 </li>
                 <!-- Nav Item -->
                 <li class="active">
@@ -92,7 +93,7 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
         </div><!--.ui-navigation -->
 
         <!-- Navbar Button -->
-        <a href="%(basepath)sindex.html#product"
+        <a href="%(site_url)s/index.html#product"
            class="btn btn-sm ui-gradient-peach pull-right">
             Get Started
         </a>
