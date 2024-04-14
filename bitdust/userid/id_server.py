@@ -427,23 +427,18 @@ class WebMainPage(resource.Resource):
         return ''
 
     def render_GET(self, request):
-        src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html>
-<head>
-<title>Identities on %(hostname)s</title>
-<style>
-body{margin: 0 auto; padding: 0;}
-#content {margin: 0 auto; padding: 0; text-align: justify; line-height: 1.7;
-min-height: 500px; width: 960px; font-size: 18px; text-decoration: none;
-font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
-</style>
-</head>
-<body>
-<div id="content">
-<h1 align=center>Identities on %(hostname)s</h1>
-''' % {
-            'hostname': strng.to_text(A().hostname),
-        }
+        src = ''
+
+        src += '<div id="ui-id-servers" class="section bg-light">\n'
+        src += '<div class="container">\n'
+        src += '<div class="ui-card">\n'
+        src += '<div class="card-body">\n'
+
+        src += '<div class="row justify-content-center">\n'
+        src += '<h1 align=center>Identities on %s</h1>' % strng.to_text(A().hostname)
+        src += '</div><br>\n'
+
+        src += '<div class="row">\n'
         src += '<table cellspacing=0 width=100% border=0><tr valign=top>\n'
         src += '<td width=152px nowrap>\n'
         HTDOCS_DIR = settings.IdentityServerDir()
@@ -471,6 +466,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
             src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (strng.to_text(url), strng.to_text(name))
         src += '</td>\n</tr>\n</table>\n'
         src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (strng.to_text(A().hostname), len(files))
+        del files
         src += '<p>Other known identity servers:\n'
         for idhost in sorted(known_servers.by_host().keys()):
             idport = known_servers.by_host()[idhost][0]
@@ -479,9 +475,25 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
             src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (strng.to_text(idhost), strng.to_text(idhost))
         src += '</p>'
         src += '<!--CLIENT_HOST=%s:%s-->\n' % (request.client.host, request.client.port)
-        src += '</body>\n</html>'
-        del files
-        return strng.to_bin(src)
+        src += '</div>\n'
+        src += '</div>\n'
+        src += '</div>\n'
+        src += '</div>\n'
+        src += '</div>\n'
+
+        html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
+            title='Identities on %s' % strng.to_text(A().hostname),
+            site_url='https://bitdust.io',
+            basepath='https://identities.bitdust.io/',
+            wikipath='https://bitdust.io/wiki/',
+            idserverspath='https://identities.bitdust.io/',
+            blockchainpath='https://blockchain.bitdust.io/',
+            div_main_class='main idservers',
+            div_main_body=src,
+            google_analytics='',
+            pre_footer='',
+        )
+        return strng.to_bin(html_src)
 
 
 #------------------------------------------------------------------------------
@@ -554,13 +566,14 @@ class KnownIDServersWebMainPage(resource.Resource):
         html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
             title='BitDust identity servers',
             site_url='https://bitdust.io',
-            basepath='https://bitdust.io/',
+            basepath='https://identities.bitdust.io/',
             wikipath='https://bitdust.io/wiki/',
             idserverspath='https://identities.bitdust.io/',
             blockchainpath='https://blockchain.bitdust.io/',
             div_main_class='main idservers',
             div_main_body=src,
             google_analytics='',
+            pre_footer=web_html_template.pre_footer % dict(basepath='https://identities.bitdust.io/'),
         )
         return strng.to_bin(html_src)
 

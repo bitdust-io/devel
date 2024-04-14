@@ -1,3 +1,29 @@
+"""
+Apache2 config
+
+<VirtualHost *:80>
+        ServerName blockchain.bitdust.io
+        ServerAlias www.blockchain.bitdust.io
+        Redirect / https://blockchain.bitdust.io/
+        RewriteEngine on
+        RewriteCond %{SERVER_NAME} =blockchain.bitdust.io [OR]
+        RewriteCond %{SERVER_NAME} =www.blockchain.bitdust.io
+        RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+</VirtualHost>
+
+<VirtualHost *:443>
+        ServerName blockchain.bitdust.io
+        ServerAlias www.blockchain.bitdust.io
+        ServerAdmin bitdust.io@gmail.com
+        DocumentRoot /var/www
+        SSLEngine on
+        RewriteEngine on
+        RewriteRule ^/([a-zA-Z0-9]*)$ http://localhost:19080/$1 [P,L]
+        SSLCertificateFile /ssl/domain.cert.pem
+        SSLCertificateKeyFile /ssl/private.key.pem
+</VirtualHost>
+"""
+
 import sys
 import time
 import sqlite3
@@ -117,7 +143,7 @@ class BlockchainMainPage(resource.Resource):
         else:
             page_num = 0
 
-        page_max = -1
+        page_max = page_num + 1
 
         src = ''
 
@@ -133,17 +159,18 @@ class BlockchainMainPage(resource.Resource):
         conn = None
         c = None
 
+        if len(_all) < page_size:
+            page_max = page_num
+
         view = []
         b = -1
         x_old = 'init'
 
         for x in _all:
-            if int(x[0]) == 1:
-                page_max = page_num
-
             if x[0] != x_old:
                 color_cell = '#F8F8F8'
-                view.append('<tr><td>&nbsp;</td></tr>')  #block separator
+                if b >= 0:
+                    view.append('<tr><td>&nbsp;</td></tr>')  #block separator
             else:
                 color_cell = 'white'
 
@@ -152,18 +179,19 @@ class BlockchainMainPage(resource.Resource):
             if x[0] != x_old:
                 b = b + 1
 
-            if x_old != x[0]:
-                view.append('<td>{}</td>'.format(x[0]))  #block height
-            else:
-                view.append('<td>{}</td>'.format(x[0]))  #block height
+            txid_formatted = strng.to_text(base64.b64encode(strng.to_bin(x[5]), altchars=b'-_'))
+            view.append('<td><a href="/{}">{}</a></td>'.format(
+                txid_formatted,
+                txid_formatted[:8],
+            ))  #TXID
 
             view.append('<td>{}'.format(time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(float(x[1])))))
-            view.append('<td>{}&hellip;</td>'.format(x[2][:6]))  #from
-            view.append('<td>{}&hellip;</td>'.format(x[3][:6]))  #to
+            view.append('<td>{}</td>'.format(x[2][:8]))  #from
+            view.append('<td>{}</td>'.format(x[3][:8]))  #to
             view.append('<td>{0:g}</td>'.format(float(x[4])))  #amount
 
             if x_old != x[0]:
-                view.append('<td>{}&hellip;</td>'.format(x[7][:6]))  #block hash
+                view.append('<td>{}</td>'.format(x[7][:8]))  #block hash
             else:
                 view.append('<td>&nbsp;</td>')  #block hash
 
@@ -173,10 +201,10 @@ class BlockchainMainPage(resource.Resource):
             view.append('<td>{}{}</td>'.format(x[10][:16], '&hellip;' if len(x[10]) > 16 else ''))  #operation
             view.append('<td>{}{}</td>'.format(x[11][:24], '&hellip;' if len(x[11]) > 24 else ''))  #openfield
 
-            view.append('<td><a href="/{}">{}&hellip;</a></td>'.format(
-                strng.to_text(base64.b64encode(strng.to_bin(x[5]), altchars=b'-_')),
-                x[5][:6],
-            ))  #TXID
+            if x_old != x[0]:
+                view.append('<td>{}</td>'.format(x[0]))  #block height
+            else:
+                view.append('<td>{}</td>'.format(x[0]))  #block height
 
             view.append('</tr>')
 
@@ -208,12 +236,13 @@ class BlockchainMainPage(resource.Resource):
 
         src += '<div class="row justify-content-center">\n'
 
-        src += '<style type="text/css">#blockchain-table td {padding: 0px 5px; font-size: 0.9em; font-family: monospace, monospace; }</style>'
+        src += '<style type="text/css">#blockchain-table td {padding: 0px 5px; font-size: 0.8em; font-family: monospace, monospace; }</style>'
 
-        src += '<table id="blockchain-table" class="table table-responsive">\n'
+        src += '<div class="table-responsive">\n'
+        src += '<table id="blockchain-table" class="table table-bordered table-hover">\n'
 
         src += '<tr bgcolor=white>\n'
-        src += '<td><b>Block</b></td>\n'
+        src += '<td><b>TXID</b></td>\n'
         src += '<td><b>Timestamp</b></td>\n'
         src += '<td><b>From</b></td>\n'
         src += '<td><b>To</b></td>\n'
@@ -223,12 +252,13 @@ class BlockchainMainPage(resource.Resource):
         src += '<td><b>Reward</b></td>\n'
         src += '<td><b>Operation</b></td>\n'
         src += '<td><b>Openfield</b></td>\n'
-        src += '<td><b>TXID</b></td>\n'
+        src += '<td><b>Block</b></td>\n'
         src += '</tr>\n'
 
         src += ''.join(view)
 
         src += '</table>\n'
+        src += '</div>\n'
         src += '</div>\n'
 
         src += '<br>\n'
@@ -255,13 +285,14 @@ class BlockchainMainPage(resource.Resource):
         html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
             title='BitDust blockchain explorer',
             site_url='https://bitdust.io',
-            basepath='https://bitdust.io/',
+            basepath='https://%s/' % _ExplorerHost,
             wikipath='https://bitdust.io/wiki/',
             idserverspath='https://identities.bitdust.io/',
             blockchainpath='https://blockchain.bitdust.io/',
             div_main_class='main blockchain',
             div_main_body=src,
             google_analytics='',
+            pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
         )
         return strng.to_bin(html_src)
 
@@ -293,13 +324,14 @@ class BlockchainTransactionPage(resource.Resource):
             html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
                 title='BitDust blockchain explorer',
                 site_url='https://bitdust.io',
-                basepath='https://bitdust.io/',
+                basepath='https://%s/' % _ExplorerHost,
                 wikipath='https://bitdust.io/wiki/',
                 idserverspath='https://identities.bitdust.io/',
                 blockchainpath='https://blockchain.bitdust.io/',
                 div_main_class='main blockchain-transaction',
                 div_main_body=src,
                 google_analytics='',
+                pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
             )
             return strng.to_bin(html_src)
 
@@ -321,13 +353,14 @@ class BlockchainTransactionPage(resource.Resource):
             html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
                 title='BitDust blockchain explorer',
                 site_url='https://bitdust.io',
-                basepath='https://bitdust.io/',
+                basepath='https://%s/' % _ExplorerHost,
                 wikipath='https://bitdust.io/wiki/',
                 idserverspath='https://identities.bitdust.io/',
                 blockchainpath='https://blockchain.bitdust.io/',
                 div_main_class='main blockchain-transaction',
                 div_main_body=src,
                 google_analytics='',
+                pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
             )
             return strng.to_bin(html_src)
 
@@ -340,7 +373,7 @@ class BlockchainTransactionPage(resource.Resource):
         src += '<div>fee: <b>{0:g}</b></div><br>\n'.format(raw[8])
         src += '<div>reward: <b>{0:g}</b></div><br>\n'.format(raw[9])
         src += '<div>operation: <b>{}</b></div><br>\n'.format(raw[10])
-        src += '<div style="margin: 0 auto; overflow-wrap: break-word; word-wrap: break-word;">openfield: <b><code>{}</code></b></div>\n'.format(raw[11])
+        src += '<div style="margin: 0 auto; overflow-wrap: break-word; word-wrap: break-word;">openfield: <b><code>{}</code></b></div><br>\n'.format(raw[11])
         src += '<div style="margin: 0 auto; overflow-wrap: break-word; word-wrap: break-word;">signature:\n<b><code>{}</code></b></div><br>\n'.format(self.tx_id)
         src += '</div>\n'
         src += '</div>\n'
@@ -350,13 +383,14 @@ class BlockchainTransactionPage(resource.Resource):
         html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
             title='BitDust blockchain explorer',
             site_url='https://bitdust.io',
-            basepath='https://bitdust.io/',
+            basepath='https://%s/' % _ExplorerHost,
             wikipath='https://bitdust.io/wiki/',
             idserverspath='https://identities.bitdust.io/',
             blockchainpath='https://blockchain.bitdust.io/',
             div_main_class='main blockchain-transaction',
             div_main_body=src,
             google_analytics='',
+            pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
         )
         return strng.to_bin(html_src)
 

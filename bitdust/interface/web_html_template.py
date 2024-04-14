@@ -16,15 +16,18 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
 
     <title data-content="pageTitle">%(title)s</title>
 
+    <link rel="manifest" href="%(basepath)ssite.webmanifest"/>
+
     <link rel="apple-touch-icon" sizes="180x180" href="%(basepath)slogos/logo-pictogram-color.png"/>
     <link rel="icon" type="image/png" sizes="32x32" href="%(basepath)slogos/logo-pictogram-color.png"/>
     <link rel="icon" type="image/png" sizes="16x16" href="%(basepath)slogos/logo-pictogram-color.png"/>
-    <link rel="manifest" href="%(basepath)ssite.webmanifest"/>
     <link rel="mask-icon" href="%(basepath)slogos/logo-pictogram-color.svg" color="#5bbad5"/>
-    <link rel="stylesheet" href="%(basepath)scss/font_sans_pro_600_700.css" type="text/css"/>
-    <link rel="stylesheet" href="%(basepath)scss/font_open_sans_600.css" type="text/css"/>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:600,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:600" rel="stylesheet">
     <link rel="stylesheet" href="%(basepath)sassets/css/applify.min.css" type="text/css"/>
-    <link rel="stylesheet" href="%(basepath)scss/automat.css" type="text/css">
+    <link rel="stylesheet" href="%(basepath)sassets/css/tables.css" type="text/css"/>
+    <link rel="stylesheet" href="%(basepath)scss/automat.css" type="text/css"/>
 
 </head>
 
@@ -46,27 +49,27 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
             <ul class="nav navbar-nav">
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#product">Product</a>
+                    <a href="%(site_url)s/index.html#product">Product</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#problem">Problem</a>
+                    <a href="%(site_url)s/index.html#problem">Problem</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#solution">Solution</a>
+                    <a href="%(site_url)s/index.html#solution">Solution</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#ecosystem">Ecosystem</a>
+                    <a href="%(site_url)s/index.html#ecosystem">Ecosystem</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#roadmap">Roadmap</a>
+                    <a href="%(site_url)s/index.html#roadmap">Roadmap</a>
                 </li>
                 <!-- Nav Item -->
                 <li>
-                    <a href="%(basepath)sindex.html#team">Team</a>
+                    <a href="%(site_url)s/index.html#team">Team</a>
                 </li>
                 <!-- Nav Item -->
                 <li class="active">
@@ -92,7 +95,7 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
         </div><!--.ui-navigation -->
 
         <!-- Navbar Button -->
-        <a href="%(basepath)sindex.html#product"
+        <a href="%(site_url)s/index.html#product"
            class="btn btn-sm ui-gradient-peach pull-right">
             Get Started
         </a>
@@ -109,28 +112,8 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
 
 <!-- Footer -->
 <footer class="ui-footer bg-gray">
-    <div class="container pt-6 pb-6">
-        <div class="row">
-            <div class="col-sm-8 footer-about footer-col center-on-sm">
-                <img src="%(basepath)sassets/img/logo/bitdust-logo-white.svg" alt="BitDust" />
-                <p class="mt-1">
-                    We are currently with a small team primarily focusing on the development and supporting the BitDust community.
-                    Join us via Telegram or send a email.
-                </p>
-            </div>
 
-            <div class="col-md-4 col-sm-6 footer-col center-on-sm">
-                <div>
-                    <a class="btn ui-gradient-purple btn-circle shadow-md" href="https://t.me/bitdust" target="_blank">
-                        <span class="fa fa-telegram"></span>
-                    </a>
-                    <a class="btn ui-gradient-blue btn-circle shadow-md" href="https://github.com/bitdust-io/" target="_blank">
-                        <span class="fa fa-github"></span>
-                    </a>
-                </div>
-            </div>
-        </div><!-- .row -->
-    </div><!-- .container -->
+    %(pre_footer)s
 
     <!-- Footer Copyright -->
     <div class="footer-copyright bg-dark-gray">
@@ -146,7 +129,7 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
                 <div class="col-sm-6 text-right">
                     <ul class="footer-nav">
                         <li>
-                            <a href="%(site_url)s%(wikipath)s">
+                            <a href="%(wikipath)s">
                                 Wiki
                             </a>
                         </li>
@@ -169,10 +152,10 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
 
 <!-- Scripts -->
 <script src="%(basepath)sassets/js/libs/jquery/jquery-3.2.1.min.js"></script>
-<script src="%(basepath)sassets/js/libs/slider-pro/jquery.sliderPro.min.js"></script>
-<script src="%(basepath)sassets/js/libs/owl.carousel/owl.carousel.min.js"></script>
-<script src="%(basepath)sassets/js/libs/form-validator/form-validator.min.js"></script>
 <script src="%(basepath)sassets/js/libs/bootstrap.js"></script>
+<script src="%(basepath)sassets/js/libs/owl.carousel/owl.carousel.min.js"></script>
+<script src="%(basepath)sassets/js/libs/slider-pro/jquery.sliderPro.min.js"></script>
+<script src="%(basepath)sassets/js/libs/form-validator/form-validator.min.js"></script>
 <script src="%(basepath)sassets/js/applify/ui-map.js"></script>
 <script src="%(basepath)sassets/js/applify/build/applify.js"></script>
 %(google_analytics)s
@@ -202,3 +185,28 @@ GOOGLE_ANALITICS = """
 """
 
 google_analytics = GOOGLE_ANALITICS % dict(google_analytics_code='', )
+
+pre_footer = """
+<div class="container pt-6 pb-6">
+    <div class="row">
+        <div class="col-sm-8 footer-about footer-col center-on-sm">
+            <img src="%(basepath)sassets/img/logo/bitdust-logo-white.svg" alt="BitDust" />
+            <p class="mt-1">
+                We are currently with a small team primarily focusing on the development and supporting the BitDust community.
+                Join us via Telegram or send a email.
+            </p>
+        </div>
+
+        <div class="col-md-4 col-sm-6 footer-col center-on-sm">
+            <div>
+                <a class="btn ui-gradient-purple btn-circle shadow-md" href="https://t.me/bitdust" target="_blank">
+                    <span class="fa fa-telegram"></span>
+                </a>
+                <a class="btn ui-gradient-blue btn-circle shadow-md" href="https://github.com/bitdust-io/" target="_blank">
+                    <span class="fa fa-github"></span>
+                </a>
+            </div>
+        </div>
+    </div><!-- .row -->
+</div><!-- .container -->
+"""
