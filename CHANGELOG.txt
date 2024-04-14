@@ -1,6 +1,25 @@
 Change Log
 ==========
 
+2024-04-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added HMTL WEB template
+* updated id_server.py
+* built new service_blockchain_explorer()
+* updated bitdust/customer/payment.py
+* Bump cryptography from 39.0.0 to 41.0.6
+* disabled and removed few un-used services
+* updated api.services_list()
+* updated api.suppliers_list()
+* introducing storage contracts
+* bug fix in bitdust/storage/accounting.py
+* bug fixes in bitdust/supplier/storage_contract.py
+* bug fix in supplier_connector()
+* IDURL fix in contacts/contactsdb.py
+* small fix in main/config.py
+
+
+
 2023-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in bitdust/system/deploy.py related to python3.11
