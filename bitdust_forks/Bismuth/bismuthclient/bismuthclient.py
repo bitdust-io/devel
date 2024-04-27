@@ -206,12 +206,20 @@ class BismuthClient():
         self._set_cache(key, json)
         return json
 
-    def search_transactions(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
-        key = "txsearch-{}-{}-{}-{}-{}-{}".format(address or '*', recipient or '*', operation or '*', openfield or '*', limit, offset)
+    def search_transactions(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0, block_height_from=None):
+        key = "txsearch-{}-{}-{}-{}-{}-{}-{}".format(
+            address or '*',
+            recipient or '*',
+            operation or '*',
+            openfield or '*',
+            limit,
+            offset,
+            block_height_from or 0,
+        )
         cached = self._get_cached(key)
         if cached:
             return cached
-        transactions = self.command("txsearch", [(address, recipient, operation, openfield, limit, offset, ), ])
+        transactions = self.command("txsearch", [(address, recipient, operation, openfield, limit, offset, block_height_from, ), ])
         if self.verbose:
             print('Client: search transactions', key, transactions)
         json = [TxFormatter(tx).to_json(for_display=True) for tx in transactions]

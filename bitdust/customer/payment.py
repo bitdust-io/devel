@@ -51,6 +51,7 @@ from bitdust.crypt import key
 from bitdust.blockchain import bismuth_wallet
 
 from bitdust.userid import id_url
+from bitdust.userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -83,6 +84,7 @@ def list_storage_contracts(supplier_idurl):
         contract_path = os.path.join(supplier_contracts_dir, contract_filename)
         json_data = jsn.loads_text(local_fs.ReadTextFile(contract_path))
         l.append(json_data)
+    l.sort(key=lambda json_data: utime.unpack_time(json_data['started']))
     return l
 
 
@@ -110,15 +112,21 @@ def pay_for_storage():
         lg.err('my current balance is not available, payments are not possible at the moment')
         return False
     now = utime.utcnow_to_sec1970()
+    my_customer_prefix = my_id.getIDURL().unique_name()
     for supplier_idurl in list_contracted_suppliers():
         supplier_contracts = list_storage_contracts(supplier_idurl)
         unpaid_contracts = []
-        for json_data in supplier_contracts:
+        unpaid_sequence_numbers = set()
+        for pos, json_data in enumerate(supplier_contracts):
             if json_data.get('paid'):
                 continue
             if now < utime.unpack_time(json_data['complete_after']):
                 continue
             unpaid_contracts.append(json_data)
+            sequence_number = json_data.get('sequence_number', -1)
+            if sequence_number < 0:
+                sequence_number = pos + 1
+            unpaid_sequence_numbers.add(sequence_number)
         sum_to_pay = 0
         pay_before_earliest = None
         pay_before_latest = None
@@ -155,7 +163,7 @@ def pay_for_storage():
                         recipient=supplier_wallet_address,
                         amount=sum_to_pay,
                         operation='storage',
-                        data='{} {}'.format(started, complete_after),
+                        data='{} {}'.format(my_customer_prefix, ','.join(map(str, sorted(unpaid_sequence_numbers)))),
                         raise_errors=True,
                     )
                 except:

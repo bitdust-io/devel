@@ -283,6 +283,7 @@ class TestIDURL(TestCase):
         self.assertEqual(repr(id_url.field(alice_text)), '{http://127.0.0.1:8084/alice.xml}')
         self.assertEqual('=%s=' % id_url.field(alice_text), '=http://127.0.0.1:8084/alice.xml=')
         self.assertEqual('=%r=' % id_url.field(alice_text), '={http://127.0.0.1:8084/alice.xml}=')
+        self.assertEqual(id_url.field(alice_text).unique_name(), 'alice_1c32a98ab413b6a2deb6a7f38f8b56fffc4e983f')
 
     def test_identity_not_cached(self):
         self._cache_identity('alice')

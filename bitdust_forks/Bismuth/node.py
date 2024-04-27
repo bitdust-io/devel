@@ -1767,14 +1767,17 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 elif data == 'txsearch':
                     if node.peers.is_allowed(peer_ip, data):
                         segments = receive(self.request)
-                        address, recipient, operation, openfield, limit, offset = segments
+                        block_height_from = None
+                        if len(segments) == 6:
+                            address, recipient, operation, openfield, limit, offset = segments
+                        else:
+                            address, recipient, operation, openfield, limit, offset, block_height_from = segments
                         while node.db_lock.locked():
                             time.sleep(node.pause)
                             node.logger.app_log.warning('Wait DB lock to run txsearch')
                         db_handler_instance = dbhandler.DbHandler(node.index_db, node.ledger_path, node.hyper_path, node.ram, node.ledger_ram_file, node.logger, trace_db_calls=node.trace_db_calls)
-                        result = db_handler_instance.txsearch(address, recipient, operation, openfield, limit, offset)
+                        result = db_handler_instance.txsearch(address, recipient, operation, openfield, limit, offset, block_height_from)
                         db_handler_instance.close()
-
                         send(self.request, result)
                     else:
                         node.logger.app_log.debug(f'{peer_ip} not whitelisted for txsearch command')
