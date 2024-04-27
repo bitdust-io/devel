@@ -143,7 +143,7 @@ class DbHandler:
             result = 'No announcement'
         return result
 
-    def txsearch(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0):
+    def txsearch(self, address=None, recipient=None, operation=None, openfield=None, limit=10, offset=0, block_height_from=None):
         if not address and not recipient and not operation and not openfield:
             return []
         queries = []
@@ -160,11 +160,14 @@ class DbHandler:
         if openfield:
             queries.append('openfield = ?')
             params.append(openfield)
+        if block_height_from is not None:
+            queries.append('block_height >= ?')
+            params.append(block_height_from)
         params.append(offset)
         params.append(limit)
         sql = 'SELECT * FROM transactions WHERE '
         sql += ' AND '.join(queries)
-        sql += ' LIMIT ?, ?;'
+        sql += ' ORDER BY block_height DESC LIMIT ?, ?;'
         try:
             # print('DB:txsearch', sql, params)
             self.execute_param(self.h, sql, tuple(params))

@@ -63,6 +63,8 @@ from bitdust.logs import lg
 from bitdust.system import bpio
 from bitdust.system import local_fs
 
+from bitdust.crypt import hashes
+
 from bitdust.lib import strng
 from bitdust.lib import nameurl
 
@@ -739,6 +741,7 @@ def idurl_to_id(idurl_text, by_parts=False):
 
 
 class ID_URL_FIELD(object):
+
     """
     A class represents a valid, verified and synced IDURL identifier of a device.
     The IDURL is always corresponding to the identity file.
@@ -756,6 +759,7 @@ class ID_URL_FIELD(object):
 
     This is why you can always trust and be able to compare two user IDs and verify recipient/sender identity.
     """
+
     def __init__(self, idurl):
         self.current = b''
         self.current_as_string = ''
@@ -764,6 +768,7 @@ class ID_URL_FIELD(object):
         self.latest_as_string = ''
         self.latest_id = ''
         self.latest_revision = -1
+        self._unique_name = ''
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
@@ -1016,3 +1021,11 @@ class ID_URL_FIELD(object):
             raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key
+
+    def unique_name(self, raise_error=True):
+        if not self._unique_name:
+            self._unique_name = '{}_{}'.format(
+                self.username,
+                strng.to_text(hashes.sha1(self.to_public_key(raise_error=raise_error), hexdigest=True)),
+            )
+        return self._unique_name
