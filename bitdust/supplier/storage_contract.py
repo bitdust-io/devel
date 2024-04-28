@@ -513,7 +513,11 @@ def accept_storage_payments():
         if tx['recipient'] != bismuth_wallet.my_wallet_address():
             continue
         try:
-            customer_prefix, started, complete_after = tx['openfield'].split(' ')
+            customer_prefix, sequence_numbers = tx['openfield'].split(' ')
+        except:
+            continue
+        try:
+            sequence_numbers = map(int, sequence_numbers.split(','))
         except:
             lg.exc()
             continue
