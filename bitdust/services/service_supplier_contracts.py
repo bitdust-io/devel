@@ -57,9 +57,11 @@ class SupplierContractsService(LocalService):
         return True
 
     def stop(self):
-        self.accept_payments_loop.stop()
+        if self.accept_payments_loop.running:
+            self.accept_payments_loop.stop()
         self.accept_payments_loop = None
-        self.sync_my_transactions_loop.stop()
+        if self.sync_my_transactions_loop.running:
+            self.sync_my_transactions_loop.stop()
         self.sync_my_transactions_loop = None
         return True
 

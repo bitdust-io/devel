@@ -292,7 +292,7 @@ class BlockchainMainPage(resource.Resource):
             div_main_class='main blockchain',
             div_main_body=src,
             google_analytics='',
-            pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
+            pre_footer='',
         )
         return strng.to_bin(html_src)
 
@@ -331,7 +331,7 @@ class BlockchainTransactionPage(resource.Resource):
                 div_main_class='main blockchain-transaction',
                 div_main_body=src,
                 google_analytics='',
-                pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
+                pre_footer='',
             )
             return strng.to_bin(html_src)
 
@@ -360,7 +360,27 @@ class BlockchainTransactionPage(resource.Resource):
                 div_main_class='main blockchain-transaction',
                 div_main_body=src,
                 google_analytics='',
-                pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
+                pre_footer='',
+            )
+            return strng.to_bin(html_src)
+
+        if not raw:
+            src += '<p align=center>invalid transaction ID</p>\n'
+            src += '</div>\n'
+            src += '</div>\n'
+            src += '</div>\n'
+            src += '</div>\n'
+            html_src = web_html_template.WEB_ROOT_TEMPLATE % dict(
+                title='BitDust blockchain explorer',
+                site_url='https://bitdust.io',
+                basepath='https://%s/' % _ExplorerHost,
+                wikipath='https://bitdust.io/wiki/',
+                idserverspath='https://identities.bitdust.io/',
+                blockchainpath='https://blockchain.bitdust.io/',
+                div_main_class='main blockchain-transaction',
+                div_main_body=src,
+                google_analytics='',
+                pre_footer='',
             )
             return strng.to_bin(html_src)
 
@@ -390,7 +410,7 @@ class BlockchainTransactionPage(resource.Resource):
             div_main_class='main blockchain-transaction',
             div_main_body=src,
             google_analytics='',
-            pre_footer=web_html_template.pre_footer % dict(basepath='https://%s/' % _ExplorerHost),
+            pre_footer='',
         )
         return strng.to_bin(html_src)
 

@@ -505,6 +505,7 @@ def accept_storage_payments():
             tx = jsn.loads_text(local_fs.ReadTextFile(filepath))
             int(tx['block_height'])
             tx['operation']
+            float(tx['amount'])
         except:
             lg.exc()
             continue
@@ -523,11 +524,11 @@ def accept_storage_payments():
             continue
         if customer_prefix not in my_storage_transactions:
             my_storage_transactions[customer_prefix] = {
-                'total_amount': 0,
+                'total_amount': 0.0,
                 'transactions': [],
             }
         my_storage_transactions[customer_prefix]['transactions'].append(tx)
-        my_storage_transactions[customer_prefix]['total_amount'] += tx['amount']
+        my_storage_transactions[customer_prefix]['total_amount'] += float(tx['amount'])
     for customer_idurl in contactsdb.customers():
         contracts_list = list_customer_contracts(customer_idurl)
         for contract_started_time in contracts_list.keys():
