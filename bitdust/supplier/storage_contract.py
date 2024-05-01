@@ -41,7 +41,6 @@ import os
 from bitdust.logs import lg
 
 from bitdust.lib import utime
-from bitdust.lib import strng
 from bitdust.lib import jsn
 
 from bitdust.system import local_fs
@@ -50,8 +49,6 @@ from bitdust.system import bpio
 from bitdust.main import config
 from bitdust.main import settings
 from bitdust.main import events
-
-from bitdust.crypt import key
 
 from bitdust.contacts import contactsdb
 
@@ -65,11 +62,7 @@ from bitdust.userid import id_url
 
 
 def get_customer_contracts_dir(customer_idurl):
-    customer_idurl = id_url.field(customer_idurl)
-    customer_contracts_prefix = '{}_{}'.format(
-        customer_idurl.username,
-        strng.to_text(key.HashSHA(customer_idurl.to_public_key(), hexdigest=True)),
-    )
+    customer_contracts_prefix = id_url.field(customer_idurl).unique_name()
     return os.path.join(settings.ServiceDir('service_supplier_contracts'), customer_contracts_prefix)
 
 
@@ -77,6 +70,27 @@ def get_current_customer_contract(customer_idurl):
     customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
     if _Debug:
         lg.args(_DebugLevel, c=customer_idurl, path=customer_contracts_dir)
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
+    current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
+    if not os.path.isfile(current_customer_contract_path):
+        return None
+    json_data = jsn.loads_text(local_fs.ReadTextFile(current_customer_contract_path))
+    if not json_data:
+        return None
+    if not accounting.verify_storage_contract(json_data):
+        lg.err('current storage contract with %r is not valid' % customer_idurl)
+        return None
+    if 'my_position' in json_data:
+        # TODO: remove later...
+        json_data['ecc_position'] = json_data.pop('my_position')
+    return json_data
+
+
+def get_customer_transaction(customer_idurl, tx_id):
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, tx_id=tx_id)
     if not os.path.isdir(customer_contracts_dir):
         bpio._dirs_make(customer_contracts_dir)
     current_customer_contract_path = os.path.join(customer_contracts_dir, 'current')
@@ -119,6 +133,7 @@ def list_customer_contracts(customer_idurl):
     latest_paid_contract_time = -1
     completed_contracts_total_GBH_value = 0
     paid_contracts_total_GBH_value = 0
+    counter = 0
     for fname in os.listdir(customer_contracts_dir):
         if fname == 'current':
             current_contract = jsn.loads_text(local_fs.ReadTextFile(os.path.join(customer_contracts_dir, 'current')))
@@ -144,7 +159,9 @@ def list_customer_contracts(customer_idurl):
             # TODO: remove later...
             json_data['ecc_position'] = json_data.pop('my_position')
         json_data['filename'] = fname
+        json_data['state'] = contract_state
         customer_contracts[started_time] = json_data
+        counter += 1
         if started_time > latest_contract_started_time:
             latest_contract_started_time = started_time
             latest_contract = json_data
@@ -168,6 +185,7 @@ def list_customer_contracts(customer_idurl):
     customer_contracts['latest_completed_contract'] = latest_completed_contract
     customer_contracts['completed_value'] = completed_contracts_total_GBH_value
     customer_contracts['paid_value'] = paid_contracts_total_GBH_value
+    customer_contracts['count'] = counter
     if _Debug:
         lg.args(_DebugLevel, completed_value=completed_contracts_total_GBH_value, paid_value=paid_contracts_total_GBH_value)
     return customer_contracts
@@ -207,12 +225,18 @@ def prepare_customer_contract(customer_idurl, details):
     initial_duration_hours = config.conf().getInt('services/supplier-contracts/initial-duration-hours')
     new_raise_factor = config.conf().getFloat('services/supplier-contracts/duration-raise-factor')
     new_duration_hours = None
+    new_sequence_number = 0
     if not latest_contract:
         # SCENARIO 1: this is a new customer - there were no contracts signed yet
         started_time = now
         new_duration_hours = initial_duration_hours
         new_pay_before_time = started_time + int(billing_period_seconds/2.0)
+        new_sequence_number = 1
     else:
+        latest_sequence_number = latest_contract.get('sequence_number', -1)
+        if latest_sequence_number < 0:
+            latest_sequence_number = customer_contracts_list_and_details['count']
+        new_sequence_number = latest_sequence_number + 1
         if latest_contract_state == 'cancelled':
             cancelled_contract_filename = latest_contract.pop('filename', None)
             if now < utime.unpack_time(latest_contract['complete_after']):
@@ -229,6 +253,7 @@ def prepare_customer_contract(customer_idurl, details):
                     pay_before_time=utime.unpack_time(latest_contract['pay_before']),
                     duration_hours=latest_contract['duration_hours'],
                     raise_factor=latest_contract['raise_factor'],
+                    sequence_number=new_sequence_number,
                 )
             if latest_completed_contract:
                 if now - initial_duration_hours*60*60 > utime.unpack_time(latest_completed_contract['pay_before']):
@@ -316,10 +341,11 @@ def prepare_customer_contract(customer_idurl, details):
         pay_before_time=new_pay_before_time,
         duration_hours=new_duration_hours,
         raise_factor=new_raise_factor,
+        sequence_number=new_sequence_number,
     )
 
 
-def start_current_customer_contract(customer_idurl, details, started_time, complete_after_time, pay_before_time, duration_hours, raise_factor):
+def start_current_customer_contract(customer_idurl, details, started_time, complete_after_time, pay_before_time, duration_hours, raise_factor, sequence_number):
     json_data = {
         'started': utime.pack_time(started_time),
         'complete_after': utime.pack_time(complete_after_time),
@@ -330,6 +356,7 @@ def start_current_customer_contract(customer_idurl, details, started_time, compl
         'ecc_position': details['ecc_position'],
         'ecc_map': details['ecc_map'],
         'raise_factor': raise_factor,
+        'sequence_number': sequence_number,
         'wallet_address': bismuth_wallet.my_wallet_address(),
     }
     local_fs.WriteTextFile(os.path.join(get_customer_contracts_dir(customer_idurl), 'current'), jsn.dumps(json_data))
@@ -467,3 +494,46 @@ def verify_all_current_customers_contracts():
                     lg.warn('rejecting customer %r because of finished contract' % customer_idurl)
                     rejected_customers.append(customer_idurl)
     return rejected_customers
+
+
+def accept_storage_payments():
+    now = utime.utcnow_to_sec1970()
+    my_storage_transactions = {}
+    for filename in os.listdir(bismuth_wallet.my_transactions_dir()):
+        filepath = os.path.join(bismuth_wallet.my_transactions_dir(), filename)
+        try:
+            tx = jsn.loads_text(local_fs.ReadTextFile(filepath))
+            int(tx['block_height'])
+            tx['operation']
+            float(tx['amount'])
+        except:
+            lg.exc()
+            continue
+        if tx['operation'] != 'storage':
+            continue
+        if tx['recipient'] != bismuth_wallet.my_wallet_address():
+            continue
+        try:
+            customer_prefix, sequence_numbers = tx['openfield'].split(' ')
+        except:
+            continue
+        try:
+            sequence_numbers = map(int, sequence_numbers.split(','))
+        except:
+            lg.exc()
+            continue
+        if customer_prefix not in my_storage_transactions:
+            my_storage_transactions[customer_prefix] = {
+                'total_amount': 0.0,
+                'transactions': [],
+            }
+        my_storage_transactions[customer_prefix]['transactions'].append(tx)
+        my_storage_transactions[customer_prefix]['total_amount'] += float(tx['amount'])
+    for customer_idurl in contactsdb.customers():
+        contracts_list = list_customer_contracts(customer_idurl)
+        for contract_started_time in contracts_list.keys():
+            if isinstance(contract_started_time, int):
+                json_data = contracts_list[contract_started_time]
+                # if json_data['state'] == 'paid':
+                #     ...
+        # latest_contract = contracts_list['latest']

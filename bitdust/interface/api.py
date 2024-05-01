@@ -1049,12 +1049,10 @@ def config_get(key, include_info=False):
         return ERROR('empty key')
     if _Debug:
         lg.out(_DebugLevel, 'api.config_get [%s]' % key)
-    if not config.conf().exist(key):
+    if not config.conf().registered(key):
         return ERROR('option %s does not exist' % key)
     if not config.conf().hasChilds(key):
-        return RESULT([
-            config.conf().toJson(key, include_info=include_info),
-        ])
+        return RESULT([config.conf().toJson(key, include_info=include_info)])
     known_childs = sorted(config.conf().listEntries(key))
     if key.startswith('services/') and key.count('/') == 1:
         svc_enabled_key = key + '/enabled'
@@ -1085,6 +1083,8 @@ def config_set(key, value):
     """
     key = strng.to_text(key)
     v = {}
+    if not config.conf().registered(key):
+        return ERROR('option %s does not exist' % key)
     if config.conf().exist(key):
         v['old_value'] = config.conf().getValueOfType(key)
     typ_label = config.conf().getTypeLabel(key)
@@ -5846,11 +5846,7 @@ def blockchain_info():
         }
     if driver.is_on('service_bismuth_wallet'):
         from bitdust.blockchain import bismuth_wallet
-        try:
-            cur_balance = bismuth_wallet.my_balance()
-        except:
-            lg.exc()
-            cur_balance = 'N/A'
+        cur_balance = bismuth_wallet.my_balance()
         ret['wallet'] = {
             'balance': cur_balance,
             'address': bismuth_wallet.my_wallet_address(),
@@ -5878,11 +5874,7 @@ def blockchain_wallet_balance():
     if not driver.is_on('service_bismuth_wallet'):
         return ERROR('service_bismuth_wallet() is not started')
     from bitdust.blockchain import bismuth_wallet
-    try:
-        cur_balance = bismuth_wallet.my_balance()
-    except:
-        lg.exc()
-        cur_balance = 'N/A'
+    cur_balance = bismuth_wallet.my_balance()
     return OK({
         'balance': cur_balance,
         'address': bismuth_wallet.my_wallet_address(),

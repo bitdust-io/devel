@@ -599,6 +599,7 @@ def worker(s_time):
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
+
     def handle(self):
         global new_diff
         global node_ip
@@ -615,7 +616,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
         peer_ip, peer_port = self.request.getpeername()
 
         try:
-            data = connections.receive(self.request, 10)
+            try:
+                data = connections.receive(self.request, 10)
+            except:
+                data = ''
+                lg.warn('failed reading data from %r: %r' % (self.client_address, self.request))
 
             # if _Debug:
             #     lg.args(_DebugLevel, data=data, peer_ip=peer_ip, peer_port=peer_port)

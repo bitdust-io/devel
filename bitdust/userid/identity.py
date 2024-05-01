@@ -188,6 +188,7 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 
 
 class identity(object):
+
     """
     We are passed an XML version of an identity and make an Identity. Also can
     construct an Identity by providing all fields. The fields is:
@@ -411,7 +412,7 @@ class identity(object):
         try:
             doc = minidom.parseString(strng.to_bin(xmlsrc))
         except:
-            lg.exc('xmlsrc=%r' % xmlsrc)
+            lg.warn('failed reading identity source from %d bytes' % len(strng.to_bin(xmlsrc)))
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)

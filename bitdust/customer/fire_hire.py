@@ -104,7 +104,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -223,6 +223,7 @@ def Destroy():
 
 
 class FireHire(automat.Automat):
+
     """
     This class implements all the functionality of the ``fire_hire()`` state
     machine.

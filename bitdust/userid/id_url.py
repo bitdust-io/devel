@@ -63,6 +63,8 @@ from bitdust.logs import lg
 from bitdust.system import bpio
 from bitdust.system import local_fs
 
+from bitdust.crypt import hashes
+
 from bitdust.lib import strng
 from bitdust.lib import nameurl
 
@@ -739,9 +741,10 @@ def idurl_to_id(idurl_text, by_parts=False):
 
 
 class ID_URL_FIELD(object):
+
     """
     A class represents a valid, verified and synced IDURL identifier of a device.
-    The IDURL is always corresponds to your own identity file.
+    The IDURL is always corresponding to the identity file.
 
     When your identity file is updated due to rotation to another identity server,
     the "host" component of your IDURL is changed:
@@ -756,6 +759,7 @@ class ID_URL_FIELD(object):
 
     This is why you can always trust and be able to compare two user IDs and verify recipient/sender identity.
     """
+
     def __init__(self, idurl):
         self.current = b''
         self.current_as_string = ''
@@ -764,6 +768,7 @@ class ID_URL_FIELD(object):
         self.latest_as_string = ''
         self.latest_id = ''
         self.latest_revision = -1
+        self._unique_name = ''
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
@@ -903,7 +908,7 @@ class ID_URL_FIELD(object):
     def __repr__(self):
         if _Debug:
             lg.args(_DebugLevel*2, latest_as_string=self.latest_as_string)
-        return '[%s%s]' % ('' if self.is_latest() else '*', self.latest_as_string)
+        return '{%s%s}' % ('' if self.is_latest() else '*', self.latest_as_string)
 
     def __str__(self):
         if _Debug:
@@ -944,7 +949,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method == 'field':
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = ValueError('tried to modify username of the identity %r -> %r' % (self.current, self.latest))
+            exc = ValueError('while refreshing tried to modify username of the identity %r -> %r' % (self.current, self.latest))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         self.latest_host = latest_host
@@ -1016,3 +1021,11 @@ class ID_URL_FIELD(object):
             raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key
+
+    def unique_name(self, raise_error=True):
+        if not self._unique_name:
+            self._unique_name = '{}_{}'.format(
+                self.username,
+                strng.to_text(hashes.sha1(self.to_public_key(raise_error=raise_error), hexdigest=True)),
+            )
+        return self._unique_name
