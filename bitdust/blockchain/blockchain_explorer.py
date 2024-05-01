@@ -48,6 +48,7 @@ from twisted.web import server, resource
 from bitdust.logs import lg
 
 from bitdust.lib import strng
+from bitdust.lib import misc
 
 from bitdust.main import settings
 from bitdust.main import config
@@ -188,15 +189,15 @@ class BlockchainMainPage(resource.Resource):
             view.append('<td>{}'.format(time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(float(x[1])))))
             view.append('<td>{}</td>'.format(x[2][:8]))  #from
             view.append('<td>{}</td>'.format(x[3][:8]))  #to
-            view.append('<td>{0:g}</td>'.format(float(x[4])))  #amount
+            view.append('<td>{}</td>'.format(misc.float2str(x[4], mask='%10.12f')))  #amount
 
             if x_old != x[0]:
                 view.append('<td>{}</td>'.format(x[7][:8]))  #block hash
             else:
                 view.append('<td>&nbsp;</td>')  #block hash
 
-            view.append('<td>{0:g}</td>'.format(float(x[8])))  #fee
-            view.append('<td>{0:g}</td>'.format(float(x[9])))  #reward
+            view.append('<td>{}</td>'.format(misc.float2str(x[8], mask='%10.12f')))  #fee
+            view.append('<td>{}</td>'.format(misc.float2str(x[9], mask='%10.12f')))  #reward
 
             view.append('<td>{}{}</td>'.format(x[10][:16], '&hellip;' if len(x[10]) > 16 else ''))  #operation
             view.append('<td>{}{}</td>'.format(x[11][:24], '&hellip;' if len(x[11]) > 24 else ''))  #openfield
@@ -389,9 +390,9 @@ class BlockchainTransactionPage(resource.Resource):
         src += '<div>timestamp: <b>{}</b></div><br>\n'.format(time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(float(raw[1]))))
         src += '<div>sender: <b><code>{}</code></b></div><br>\n'.format(raw[2])
         src += '<div>recipient: <b><code>{}</code></b></div><br>\n'.format(raw[3])
-        src += '<div>amount: <b>{0:g}</b></div><br>\n'.format(raw[4])
-        src += '<div>fee: <b>{0:g}</b></div><br>\n'.format(raw[8])
-        src += '<div>reward: <b>{0:g}</b></div><br>\n'.format(raw[9])
+        src += '<div>amount: <b>{}</b></div><br>\n'.format(misc.float2str(raw[4], mask='%10.12f'))
+        src += '<div>fee: <b>{}</b></div><br>\n'.format(misc.float2str(raw[8], mask='%10.12f'))
+        src += '<div>reward: <b>{}</b></div><br>\n'.format(misc.float2str(raw[9], mask='%10.12f'))
         src += '<div>operation: <b>{}</b></div><br>\n'.format(raw[10])
         src += '<div style="margin: 0 auto; overflow-wrap: break-word; word-wrap: break-word;">openfield: <b><code>{}</code></b></div><br>\n'.format(raw[11])
         src += '<div style="margin: 0 auto; overflow-wrap: break-word; word-wrap: break-word;">signature:\n<b><code>{}</code></b></div><br>\n'.format(self.tx_id)
