@@ -496,44 +496,40 @@ def verify_all_current_customers_contracts():
     return rejected_customers
 
 
-def accept_storage_payments():
-    now = utime.utcnow_to_sec1970()
-    my_storage_transactions = {}
-    for filename in os.listdir(bismuth_wallet.my_transactions_dir()):
-        filepath = os.path.join(bismuth_wallet.my_transactions_dir(), filename)
-        try:
-            tx = jsn.loads_text(local_fs.ReadTextFile(filepath))
-            int(tx['block_height'])
-            tx['operation']
-            float(tx['amount'])
-        except:
-            lg.exc()
-            continue
-        if tx['operation'] != 'storage':
-            continue
-        if tx['recipient'] != bismuth_wallet.my_wallet_address():
-            continue
-        try:
-            customer_prefix, sequence_numbers = tx['openfield'].split(' ')
-        except:
-            continue
-        try:
-            sequence_numbers = map(int, sequence_numbers.split(','))
-        except:
-            lg.exc()
-            continue
-        if customer_prefix not in my_storage_transactions:
-            my_storage_transactions[customer_prefix] = {
-                'total_amount': 0.0,
-                'transactions': [],
-            }
-        my_storage_transactions[customer_prefix]['transactions'].append(tx)
-        my_storage_transactions[customer_prefix]['total_amount'] += float(tx['amount'])
+def verify_accept_storage_payment(tx):
+    try:
+        customer_prefix, sequence_numbers = tx['openfield'].split(' ')
+    except:
+        lg.exc()
+        return
+    try:
+        sequence_numbers = map(int, sequence_numbers.split(','))
+    except:
+        lg.exc()
+        continue
+    recently_paid_contracts = []
     for customer_idurl in contactsdb.customers():
+        if customer_idurl.unique_name() != customer_prefix:
+            continue
         contracts_list = list_customer_contracts(customer_idurl)
         for contract_started_time in contracts_list.keys():
             if isinstance(contract_started_time, int):
                 json_data = contracts_list[contract_started_time]
-                # if json_data['state'] == 'paid':
-                #     ...
-        # latest_contract = contracts_list['latest']
+                if json_data['state'] == 'completed':
+                    if json_data['sequence_number'] in sequence_numbers:
+                        recently_paid_contracts.append(json_data)
+    if _Debug:
+        lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers, recently_paid_contracts=len(recently_paid_contracts))
+    if not recently_paid_contracts:
+        return
+    customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
+    for json_data in recently_paid_contracts:
+        # rename "<started_time>.completed" file to "<started_time>.paid"
+        completed_contract_path = os.path.join(customer_contracts_dir, json_data['filename'])
+        paid_contract_path = os.path.join(customer_contracts_dir, '{}.paid'.format(utime.unpack_time(json_data['started'])))
+        if _Debug:
+            lg.args(_DebugLevel, old_path=completed_contract_path, new_path=paid_contract_path)
+        os.rename(completed_contract_path, paid_contract_path)
+        paid_contract = jsn.loads_text(local_fs.ReadTextFile(paid_contract_path))
+        paid_contract['customer'] = customer_idurl
+        events.send('storage-contract-paid', data=dict(contract=paid_contract))
