@@ -164,6 +164,7 @@ def total_connectors():
 
 
 class SupplierConnector(automat.Automat):
+
     """
     This class implements all the functionality of the ``supplier_connector()``
     state machine.
@@ -607,6 +608,8 @@ class SupplierConnector(automat.Automat):
         self.destroy()
 
     def _supplier_service_acked(self, response, info):
+        if _Debug:
+            lg.args(_DebugLevel, response=response, info=info)
         if not self.request_packet_id:
             lg.warn('received "old" response : %r' % response)
             return
@@ -623,7 +626,6 @@ class SupplierConnector(automat.Automat):
                 lg.exc()
             if _Debug:
                 lg.args(_DebugLevel, response=response, info=info, contract=the_contract)
-            self.storage_contract = the_contract
             if the_contract:
                 if not accounting.verify_storage_contract(the_contract):
                     lg.err('received storage contract from %r is not valid' % self.supplier_idurl)
@@ -632,6 +634,7 @@ class SupplierConnector(automat.Automat):
                     return
                 from bitdust.customer import payment
                 payment.save_storage_contract(self.supplier_idurl, the_contract)
+                self.storage_contract = the_contract
         self.automat('ack', response)
 
     def _supplier_service_failed(self, response, info):

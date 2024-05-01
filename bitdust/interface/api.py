@@ -4463,10 +4463,7 @@ def suppliers_list(customer_id=None, verbose=False):
             customer_idurl = global_id.GlobalUserToIDURL(customer_id, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
     results = []
-    for (
-        pos,
-        supplier_idurl,
-    ) in enumerate(contactsdb.suppliers(customer_idurl)):
+    for pos, supplier_idurl in enumerate(contactsdb.suppliers(customer_idurl)):
         if not supplier_idurl:
             r = {
                 'position': pos,
