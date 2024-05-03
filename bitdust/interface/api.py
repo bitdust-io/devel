@@ -1709,6 +1709,8 @@ def files_sync():
     if _Debug:
         lg.out(_DebugLevel, 'api.files_sync')
     from bitdust.storage import backup_monitor
+    from bitdust.customer import fire_hire
+    fire_hire.ForceRestart()
     backup_monitor.A('restart')
     if _Debug:
         lg.out(_DebugLevel, 'api.files_sync')

@@ -146,6 +146,7 @@ from bitdust.userid import id_url
 _FireHire = None
 _LastFireTime = 0
 _SuppliersToFire = []
+_ForceRestartState = False
 
 #-------------------------------------------------------------------------
 
@@ -166,6 +167,11 @@ def ClearLastFireTime():
 def AddSupplierToFire(idurl):
     global _SuppliersToFire
     _SuppliersToFire.append(idurl)
+
+
+def ForceRestart():
+    global _ForceRestartState
+    _ForceRestartState = True
 
 
 def IsAllHired():
@@ -423,6 +429,9 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
+        global _ForceRestartState
+        if _ForceRestartState:
+            return True
         return self._is_config_changed()
 
     def isContractExpiring(self, *args, **kwargs):
@@ -453,6 +462,8 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
+        global _ForceRestartState
+        _ForceRestartState = False
         from bitdust.customer import supplier_connector
         from bitdust.p2p import online_status
         self.connect_list = []
