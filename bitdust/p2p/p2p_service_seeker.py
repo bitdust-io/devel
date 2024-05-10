@@ -44,7 +44,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -80,6 +80,7 @@ _P2PServiceSeekerInstaceCounter = 0
 
 
 class P2PServiceSeeker(automat.Automat):
+
     """
     This class implements all the functionality of the ``p2p_service_seeker()``
     state machine.
@@ -107,6 +108,7 @@ class P2PServiceSeeker(automat.Automat):
         self.ack_timeout = None
         self.force_handshake = None
         self.exclude_nodes = []
+        self.verify_accepted = None
         self.lookup_task = None
         self.requested_packet_id = None
 
@@ -195,6 +197,7 @@ class P2PServiceSeeker(automat.Automat):
         self.ack_timeout = kwargs.get('ack_timeout', None)
         self.force_handshake = kwargs.get('force_handshake', False)
         self.result_callback = kwargs.get('result_callback', None)
+        self.verify_accepted = kwargs.get('verify_accepted', True)
         self.exclude_nodes = id_url.to_bin_list(kwargs.get('exclude_nodes', []))
         self.retries = kwargs.get('attempts', 5)
 
@@ -319,6 +322,7 @@ class P2PServiceSeeker(automat.Automat):
         self.ack_timeout = None
         self.force_handshake = None
         self.exclude_nodes = []
+        self.verify_accepted = None
         self.requested_packet_id = None
         self.lookup_task = None
         self.destroy()
@@ -328,13 +332,10 @@ class P2PServiceSeeker(automat.Automat):
     def _node_acked(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %r %r' % (response, info))
-        if not strng.to_text(response.Payload).startswith('accepted'):
+        if self.verify_accepted and not strng.to_text(response.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with "service denied" response: %r %r' % (response, info))
-            self.automat('service-denied', (
-                response,
-                info,
-            ), reason='service-denied')
+            self.automat('service-denied', (response, info), reason='service-denied')
             return
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
@@ -343,10 +344,7 @@ class P2PServiceSeeker(automat.Automat):
     def _node_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
-        self.automat('service-denied', (
-            response,
-            info,
-        ), reason='service-denied')
+        self.automat('service-denied', (response, info), reason='service-denied')
 
     def _node_timed_out(self, pkt_out):
         if _Debug:
@@ -388,7 +386,7 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
 #------------------------------------------------------------------------------
 
 
-def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[], attempts=5, request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
+def connect_random_node(lookup_method, service_name, service_params=None, verify_accepted=True, exclude_nodes=[], attempts=5, request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
@@ -410,6 +408,7 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
         attempts=attempts,
         ack_timeout=ack_timeout,
         force_handshake=force_handshake,
+        verify_accepted=verify_accepted,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )
@@ -418,7 +417,7 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
     return result
 
 
-def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[], attempts=2, request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
+def connect_known_node(remote_idurl, service_name, service_params=None, verify_accepted=True, exclude_nodes=[], attempts=2, request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
@@ -440,6 +439,7 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
         attempts=attempts,
         ack_timeout=ack_timeout,
         force_handshake=force_handshake,
+        verify_accepted=verify_accepted,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )

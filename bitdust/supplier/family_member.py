@@ -108,6 +108,7 @@ def by_customer_idurl(customer_idurl):
 
 
 class FamilyMember(automat.Automat):
+
     """
     This class implements all the functionality of ``family_member()`` state machine.
     """
@@ -356,7 +357,7 @@ class FamilyMember(automat.Automat):
 #             return
         possible_transaction = self._do_process_request(merged_info, self.current_request)
         if not possible_transaction:
-            lg.warn('failed to process customer family change request, skip transaction')
+            lg.warn('failed to process customer family %r change request, skip transaction' % self)
             return
         self.transaction = self._do_increment_revision(possible_transaction)
         if _Debug:
@@ -508,9 +509,9 @@ class FamilyMember(automat.Automat):
             if dht_revision < 1:
                 raise Exception('invalid revision')
             if not isinstance(out['suppliers'], list) or len(out['suppliers']) < 1:
-                raise Exception('must include some suppliers')
+                raise Exception('family %r must include some suppliers' % self)
             if ecc_map and ecc_map not in eccmap.EccMapNames():
-                raise Exception('invalid ecc_map name')
+                raise Exception('invalid ecc_map name in family %r' % self)
             out['publisher_idurl'] = id_url.field(out['publisher_idurl'])
             # TODO: add publisher_signature and Validate method to check publisher signature
             out['customer_idurl'] = id_url.field(out['customer_idurl'])
@@ -538,14 +539,14 @@ class FamilyMember(automat.Automat):
         try:
             out['suppliers'] = id_url.to_bin_list(out['suppliers'])
             if not isinstance(out['suppliers'], list) or len(out['suppliers']) < 1:
-                raise Exception('must include some suppliers')
+                raise Exception('family %r must include some suppliers' % self)
         except Exception as exc:
             lg.warn(str(exc))
             return None
         try:
             ecc_map = out['ecc_map']
             if ecc_map and ecc_map not in eccmap.EccMapNames():
-                raise Exception('invalid ecc_map name')
+                raise Exception('invalid ecc_map name in family %r' % self)
         except Exception as exc:
             lg.warn(str(exc))
             return None

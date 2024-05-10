@@ -69,7 +69,7 @@ class MyDataService(SlowStartingLocalService):
         from bitdust.storage import backup_fs
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             self.confirm_service_started(result=True)
-            if listeners.is_populate_requered('private_file'):
+            if listeners.is_populate_required('private_file'):
                 # listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
         else:
@@ -89,7 +89,7 @@ class MyDataService(SlowStartingLocalService):
         from bitdust.storage import backup_fs
         if self.starting_deferred:
             self.confirm_service_started(result=True)
-            if listeners.is_populate_requered('private_file'):
+            if listeners.is_populate_required('private_file'):
                 # listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
         if driver.is_enabled('service_my_data'):

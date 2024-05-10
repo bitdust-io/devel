@@ -83,6 +83,7 @@ def shutdown():
 
 
 class Snapshot(object):
+
     def __init__(self, model_name, snap_id=None, data=None, created=None, deleted=False):
         self.model_name = model_name
         self.snap_id = snap_id
@@ -219,5 +220,5 @@ def populate_later(model_name=None, stop=False):
     return _ModelsToBePopulated
 
 
-def is_populate_requered(model_name):
+def is_populate_required(model_name):
     return model_name in _ModelsToBePopulated
