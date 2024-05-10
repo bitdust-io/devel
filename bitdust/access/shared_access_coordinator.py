@@ -210,7 +210,7 @@ def open_known_shares():
             to_be_opened.append(key_id)
     if _Debug:
         lg.args(_DebugLevel, known_offline_shares=known_offline_shares, to_be_opened=to_be_opened)
-    populate_shared_files = listeners.is_populate_requered('shared_file')
+    populate_shared_files = listeners.is_populate_required('shared_file')
     for key_id in to_be_opened:
         active_share = SharedAccessCoordinator(key_id, log_events=True, publish_events=False)
         active_share.automat('restart')
@@ -218,7 +218,7 @@ def open_known_shares():
             backup_fs.populate_shared_files(key_id=key_id)
     # if populate_shared_files:
     # listeners.populate_later().remove('shared_file')
-    if listeners.is_populate_requered('shared_location'):
+    if listeners.is_populate_required('shared_location'):
         # listeners.populate_later().remove('shared_location')
         populate_shares()
 
@@ -463,6 +463,7 @@ def on_list_files_verified(newpacket, list_files_info):
 
 
 class SharedAccessCoordinator(automat.Automat):
+
     """
     This class implements all the functionality of the ``shared_access_coordinator()`` state machine.
     """
@@ -660,6 +661,7 @@ class SharedAccessCoordinator(automat.Automat):
             self.known_suppliers_list = [s for s in args[0]['suppliers'] if s]
         except:
             lg.exc()
+            self.automat('all-suppliers-disconnected')
             return
         self.known_ecc_map = args[0].get('ecc_map')
         self.suppliers_in_progress.clear()

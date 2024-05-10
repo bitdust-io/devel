@@ -64,7 +64,8 @@ from bitdust.main import listeners
 
 from bitdust.crypt import my_keys
 
-from bitdust.access import group_member
+# from bitdust.access import group_member
+from bitdust.access import group_participant
 
 from bitdust.p2p import online_status
 
@@ -314,9 +315,12 @@ def build_json_conversation(**record):
             return None
         conv['key_id'] = key_id
         conv['label'] = my_keys.get_label(key_id) or key_id
-        gm = group_member.get_active_group_member(key_id)
-        if gm:
-            conv.update(gm.to_json())
+        # gm = group_member.get_active_group_member(key_id)
+        # if gm:
+        #     conv.update(gm.to_json())
+        g_part = group_participant.get_active_group_participant(key_id)
+        if g_part:
+            conv.update(g_part.to_json())
     return conv
 
 

@@ -358,12 +358,12 @@ def contacts(include_all=False, include_enabled=True):
         result.update(set(customers() + known_customers()))
     if include_all or (include_enabled and driver.is_enabled('service_private_messages')) or driver.is_on('service_private_messages'):
         result.update(set(correspondents_ids()))
-    if include_all or include_enabled:
-        if driver.is_enabled('service_message_broker') or driver.is_on('service_message_broker'):
-            from bitdust.stream import message_peddler
-            result.update(set(message_peddler.list_customers()))
-            result.update(set(message_peddler.list_consumers_producers(include_consumers=True, include_producers=True)))
-            result.update(set(message_peddler.list_known_brokers()))
+    # if include_all or include_enabled:
+    #     if driver.is_enabled('service_message_broker') or driver.is_on('service_message_broker'):
+    #         from bitdust.stream import message_peddler
+    #         result.update(set(message_peddler.list_customers()))
+    #         result.update(set(message_peddler.list_consumers_producers(include_consumers=True, include_producers=True)))
+    #         result.update(set(message_peddler.list_known_brokers()))
     return list(result)
 
 
@@ -847,7 +847,7 @@ def load_contacts():
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback([], correspondents())
     AddContactsChangedCallback(on_contacts_changed)
-    if listeners.is_populate_requered('correspondent'):
+    if listeners.is_populate_required('correspondent'):
         # listeners.populate_later().remove('correspondent')
         populate_correspondents()
 

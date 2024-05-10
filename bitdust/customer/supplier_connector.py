@@ -52,7 +52,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -528,7 +528,7 @@ class SupplierConnector(automat.Automat):
                     'scope': 'consumer',
                     'action': 'remove_callback',
                     'consumer_id': self.customer_id,
-                    'method': self.customer_id,
+                    'method': self.customer_idurl,
                 },
                 {
                     'scope': 'consumer',
@@ -649,6 +649,8 @@ class SupplierConnector(automat.Automat):
         if response.PacketID != self.request_queue_packet_id:
             lg.warn('received "unexpected" queue response : %r' % response)
             return
+        if _Debug:
+            lg.args(_DebugLevel, response=response, info=info)
         # start_consumer(self.customer_id, self.supplier_id)
         self.automat('queue-ack', response)
 

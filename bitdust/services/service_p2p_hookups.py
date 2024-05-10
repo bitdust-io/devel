@@ -75,7 +75,7 @@ class P2PHookupsService(LocalService):
         callback.append_inbox_callback(p2p_service.inbox)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        if listeners.is_populate_requered('online_status'):
+        if listeners.is_populate_required('online_status'):
             # listeners.populate_later().remove('online_status')
             online_status.populate_online_statuses()
         return True

@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_message_broker.py
+# service_joint_postman.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_message_broker.py) is part of BitDust Software.
+# This file (service_joint_postman.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_message_broker
+module:: service_joint_postman
 """
 
 from __future__ import absolute_import
@@ -34,13 +34,13 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return MessageBrokerService()
+    return JointPostmanService()
 
 
-class MessageBrokerService(LocalService):
+class JointPostmanService(LocalService):
 
-    service_name = 'service_message_broker'
-    config_path = 'services/message-broker/enabled'
+    service_name = 'service_joint_postman'
+    config_path = 'services/joint-postman/enabled'
     data_dir_required = True
 
     last_time_keys_synchronized = None
@@ -48,39 +48,17 @@ class MessageBrokerService(LocalService):
     def dependent_on(self):
         return [
             'service_private_messages',
-            'service_data_disintegration',
-        ]
-
-    def installed(self):
-        return False
-
-    def attached_dht_layers(self):
-        from bitdust.dht import dht_records
-        return [
-            dht_records.LAYER_MESSAGE_BROKERS,
+            'service_customer_family',
         ]
 
     def start(self):
         from bitdust.main import events
-        from bitdust.stream import message_peddler
-        message_peddler.A('start')
-        # self._do_connect_message_brokers_dht_layer()
-        # events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         return True
 
     def stop(self):
-        from bitdust.dht import dht_service
-        from bitdust.dht import dht_records
         from bitdust.main import events
-        from bitdust.stream import message_peddler
         events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        # events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
-        # dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
-        message_peddler.A('stop')
-        return True
-
-    def health_check(self):
         return True
 
     def request(self, json_payload, newpacket, info):

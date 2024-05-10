@@ -124,7 +124,6 @@ from bitdust.crypt import my_keys
 from bitdust.access import key_ring
 
 from bitdust.userid import global_id
-from bitdust.userid import id_url
 
 from bitdust.interface import api
 
@@ -261,15 +260,18 @@ def create_new_group(label, creator_id=None, key_size=2048, group_alias=None, wi
     if _Debug:
         lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size, group_alias=group_alias)
     group_key_id = generate_group_key(creator_id=creator_id, label=label, key_size=key_size, group_alias=group_alias)
-    remote_path = create_archive_folder(group_key_id)
-    if remote_path is None:
-        return None
+    # remote_path = create_archive_folder(group_key_id)
+    # if remote_path is None:
+    #     return None
     if with_group_info:
-        set_group_info(group_key_id, {
-            'last_sequence_id': -1,
-            'active': False,
-            'archive_folder_path': remote_path,
-        })
+        set_group_info(
+            group_key_id,
+            {
+                'last_sequence_id': -1,
+                'active': False,
+                # 'archive_folder_path': remote_path,
+            }
+        )
         save_group_info(group_key_id)
     return group_key_id
 
@@ -295,15 +297,15 @@ def send_group_pub_key_to_suppliers(group_key_id):
 
 
 def load_groups():
-    loaded_brokers = 0
+    # loaded_brokers = 0
     loaded_groups = 0
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
     if not os.path.isdir(groups_dir):
         bpio._dirs_make(groups_dir)
-    brokers_dir = os.path.join(service_dir, 'brokers')
-    if not os.path.isdir(brokers_dir):
-        bpio._dirs_make(brokers_dir)
+    # brokers_dir = os.path.join(service_dir, 'brokers')
+    # if not os.path.isdir(brokers_dir):
+    #     bpio._dirs_make(brokers_dir)
     for group_key_id in os.listdir(groups_dir):
         latest_group_key_id = my_keys.latest_key_id(group_key_id)
         latest_group_path = os.path.join(groups_dir, latest_group_key_id)
@@ -321,52 +323,52 @@ def load_groups():
             continue
         active_groups()[latest_group_key_id] = latest_group_info
         loaded_groups += 1
-    for customer_id in os.listdir(brokers_dir):
-        latest_customer_id = global_id.latest_glob_id(customer_id)
-        latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
-        if latest_customer_id != customer_id:
-            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id))
-            old_customer_dir = os.path.join(brokers_dir, customer_id)
-            try:
-                bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
-                bpio.rmdir_recursive(old_customer_dir)
-            except:
-                lg.exc()
-                continue
-        for broker_id in os.listdir(latest_customer_dir):
-            if latest_customer_id not in known_brokers():
-                known_brokers(latest_customer_id)
-            latest_broker_id = global_id.latest_glob_id(broker_id)
-            latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
-            if latest_broker_id != broker_id:
-                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id))
-                old_broker_path = os.path.join(latest_customer_dir, broker_id)
-                try:
-                    os.rename(old_broker_path, latest_broker_path)
-                except:
-                    lg.exc()
-                    continue
-            latest_broker_info = jsn.loads_text(local_fs.ReadTextFile(latest_broker_path))
-            if not latest_broker_info:
-                lg.err('was not able to load broker info from %r' % latest_broker_path)
-                continue
-            existing_broker_id = known_brokers(latest_customer_id)[int(latest_broker_info['position'])]
-            if existing_broker_id:
-                if os.path.isfile(latest_broker_path):
-                    lg.err('found duplicated broker for customer %r on position %d, erasing file %r' % (latest_customer_id, int(latest_broker_info['position']), latest_broker_path))
-                    try:
-                        os.remove(latest_broker_path)
-                    except:
-                        lg.exc()
-                continue
-            known_brokers()[latest_customer_id][int(latest_broker_info['position'])] = latest_broker_id
-            loaded_brokers += 1
+    # for customer_id in os.listdir(brokers_dir):
+    #     latest_customer_id = global_id.latest_glob_id(customer_id)
+    #     latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
+    #     if latest_customer_id != customer_id:
+    #         lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id))
+    #         old_customer_dir = os.path.join(brokers_dir, customer_id)
+    #         try:
+    #             bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
+    #             bpio.rmdir_recursive(old_customer_dir)
+    #         except:
+    #             lg.exc()
+    #             continue
+    #     for broker_id in os.listdir(latest_customer_dir):
+    #         if latest_customer_id not in known_brokers():
+    #             known_brokers(latest_customer_id)
+    #         latest_broker_id = global_id.latest_glob_id(broker_id)
+    #         latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
+    #         if latest_broker_id != broker_id:
+    #             lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id))
+    #             old_broker_path = os.path.join(latest_customer_dir, broker_id)
+    #             try:
+    #                 os.rename(old_broker_path, latest_broker_path)
+    #             except:
+    #                 lg.exc()
+    #                 continue
+    #         latest_broker_info = jsn.loads_text(local_fs.ReadTextFile(latest_broker_path))
+    #         if not latest_broker_info:
+    #             lg.err('was not able to load broker info from %r' % latest_broker_path)
+    #             continue
+    #         existing_broker_id = known_brokers(latest_customer_id)[int(latest_broker_info['position'])]
+    #         if existing_broker_id:
+    #             if os.path.isfile(latest_broker_path):
+    #                 lg.err('found duplicated broker for customer %r on position %d, erasing file %r' % (latest_customer_id, int(latest_broker_info['position']), latest_broker_path))
+    #                 try:
+    #                     os.remove(latest_broker_path)
+    #                 except:
+    #                     lg.exc()
+    #             continue
+    #         known_brokers()[latest_customer_id][int(latest_broker_info['position'])] = latest_broker_id
+    #         loaded_brokers += 1
     if _Debug:
-        lg.args(_DebugLevel, loaded_groups=loaded_groups, loaded_brokers=loaded_brokers)
+        lg.args(_DebugLevel, loaded_groups=loaded_groups)
 
 
 def unload_groups():
-    known_brokers().clear()
+    # known_brokers().clear()
     active_groups().clear()
     if _Debug:
         lg.dbg(_DebugLevel, 'known groups and brokers are erased')
@@ -568,76 +570,79 @@ def set_group_active(group_key_id, value):
 
 
 def on_identity_url_changed(evt):
-    from bitdust.access import group_member
-    service_dir = settings.ServiceDir('service_private_groups')
-    groups_dir = os.path.join(service_dir, 'groups')
-    brokers_dir = os.path.join(service_dir, 'brokers')
-    old_idurl = id_url.field(evt.data['old_idurl'])
-    new_idurl = id_url.field(evt.data['new_idurl'])
-    active_group_keys = list(active_groups())
-    to_be_reconnected = []
-    for group_key_id in active_group_keys:
-        if not group_key_id:
-            continue
-        group_creator_idurl = global_id.glob2idurl(group_key_id)
-        if id_url.is_the_same(group_creator_idurl, old_idurl):
-            old_group_path = os.path.join(groups_dir, group_key_id)
-            latest_group_key_id = my_keys.latest_key_id(group_key_id)
-            latest_group_path = os.path.join(groups_dir, latest_group_key_id)
-            lg.info('going to rename rotated group file: %r -> %r' % (old_group_path, latest_group_path))
-            if os.path.isfile(old_group_path):
-                try:
-                    os.rename(old_group_path, latest_group_path)
-                except:
-                    lg.exc()
-                    continue
-            else:
-                lg.warn('key file %r was not found, key was not renamed' % old_group_path)
-            active_groups()[latest_group_key_id] = active_groups().pop(group_key_id)
-            group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
-        gm = group_member.get_active_group_member(group_key_id)
-        if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
-            lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (old_idurl, gm))
-            if group_key_id not in to_be_reconnected:
-                to_be_reconnected.append(group_key_id)
-    known_customers = list(known_brokers().keys())
-    for customer_id in known_customers:
-        latest_customer_id = global_id.idurl2glob(new_idurl)
-        customer_idurl = global_id.glob2idurl(customer_id)
-        if id_url.is_the_same(customer_idurl, old_idurl):
-            latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
-            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id))
-            old_customer_dir = os.path.join(brokers_dir, customer_id)
-            if os.path.isdir(old_customer_dir):
-                try:
-                    bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
-                    bpio.rmdir_recursive(old_customer_dir)
-                except:
-                    lg.exc()
-                    continue
-            known_brokers()[latest_customer_id] = known_brokers().pop(customer_id)
-        for broker_pos, broker_id in enumerate(known_brokers(latest_customer_id)):
-            if not broker_id:
-                continue
-            broker_idurl = global_id.glob2idurl(broker_id)
-            if broker_idurl == old_idurl:
-                latest_broker_id = global_id.idurl2glob(new_idurl)
-                latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
-                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id))
-                old_broker_path = os.path.join(latest_customer_dir, broker_id)
-                if os.path.isfile(old_broker_path):
-                    try:
-                        os.rename(old_broker_path, latest_broker_path)
-                    except:
-                        lg.exc()
-                        continue
-                if latest_broker_id in known_brokers(latest_customer_id):
-                    lg.warn('broker %r already exist' % latest_broker_id)
-                    continue
-                known_brokers()[latest_customer_id][broker_pos] = latest_broker_id
-    if _Debug:
-        lg.args(_DebugLevel, to_be_reconnected=to_be_reconnected)
-    for group_key_id in to_be_reconnected:
-        gm = group_member.get_active_group_member(group_key_id)
-        if gm:
-            gm.automat('reconnect')
+    # TODO: to be updated
+    return
+
+    # from bitdust.access import group_member
+    # service_dir = settings.ServiceDir('service_private_groups')
+    # groups_dir = os.path.join(service_dir, 'groups')
+    # brokers_dir = os.path.join(service_dir, 'brokers')
+    # old_idurl = id_url.field(evt.data['old_idurl'])
+    # new_idurl = id_url.field(evt.data['new_idurl'])
+    # active_group_keys = list(active_groups())
+    # to_be_reconnected = []
+    # for group_key_id in active_group_keys:
+    #     if not group_key_id:
+    #         continue
+    #     group_creator_idurl = global_id.glob2idurl(group_key_id)
+    #     if id_url.is_the_same(group_creator_idurl, old_idurl):
+    #         old_group_path = os.path.join(groups_dir, group_key_id)
+    #         latest_group_key_id = my_keys.latest_key_id(group_key_id)
+    #         latest_group_path = os.path.join(groups_dir, latest_group_key_id)
+    #         lg.info('going to rename rotated group file: %r -> %r' % (old_group_path, latest_group_path))
+    #         if os.path.isfile(old_group_path):
+    #             try:
+    #                 os.rename(old_group_path, latest_group_path)
+    #             except:
+    #                 lg.exc()
+    #                 continue
+    #         else:
+    #             lg.warn('key file %r was not found, key was not renamed' % old_group_path)
+    #         active_groups()[latest_group_key_id] = active_groups().pop(group_key_id)
+    #         group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
+    #     gm = group_member.get_active_group_member(group_key_id)
+    #     if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
+    #         lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (old_idurl, gm))
+    #         if group_key_id not in to_be_reconnected:
+    #             to_be_reconnected.append(group_key_id)
+    # known_customers = list(known_brokers().keys())
+    # for customer_id in known_customers:
+    #     latest_customer_id = global_id.idurl2glob(new_idurl)
+    #     customer_idurl = global_id.glob2idurl(customer_id)
+    #     if id_url.is_the_same(customer_idurl, old_idurl):
+    #         latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
+    #         lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id))
+    #         old_customer_dir = os.path.join(brokers_dir, customer_id)
+    #         if os.path.isdir(old_customer_dir):
+    #             try:
+    #                 bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
+    #                 bpio.rmdir_recursive(old_customer_dir)
+    #             except:
+    #                 lg.exc()
+    #                 continue
+    #         known_brokers()[latest_customer_id] = known_brokers().pop(customer_id)
+    #     for broker_pos, broker_id in enumerate(known_brokers(latest_customer_id)):
+    #         if not broker_id:
+    #             continue
+    #         broker_idurl = global_id.glob2idurl(broker_id)
+    #         if broker_idurl == old_idurl:
+    #             latest_broker_id = global_id.idurl2glob(new_idurl)
+    #             latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
+    #             lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id))
+    #             old_broker_path = os.path.join(latest_customer_dir, broker_id)
+    #             if os.path.isfile(old_broker_path):
+    #                 try:
+    #                     os.rename(old_broker_path, latest_broker_path)
+    #                 except:
+    #                     lg.exc()
+    #                     continue
+    #             if latest_broker_id in known_brokers(latest_customer_id):
+    #                 lg.warn('broker %r already exist' % latest_broker_id)
+    #                 continue
+    #             known_brokers()[latest_customer_id][broker_pos] = latest_broker_id
+    # if _Debug:
+    #     lg.args(_DebugLevel, to_be_reconnected=to_be_reconnected)
+    # for group_key_id in to_be_reconnected:
+    #     gm = group_member.get_active_group_member(group_key_id)
+    #     if gm:
+    #         gm.automat('reconnect')

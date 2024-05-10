@@ -506,7 +506,7 @@ def verify_accept_storage_payment(tx):
         sequence_numbers = map(int, sequence_numbers.split(','))
     except:
         lg.exc()
-        continue
+        return
     recently_paid_contracts = []
     for customer_idurl in contactsdb.customers():
         if customer_idurl.unique_name() != customer_prefix:
