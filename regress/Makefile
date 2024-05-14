@@ -121,7 +121,7 @@ _one_up_test_coverage_down:
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
 
 _one_up_test_log_down:
-	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && ( $(MAKE) --no-print-directory --output-sync=none _one_test || ( $(MAKE) --no-print-directory --output-sync=line _one_log && echo "TEST FAILED!!!" && exit 1 ) ) && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log && $(MAKE) --no-print-directory --output-sync=line _one_down
+	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && ( $(MAKE) --no-print-directory _one_test || ( $(MAKE) --no-print-directory _one_log && echo "TEST FAILED!!!" && exit 1 ) ) && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_log && $(MAKE) --no-print-directory _one_down
 
 _one_up_test_log_down_parallel:
 	@$(MAKE) --no-print-directory --output-sync=none _one_prepare && $(MAKE) --no-print-directory --output-sync=none _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_execute && $(MAKE) --no-print-directory --output-sync=recurse _one_coverage && $(MAKE) --no-print-directory --output-sync=recurse _one_log && $(MAKE) --no-print-directory --output-sync=recurse _one_down

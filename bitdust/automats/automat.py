@@ -536,7 +536,8 @@ class Automat(object):
         You can attach parameters to that event with ``arguments`` tuple.
         If ``self.fast=False`` - the ``self.A()`` method will be executed in delayed call.
         """
-        if self.fast:
+        _fast = kwargs.pop('fast', False)
+        if self.fast or _fast:
             self.event(event, *args, **kwargs)
         else:
             delay = kwargs.pop('delay', 0)

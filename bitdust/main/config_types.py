@@ -168,6 +168,7 @@ def defaults():
         'services/identity-propagate/automatic-rotate-enabled': TYPE_BOOLEAN,
         'services/identity-propagate/health-check-interval-seconds': TYPE_POSITIVE_INTEGER,
         'services/ip-port-responder/enabled': TYPE_BOOLEAN,
+        'services/joint-postman/enabled': TYPE_BOOLEAN,
         'services/keys-registry/enabled': TYPE_BOOLEAN,
         'services/keys-storage/enabled': TYPE_BOOLEAN,
         'services/keys-storage/reset-unreliable-backup-copies': TYPE_BOOLEAN,

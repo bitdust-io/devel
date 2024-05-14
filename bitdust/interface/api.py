@@ -4362,7 +4362,8 @@ def message_send_group(group_key_id, data):
         return ERROR('service_private_groups() is not started')
     from bitdust.userid import global_id
     from bitdust.crypt import my_keys
-    from bitdust.access import group_member
+    # from bitdust.access import group_member
+    from bitdust.access import group_participant
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
     group_key_id = my_keys.latest_key_id(group_key_id)
@@ -4371,16 +4372,14 @@ def message_send_group(group_key_id, data):
         return ERROR('wrong group id')
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
-    this_group_member = group_member.get_active_group_member(group_key_id)
-    if not this_group_member:
+    this_group_participant = group_participant.get_active_group_participant(group_key_id)
+    if not this_group_participant:
         return ERROR('group is not active')
-    if this_group_member.state not in [
-        'IN_SYNC!',
-    ]:
+    if this_group_participant.state != 'CONNECTED':
         return ERROR('group is not synchronized yet')
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
-    this_group_member.automat('push-message', json_payload=data)
+    this_group_participant.automat('push-message', json_payload=data, fast=True)
     return OK(message='group message sent')
 
 

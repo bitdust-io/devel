@@ -66,6 +66,8 @@ SCENARIO 22: broker-2 was restarted quickly but still is connected to the stream
 
 SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 
+SCENARIO 25: customer-1 group chat with customer-2 using supplier-1 and supplier-2 streams
+
 
 TODO:
 
@@ -2840,3 +2842,61 @@ def scenario23(customer_1_file_info, customer_1_shared_file_info):
     )
 
     msg('\n[SCENARIO 23] : PASS\n\n')
+
+
+def scenario25():
+    set_active_scenario('SCENARIO 25')
+    msg('\n\n============\n[SCENARIO 25] customer-1 group chat with customer-2 using supplier-1 and supplier-2 streams')
+
+    # create new group by customer-2
+    customer_2_groupA_key_id = kw.group_create_v1('customer-2', label='SCENARIO25_MyGroupEEE')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # customer-2 join the group
+    kw.group_join_v1('customer-2', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # share group key from customer-2 to customer-1
+    kw.group_share_v1('customer-2', customer_2_groupA_key_id, 'customer-1@id-a_8084')
+
+    # customer-1 also join the group
+    kw.group_join_v1('customer-1', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # sending few messages to the group from customer-2
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-2',
+            consumers_ids=[
+                'customer-1',
+                'customer-2',
+            ],
+            message_label='V%d' % (i + 1),
+            expected_results={
+                'customer-1': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    # # sending few messages to the group from customer-1
+    # for i in range(2):
+    #     kw.verify_message_sent_received(
+    #         customer_2_groupA_key_id,
+    #         producer_id='customer-1',
+    #         consumers_ids=[
+    #             'customer-1',
+    #             'customer-2',
+    #         ],
+    #         message_label='W%d' % (i + 1),
+    #         expected_results={
+    #             'customer-1': True,
+    #             'customer-2': True,
+    #         },
+    #         expected_last_sequence_id={},
+    #     )
+
+    msg('\n[SCENARIO 25] : PASS\n\n')
