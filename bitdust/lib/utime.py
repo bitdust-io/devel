@@ -88,17 +88,25 @@ def utcnow_to_sec1970():
     """
     Returns how much seconds passed since 1970 till current moment counting from
     UTC timezone.
+    TODO: extra methods for time synchronization across the network nodes to be added later
     """
     return datetime_to_sec1970(datetime.datetime.utcnow())
 
 
 def get_sec1970():
     """
-    Return how much seconds passed since 1970 using time.time() method, seems
-    work in local time.
+    Return how much seconds passed since 1970 using time.time() method.
     TODO: extra methods for time synchronization across the network nodes to be added later
     """
     return int(time.time())
+
+
+def get_milliseconds1970():
+    """
+    Returns how much `milliseconds` passed since 1970 till current moment.
+    TODO: extra methods for time synchronization across the network nodes to be added later
+    """
+    return int(time.time()*1000.0)
 
 
 def make_timestamp():

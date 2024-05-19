@@ -29,6 +29,9 @@ EVENTS:
     * :red:`connect`
     * :red:`disconnect`
     * :red:`init`
+    * :red:`message-in`
+    * :red:`push-message`
+    * :red:`push-message-failed`
     * :red:`reconnect`
     * :red:`shutdown`
     * :red:`suppliers-connected`
@@ -63,8 +66,6 @@ from bitdust.automats import automat
 
 from bitdust.lib import utime
 from bitdust.lib import packetid
-from bitdust.lib import jsn
-from bitdust.lib import strng
 from bitdust.lib import serialization
 
 from bitdust.main import config
@@ -91,6 +92,7 @@ from bitdust.userid import my_id
 #------------------------------------------------------------------------------
 
 CRITICAL_PUSH_MESSAGE_FAILS = None
+MAX_BUFFERED_MESSAGES = 50
 
 #------------------------------------------------------------------------------
 
@@ -313,6 +315,9 @@ class GroupParticipant(automat.Automat):
         self.known_suppliers_list = []
         self.known_ecc_map = None
         self.active_supplier_pos = None
+        self.active_supplier_idurl = None
+        self.active_supplier_id = None
+        self.active_queue_id = None
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
         self.participant_sender_id = global_id.MakeGlobalID(idurl=self.participant_idurl, key_alias=self.group_queue_alias)
@@ -349,6 +354,9 @@ class GroupParticipant(automat.Automat):
                 'alias': self.group_glob_id['key_alias'],
                 'label': my_keys.get_label(self.group_key_id) or '',
                 'creator': self.group_creator_id,
+                'active_supplier_pos': self.active_supplier_pos,
+                'active_supplier_id': self.active_supplier_id,
+                'active_queue_id': self.active_queue_id,
                 'last_sequence_id': self.last_sequence_id,
             }
         )
@@ -379,6 +387,8 @@ class GroupParticipant(automat.Automat):
                 self.doPublish(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doReportDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'reconnect':
                 self.state = 'SUPPLIERS?'
@@ -386,7 +396,13 @@ class GroupParticipant(automat.Automat):
             elif event == 'disconnect':
                 self.state = 'DISCONNECTED'
                 self.doSuppliersUnsubscribe(*args, **kwargs)
+                self.doDeactivate(event, *args, **kwargs)
                 self.doReportDisconnected(*args, **kwargs)
+            elif event == 'push-message-failed':
+                self.doRotateSupplier(*args, **kwargs)
+            elif event == 'message-in':
+                self.doRecord(*args, **kwargs)
+                self.doProcess(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
@@ -397,6 +413,8 @@ class GroupParticipant(automat.Automat):
         elif self.state == 'SUPPLIERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doReportDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'suppliers-read-failed':
                 self.state = 'DISCONNECTED'
@@ -410,6 +428,8 @@ class GroupParticipant(automat.Automat):
         elif self.state == 'SUBSCRIBE!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doReportDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'suppliers-disconnected':
                 self.state = 'DISCONNECTED'
@@ -418,6 +438,7 @@ class GroupParticipant(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.NeedDisconnect = False
                 self.doSuppliersUnsubscribe(*args, **kwargs)
+                self.doDeactivate(event, *args, **kwargs)
                 self.doReportDisconnected(*args, **kwargs)
             elif event == 'suppliers-connected' and not self.NeedDisconnect:
                 self.state = 'CONNECTED'
@@ -428,9 +449,11 @@ class GroupParticipant(automat.Automat):
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'connect' or event == 'reconnect':
                 self.state = 'SUPPLIERS?'
+                self.doActivate(*args, **kwargs)
                 self.doReadSuppliersList(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -441,6 +464,39 @@ class GroupParticipant(automat.Automat):
         """
         Action method.
         """
+        if not groups.is_group_exist(self.group_key_id):
+            groups.set_group_info(self.group_key_id)
+            groups.save_group_info(self.group_key_id)
+        message.consume_messages(
+            consumer_callback_id=self.name,
+            callback=self._do_read_queue_messages,
+            direction='incoming',
+            message_types=[
+                'queue_message',
+            ],
+        )
+
+    def doActivate(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        groups.set_group_active(self.group_key_id, True)
+        groups.save_group_info(self.group_key_id)
+
+    def doDeactivate(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        if event in ['disconnect', 'suppliers-connected']:
+            groups.set_group_active(self.group_key_id, False)
+            groups.save_group_info(self.group_key_id)
+        else:
+            groups.save_group_info(self.group_key_id)
+        if kwargs.get('erase_key', False):
+            if my_keys.is_key_registered(self.group_key_id):
+                my_keys.erase_key(self.group_key_id)
+            else:
+                lg.warn('key %r not registered, can not be erased' % self.group_key_id)
 
     def doPublish(self, *args, **kwargs):
         """
@@ -451,6 +507,21 @@ class GroupParticipant(automat.Automat):
             outgoing_counter=None,
             packet_id=None,
         )
+
+    def doRecord(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.recorded_messages.append(kwargs)
+
+    def doProcess(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        while self.recorded_messages:
+            recorded_kwargs = self.recorded_messages.pop(0)
+            message.push_group_message(**recorded_kwargs)
+            self.automat('message-consumed', recorded_kwargs, fast=True)
 
     def doReadSuppliersList(self, *args, **kwargs):
         """
@@ -492,20 +563,27 @@ class GroupParticipant(automat.Automat):
         """
         self._do_unsubscibe_all_suppliers()
 
-    def doReportDisconnected(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
     def doReportConnected(self, *args, **kwargs):
         """
         Action method.
         """
 
+    def doReportDisconnected(self, *args, **kwargs):
+        """
+        Action method.
+        """
+
+    def doRotateSupplier(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self._do_rotate_active_supplier()
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
+        message.clear_consumer_callbacks(self.name)
         self.destroy()
         self.participant_idurl = None
         self.participant_id = None
@@ -516,8 +594,14 @@ class GroupParticipant(automat.Automat):
         self.group_creator_idurl = None
         self.known_suppliers_list = None
         self.known_ecc_map = None
+        self.active_supplier_pos = None
+        self.active_supplier_idurl = None
+        self.active_supplier_id = None
+        self.active_queue_id = None
         self.suppliers_in_progress = None
         self.suppliers_succeed = None
+        self.recorded_messages = None
+        self.buffered_messages = None
 
     def _do_connect_with_supplier(self, supplier_idurl):
         if _Debug:
@@ -542,13 +626,10 @@ class GroupParticipant(automat.Automat):
             return
         service_params = {
             'action': 'queue-connect',
-            # 'queue_id': queue_id,
             'consumer_id': self.participant_id,
             'producer_id': self.participant_id,
             'group_key': group_key_info,
-            # 'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
             'last_sequence_id': self.last_sequence_id,
-            # 'known_brokers': self.connected_brokers,
         }
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=supplier_idurl,
@@ -604,7 +685,7 @@ class GroupParticipant(automat.Automat):
             }
             p2p_service.SendCancelService(
                 remote_idurl=self.supplier_idurl,
-                service_name='service_p2p_notifications',
+                service_name='service_joint_postman',
                 json_payload=service_info,
                 # callbacks={
                 #     commands.Ack(): self._supplier_queue_cancelled,
@@ -634,10 +715,23 @@ class GroupParticipant(automat.Automat):
                 self.active_supplier_pos += 1
                 if self.active_supplier_pos >= len(self.known_suppliers_list):
                     self.active_supplier_pos = 0
-        active_supplier_idurl = self.known_suppliers_list[self.active_supplier_pos]
-        active_supplier_id = active_supplier_idurl.to_id()
+            self.active_supplier_idurl = self.known_suppliers_list[self.active_supplier_pos]
+            self.active_supplier_id = self.active_supplier_idurl.to_id()
+            self.active_queue_id = global_id.MakeGlobalQueueID(
+                queue_alias=self.group_queue_alias,
+                owner_id=self.group_creator_id,
+                supplier_id=self.active_supplier_id,
+            )
+        if self.active_queue_id is None:
+            self.active_supplier_idurl = self.known_suppliers_list[self.active_supplier_pos]
+            self.active_supplier_id = self.active_supplier_idurl.to_id()
+            self.active_queue_id = global_id.MakeGlobalQueueID(
+                queue_alias=self.group_queue_alias,
+                owner_id=self.group_creator_id,
+                supplier_id=self.active_supplier_id,
+            )
         if _Debug:
-            lg.args(_DebugLevel, p=self.active_supplier_pos, s=active_supplier_id, counter=outgoing_counter, packet_id=packet_id)
+            lg.args(_DebugLevel, p=self.active_supplier_pos, s=self.active_supplier_id, counter=outgoing_counter, packet_id=packet_id)
         if outgoing_counter is None:
             self.outgoing_counter += 1
             outgoing_counter = self.outgoing_counter
@@ -648,15 +742,11 @@ class GroupParticipant(automat.Automat):
             }
         else:
             if self.outgoing_messages[outgoing_counter]['attempts'] > CRITICAL_PUSH_MESSAGE_FAILS:
-                lg.err('failed sending message to supplier %r after %d attempts' % (self.active_supplier_pos, self.outgoing_messages[outgoing_counter]['attempts']))
-                self.outgoing_messages[outgoing_counter]['attempts'] = 0
-                self.outgoing_messages[outgoing_counter]['last_attempt'] = None
-                self.automat('push-message-failed')
+                lg.err('failed sending message to supplier %r after %d attempts in %r' % (self.active_supplier_pos, self.outgoing_messages[outgoing_counter]['attempts'], self))
+                # self.outgoing_messages[outgoing_counter]['attempts'] = 0
+                # self.outgoing_messages[outgoing_counter]['last_attempt'] = None
+                self.automat('shutdown')
                 return
-            if self.outgoing_messages[outgoing_counter]['last_attempt'] is not None:
-                if utime.utcnow_to_sec1970() - self.outgoing_messages[outgoing_counter]['last_attempt'] < self.message_ack_timeout:
-                    lg.warn('pending message %d already made attempt to send recently' % outgoing_counter)
-                    return
             self.outgoing_messages[outgoing_counter]['attempts'] += 1
             self.outgoing_messages[outgoing_counter]['last_attempt'] = utime.utcnow_to_sec1970()
             json_payload = self.outgoing_messages[outgoing_counter]['payload']
@@ -678,22 +768,17 @@ class GroupParticipant(automat.Automat):
             lg.exc()
             raise Exception('message encryption failed')
         encrypted_payload = private_message_object.serialize()
-        queue_id = global_id.MakeGlobalQueueID(
-            queue_alias=self.group_queue_alias,
-            owner_id=self.group_creator_id,
-            supplier_id=active_supplier_id,
-        )
         d = message.send_message(
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'produce',
                 'created': utime.utcnow_to_sec1970(),
                 'payload': encrypted_payload,
-                'queue_id': queue_id,
+                'queue_id': self.active_queue_id,
                 'producer_id': self.participant_id,
             },
-            recipient_global_id=active_supplier_id,
-            packet_id=packetid.MakeQueueMessagePacketID(queue_id, packet_id),
+            recipient_global_id=self.active_supplier_id,
+            packet_id=packetid.MakeQueueMessagePacketID(self.active_queue_id, packet_id),
             message_ack_timeout=self.message_ack_timeout,
             skip_handshake=True,
             fire_callbacks=False,
@@ -702,6 +787,155 @@ class GroupParticipant(automat.Automat):
         d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_participant._do_send_message_to_supplier')
         d.addCallback(self._on_message_to_supplier_sent, outgoing_counter, packet_id)
         d.addErrback(self._on_message_to_supplier_failed, outgoing_counter, packet_id)
+
+    def _do_read_queue_messages(self, json_messages):
+        if not json_messages:
+            return True
+        if _Debug:
+            lg.args(_DebugLevel, json_messages=len(json_messages))
+        latest_known_sequence_id = -1
+        received_group_messages = []
+        packets_to_ack = {}
+        found_group_ids = set()
+        for json_message in json_messages:
+            try:
+                msg_type = json_message.get('msg_type', '') or json_message.get('type', '')  # TODO: need to cleanup that later
+                msg_direction = json_message['dir']
+                packet_id = json_message['packet_id']
+                owner_idurl = json_message['owner_idurl']
+                msg_data = json_message['data']
+                msg_action = msg_data.get('action', 'read')
+            except:
+                lg.exc()
+                continue
+            if msg_direction != 'incoming':
+                continue
+            if msg_type != 'queue_message':
+                continue
+            if msg_action != 'read':
+                continue
+            if 'last_sequence_id' not in msg_data:
+                continue
+            try:
+                chunk_last_sequence_id = int(msg_data['last_sequence_id'])
+                list_messages = msg_data['items']
+            except:
+                lg.exc(msg_data)
+                continue
+            incoming_queue_id = packetid.SplitQueueMessagePacketID(packet_id)[0]
+            incoming_group_alias, incoming_group_creator_id, incoming_supplier_id = global_id.SplitGlobalQueueID(incoming_queue_id)
+            incoming_group_creator_id = global_id.glob2idurl(incoming_group_creator_id).to_id()
+            incoming_group_key_id = global_id.MakeGlobalKeyID(incoming_group_alias, incoming_group_creator_id)
+            found_group_ids.add(incoming_group_key_id)
+            if incoming_group_key_id != self.group_key_id:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'skip message based on packet_id for %r : %r' % (self.group_key_id, incoming_group_key_id))
+                continue
+            if chunk_last_sequence_id > latest_known_sequence_id:
+                latest_known_sequence_id = chunk_last_sequence_id
+            for one_message in list_messages:
+                if one_message['sequence_id'] > latest_known_sequence_id:
+                    lg.err('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (one_message['sequence_id'], latest_known_sequence_id))
+                    continue
+                group_message_object = message.GroupMessage.deserialize(one_message['payload'])
+                if group_message_object is None:
+                    lg.err('GroupMessage deserialize failed, can not extract message from payload of %d bytes' % len(one_message['payload']))
+                    continue
+                try:
+                    decrypted_message = group_message_object.decrypt()
+                    json_message = serialization.BytesToDict(
+                        decrypted_message,
+                        unpack_types=True,
+                        encoding='utf-8',
+                    )
+                except:
+                    lg.exc()
+                    continue
+                received_group_messages.append(dict(
+                    json_message=json_message,
+                    direction='incoming',
+                    group_key_id=self.group_key_id,
+                    producer_id=one_message['producer_id'],
+                    sequence_id=one_message['sequence_id'],
+                ))
+                if owner_idurl:
+                    packets_to_ack[packet_id] = owner_idurl
+        for packet_id, owner_idurl in packets_to_ack.items():
+            p2p_service.SendAckNoRequest(owner_idurl, packet_id)
+        packets_to_ack.clear()
+        if not received_group_messages:
+            if self.group_key_id not in found_group_ids:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'no messages for %r found in the incoming stream' % self.group_key_id)
+                return True
+            if latest_known_sequence_id < self.last_sequence_id:
+                lg.err('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id))
+            if latest_known_sequence_id > self.last_sequence_id:
+                lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (latest_known_sequence_id, self.last_sequence_id))
+            self.last_sequence_id = latest_known_sequence_id
+            groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
+            groups.save_group_info(self.group_key_id)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
+            return True
+        received_group_messages.sort(key=lambda m: m['sequence_id'])
+        ret = self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
+        return ret
+
+    def _do_process_group_messages(self, received_group_messages, latest_known_sequence_id):
+        if _Debug:
+            lg.args(_DebugLevel, received_group_messages=len(received_group_messages), buffered_messages=len(self.buffered_messages), latest_known_sequence_id=latest_known_sequence_id)
+        newly_processed = 0
+        for new_message in received_group_messages:
+            new_sequence_id = new_message['sequence_id']
+            if new_sequence_id in self.buffered_messages:
+                lg.warn('message %d already buffered' % new_sequence_id)
+                continue
+            self.buffered_messages[new_sequence_id] = new_message
+        buffered_sequence_ids = sorted(self.buffered_messages.keys())
+        for new_sequence_id in buffered_sequence_ids:
+            # if self.last_sequence_id + 1 == new_sequence_id:
+            inp_message = self.buffered_messages.pop(new_sequence_id)
+            self.last_sequence_id = new_sequence_id
+            newly_processed += 1
+            groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+            groups.save_group_info(self.group_key_id)
+            lg.info('new message consumed in %r, last_sequence_id incremented to %d' % (self.group_key_id, self.last_sequence_id))
+            self.automat('message-in', **inp_message)
+        if len(self.buffered_messages) > MAX_BUFFERED_MESSAGES:
+            raise Exception('message sequence is broken, currently %d buffered messages' % len(self.buffered_messages))
+        if _Debug:
+            lg.dbg(_DebugLevel, 'my_last_sequence_id=%d  newly_processed=%d  buffered_messages=%d' % (self.last_sequence_id, newly_processed, len(self.buffered_messages)))
+        return True
+
+    def _do_rotate_active_supplier(self):
+        if not self.known_suppliers_list:
+            lg.err('no suppliers found, shutting down %r' % self)
+            self.automat('shutdown')
+            return
+        if self.known_suppliers_list.count(None) == len(self.known_suppliers_list):
+            lg.err('no known suppliers found, shutting down %r' % self)
+            self.automat('shutdown')
+            return
+        current_active_supplier_pos = self.active_supplier_pos
+        if self.active_supplier_pos is None:
+            self.active_supplier_pos = 0
+        self.active_supplier_pos += 1
+        if self.active_supplier_pos >= len(self.known_suppliers_list):
+            self.active_supplier_pos = 0
+        while not self.known_suppliers_list[self.active_supplier_pos]:
+            self.active_supplier_pos += 1
+            if self.active_supplier_pos >= len(self.known_suppliers_list):
+                self.active_supplier_pos = 0
+        self.active_supplier_idurl = self.known_suppliers_list[self.active_supplier_pos]
+        self.active_supplier_id = self.active_supplier_idurl.to_id()
+        self.active_queue_id = global_id.MakeGlobalQueueID(
+            queue_alias=self.group_queue_alias,
+            owner_id=self.group_creator_id,
+            supplier_id=self.active_supplier_id,
+        )
+        if _Debug:
+            lg.args(_DebugLevel, current=current_active_supplier_pos, new=self.active_supplier_pos)
 
     def _on_message_to_supplier_sent(self, response_packet, outgoing_counter, packet_id):
         if _Debug:
@@ -718,6 +952,7 @@ class GroupParticipant(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, err=err, outgoing_counter=outgoing_counter, packet_id=packet_id)
         self.outgoing_messages[outgoing_counter]['last_attempt'] = None
+        self._do_rotate_active_supplier()
         self._do_send_message_to_supplier(json_payload=None, outgoing_counter=outgoing_counter, packet_id=None)
 
     def _on_read_group_creator_suppliers(self, dht_value):

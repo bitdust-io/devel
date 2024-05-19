@@ -68,6 +68,10 @@ SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 
 SCENARIO 25: customer-1 group chat with customer-2 using supplier-1 and supplier-2 streams
 
+SCENARIO 26: customer-3 stopped and started again but still connected to the group
+
+SCENARIO 27: customer-2 sent message to the group but active supplier-1 is offline
+
 
 TODO:
 
@@ -2882,21 +2886,374 @@ def scenario25():
             expected_last_sequence_id={},
         )
 
-    # # sending few messages to the group from customer-1
-    # for i in range(2):
-    #     kw.verify_message_sent_received(
-    #         customer_2_groupA_key_id,
-    #         producer_id='customer-1',
-    #         consumers_ids=[
-    #             'customer-1',
-    #             'customer-2',
-    #         ],
-    #         message_label='W%d' % (i + 1),
-    #         expected_results={
-    #             'customer-1': True,
-    #             'customer-2': True,
-    #         },
-    #         expected_last_sequence_id={},
-    #     )
+    # sending few messages to the group from customer-1
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-1',
+            consumers_ids=[
+                'customer-1',
+                'customer-2',
+            ],
+            message_label='W%d' % (i + 1),
+            expected_results={
+                'customer-1': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
 
     msg('\n[SCENARIO 25] : PASS\n\n')
+
+
+def scenario26():
+    set_active_scenario('SCENARIO 26')
+    msg('\n\n============\n[SCENARIO 26] customer-3 stopped and started again but still connected to the group')
+
+    # create new group by customer-2
+    customer_2_groupA_key_id = kw.group_create_v1('customer-2', label='SCENARIO20_MyGroupFFF')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # customer-2 join the group
+    kw.group_join_v1('customer-2', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # share group key from customer-2 to customer-3
+    kw.group_share_v1('customer-2', customer_2_groupA_key_id, 'customer-3@id-a_8084')
+
+    # customer-3 also join the group
+    kw.group_join_v1('customer-3', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # sending few messages to the group from customer-2
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-2',
+            consumers_ids=[
+                'customer-3',
+                'customer-2',
+            ],
+            message_label='X%d' % (i + 1),
+            expected_results={
+                'customer-3': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    # sending few messages to the group from customer-3
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-3',
+            consumers_ids=[
+                'customer-3',
+                'customer-2',
+            ],
+            message_label='Y%d' % (i + 1),
+            expected_results={
+                'customer-3': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    customer_2_groupA_info_before = kw.group_info_v1('customer-3', customer_2_groupA_key_id)['result']
+    assert customer_2_groupA_info_before['state'] == 'CONNECTED'
+
+    # stop customer-3 node
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+    request_get('customer-3', 'process/stop/v1', verbose=True, raise_error=False)
+    kw.wait_packets_finished(CUSTOMERS_IDS_12)
+
+    # start customer-3 node again
+    start_daemon('customer-3', skip_initialize=True, verbose=True)
+    health_check('customer-3', verbose=True)
+
+    kw.wait_service_state(
+        [
+            'customer-3',
+        ],
+        'service_shared_data',
+        'ON'
+    )
+    kw.wait_service_state(
+        [
+            'customer-3',
+        ],
+        'service_private_groups',
+        'ON'
+    )
+
+    customer_2_groupA_info_after = kw.group_info_v1('customer-3', customer_2_groupA_key_id, wait_state='CONNECTED')['result']
+    assert customer_2_groupA_info_after['state'] == 'CONNECTED'
+
+    # sending a message again to the group from customer-2 and customer-3 must receive it
+    for i in range(1):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-2',
+            consumers_ids=[
+                'customer-3',
+                'customer-2',
+            ],
+            message_label='X%d' % (i + 1),
+            expected_results={
+                'customer-3': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+    msg('\n[SCENARIO 26] : PASS\n\n')
+
+
+def scenario27():
+    set_active_scenario('SCENARIO 27')
+    msg('\n\n============\n[SCENARIO 27] customer-2 sent message to the group but active supplier-1 is offline')
+
+    kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=[
+            'customer-1@id-a_8084',
+        ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+        accepted_mistakes=0,
+    )
+    kw.supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=[
+            'customer-2@id-a_8084',
+        ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+        accepted_mistakes=0,
+    )
+
+    # create new group by customer-2
+    customer_2_groupA_key_id = kw.group_create_v1('customer-2', label='SCENARIO18_MyGroupAAA')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # customer-2 join the group
+    kw.group_join_v1('customer-2', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # share group key from customer-2 to customer-1
+    kw.group_share_v1('customer-2', customer_2_groupA_key_id, 'customer-1@id-a_8084')
+
+    # customer-1 also join the group
+    kw.group_join_v1('customer-1', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # sending few messages to the group from customer-2
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-2',
+            consumers_ids=[
+                'customer-1',
+                'customer-2',
+            ],
+            message_label='AA_%d' % (i + 1),
+            expected_results={
+                'customer-1': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    # sending few messages to the group from customer-1
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-1',
+            consumers_ids=[
+                'customer-1',
+                'customer-2',
+            ],
+            message_label='BB_%d' % (i + 1),
+            expected_results={
+                'customer-1': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    # create second group by customer-2
+    customer_2_groupB_key_id = kw.group_create_v1('customer-2', label='SCENARIO18_MyGroupBBB')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # customer-2 join the second group
+    kw.group_join_v1('customer-2', customer_2_groupB_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # share second group key from customer-2 to customer-1
+    kw.group_share_v1('customer-2', customer_2_groupB_key_id, 'customer-1@id-a_8084')
+
+    # customer-1 also joins the second group
+    kw.group_join_v1('customer-1', customer_2_groupB_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123)
+
+    # sending few messages to the second group from customer-2
+    for i in range(1):
+        kw.verify_message_sent_received(
+            customer_2_groupB_key_id,
+            producer_id='customer-2',
+            consumers_ids=[
+                'customer-1',
+                'customer-2',
+            ],
+            message_label='CC_%d' % (i + 1),
+            expected_results={
+                'customer-1': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    # sending few messages to the second group from customer-1
+    for i in range(1):
+        kw.verify_message_sent_received(
+            customer_2_groupB_key_id,
+            producer_id='customer-1',
+            consumers_ids=[
+                'customer-1',
+                'customer-2',
+            ],
+            message_label='DD_%d' % (i + 1),
+            expected_results={
+                'customer-1': True,
+                'customer-2': True,
+            },
+            expected_last_sequence_id={},
+        )
+
+    # verify active queue supplier for customer-1
+    customer_1_groupA_info_before = kw.group_info_v1('customer-1', customer_2_groupA_key_id)['result']
+    assert customer_1_groupA_info_before['state'] == 'CONNECTED'
+    customer_1_active_queueA_id = customer_1_groupA_info_before['active_queue_id']
+    customer_1_groupA_active_supplier_name_before = customer_1_groupA_info_before['active_supplier_id'].split('@')[0]
+    assert customer_1_groupA_active_supplier_name_before == 'supplier-1'
+
+    # also check the second group have similar info for customer-1
+    customer_1_groupB_info_before = kw.group_info_v1('customer-1', customer_2_groupB_key_id)['result']
+    assert customer_1_groupB_info_before['state'] == 'CONNECTED'
+    customer_1_active_queueB_id = customer_1_groupB_info_before['active_queue_id']
+    customer_1_groupB_active_supplier_name_before = customer_1_groupB_info_before['active_supplier_id'].split('@')[0]
+    assert customer_1_groupB_active_supplier_name_before == 'supplier-1'
+
+    # verify active queue supplier for customer-2
+    customer_2_groupA_info_before = kw.group_info_v1('customer-2', customer_2_groupA_key_id)['result']
+    assert customer_2_groupA_info_before['state'] == 'CONNECTED'
+    customer_2_active_queueA_id = customer_1_groupA_info_before['active_queue_id']
+    customer_2_groupA_active_supplier_name_before = customer_2_groupA_info_before['active_supplier_id'].split('@')[0]
+    assert customer_2_groupA_active_supplier_name_before == 'supplier-1'
+
+    # also check the second group have similar info for customer-2
+    customer_2_groupB_info_before = kw.group_info_v1('customer-2', customer_2_groupB_key_id)['result']
+    assert customer_2_groupB_info_before['state'] == 'CONNECTED'
+    customer_2_active_queueB_id = customer_2_groupB_info_before['active_queue_id']
+    customer_2_groupB_active_supplier_name_before = customer_2_groupB_info_before['active_supplier_id'].split('@')[0]
+    assert customer_2_groupB_active_supplier_name_before == 'supplier-1'
+
+    # verify supplier-1 details before it goes offline
+    supplier_1_consumers = kw.queue_consumer_list_v1('supplier-1', extract_ids=True)
+    supplier_1_producers = kw.queue_producer_list_v1('supplier-1', extract_ids=True)
+    supplier_1_streams = kw.queue_stream_list_v1('supplier-1', extract_ids=True)
+    assert 'customer-1@id-a_8084' in supplier_1_consumers
+    assert 'customer-1@id-a_8084' in supplier_1_producers
+    assert 'customer-2@id-a_8084' in supplier_1_consumers
+    assert 'customer-2@id-a_8084' in supplier_1_producers
+    assert customer_1_active_queueA_id in supplier_1_streams
+    assert customer_1_active_queueB_id in supplier_1_streams
+    assert customer_2_active_queueA_id in supplier_1_streams
+    assert customer_2_active_queueB_id in supplier_1_streams
+
+    # verify messages
+    customer_1_conversations_count_before = len(kw.message_conversation_v1('customer-1')['result'])
+    customer_2_conversations_count_before = len(kw.message_conversation_v1('customer-2')['result'])
+    customer_1_groupA_messages_before = len(kw.message_history_v1('customer-1', customer_2_groupA_key_id, message_type='group_message')['result'])
+    customer_2_groupA_messages_before = len(kw.message_history_v1('customer-2', customer_2_groupA_key_id, message_type='group_message')['result'])
+    customer_1_groupB_messages_before = len(kw.message_history_v1('customer-1', customer_2_groupB_key_id, message_type='group_message')['result'])
+    customer_2_groupB_messages_before = len(kw.message_history_v1('customer-2', customer_2_groupB_key_id, message_type='group_message')['result'])
+    assert customer_1_groupA_messages_before > 0
+    assert customer_2_groupA_messages_before > 0
+    assert customer_1_groupB_messages_before > 0
+    assert customer_2_groupB_messages_before > 0
+
+    # stop supplier-1
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + SUPPLIERS_IDS_12)
+    kw.config_set_v1('supplier-1', 'services/network/enabled', 'false')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + ['supplier-2', ])
+
+    # send again a message to the second group from customer-1
+    # this should rotate active queue supplier for customer-1 in the second group only
+    kw.verify_message_sent_received(
+        customer_2_groupB_key_id,
+        producer_id='customer-1',
+        consumers_ids=[
+            'customer-1',
+            'customer-2',
+        ],
+        message_label='MUST_ROTATE_SUPPLIER_1_NOW',
+        expected_results={
+            'customer-1': True,
+            'customer-2': True,
+        },
+        expected_last_sequence_id={},
+        polling_timeout=180,
+        receive_timeout=181,
+    )
+
+    # verify active queue supplier for customer-1 again - must not be changed
+    customer_1_groupA_info_after = kw.group_info_v1('customer-1', customer_2_groupA_key_id, wait_state='CONNECTED')['result']
+    assert customer_1_groupA_info_after['state'] == 'CONNECTED'
+    assert customer_1_groupA_info_after['active_supplier_id'].split('@')[0] == customer_1_groupA_active_supplier_name_before
+
+    # then check active queue supplier and group state of the second group on customer-1 - this suppose to change
+    customer_1_groupB_info_after = kw.group_info_v1('customer-1', customer_2_groupB_key_id, wait_state='CONNECTED')['result']
+    assert customer_1_groupB_info_after['state'] == 'CONNECTED'
+    assert customer_1_groupB_info_after['active_supplier_id'].split('@')[0] != customer_1_groupB_active_supplier_name_before
+
+    # check the first group have similar info on customer-2 node - this group must also not be updated
+    customer_2_groupA_info_after = kw.group_info_v1('customer-2', customer_2_groupA_key_id, wait_state='CONNECTED')['result']
+    assert customer_2_groupA_info_after['state'] == 'CONNECTED'
+    assert customer_2_groupA_info_after['active_supplier_id'].split('@')[0] == customer_2_groupA_active_supplier_name_before
+
+    # now check the second group have similar info on customer-2 node - this group must also not be updated
+    customer_2_groupB_info_after = kw.group_info_v1('customer-2', customer_2_groupB_key_id, wait_state='CONNECTED')['result']
+    assert customer_2_groupB_info_after['state'] == 'CONNECTED'
+    assert customer_2_groupB_info_after['active_supplier_id'].split('@')[0] == customer_2_groupB_active_supplier_name_before
+
+    # verify messages again
+    assert len(kw.message_history_v1('customer-1', customer_2_groupA_key_id, message_type='group_message')['result']) == customer_1_groupA_messages_before
+    assert len(kw.message_history_v1('customer-2', customer_2_groupA_key_id, message_type='group_message')['result']) == customer_2_groupA_messages_before
+    assert len(kw.message_history_v1('customer-1', customer_2_groupB_key_id, message_type='group_message')['result']) == customer_1_groupB_messages_before + 1
+    assert len(kw.message_history_v1('customer-2', customer_2_groupB_key_id, message_type='group_message')['result']) == customer_2_groupB_messages_before + 1
+    assert len(kw.message_conversation_v1('customer-1')['result']) == customer_1_conversations_count_before
+    assert len(kw.message_conversation_v1('customer-2')['result']) == customer_2_conversations_count_before
+
+    # start the supplier-1 again
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + ['supplier-2', ])
+    kw.config_set_v1('supplier-1', 'services/network/enabled', 'true')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + SUPPLIERS_IDS_12)
+    health_check('supplier-1', verbose=True)
+    kw.wait_service_state(
+        [
+            'supplier-1',
+        ],
+        'service_joint_postman',
+        'ON',
+    )
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + SUPPLIERS_IDS_12)
+
+    msg('\n[SCENARIO 27] : PASS\n\n')

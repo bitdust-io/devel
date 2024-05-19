@@ -651,7 +651,7 @@ def write_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s with %r' % (new_message.message_id, queue_id, data))
+        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s' % (new_message.message_id, queue_id))
     touch_queues()
     return new_message
 
@@ -1016,7 +1016,7 @@ def do_cleanup(target_queues=None):
         if processed_message:
             for cb in _MessageProcessedCallbacks:
                 if not cb(processed_message):
-                    lg.warn('message %r was not correctly processed' % message_id)
+                    lg.warn('message %r was not correctly processed in %r' % (message_id, cb))
     to_be_removed.clear()
     del to_be_removed
     return True

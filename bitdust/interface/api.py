@@ -35,8 +35,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 10
 
 _APILogFileEnabled = None
 
@@ -526,10 +526,6 @@ def process_info():
             'active': len(shared_access_coordinator.list_active_shares()),
         }
     if driver.is_on('service_private_groups'):
-        # from bitdust.access import group_member
-        # result['group'] = {
-        #     'active': len(group_member.list_active_group_members()),
-        # }
         from bitdust.access import group_participant
         result['group'] = {
             'active': len(group_participant.list_active_group_participants()),
@@ -548,11 +544,9 @@ def process_info():
         result['stream']['queues'] = len(p2p_queue.queue())
         result['stream']['consumers'] = len(p2p_queue.consumer())
         result['stream']['producers'] = len(p2p_queue.producer())
-    # if driver.is_on('service_message_broker'):
-    #     from bitdust.stream import queue_keeper
-    #     from bitdust.stream import message_peddler
-    #     result['stream']['peddlers'] = len(message_peddler.streams())
-    #     result['stream']['keepers'] = len(queue_keeper.queue_keepers())
+    if driver.is_on('service_joint_postman'):
+        from bitdust.stream import postman
+        result['stream']['streams'] = len(postman.streams())
     if driver.is_on('service_data_motion'):
         from bitdust.stream import io_throttle
         result['stream']['supplier_queues'] = len(io_throttle.throttle().ListSupplierQueues())
@@ -1693,14 +1687,14 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=None):
 #------------------------------------------------------------------------------
 
 
-def files_sync():
+def files_sync(force=False):
     """
     This should re-start "data synchronization" process with your remote suppliers.
 
     Normally all communications and synchronizations are handled automatically, so you do not need to
     call that method.
 
-    This method is provided for testing and development purposes.
+    This method is provided for testing and development purposes only.
 
     ###### HTTP
         curl -X GET 'localhost:8180/file/sync/v1'
@@ -1713,8 +1707,9 @@ def files_sync():
     if _Debug:
         lg.out(_DebugLevel, 'api.files_sync')
     from bitdust.storage import backup_monitor
-    from bitdust.customer import fire_hire
-    fire_hire.ForceRestart()
+    if force:
+        from bitdust.customer import fire_hire
+        fire_hire.ForceRestart()
     backup_monitor.A('restart')
     if _Debug:
         lg.out(_DebugLevel, 'api.files_sync')
@@ -3303,7 +3298,6 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
-    # from bitdust.access import group_member
     from bitdust.access import group_participant
     from bitdust.access import groups
     from bitdust.crypt import my_keys
@@ -3311,7 +3305,6 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     from bitdust.userid import my_id
     results = []
     if only_active:
-        # for group_key_id in group_member.list_active_group_members():
         for group_key_id in group_participant.list_active_group_participants():
             _glob_id = global_id.ParseGlobalID(group_key_id)
             to_be_listed = False
@@ -3321,7 +3314,6 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
                 to_be_listed = True
             if not to_be_listed:
                 continue
-            # the_group = group_member.get_active_group_member(group_key_id)
             the_group = group_participant.get_active_group_participant(group_key_id)
             if not the_group:
                 lg.warn('group %s was not found' % group_key_id)
@@ -3349,11 +3341,8 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
         result.update({
             'group_key_info': my_keys.get_key_info(group_key_id),
         })
-        # this_group_member = group_member.get_active_group_member(group_key_id)
         this_group_participant = group_participant.get_active_group_participant(group_key_id)
-        # if this_group_member:
         if this_group_participant:
-            # result.update(this_group_member.to_json())
             result.update(this_group_participant.to_json())
             results.append(result)
             continue
@@ -3428,7 +3417,6 @@ def group_info(group_key_id):
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
     from bitdust.access import groups
-    # from bitdust.access import group_member
     from bitdust.access import group_participant
     from bitdust.crypt import my_keys
     group_key_id = strng.to_text(group_key_id)
@@ -3447,10 +3435,6 @@ def group_info(group_key_id):
     response.update({
         'group_key_info': my_keys.get_key_info(group_key_id),
     })
-    # this_group_member = group_member.get_active_group_member(group_key_id)
-    # if this_group_member:
-    #     response.update(this_group_member.to_json())
-    #     return OK(response)
     this_group_participant = group_participant.get_active_group_participant(group_key_id)
     if this_group_participant:
         response.update(this_group_participant.to_json())
@@ -3528,62 +3512,9 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('group key is not registered')
     ret = Deferred()
-    # started_group_members = []
-    # existing_group_members = []
     started_group_participants = []
     existing_group_participants = []
     creator_idurl = my_keys.get_creator_idurl(group_key_id, as_field=False)
-
-    # def _on_group_member_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-    #     if _Debug:
-    #         lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
-    #     if newstate == 'IN_SYNC!' and oldstate != newstate:
-    #         if existing_group_members:
-    #             existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-    #             ret.callback(OK(existing_group_members[0].to_json(), message='group is refreshed', api_method='group_join'))
-    #         else:
-    #             started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-    #             ret.callback(OK(started_group_members[0].to_json(), message='group is connected', api_method='group_join'))
-    #     if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
-    #         if existing_group_members:
-    #             existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-    #             ret.callback(ERROR('group is disconnected', details=existing_group_members[0].to_json(), api_method='group_join'))
-    #         else:
-    #             started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-    #             ret.callback(ERROR('group is disconnected', details=started_group_members[0].to_json(), api_method='group_join'))
-    #     return None
-
-    # def _do_start_group_member():
-    #     from bitdust.access import group_member
-    #     existing_group_member = group_member.get_active_group_member(group_key_id)
-    #     if _Debug:
-    #         lg.args(_DebugLevel, existing_group_member=existing_group_member)
-    #     if existing_group_member:
-    #         existing_group_members.append(existing_group_member)
-    #     else:
-    #         existing_group_member = group_member.GroupMember(
-    #             group_key_id=group_key_id,
-    #             publish_events=publish_events,
-    #             use_dht_cache=use_dht_cache,
-    #         )
-    #         started_group_members.append(existing_group_member)
-    #     if existing_group_member.state in [
-    #         'DHT_READ?',
-    #         'BROKERS?',
-    #         'QUEUE?',
-    #         'IN_SYNC!'
-    #     ]:
-    #         connecting_word = 'active' if existing_group_member.state == 'IN_SYNC!' else 'connecting'
-    #         ret.callback(OK(existing_group_member.to_json(), message='group is already %s' % connecting_word, api_method='group_join'))
-    #         return None
-    #     if wait_result:
-    #         existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
-    #     if started_group_members:
-    #         started_group_members[0].automat('init')
-    #     existing_group_member.automat('join')
-    #     if not wait_result:
-    #         ret.callback(OK(existing_group_member.to_json(), message='group connection started', api_method='group_join'))
-    #     return None
 
     def _on_group_participant_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if _Debug:
@@ -3634,11 +3565,9 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
         from bitdust.contacts import identitycache
         d = identitycache.immediatelyCaching(creator_idurl)
         d.addErrback(lambda *args: ret.callback(ERROR('failed caching group creator identity')) and None)
-        # d.addCallback(lambda *args: _do_start_group_member())
         d.addCallback(lambda *args: _do_start_group_participant())
 
     if id_url.is_cached(creator_idurl):
-        # _do_start_group_member()
         _do_start_group_participant()
     else:
         _do_cache_creator_idurl()
@@ -3657,7 +3586,6 @@ def group_leave(group_key_id, erase_key=False):
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
-    # from bitdust.access import group_member
     from bitdust.access import group_participant
     from bitdust.access import groups
     from bitdust.crypt import my_keys
@@ -3667,10 +3595,8 @@ def group_leave(group_key_id, erase_key=False):
     group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
-    # this_group_member = group_member.get_active_group_member(group_key_id)
-    # if not this_group_member:
     this_group_participant = group_participant.get_active_group_participant(group_key_id)
-    if this_group_participant:
+    if not this_group_participant:
         if erase_key:
             groups.erase_group_info(group_key_id)
             my_keys.erase_key(group_key_id)
@@ -3678,10 +3604,8 @@ def group_leave(group_key_id, erase_key=False):
         groups.set_group_active(group_key_id, False)
         groups.save_group_info(group_key_id)
         return OK(message='group deactivated')
-    # result_json = this_group_member.to_json()
     result_json = this_group_participant.to_json()
     result_json['state'] = 'CLOSED'
-    # this_group_member.event('leave', erase_key=erase_key)
     this_group_participant.event('disconnect', erase_key=erase_key)
     if erase_key:
         return OK(message='group deactivated and deleted', result=result_json)
@@ -3691,7 +3615,7 @@ def group_leave(group_key_id, erase_key=False):
 def group_reconnect(group_key_id, use_dht_cache=False):
     """
     Refreshing given messaging group - disconnect from the group first and then join again.
-    Helpful method to reconnect with the message brokers effectively.
+    Helpful method to reconnect with the group suppliers effectively.
 
     ###### HTTP
         curl -X PUT 'localhost:8180/group/reconnect/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"}'
@@ -3701,7 +3625,6 @@ def group_reconnect(group_key_id, use_dht_cache=False):
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
-    # from bitdust.access import group_member
     from bitdust.access import group_participant
     from bitdust.crypt import my_keys
     group_key_id = strng.to_text(group_key_id)
@@ -3711,7 +3634,6 @@ def group_reconnect(group_key_id, use_dht_cache=False):
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
     ret = Deferred()
-    # d = group_member.restart_active_group_member(group_key_id, use_dht_cache=use_dht_cache)
     d = group_participant.restart_active_group_participant(group_key_id)
     if not d:
         return ERROR('group is not active at the moment')
@@ -4313,6 +4235,8 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
     if recipient_id.startswith('person$'):
+        return ERROR('method is not implemented yet')
+        # TODO: to be implemented
         if not driver.is_on('service_personal_messages'):
             return ERROR('service_personal_messages() is not started')
         if _Debug:
@@ -4362,7 +4286,6 @@ def message_send_group(group_key_id, data):
         return ERROR('service_private_groups() is not started')
     from bitdust.userid import global_id
     from bitdust.crypt import my_keys
-    # from bitdust.access import group_member
     from bitdust.access import group_participant
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
@@ -5455,8 +5378,6 @@ def queue_keepers_list():
     if not driver.is_on('service_message_broker'):
         return ERROR('service_message_broker() is not started')
     return RESULT([])
-    # from bitdust.stream import queue_keeper
-    # return RESULT([qk.to_json() for qk in queue_keeper.queue_keepers().values()])
 
 
 def queue_peddlers_list():
@@ -5472,20 +5393,30 @@ def queue_peddlers_list():
     if not driver.is_on('service_message_broker'):
         return ERROR('service_message_broker() is not started')
     return RESULT([])
-    # from bitdust.stream import message_peddler
-    # return RESULT(
-    #     [
-    #         {
-    #             'queue_id': queue_id,
-    #             'active': mp['active'],
-    #             'consumers': list(mp['consumers'].keys()),
-    #             'producers': list(mp['producers'].keys()),
-    #             'messages': len(mp['messages']),
-    #             'archive': len(mp['archive']),
-    #             'sequence_id': mp['last_sequence_id'],
-    #         } for queue_id, mp in message_peddler.streams().items()
-    #     ]
-    # )
+
+
+def queue_streams_list():
+    """
+    Returns list of all registered message peddlers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/queue/stream/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "queue_streams_list", "kwargs": {} }');
+    """
+    if not driver.is_on('service_joint_postman'):
+        return ERROR('service_joint_postman() is not started')
+    from bitdust.stream import postman
+    return RESULT(
+        [{
+            'queue_id': queue_id,
+            'active': mp['active'],
+            'consumers': list(mp['consumers'].keys()),
+            'producers': list(mp['producers'].keys()),
+            'sequence_id': mp['last_sequence_id'],
+        } for queue_id, mp in postman.streams().items()]
+    )
 
 
 #------------------------------------------------------------------------------

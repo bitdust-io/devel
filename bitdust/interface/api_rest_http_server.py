@@ -274,6 +274,7 @@ def _index_or_idurl_or_global_id(
 
 
 class BitDustAPISite(Site):
+
     def buildProtocol(self, addr):
         """
         Only accepting connections from local machine!
@@ -285,6 +286,7 @@ class BitDustAPISite(Site):
 
 
 class BitDustRESTHTTPServer(JsonAPIResource):
+
     """
     A set of API method to interract and control locally running BitDust process.
     """
@@ -658,7 +660,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/file/sync$')
     @GET('^/file/sync/v1$')
     def file_sync_v1(self, request):
-        return api.files_sync()
+        return api.files_sync(force=bool(_request_arg(request, 'force', '0') in ['1', 'true']), )
 
     @GET('^/f/l$')
     @GET('^/v1/file/list$')
@@ -1287,6 +1289,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/queue/peddler/list/v1$')
     def queue_peddler_list_v1(self, request):
         return api.queue_peddlers_list()
+
+    @GET('^/qu/s/l$')
+    @GET('^/v1/queue/stream/list$')
+    @GET('^/queue/stream/list/v1$')
+    def queue_stream_list_v1(self, request):
+        return api.queue_streams_list()
 
     #------------------------------------------------------------------------------
 

@@ -51,14 +51,9 @@ class PrivateGroupsService(LocalService):
     def start(self):
         from bitdust.main import events
         from bitdust.access import groups
-        # from bitdust.access import group_member
         from bitdust.access import group_participant
         groups.init()
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
-        # events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
-        # if driver.is_on('service_entangled_dht'):
-        #     self._do_join_message_brokers_dht_layer()
-        # group_member.start_group_members()
         group_participant.start_group_participants()
         events.add_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
         return True
@@ -66,12 +61,9 @@ class PrivateGroupsService(LocalService):
     def stop(self):
         from bitdust.main import events
         from bitdust.access import groups
-        # from bitdust.access import group_member
         from bitdust.access import group_participant
         events.remove_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
-        # group_member.shutdown_group_members()
         group_participant.shutdown_group_participants()
-        # events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         groups.shutdown()
         return True
@@ -79,24 +71,6 @@ class PrivateGroupsService(LocalService):
     def health_check(self):
         # TODO: probably at least one queue must be connected if service is enabled
         return True
-
-    # def _do_join_message_brokers_dht_layer(self):
-    #     from bitdust.logs import lg
-    #     from bitdust.dht import dht_service
-    #     from bitdust.dht import dht_records
-    #     from bitdust.dht import known_nodes
-    #     lg.info('going to join message brokers DHT layer: %d' % dht_records.LAYER_MESSAGE_BROKERS)
-    #     known_seeds = known_nodes.nodes()
-    #     dht_service.open_layer(
-    #         seed_nodes=known_seeds,
-    #         layer_id=dht_records.LAYER_MESSAGE_BROKERS,
-    #         connect_now=True,
-    #         attach=False,
-    #     )
-
-    # def _on_dht_layer_connected(self, evt):
-    #     if evt.data['layer_id'] == 0:
-    #         self._do_join_message_brokers_dht_layer()
 
     def _on_supplier_modified(self, evt):
         from bitdust.logs import lg

@@ -150,7 +150,7 @@ When `supplier` service is enabled and started your device will also write addit
 This way people are able to access encrypted shared files of each other on different suppliers across the network.
 
 {services/customer-patrol/enabled} reject customers who are out of quota
-When you are running `supplier` service other people are able to store files on your device.
+When you are running `supplier` service other users are able to store files on your device.
 The `customer-patrol` service makes sure that your customers do not exceed requested and agreed storage quotas.
 
 {services/customer-patrol/customer-idle-days} customer idle limit
@@ -413,12 +413,12 @@ Controls network connections and incoming data streams when downloading encrypte
 {services/shared-data/enabled} enable data sharing
 Makes possible decentralized sharing of encrypted files with other users.
 
-{services/supplier/enabled} donate own disk space to people
+{services/supplier/enabled} donate own disk space to other users
 To make it possible to store any files on the network, some other nodes must already be connected and provide storage space.
 The `supplier` service allocates a part of your disk and serves encrypted files uploaded to your device from remote nodes.
 
 {services/supplier/donated-space} donated space
-The amount of storage space you want to donate to other people who also use BitDust.
+The amount of storage space you want to donate to other users.
 
 {services/supplier-contracts/enabled} digitally signed supplier contracts
 The service is under development.

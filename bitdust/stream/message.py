@@ -194,12 +194,14 @@ def RemoveOutgoingMessageCallback(cb):
 
 
 class PrivateMessage(object):
+
     """
     A class to represent a message.
 
     We always encrypt messages with a session key so we need to package
     with encrypted body.
     """
+
     def __init__(self, recipient, sender=None, encrypted_session=None, encrypted_body=None):
         self.sender = strng.to_text(sender or my_id.getGlobalID(key_alias='master'))
         self.recipient = strng.to_text(recipient)
@@ -307,6 +309,7 @@ class PrivateMessage(object):
 
 
 class GroupMessage(PrivateMessage):
+
     def __str__(self):
         return 'GroupMessage(%s->%s)' % (
             self.sender,
@@ -641,6 +644,8 @@ def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_
 
 
 def push_incoming_message(request, private_message_object, json_message):
+    if _Debug:
+        lg.args(_DebugLevel, request=request)
     msg_type = None
     if request.PacketID.startswith('private_'):
         msg_type = 'private_message'
@@ -662,6 +667,8 @@ def push_incoming_message(request, private_message_object, json_message):
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
+    if _Debug:
+        lg.args(_DebugLevel, request=request)
     msg_type = 'private_message'
     if request.PacketID.startswith('queue_'):
         msg_type = 'queue_message'
@@ -679,6 +686,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
 
 
 def push_group_message(json_message, direction, group_key_id, producer_id, sequence_id):
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, producer_id=producer_id, sequence_id=sequence_id)
     return push_message(
         direction=direction,
         msg_type='group_message',

@@ -1216,6 +1216,20 @@ def queue_peddler_list_v1(node, extract_ids=False):
     return [f['queue_id'] for f in response.json()['result']]
 
 
+def queue_stream_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/stream/list/v1', timeout=20)
+    assert response.status_code == 200
+    dbg(
+        'queue/stream/list/v1 [%s] : %s\n' % (
+            node,
+            pprint.pformat(response.json()),
+        )
+    )
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['queue_id'] for f in response.json()['result']]
+
 #------------------------------------------------------------------------------
 
 

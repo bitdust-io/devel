@@ -339,10 +339,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
     if not recipient:
         recipient = my_id.getGlobalID(key_alias='master')
     if direction is None:
-        if message_type in [
-            'private_message',
-            None,
-        ]:
+        if message_type in ['private_message', None]:
             direction = 'out' if sender == my_id.getGlobalID(key_alias='master') else 'in'
         else:
             direction = 'in'
@@ -351,10 +348,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
     if _Debug:
         lg.args(_DebugLevel, sender=sender, recipient=recipient, typ=payload_type, dir=direction, message_id=payload_message_id)
     recipient_local_key_id = my_keys.get_local_key_id(recipient)
-    if payload_type in [
-        3,
-        4,
-    ]:
+    if payload_type in [3, 4]:
         sender_local_key_id = recipient_local_key_id
     else:
         sender_local_key_id = my_keys.get_local_key_id(sender)
