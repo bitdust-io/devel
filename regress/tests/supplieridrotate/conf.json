@@ -149,10 +149,37 @@
                 "supplier_candidates": "http://id-dead:8084/supplier-rotated.xml,http://id-b:8084/supplier-2.xml",
                 "preferred_brokers": ""
             }
+        },
+        "customer-2": {
+            "links": [
+                "dht-2",
+                "stun-1",
+                "id-a",
+                "id-b",
+                "id-c",
+                "id-dead"
+            ],
+            "ports": "10052:22",
+            "volumes": [
+                "customer_2:/customer_2"
+            ],
+            "node": {
+                "role": "customer",
+                "name": "customer-2",
+                "join_network": true,
+                "known_dht_seeds": "dht-2:14441",
+                "known_id_servers": "id-b:8084",
+                "preferred_routers": "",
+                "block_size": "10 KB",
+                "num_suppliers": 2,
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-b:8084/supplier-2.xml",
+                "preferred_brokers": ""
+            }
         }
     },
     "containers_volumes": [
-        "customer_1:"
+        "customer_1:",
+        "customer_2:"
     ],
     "tester_links": [
         "id-a",
@@ -165,9 +192,11 @@
         "supplier-1",
         "supplier-2",
         "supplier-rotated",
-        "customer-1"
+        "customer-1",
+        "customer-2"
     ],
     "tester_volumes": [
-        "customer_1:/customer_1"
+        "customer_1:/customer_1",
+        "customer_2:/customer_2"
     ]
 }

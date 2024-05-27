@@ -40,11 +40,7 @@ def test_stream():
     #--- SCENARIO 3: customer-1 send private message to customer-2
     scenarios.scenario3()
 
-    #--- SCENARIO 8: customer-3 receive all archived messages from message broker
-    # TODO: to be implemented
-    # scenarios.scenario8()
-
-    #--- SCENARIO 25: customer-1 group chat with customer-2 using supplier-1 and supplier-2 streams
+    #--- SCENARIO 25: customer-3 receive all past messages from other group participants
     scenarios.scenario25()
 
     #--- SCENARIO 26: customer-3 stopped and started again but still connected to the group
@@ -52,7 +48,6 @@ def test_stream():
 
     #--- SCENARIO 27: customer-2 sent message to the group but active supplier-1 is offline
     scenarios.scenario27()
-
 
 #------------------------------------------------------------------------------
 

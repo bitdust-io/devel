@@ -359,7 +359,7 @@ def Receipt():
 def Message():
     """
     An encrypted message from one peer to another.
-    Can be on of the types: "private_message", "queue_message", "queue_message_replica", "group_message"
+    Can be on of the types: "private_message", "queue_message", "group_message"
     """
     return 'Message'
 

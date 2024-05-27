@@ -66,6 +66,7 @@ class JointPostmanService(LocalService):
         from bitdust.logs import lg
         from bitdust.p2p import p2p_service
         from bitdust.stream import postman
+        from bitdust.userid import global_id
         try:
             action = json_payload['action']
         except:
@@ -74,8 +75,8 @@ class JointPostmanService(LocalService):
         # TODO: validate signature and the key
         if action == 'queue-connect':  #  or action == 'queue-connect-follow':
             try:
-                consumer_id = json_payload.get('consumer_id')
-                producer_id = json_payload.get('producer_id')
+                consumer_id = global_id.latest_glob_id(json_payload.get('consumer_id'))
+                producer_id = global_id.latest_glob_id(json_payload.get('producer_id'))
                 group_key_info = json_payload.get('group_key')
             except:
                 lg.warn('wrong payload: %r' % json_payload)

@@ -193,11 +193,9 @@ def on_consume_queue_messages(json_messages):
             continue
         if msg_direction != 'incoming':
             continue
-        if to_user != my_id.getID():
+        if global_id.latest_glob_id(to_user) != my_id.getID():
             continue
-        if msg_type not in [
-            'queue_message',
-        ]:
+        if msg_type != 'queue_message':
             continue
         if msg_action not in ['produce', 'consume']:
             continue
@@ -225,6 +223,7 @@ def on_consume_queue_messages(json_messages):
                 continue
         if msg_action == 'consume':
             # request from group_participant() to catch up unread messages from the queue
+            # TODO: decide about a solution to read past messages and potentially cleanup that block
             consumer_id = msg_data.get('consumer_id')
             if consumer_id not in streams()[queue_id]['consumers']:
                 lg.warn('skipped incoming "queue-read" request, consumer %r is not registered for queue %r' % (consumer_id, queue_id))
@@ -234,10 +233,6 @@ def on_consume_queue_messages(json_messages):
                 lg.warn('skipped incoming "queue-read" request, consumer %r is not active in queue %r' % (consumer_id, queue_id))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'consumer is not active')
                 continue
-            consumer_last_sequence_id = int(msg_data.get('last_sequence_id', -1))
-            if _Debug:
-                lg.args(_DebugLevel, event='queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
-            # TODO: decide about a solution to read past messages
             p2p_service.SendAckNoRequest(from_idurl, packet_id)
             handled = True
             continue
@@ -992,7 +987,10 @@ def on_group_creator_idurl_cache_failed(err, request_packet, result_defer):
 def on_identity_url_changed(evt):
     if _Debug:
         lg.args(_DebugLevel, **evt.data)
-    if my_id.getIDURL().to_bin() in [evt.data['new_idurl'], evt.data['old_idurl']]:
+    old_idurl = evt.data['old_idurl']
+    new_idurl = evt.data['new_idurl']
+    if my_id.getIDURL().to_bin() in [new_idurl, old_idurl]:
+        lg.warn('my IDURL was rotated, restarting all streams')
         stop_all_streams()
         p2p_queue.remove_message_processed_callback(on_message_processed)
         close_all_streams()
@@ -1000,8 +998,7 @@ def on_identity_url_changed(evt):
         p2p_queue.add_message_processed_callback(on_message_processed)
         start_all_streams()
         return
-    old_idurl = evt.data['old_idurl']
-    new_id = global_id.idurl2glob(evt.data['new_idurl'])
+    new_id = global_id.idurl2glob(new_idurl)
     queues_to_be_closed = []
     if id_url.is_in(old_idurl, customers().keys(), as_field=False):
         for queue_id in customers()[id_url.field(old_idurl)]:
@@ -1012,11 +1009,11 @@ def on_identity_url_changed(evt):
         rotated_producers = []
         for cur_consumer_id in streams()[queue_id]['consumers']:
             consumer_idurl = global_id.glob2idurl(cur_consumer_id)
-            if id_url.to_bin(consumer_idurl) == id_url.to_bin(old_idurl):
+            if id_url.is_the_same(consumer_idurl, old_idurl) or id_url.is_the_same(consumer_idurl, new_idurl):
                 rotated_consumers.append((cur_consumer_id, new_id))
         for cur_producer_id in streams()[queue_id]['producers']:
             producer_idurl = global_id.glob2idurl(cur_producer_id)
-            if id_url.to_bin(producer_idurl) == old_idurl:
+            if id_url.is_the_same(producer_idurl, old_idurl) or id_url.is_the_same(producer_idurl, new_idurl):
                 rotated_producers.append((cur_producer_id, new_id))
         for old_consumer_id, new_consumer_id in rotated_consumers:
             old_consumer_info = streams()[queue_id]['consumers'][old_consumer_id]
@@ -1154,6 +1151,8 @@ def do_restart_streams():
 
 
 def do_close_streams(queues_list, erase_key=False):
+    if _Debug:
+        lg.args(_DebugLevel, queues_list=queues_list)
     for queue_id in queues_list:
         if queue_id not in streams():
             continue

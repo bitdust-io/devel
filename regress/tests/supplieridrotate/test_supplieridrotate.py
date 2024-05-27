@@ -44,12 +44,18 @@ def test_supplieridrotate():
     #--- SCENARIO 13 begin: supplier of customer-1 has IDURL rotated
     old_customer_1_info_s13 = scenarios.scenario13_begin()
 
+    #--- SCENARIO 12 begin: customer-1 group chat with customer-2, but active queue supplier-rotated IDURL was rotated
+    old_customer_1_info_s12 = scenarios.scenario12_begin()
+
     #--- SCENARIO 9: ID server id-dead is dead
     scenarios.scenario9(
         target_nodes=[
             'supplier-rotated',
         ],
     )
+
+    #--- SCENARIO 12 end: customer-1 group chat with customer-2, but active queue supplier-rotated IDURL was rotated
+    scenarios.scenario12_end(old_customer_1_info_s12)
 
     #--- SCENARIO 13 end: supplier of customer-1 has IDURL rotated
     scenarios.scenario13_end(old_customer_1_info_s13)
@@ -70,7 +76,6 @@ def prepare():
     )
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_customer', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
-    # kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_message_history', 'ON')
     kw.wait_packets_finished(

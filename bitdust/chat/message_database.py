@@ -36,7 +36,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -64,7 +64,6 @@ from bitdust.main import listeners
 
 from bitdust.crypt import my_keys
 
-# from bitdust.access import group_member
 from bitdust.access import group_participant
 
 from bitdust.p2p import online_status
@@ -256,11 +255,10 @@ def build_json_conversation(**record):
     conv = {
         'key_id': '',
         'label': '',
-        'state': 'OFFLINE',
+        'state': 'DISCONNECTED',
         'index': None,
         'id': None,
         'name': None,
-        'repr': None,
         'events': None,
     }
     conv.update(record)
@@ -315,9 +313,6 @@ def build_json_conversation(**record):
             return None
         conv['key_id'] = key_id
         conv['label'] = my_keys.get_label(key_id) or key_id
-        # gm = group_member.get_active_group_member(key_id)
-        # if gm:
-        #     conv.update(gm.to_json())
         g_part = group_participant.get_active_group_participant(key_id)
         if g_part:
             conv.update(g_part.to_json())
@@ -438,7 +433,7 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
     return conversation_id
 
 
-def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, message_types=[], offset=None, limit=None, raw_results=False):
+def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_by_id=True, order_by_time=False, message_types=[], sequence_head=None, sequence_tail=None, offset=None, limit=None, raw_results=False):
     sql = 'SELECT * FROM history'
     q = ''
     params = []
@@ -462,18 +457,14 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
                 lg.warn('local_key_id was not found for sender %r' % sender_id)
                 return []
             q += ' sender_local_key_id=?'
-            params += [
-                sender_local_key_id,
-            ]
+            params.append(sender_local_key_id)
         if recipient_id:
             recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
             if recipient_local_key_id is None:
                 lg.warn('local_key_id was not found for recipient %r' % recipient_id)
                 return []
             q += ' recipient_local_key_id=?'
-            params += [
-                recipient_local_key_id,
-            ]
+            params.append(recipient_local_key_id)
     if message_types:
         if params:
             q += ' AND payload_type IN (%s)' % (','.join([
@@ -484,20 +475,31 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
                 '?',
             ]*len(message_types)))
         params.extend([MESSAGE_TYPES.get(mt, 1) for mt in message_types])
+    if sequence_head is not None:
+        if params:
+            q += ' AND payload_message_id>=?'
+        else:
+            q += ' payload_message_id>=?'
+        params.append(sequence_head)
+    if sequence_tail is not None:
+        if params:
+            q += ' AND payload_message_id<=?'
+        else:
+            q += ' payload_message_id<=?'
+        params.append(sequence_tail)
     if q:
         sql += ' WHERE %s' % q
-    if order_by_time:
-        sql += ' ORDER BY payload_time DESC'
+    if order_by_id:
+        sql += ' ORDER BY payload_message_id DESC'
+    else:
+        if order_by_time:
+            sql += ' ORDER BY payload_time DESC'
     if limit is not None:
         sql += ' LIMIT ?'
-        params += [
-            limit,
-        ]
+        params.append(limit)
     if offset is not None:
         sql += ' OFFSET ?'
-        params += [
-            offset,
-        ]
+        params.append(offset)
     if _Debug:
         lg.args(_DebugLevel, sql=sql, params=params)
     results = []
@@ -648,10 +650,7 @@ def rebuild_conversations():
         msg_typ = message_json['payload'].get('msg_type') or message_json['payload'].get('type')
         payload_type = MESSAGE_TYPES.get(msg_typ, 1)
         recipient_local_key_id = my_keys.get_local_key_id(message_json['recipient']['glob_id'])
-        if payload_type in [
-            3,
-            4,
-        ]:
+        if payload_type in [3, 4]:
             sender_local_key_id = recipient_local_key_id
         else:
             sender_local_key_id = my_keys.get_local_key_id(message_json['sender']['glob_id'])

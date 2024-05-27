@@ -26,6 +26,7 @@
 BitDust group_participant() Automat
 
 EVENTS:
+    * :red:`command-in`
     * :red:`connect`
     * :red:`disconnect`
     * :red:`init`
@@ -69,6 +70,8 @@ from bitdust.lib import packetid
 from bitdust.lib import serialization
 
 from bitdust.main import config
+
+from bitdust.services import driver
 
 from bitdust.crypt import my_keys
 
@@ -322,6 +325,9 @@ class GroupParticipant(automat.Automat):
         self.suppliers_succeed = []
         self.participant_sender_id = global_id.MakeGlobalID(idurl=self.participant_idurl, key_alias=self.group_queue_alias)
         self.last_sequence_id = groups.get_last_sequence_id(self.group_key_id)
+        self.sequence_head = None
+        self.sequence_tail = None
+        self.sequence_count = None
         self.outgoing_messages = {}
         self.outgoing_counter = 0
         self.buffered_messages = {}
@@ -358,6 +364,9 @@ class GroupParticipant(automat.Automat):
                 'active_supplier_id': self.active_supplier_id,
                 'active_queue_id': self.active_queue_id,
                 'last_sequence_id': self.last_sequence_id,
+                'sequence_head': self.sequence_head,
+                'sequence_tail': self.sequence_tail,
+                'sequence_count': self.sequence_count,
             }
         )
         return j
@@ -403,6 +412,8 @@ class GroupParticipant(automat.Automat):
             elif event == 'message-in':
                 self.doRecord(*args, **kwargs)
                 self.doProcess(*args, **kwargs)
+            elif event == 'command-in':
+                self.doHandle(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
@@ -521,12 +532,30 @@ class GroupParticipant(automat.Automat):
         while self.recorded_messages:
             recorded_kwargs = self.recorded_messages.pop(0)
             message.push_group_message(**recorded_kwargs)
-            self.automat('message-consumed', recorded_kwargs, fast=True)
+            if self.sequence_count is not None:
+                self.sequence_count += 1
+                self.sequence_tail = recorded_kwargs['sequence_id']
+                if self.sequence_head is None:
+                    self.sequence_head = recorded_kwargs['sequence_id']
+
+    def doHandle(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if not driver.is_on('service_message_history'):
+            return
+        self._do_handle_group_command(kwargs['json_message'])
 
     def doReadSuppliersList(self, *args, **kwargs):
         """
         Action method.
         """
+        self.known_suppliers_list.clear()
+        self.known_ecc_map = None
+        self.active_supplier_pos = None
+        self.active_supplier_idurl = None
+        self.active_supplier_id = None
+        self.active_queue_id = None
         d = dht_relations.read_customer_suppliers(self.group_creator_idurl, use_cache=True)
         d.addCallback(self._on_read_group_creator_suppliers)
         d.addErrback(lambda err: self.automat('suppliers-read-failed', err))
@@ -567,6 +596,18 @@ class GroupParticipant(automat.Automat):
         """
         Action method.
         """
+        self._do_refresh_sequence_stats()
+        self._do_send_message_to_supplier(
+            json_payload={
+                'command': 'connected',
+                'participant_id': self.participant_id,
+                'sequence_head': self.sequence_head,
+                'sequence_tail': self.sequence_tail,
+                'sequence_count': self.sequence_count,
+            },
+            outgoing_counter=None,
+            packet_id=None,
+        )
 
     def doReportDisconnected(self, *args, **kwargs):
         """
@@ -598,8 +639,12 @@ class GroupParticipant(automat.Automat):
         self.active_supplier_idurl = None
         self.active_supplier_id = None
         self.active_queue_id = None
-        self.suppliers_in_progress = None
-        self.suppliers_succeed = None
+        self.suppliers_in_progress = []
+        self.suppliers_succeed = []
+        self.last_sequence_id = None
+        self.sequence_head = None
+        self.sequence_tail = None
+        self.sequence_count = None
         self.recorded_messages = None
         self.buffered_messages = None
 
@@ -684,7 +729,7 @@ class GroupParticipant(automat.Automat):
                 'last_sequence_id': self.last_sequence_id,
             }
             p2p_service.SendCancelService(
-                remote_idurl=self.supplier_idurl,
+                remote_idurl=supplier_idurl,
                 service_name='service_joint_postman',
                 json_payload=service_info,
                 # callbacks={
@@ -812,6 +857,48 @@ class GroupParticipant(automat.Automat):
                 continue
             if msg_type != 'queue_message':
                 continue
+            if msg_action == 'pull':
+                try:
+                    incoming_group_key_id = my_keys.latest_key_id(msg_data['group_key_id'])
+                    incoming_participant_id = global_id.latest_glob_id(msg_data['participant_id'])
+                    incoming_sequence_head = msg_data['sequence_head']
+                    incoming_sequence_tail = msg_data['sequence_tail']
+                    incoming_sequence_count = msg_data['sequence_count']
+                except:
+                    lg.exc(msg_data)
+                    continue
+                if incoming_group_key_id != self.group_key_id:
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'skip message from %r based on incoming group_key_id for %r : %r' % (incoming_participant_id, self.group_key_id, incoming_group_key_id))
+                    continue
+                self._do_push_messages_to_another_participant(
+                    remote_id=incoming_participant_id,
+                    sequence_head=incoming_sequence_head,
+                    sequence_tail=incoming_sequence_tail,
+                    sequence_count=incoming_sequence_count,
+                )
+                return True
+            incoming_queue_id = packetid.SplitQueueMessagePacketID(packet_id)[0]
+            incoming_group_alias, incoming_group_creator_id, incoming_supplier_id = global_id.SplitGlobalQueueID(incoming_queue_id)
+            incoming_group_creator_id = global_id.latest_glob_id(incoming_group_creator_id)
+            incoming_group_key_id = global_id.MakeGlobalKeyID(incoming_group_alias, incoming_group_creator_id)
+            found_group_ids.add(incoming_group_key_id)
+            if incoming_group_key_id != self.group_key_id:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'skip message from %r based on packet_id for %r : %r' % (incoming_supplier_id, self.group_key_id, incoming_group_key_id))
+                continue
+            if msg_action == 'push':
+                received_group_messages = []
+                for msg in msg_data.get('items', []):
+                    received_group_messages.append(dict(
+                        json_message=msg['data'],
+                        direction='incoming',
+                        group_key_id=self.group_key_id,
+                        producer_id=msg['producer_id'],
+                        sequence_id=int(msg['message_id']),
+                    ))
+                self._do_process_group_messages(received_group_messages)
+                return True
             if msg_action != 'read':
                 continue
             if 'last_sequence_id' not in msg_data:
@@ -822,21 +909,12 @@ class GroupParticipant(automat.Automat):
             except:
                 lg.exc(msg_data)
                 continue
-            incoming_queue_id = packetid.SplitQueueMessagePacketID(packet_id)[0]
-            incoming_group_alias, incoming_group_creator_id, incoming_supplier_id = global_id.SplitGlobalQueueID(incoming_queue_id)
-            incoming_group_creator_id = global_id.glob2idurl(incoming_group_creator_id).to_id()
-            incoming_group_key_id = global_id.MakeGlobalKeyID(incoming_group_alias, incoming_group_creator_id)
-            found_group_ids.add(incoming_group_key_id)
-            if incoming_group_key_id != self.group_key_id:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'skip message based on packet_id for %r : %r' % (self.group_key_id, incoming_group_key_id))
-                continue
-            if chunk_last_sequence_id > latest_known_sequence_id:
+            if chunk_last_sequence_id is not None and chunk_last_sequence_id > latest_known_sequence_id:
                 latest_known_sequence_id = chunk_last_sequence_id
             for one_message in list_messages:
                 if one_message['sequence_id'] > latest_known_sequence_id:
-                    lg.err('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (one_message['sequence_id'], latest_known_sequence_id))
-                    continue
+                    lg.warn('incoming sequence_id %d is older than known last_sequence_id %d' % (one_message['sequence_id'], latest_known_sequence_id))
+                    # continue
                 group_message_object = message.GroupMessage.deserialize(one_message['payload'])
                 if group_message_object is None:
                     lg.err('GroupMessage deserialize failed, can not extract message from payload of %d bytes' % len(one_message['payload']))
@@ -860,6 +938,10 @@ class GroupParticipant(automat.Automat):
                 ))
                 if owner_idurl:
                     packets_to_ack[packet_id] = owner_idurl
+        if not packets_to_ack:
+            if _Debug:
+                lg.args(_DebugLevel, json_messages=json_messages)
+            return True
         for packet_id, owner_idurl in packets_to_ack.items():
             p2p_service.SendAckNoRequest(owner_idurl, packet_id)
         packets_to_ack.clear()
@@ -879,12 +961,12 @@ class GroupParticipant(automat.Automat):
                 lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
             return True
         received_group_messages.sort(key=lambda m: m['sequence_id'])
-        ret = self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
+        ret = self._do_process_group_messages(received_group_messages)
         return ret
 
-    def _do_process_group_messages(self, received_group_messages, latest_known_sequence_id):
+    def _do_process_group_messages(self, received_group_messages):
         if _Debug:
-            lg.args(_DebugLevel, received_group_messages=len(received_group_messages), buffered_messages=len(self.buffered_messages), latest_known_sequence_id=latest_known_sequence_id)
+            lg.args(_DebugLevel, received_group_messages=len(received_group_messages), buffered_messages=len(self.buffered_messages))
         newly_processed = 0
         for new_message in received_group_messages:
             new_sequence_id = new_message['sequence_id']
@@ -894,14 +976,21 @@ class GroupParticipant(automat.Automat):
             self.buffered_messages[new_sequence_id] = new_message
         buffered_sequence_ids = sorted(self.buffered_messages.keys())
         for new_sequence_id in buffered_sequence_ids:
-            # if self.last_sequence_id + 1 == new_sequence_id:
-            inp_message = self.buffered_messages.pop(new_sequence_id)
-            self.last_sequence_id = new_sequence_id
             newly_processed += 1
-            groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
-            groups.save_group_info(self.group_key_id)
-            lg.info('new message consumed in %r, last_sequence_id incremented to %d' % (self.group_key_id, self.last_sequence_id))
-            self.automat('message-in', **inp_message)
+            inp_message = self.buffered_messages.pop(new_sequence_id)
+            inp_message['fast'] = True
+            command = inp_message.get('json_message', {}).get('command', None)
+            if command:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'new command received in %r, last_sequence_id incremented to %d' % (self, self.last_sequence_id))
+                self.automat('command-in', **inp_message)
+            else:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'new message consumed in %r, last_sequence_id incremented to %d' % (self, self.last_sequence_id))
+                self.last_sequence_id = new_sequence_id
+                groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+                groups.save_group_info(self.group_key_id)
+                self.automat('message-in', **inp_message)
         if len(self.buffered_messages) > MAX_BUFFERED_MESSAGES:
             raise Exception('message sequence is broken, currently %d buffered messages' % len(self.buffered_messages))
         if _Debug:
@@ -936,6 +1025,198 @@ class GroupParticipant(automat.Automat):
         )
         if _Debug:
             lg.args(_DebugLevel, current=current_active_supplier_pos, new=self.active_supplier_pos)
+
+    def _do_refresh_sequence_stats(self):
+        if driver.is_on('service_message_history'):
+            from bitdust.chat import message_database
+            head = None
+            tail = None
+            count = 0
+            for stored_message in message_database.query_messages(
+                recipient_id=self.group_key_id,
+                bidirectional=False,
+                message_types=[
+                    'group_message',
+                ],
+            ):
+                try:
+                    message_id = int(stored_message['payload']['message_id'])
+                except:
+                    lg.exc()
+                    continue
+                if head is None:
+                    head = message_id
+                if tail is None:
+                    tail = message_id
+                if count is None:
+                    count = 0
+                if head > message_id:
+                    head = message_id
+                if tail < message_id:
+                    tail = message_id
+                count += 1
+            self.sequence_head = head
+            self.sequence_tail = tail
+            self.sequence_count = count
+        else:
+            self.sequence_head = None
+            self.sequence_tail = None
+            self.sequence_count = None
+        if _Debug:
+            lg.args(_DebugLevel, count=self.sequence_count, head=self.sequence_head, tail=self.sequence_tail, recipient_id=self.group_key_id)
+
+    def _do_handle_group_command(self, json_message):
+        command = json_message['command']
+        incoming_participant_id = json_message.get('participant_id')
+        if _Debug:
+            lg.dbg(_DebugLevel, 'received command [%s] from %r in %r' % (command.upper(), incoming_participant_id, self))
+        if command == 'connected':
+            if incoming_participant_id:
+                incoming_participant_id = my_keys.latest_key_id(incoming_participant_id)
+                if incoming_participant_id != self.participant_id:
+                    if self.sequence_count is None:
+                        self._do_refresh_sequence_stats()
+                    incoming_sequence_head = json_message.get('sequence_head', None)
+                    incoming_sequence_tail = json_message.get('sequence_tail', None)
+                    incoming_sequence_count = json_message.get('sequence_count', None)
+                    pull_required = False
+                    pull_sequence_head = None
+                    pull_sequence_tail = None
+                    pull_sequence_count = None
+                    push_required = False
+                    push_sequence_head = None
+                    push_sequence_tail = None
+                    push_sequence_count = None
+                    if incoming_sequence_count is not None:
+                        if self.sequence_head is not None:
+                            if incoming_sequence_head is None:
+                                push_required = True
+                                push_sequence_head = self.sequence_head
+                            elif incoming_sequence_head < self.sequence_head:
+                                pull_required = True
+                                pull_sequence_head = incoming_sequence_head
+                            elif incoming_sequence_head > self.sequence_head:
+                                push_required = True
+                                push_sequence_head = self.sequence_head
+                        if self.sequence_tail is not None:
+                            if incoming_sequence_tail is None:
+                                push_required = True
+                                push_sequence_tail = self.sequence_tail
+                            elif incoming_sequence_tail > self.sequence_tail:
+                                pull_required = True
+                                pull_sequence_tail = incoming_sequence_tail
+                            elif incoming_sequence_tail < self.sequence_tail:
+                                push_required = True
+                                push_sequence_tail = self.sequence_tail
+                        if self.sequence_count is not None:
+                            if incoming_sequence_count is None:
+                                push_required = True
+                                push_sequence_count = self.sequence_count
+                            elif incoming_sequence_count < self.sequence_count:
+                                push_required = True
+                                push_sequence_count = self.sequence_count
+                            elif incoming_sequence_count > self.sequence_count:
+                                pull_required = True
+                                pull_sequence_count = incoming_sequence_count
+                    else:
+                        if self.sequence_count is not None:
+                            push_required = True
+                            push_sequence_head = self.sequence_head
+                            push_sequence_tail = self.sequence_tail
+                            push_sequence_count = self.sequence_count
+                    if _Debug:
+                        lg.args(_DebugLevel, pull_required=pull_required, push_required=push_required)
+                    if pull_required:
+                        self._do_pull_messages_from_another_participant(
+                            remote_id=incoming_participant_id,
+                            sequence_head=pull_sequence_head,
+                            sequence_tail=pull_sequence_tail,
+                            sequence_count=pull_sequence_count,
+                        )
+                    if push_required:
+                        self._do_push_messages_to_another_participant(
+                            remote_id=incoming_participant_id,
+                            sequence_head=push_sequence_head,
+                            sequence_tail=push_sequence_tail,
+                            sequence_count=push_sequence_count,
+                        )
+        else:
+            lg.err('unknown incoming command %r from %r' % (command, incoming_participant_id))
+
+    def _do_push_messages_to_another_participant(self, remote_id, sequence_head, sequence_tail, sequence_count):
+        messages = []
+        if driver.is_on('service_message_history'):
+            from bitdust.chat import message_database
+            messages.extend(
+                [
+                    {
+                        'data': m['payload']['data'],
+                        'producer_id': m['sender']['glob_id'],
+                        'message_id': m['payload']['message_id'],
+                    } for m in message_database.query_messages(
+                        recipient_id=self.group_key_id,
+                        bidirectional=False,
+                        message_types=[
+                            'group_message',
+                        ],
+                        sequence_head=sequence_head,
+                        sequence_tail=sequence_tail,
+                        limit=max(sequence_count, 1000),
+                    )
+                ]
+            )
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias=self.group_queue_alias,
+            owner_id=self.group_creator_id,
+            supplier_id=self.active_supplier_id,
+        )
+        packet_id = packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID())
+        ret = message.send_message(
+            json_data={
+                'msg_type': 'queue_message',
+                'action': 'push',
+                'created': utime.utcnow_to_sec1970(),
+                'group_key_id': self.group_key_id,
+                'participant_id': self.participant_id,
+                'items': messages,
+            },
+            recipient_global_id=remote_id,
+            packet_id=packet_id,
+            # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
+            # skip_handshake=True,
+            fire_callbacks=False,
+        )
+        ret.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, ignore=True, method='group_participant._do_push_messages_to_another_participant')
+        if _Debug:
+            lg.out(_DebugLevel, '>>> PUSH >>>    %d messages from %r to %r with head=%r tail=%r count=%r' % (len(messages), self, remote_id, sequence_head, sequence_tail, sequence_count))
+
+    def _do_pull_messages_from_another_participant(self, remote_id, sequence_head, sequence_tail, sequence_count):
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias=self.group_queue_alias,
+            owner_id=self.group_creator_id,
+            supplier_id=self.active_supplier_id,
+        )
+        packet_id = packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID())
+        ret = message.send_message(
+            json_data={
+                'msg_type': 'queue_message',
+                'action': 'pull',
+                'created': utime.utcnow_to_sec1970(),
+                'group_key_id': self.group_key_id,
+                'participant_id': self.participant_id,
+                'sequence_head': sequence_head,
+                'sequence_tail': sequence_tail,
+                'sequence_count': sequence_count,
+            },
+            recipient_global_id=remote_id,
+            packet_id=packet_id,
+            # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
+            # skip_handshake=True,
+            fire_callbacks=False,
+        )
+        ret.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, ignore=True, method='group_participant._do_pull_messages_from_another_participant')
+        if _Debug:
+            lg.out(_DebugLevel, '>>> PULL >>>    from %r to %r with head=%r tail=%r count=%r' % (self, remote_id, sequence_head, sequence_tail, sequence_count))
 
     def _on_message_to_supplier_sent(self, response_packet, outgoing_counter, packet_id):
         if _Debug:

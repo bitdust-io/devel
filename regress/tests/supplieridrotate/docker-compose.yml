@@ -115,6 +115,20 @@ services:
       - id-c
       - id-dead
 
+  customer-2:
+    image: bitdust/app
+    ports:
+      - "10752:22"
+    volumes:
+      - customer_2:/customer_2
+    links:
+      - dht-2
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
 
 
   tester:
@@ -136,12 +150,15 @@ services:
       - supplier-2
       - supplier-rotated
       - customer-1
+      - customer-2
 
     volumes:
       - customer_1:/customer_1
+      - customer_2:/customer_2
 
 
 
 volumes:
   customer_1:
+  customer_2:
 

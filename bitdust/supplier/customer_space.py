@@ -848,6 +848,7 @@ def on_identity_url_changed(evt):
             lg.exc()
     # update customer idurl in "spaceused" file
     local_tester.TestSpaceTime()
+    # TODO: reconnect "supplier-file-modified" consumers & producers
     return True
 
 
@@ -994,26 +995,30 @@ def on_service_supplier_request(json_payload, newpacket, info):
     reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
     if new_customer:
         lg.info('NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
-        events.send('new-customer-accepted', data=dict(
-            idurl=customer_idurl,
-            allocated_bytes=bytes_for_customer,
-            ecc_map=ecc_map,
-            position=family_position,
-            family_snapshot=family_snapshot,
-            key_id=customer_public_key_id,
-            contract=current_contract,
-        ))
+        events.send(
+            'new-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                family_snapshot=family_snapshot,
+                key_id=customer_public_key_id,
+                contract=current_contract,
+            )
+        )
     else:
         lg.info('EXISTING CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
-        events.send('existing-customer-accepted', data=dict(
-            idurl=customer_idurl,
-            allocated_bytes=bytes_for_customer,
-            ecc_map=ecc_map,
-            position=family_position,
-            key_id=customer_public_key_id,
-            family_snapshot=family_snapshot,
-            contract=current_contract,
-        ))
+        events.send(
+            'existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                key_id=customer_public_key_id,
+                family_snapshot=family_snapshot,
+                contract=current_contract,
+            )
+        )
     if current_contract:
         return p2p_service.SendAck(newpacket, 'accepted:' + jsn.dumps(current_contract))
     return p2p_service.SendAck(newpacket, 'accepted')

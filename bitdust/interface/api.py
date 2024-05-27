@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _APILogFileEnabled = None
@@ -3349,7 +3349,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
         offline_group_info = groups.active_groups().get(group_key_id)
         if offline_group_info:
             result.update(offline_group_info)
-            result['state'] = 'OFFLINE'
+            result['state'] = 'DISCONNECTED'
             results.append(result)
             continue
         stored_group_info = groups.read_group_info(group_key_id)
@@ -3442,7 +3442,7 @@ def group_info(group_key_id):
     offline_group_info = groups.active_groups().get(group_key_id)
     if offline_group_info:
         response.update(offline_group_info)
-        response['state'] = 'OFFLINE'
+        response['state'] = 'DISCONNECTED'
         return OK(response)
     stored_group_info = groups.read_group_info(group_key_id)
     if stored_group_info:
@@ -4137,16 +4137,14 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         if not my_keys.is_valid_key_id(recipient_id):
             return ERROR('invalid recipient_id: %s' % recipient_id)
     bidirectional = False
-    if message_type in [
-        None,
-        'private_message',
-    ]:
+    if message_type in [None, 'private_message']:
         bidirectional = True
         if sender_id is None:
             sender_id = my_id.getGlobalID(key_alias='master')
     if sender_id:
         sender_local_key_id = my_keys.get_local_key_id(sender_id)
         if sender_local_key_id is None:
+            lg.warn('local key id for sender %s was not registered' % sender_id)
             return RESULT([])
     if recipient_id:
         recipient_local_key_id = my_keys.get_local_key_id(recipient_id)

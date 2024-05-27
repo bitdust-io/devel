@@ -68,7 +68,7 @@ build_app:
 	@docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) app_image
 
 $(ALL_TESTS):
-	@$(MAKE) --no-print-directory --output-sync=none spawn_run_log/$@
+	@$(MAKE) --no-print-directory spawn_run_log/$@
 
 _all_tests: $(ALL_TESTS)
 	@echo "ALL TESTS ARE FINISHED"
@@ -97,12 +97,12 @@ _one_test:
 _one_test_rerun:
 	@echo "TEST with 1 re-run ${TEST_NAME} DEBUG=${_DEBUG} PAUSE_BEFORE=${_PAUSE_BEFORE}";
 	@mkdir -p logs;
-	@$(MAKE) --no-print-directory --output-sync=none _one_clean_test || (echo "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\ntest ${TEST_NAME} DID NOT PASS FIRST TIME, try to re-run" && $(MAKE) --no-print-directory _one_clean_test ) || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
+	@$(MAKE) --no-print-directory _one_clean_test || (echo "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\ntest ${TEST_NAME} DID NOT PASS FIRST TIME, try to re-run" && $(MAKE) --no-print-directory _one_clean_test ) || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
 
 _one_test_execute:
 	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG} PAUSE_BEFORE=${_PAUSE_BEFORE}";
 	@mkdir -p logs;
-	@$(MAKE) --no-print-directory --output-sync=none _one_clean_test || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
+	@$(MAKE) --no-print-directory _one_clean_test || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}";
@@ -118,19 +118,19 @@ _one_post_report:
 	@/bin/bash build_report.sh ${TEST_NAME} > /dev/null;
 
 _one_up_test_coverage_down:
-	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
+	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && $(MAKE) --no-print-directory _one_test && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_down
 
 _one_up_test_log_down:
 	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && ( $(MAKE) --no-print-directory _one_test || ( $(MAKE) --no-print-directory _one_log && echo "TEST FAILED!!!" && exit 1 ) ) && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_log && $(MAKE) --no-print-directory _one_down
 
 _one_up_test_log_down_parallel:
-	@$(MAKE) --no-print-directory --output-sync=none _one_prepare && $(MAKE) --no-print-directory --output-sync=none _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_execute && $(MAKE) --no-print-directory --output-sync=recurse _one_coverage && $(MAKE) --no-print-directory --output-sync=recurse _one_log && $(MAKE) --no-print-directory --output-sync=recurse _one_down
+	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && $(MAKE) --no-print-directory _one_test_execute && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_log && $(MAKE) --no-print-directory _one_down
 
 _one_up_test_log:
-	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && ( $(MAKE) --no-print-directory --output-sync=none _one_test || echo "TEST FAILED!!!" ) && $(MAKE) --no-print-directory --output-sync=line _one_log
+	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && ( $(MAKE) --no-print-directory _one_test || echo "TEST FAILED!!!" ) && $(MAKE) --no-print-directory _one_log
 
 _one_up_test_coverage_log:
-	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && ( $(MAKE) --no-print-directory --output-sync=none _one_test || echo "TEST FAILED!!!" ) && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log
+	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && ( $(MAKE) --no-print-directory _one_test || echo "TEST FAILED!!!" ) && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_log
 
 up/%:
 	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up
@@ -148,15 +148,15 @@ log/%:
 	@$(MAKE) --no-print-directory TEST_NAME=$* _one_log
 
 run/%:
-	@$(MAKE) --no-print-directory --output-sync=line TEST_NAME=$* _one_up_test_coverage_down
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up_test_coverage_down
 	@echo ''; echo '';
 
 run_log/%:
-	@$(MAKE) --no-print-directory --output-sync=line TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
+	@$(MAKE) --no-print-directory TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
 
 spawn_run_log/%:
 	@echo "STARTING $*"
-	@$(MAKE) --no-print-directory --output-sync=none TEST_NAME=$* _DEBUG=1 _PAUSE_BEFORE=${_PAUSE_BEFORE} _one_up_test_log_down_parallel
+	@$(MAKE) --no-print-directory TEST_NAME=$* _DEBUG=1 _PAUSE_BEFORE=${_PAUSE_BEFORE} _one_up_test_log_down_parallel
 
 run_log_up/%:
 	@$(MAKE) --no-print-directory TEST_NAME=$* _DEBUG=1 _one_up_test_log
