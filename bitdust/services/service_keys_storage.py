@@ -229,10 +229,7 @@ class KeysStorageService(LocalService):
 
     def _on_index_synchronizer_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         from twisted.internet.defer import Deferred
-        if oldstate in [
-            'REQUEST?',
-            'SENDING',
-        ] and newstate == 'IN_SYNC!':
+        if oldstate in ['REQUEST?', 'SENDING'] and newstate == 'IN_SYNC!':
             if self.sync_keys_requested:
                 result = Deferred()
                 result.addCallback(self._on_keys_synchronized)

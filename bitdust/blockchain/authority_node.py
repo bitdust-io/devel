@@ -23,7 +23,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -79,6 +79,7 @@ def A(event=None, *args, **kwargs):
 
 
 class AuthorityNode(automat.Automat):
+
     """
     This class implements all the functionality of ``authority_node()`` state machine.
     """

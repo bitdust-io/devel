@@ -41,7 +41,7 @@ from bitdust.userid import id_url
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ def A(event=None, *args, **kwargs):
 
 
 class BlockchainRegistrator(automat.Automat):
+
     """
     This class implements all the functionality of ``blockchain_registrator()`` state machine.
     """

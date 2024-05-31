@@ -100,6 +100,12 @@ no_debug:
 	fi;
 	@echo 'all ".py" local files were updated with "_Debug = False"'
 
+debug_on:
+	@find ./bitdust -type f -name "*.py" -exec python3 -c 'import sys; inp=open(sys.argv[1]).read();outp=inp.replace("_Debug = False", "_Debug = True"); open(sys.argv[1],"w").write(outp); print(sys.argv[1], len(outp), "CHANGED" if inp != outp else "");' '{}' \;
+
+debug_off:
+	@find ./bitdust -type f -name "*.py" -exec python3 -c 'import sys; inp=open(sys.argv[1]).read();outp=inp.replace("_Debug = True", "_Debug = False"); open(sys.argv[1],"w").write(outp); print(sys.argv[1], len(outp), "CHANGED" if inp != outp else "");' '{}' \;
+
 test_regress:
 	$(MAKE) regress_clean_run_report
 
@@ -124,7 +130,7 @@ regress_run:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) _PAUSE_BEFORE=0 make --no-print-directory -C regress/ run_all
 
 regress_run_parallel:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) _PAUSE_BEFORE=0 make --no-print-directory -j 1 -C regress/ run_parallel
+	PYTHON_VERSION=$(REGRESSION_PY_VER) _PAUSE_BEFORE=0 make --no-print-directory -j 2 -C regress/ run_parallel
 
 regress_run_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ run_all_log

@@ -104,7 +104,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -468,11 +468,13 @@ class FireHire(automat.Automat):
         from bitdust.p2p import online_status
         self.connect_list = []
         my_current_family = contactsdb.suppliers()
-        if self._is_config_changed():
-            target_suppliers = list(my_current_family)
-        else:
-            # only select suppliers with expired contracts
-            target_suppliers = self._get_suppliers_with_expired_contracts()
+        target_suppliers = list(my_current_family)
+        if not self._is_config_changed():
+            if driver.is_on('service_customer_contracts'):
+                # only select suppliers with expired contracts
+                target_suppliers = self._get_suppliers_with_expired_contracts()
+        if _Debug:
+            lg.args(_DebugLevel, my_current_family=my_current_family, target_suppliers=target_suppliers, configs=self.configs)
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue

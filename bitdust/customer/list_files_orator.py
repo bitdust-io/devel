@@ -55,7 +55,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -176,6 +176,7 @@ def Destroy():
 
 
 class ListFilesOrator(automat.Automat):
+
     """
     A class to request list of my files from my suppliers and also scan the
     local files.

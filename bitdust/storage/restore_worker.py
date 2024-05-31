@@ -77,7 +77,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -133,6 +133,7 @@ from bitdust.userid import my_id
 
 
 class RestoreWorker(automat.Automat):
+
     """
     This class implements all the functionality of ``restore_worker()`` state machine.
     """

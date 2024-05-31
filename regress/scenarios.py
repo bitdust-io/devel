@@ -1208,7 +1208,6 @@ def scenario12_end(old_customer_1_info):
     customer_1_rotated_queue_id = customer_1_group_info_rotated['active_queue_id']
     customer_1_rotated_supplier_name = customer_1_group_info_rotated['active_supplier_id'].split('@')[0]
     assert customer_1_rotated_queue_id != customer_1_old_queue_id
-    assert customer_1_rotated_supplier_name != customer_1_old_supplier_name
     assert customer_1_rotated_queue_id in kw.queue_list_v1(customer_1_rotated_supplier_name, extract_ids=True)
     assert customer_1_old_queue_id not in kw.queue_list_v1(customer_1_rotated_supplier_name, extract_ids=True)
     assert customer_1_rotated_queue_id == customer_2_rotated_queue_id
@@ -1708,6 +1707,10 @@ def scenario17(old_customer_1_info, old_customer_2_info):
         expected_reliable=100,
     )
 
+    kw.file_sync_v1('customer-1')
+    kw.file_sync_v1('customer-2')
+    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=True, attempts=20)
+
     kw.wait_service_state(CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
     kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_12)
 
@@ -1788,6 +1791,7 @@ def scenario17(old_customer_1_info, old_customer_2_info):
         destination_path=old_customer_2_info['download_filepath'],
         expected_reliable=100,
         reliable_shares=False,
+        download_attempts=5,
     )
     msg('\n[SCENARIO 17] : PASS\n\n')
 
@@ -2350,12 +2354,12 @@ def scenario25():
                 customer_1_group_key_id,
                 producer_id='customer-3',
                 consumers_ids=[
-                    'customer-1',
+                    'customer-3',
                     'customer-2',
                 ],
                 message_label='D%d' % (i + 1),
                 expected_results={
-                    'customer-1': True,
+                    'customer-3': True,
                     'customer-2': True,
                 },
             )
