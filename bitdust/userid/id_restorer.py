@@ -60,6 +60,11 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import random
@@ -125,6 +130,7 @@ def A(event=None, *args, **kwargs):
 
 
 class IdRestorer(automat.Automat):
+
     """
     BitDust identity_restorer() Automat.
 
@@ -225,10 +231,12 @@ class IdRestorer(automat.Automat):
         """
         Action method.
         """
-        lg.out(4, 'identity_restorer.doStunExternalIP')
+        if _Debug:
+            lg.out(_DebugLevel, 'identity_restorer.doStunExternalIP')
 
         def save(result):
-            lg.out(4, '            external IP : %s' % result)
+            if _Debug:
+                lg.out(_DebugLevel, '            external IP : %s' % result)
             if result['result'] != 'stun-success':
                 self.automat('stun-failed')
                 return
@@ -267,21 +275,25 @@ class IdRestorer(automat.Automat):
     def doRequestMyIdentity(self, *args, **kwargs):
         global _WorkingIDURL
         idurl = _WorkingIDURL
-        lg.out(4, 'identity_restorer.doRequestMyIdentity %s %s' % (idurl, type(idurl)))
+        if _Debug:
+            lg.out(_DebugLevel, 'identity_restorer.doRequestMyIdentity %s %s' % (idurl, type(idurl)))
         net_misc.getPageTwisted(idurl).addCallbacks(lambda src: self.automat('my-id-received', src), lambda err: self.automat('my-id-failed', err))
 
     def doVerifyAndRestore(self, *args, **kwargs):
         global _WorkingKey
-        lg.out(4, 'identity_restorer.doVerifyAndRestore')
+        if _Debug:
+            lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore')
 
         remote_identity_src = args[0]
 
         if os.path.isfile(settings.KeyFileName()):
-            lg.out(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
+            if _Debug:
+                lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
             bpio.backup_and_remove(settings.KeyFileName())
 
         if os.path.isfile(settings.LocalIdentityFilename()):
-            lg.out(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.LocalIdentityFilename())
+            if _Debug:
+                lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.LocalIdentityFilename())
             bpio.backup_and_remove(settings.LocalIdentityFilename())
 
         try:
@@ -292,25 +304,29 @@ class IdRestorer(automat.Automat):
             reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))  # @UndefinedVariable
             return
 
-        lg.out(4, 'identity_restorer.doVerifyAndRestore checking remote identity')
+        if _Debug:
+            lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore checking remote identity')
         try:
             res = remote_ident.isCorrect()
         except:
             lg.exc()
             res = False
         if not res:
-            lg.out(4, 'identity_restorer.doVerifyAndRestore remote identity is not correct FAILED!!!!')
+            if _Debug:
+                lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore remote identity is not correct FAILED!!!!')
             reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity format is not correct', 'red'))  # @UndefinedVariable
             return
 
-        lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity')
+        if _Debug:
+            lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore validate remote identity')
         try:
             res = remote_ident.Valid()
         except:
             lg.exc()
             res = False
         if not res:
-            lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity FAILED!!!!')
+            if _Debug:
+                lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore validate remote identity FAILED!!!!')
             reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))  # @UndefinedVariable
             return
 
@@ -343,11 +359,13 @@ class IdRestorer(automat.Automat):
         bpio.WriteTextFile(settings.UserNameFilename(), my_id.getIDName())
 
         if os.path.isfile(settings.KeyFileName() + '.backup'):
-            lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())
+            if _Debug:
+                lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())
             bpio.remove_backuped_file(settings.KeyFileName())
 
         if os.path.isfile(settings.LocalIdentityFilename() + '.backup'):
-            lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
+            if _Debug:
+                lg.out(_DebugLevel, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
             bpio.remove_backuped_file(settings.LocalIdentityFilename())
 
         reactor.callLater(0.1, self.automat, 'restore-success')  # @UndefinedVariable
@@ -379,7 +397,8 @@ class IdRestorer(automat.Automat):
         from bitdust.main import installer
         installer.A().event('print', args[0])
         self.last_message = args[0][0]
-        lg.out(6, 'id_restorer.doPrint: %s' % str(args[0]))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_restorer.doPrint: %s' % str(args[0]))
 
     def doDestroyMe(self, *args, **kwargs):
         """

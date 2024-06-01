@@ -86,7 +86,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -178,6 +178,7 @@ def A(event=None, *args, **kwargs):
 
 
 class IndexSynchronizer(automat.Automat):
+
     """
     This class implements all the functionality of the ``index_synchronizer()``
     state machine.

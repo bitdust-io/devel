@@ -149,6 +149,7 @@ def Destroy():
 
 
 class BackupMonitor(automat.Automat):
+
     """
     A class to monitor backups and manage rebuilding process.
     """

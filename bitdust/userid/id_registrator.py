@@ -373,11 +373,12 @@ class IdRegistrator(automat.Automat):
                 pass
         self.min_servers = max(settings.MinimumIdentitySources(), config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources())
         self.max_servers = min(settings.MaximumIdentitySources(), config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
-        lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
-        lg.out(4, '    known_servers=%s' % self.known_servers)
-        lg.out(4, '    preferred_servers=%s' % self.preferred_servers)
-        lg.out(4, '    min_servers=%s' % self.min_servers)
-        lg.out(4, '    max_servers=%s' % self.max_servers)
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doSaveMyName [%s]' % login)
+            lg.out(_DebugLevel, '    known_servers=%s' % self.known_servers)
+            lg.out(_DebugLevel, '    preferred_servers=%s' % self.preferred_servers)
+            lg.out(_DebugLevel, '    min_servers=%s' % self.min_servers)
+            lg.out(_DebugLevel, '    max_servers=%s' % self.max_servers)
         bpio.WriteTextFile(settings.UserNameFilename(), login)
 
     def doSelectRandomServers(self, *args, **kwargs):
@@ -397,16 +398,19 @@ class IdRegistrator(automat.Automat):
             if len(s) > 0:
                 # if found some known servers - just pick a random one
                 self.discovered_servers.append(random.choice(list(s)))
-        lg.out(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))
 
     def doPingServers(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.out(4, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
 
         def _cb(htmlsrc, id_server_host):
-            lg.out(4, '            RESPONDED: %s' % id_server_host)
+            if _Debug:
+                lg.out(_DebugLevel, '            RESPONDED: %s' % id_server_host)
             if self.preferred_servers and id_server_host in self.preferred_servers:
                 self.good_servers.insert(0, id_server_host)
             else:
@@ -415,7 +419,8 @@ class IdRegistrator(automat.Automat):
             self.automat('id-server-response', (id_server_host, htmlsrc))
 
         def _eb(err, id_server_host):
-            lg.out(4, '               FAILED: %s : %s' % (id_server_host, err.getErrorMessage()))
+            if _Debug:
+                lg.out(_DebugLevel, '               FAILED: %s : %s' % (id_server_host, err.getErrorMessage()))
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
 
@@ -427,7 +432,8 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
-            lg.out(4, '               connecting to %s' % server_url)
+            if _Debug:
+                lg.out(_DebugLevel, '               connecting to %s' % server_url)
             d = net_misc.getPageTwisted(server_url, timeout=7)
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)
@@ -450,12 +456,14 @@ class IdRegistrator(automat.Automat):
                 self.registrations.remove(idurl)
                 self.automat('id-not-exist', idurl)
             else:
-                lg.out(4, '                EXIST: %s' % idurl)
+                if _Debug:
+                    lg.out(_DebugLevel, '                EXIST: %s' % idurl)
                 self.registrations.remove(idurl)
                 self.automat('id-exist', idurl)
 
         def _eb(err, idurl, host):
-            lg.out(4, '            NOT EXIST: %s' % idurl)
+            if _Debug:
+                lg.out(_DebugLevel, '            NOT EXIST: %s' % idurl)
             if self.preferred_servers and host in self.preferred_servers:
                 if self.preferred_servers[0] == host:
                     self.free_idurls.insert(0, idurl)
@@ -471,12 +479,14 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             idurl = nameurl.UrlMake('http', strng.to_text(host), webport, login + '.xml')
-            lg.out(4, '    %s' % idurl)
+            if _Debug:
+                lg.out(_DebugLevel, '    %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=10)
             d.addCallback(_cb, idurl, host)
             d.addErrback(_eb, idurl, host)
             self.registrations.append(idurl)
-        lg.out(4, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
 
     def doDetectLocalIP(self, *args, **kwargs):
         """
@@ -484,14 +494,16 @@ class IdRegistrator(automat.Automat):
         """
         localip = net_misc.getLocalIp()
         bpio.WriteTextFile(settings.LocalIPFilename(), localip)
-        lg.out(4, 'id_registrator.doDetectLocalIP [%s]' % localip)
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doDetectLocalIP [%s]' % localip)
         self.automat('local-ip-detected')
 
     def doStunExternalIP(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.out(4, 'id_registrator.doStunExternalIP')
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doStunExternalIP')
         if len(self.free_idurls) == 1:
             if self.free_idurls[0].count(b'localhost:') or self.free_idurls[0].count(b'127.0.0.1:'):
                 # if you wish to create a local identity you do not need to stun external IP at all
@@ -499,7 +511,8 @@ class IdRegistrator(automat.Automat):
                 return True
 
         def save(result):
-            lg.out(4, '            external IP : %s' % result)
+            if _Debug:
+                lg.out(_DebugLevel, '            external IP : %s' % result)
             if result['result'] != 'stun-success':
                 self.automat('stun-failed')
                 return
@@ -555,7 +568,8 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'id_registrator.doRequestMyIdentity')
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doRequestMyIdentity')
 
         def _cb(src):
             # TODO: validate my identity and make sure other servers also stored
@@ -566,7 +580,8 @@ class IdRegistrator(automat.Automat):
             self.automat('my-id-not-exist', err)
 
         for idurl in self.new_identity.getSources(as_originals=True):
-            lg.out(8, '        %s' % idurl)
+            if _Debug:
+                lg.out(_DebugLevel, '        %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=15)
             d.addCallback(_cb)
             d.addErrback(_eb)
@@ -575,7 +590,8 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        lg.out(4, 'id_registrator.doSaveMyIdentity %s' % self.new_identity)
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doSaveMyIdentity %s' % self.new_identity)
         my_id.setLocalIdentity(self.new_identity)
         my_id.saveLocalIdentity()
 
@@ -595,7 +611,8 @@ class IdRegistrator(automat.Automat):
         from bitdust.main import installer
         installer.A().event('print', *args, **kwargs)
         self.last_message = args[0][0]
-        lg.out(6, 'id_registrator.doPrint: %s' % str(*args, **kwargs))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator.doPrint: %s' % str(*args, **kwargs))
 
     def _create_new_identity(self):
         """
@@ -606,7 +623,8 @@ class IdRegistrator(automat.Automat):
         externalIP = strng.to_bin(misc.readExternalIP()) or b'127.0.0.1'
         if self.free_idurls[0].count(b'127.0.0.1'):
             externalIP = b'127.0.0.1'
-        lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
 
         my_id.forgetLocalIdentity()
         my_id.eraseLocalIdentity(do_backup=True)
@@ -614,7 +632,8 @@ class IdRegistrator(automat.Automat):
         key.InitMyKey()
         if not key.isMyKeyReady():
             key.GenerateNewKey()
-        lg.out(4, '    my key is ready')
+        if _Debug:
+            lg.out(_DebugLevel, '    my key is ready')
         ident = my_id.buildDefaultIdentity(name=login, ip=externalIP, idurls=self.free_idurls)
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
@@ -624,7 +643,8 @@ class IdRegistrator(automat.Automat):
         except:
             lg.exc()
         self.new_identity = ident
-        lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
+        if _Debug:
+            lg.out(_DebugLevel, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
 
     def _send_new_identity(self):
         """

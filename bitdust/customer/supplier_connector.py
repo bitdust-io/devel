@@ -51,8 +51,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 12
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -164,6 +164,7 @@ def total_connectors():
 
 
 class SupplierConnector(automat.Automat):
+
     """
     This class implements all the functionality of the ``supplier_connector()``
     state machine.
@@ -527,7 +528,7 @@ class SupplierConnector(automat.Automat):
                     'scope': 'consumer',
                     'action': 'remove_callback',
                     'consumer_id': self.customer_id,
-                    'method': self.customer_id,
+                    'method': self.customer_idurl,
                 },
                 {
                     'scope': 'consumer',
@@ -607,6 +608,8 @@ class SupplierConnector(automat.Automat):
         self.destroy()
 
     def _supplier_service_acked(self, response, info):
+        if _Debug:
+            lg.args(_DebugLevel, response=response, info=info)
         if not self.request_packet_id:
             lg.warn('received "old" response : %r' % response)
             return
@@ -623,7 +626,6 @@ class SupplierConnector(automat.Automat):
                 lg.exc()
             if _Debug:
                 lg.args(_DebugLevel, response=response, info=info, contract=the_contract)
-            self.storage_contract = the_contract
             if the_contract:
                 if not accounting.verify_storage_contract(the_contract):
                     lg.err('received storage contract from %r is not valid' % self.supplier_idurl)
@@ -632,6 +634,7 @@ class SupplierConnector(automat.Automat):
                     return
                 from bitdust.customer import payment
                 payment.save_storage_contract(self.supplier_idurl, the_contract)
+                self.storage_contract = the_contract
         self.automat('ack', response)
 
     def _supplier_service_failed(self, response, info):
@@ -646,6 +649,8 @@ class SupplierConnector(automat.Automat):
         if response.PacketID != self.request_queue_packet_id:
             lg.warn('received "unexpected" queue response : %r' % response)
             return
+        if _Debug:
+            lg.args(_DebugLevel, response=response, info=info)
         # start_consumer(self.customer_id, self.supplier_id)
         self.automat('queue-ack', response)
 

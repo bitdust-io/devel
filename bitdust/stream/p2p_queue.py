@@ -651,7 +651,7 @@ def write_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s with %r' % (new_message.message_id, queue_id, data))
+        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s' % (new_message.message_id, queue_id))
     touch_queues()
     return new_message
 
@@ -971,12 +971,7 @@ def do_consume(interested_consumers=None):
                         break
                 if not matching:
                     continue
-            do_notify(
-                callback_method,
-                _consumer_id,
-                _queue_id,
-                _message_id,
-            )
+            do_notify(callback_method, _consumer_id, _queue_id, _message_id)
             notifications_count += 1
             consumers_affected.append(_consumer_id)
             break
@@ -1006,31 +1001,22 @@ def do_cleanup(target_queues=None):
                         found_pending_notifications = True
                 if not found_pending_notifications:
                     # no pending notifications found, but state is SENT : all is done
-                    to_be_removed.add((
-                        queue_id,
-                        _message.message_id,
-                    ))
+                    to_be_removed.add((queue_id, _message.message_id))
                     continue
                 if len(_message.failed_notifications) + len(_message.success_notifications) >= len(_message.consumers):
                     # all notifications are sent and results are received (or timeouts) - remove message from the queue
-                    to_be_removed.add((
-                        queue_id,
-                        _message.message_id,
-                    ))
+                    to_be_removed.add((queue_id, _message.message_id))
                     continue
             if len(_message.consumers) == 0:
                 # there is no consumers for that message - remove it
-                to_be_removed.add((
-                    queue_id,
-                    _message.message_id,
-                ))
+                to_be_removed.add((queue_id, _message.message_id))
                 continue
     for queue_id, message_id in to_be_removed:
         processed_message = pull_message(queue_id, message_id)
         if processed_message:
             for cb in _MessageProcessedCallbacks:
                 if not cb(processed_message):
-                    lg.warn('message %r was not correctly processed' % message_id)
+                    lg.warn('message %r was not correctly processed in %r' % (message_id, cb))
     to_be_removed.clear()
     del to_be_removed
     return True
@@ -1040,6 +1026,7 @@ def do_cleanup(target_queues=None):
 
 
 class QueueMessage(object):
+
     def __init__(self, producer_id, queue_id, json_data, created=None):
         self.message_id = make_message_id()
         self.producer_id = producer_id
@@ -1074,6 +1061,7 @@ class QueueMessage(object):
 
 
 class ConsumerInfo(object):
+
     def __init__(self, consumer_id):
         self.state = 'READY'
         self.consumer_id = consumer_id
@@ -1088,6 +1076,7 @@ class ConsumerInfo(object):
 
 
 class ProducerInfo(object):
+
     def __init__(self, producer_id):
         self.state = 'READY'
         self.producer_id = producer_id
@@ -1105,12 +1094,7 @@ class ProducerInfo(object):
             return False
         for queue_id in self.queues:
             try:
-                write_message(
-                    producer_id=self.producer_id,
-                    queue_id=queue_id,
-                    data=evt.data,
-                    creation_time=evt.created,
-                )
+                write_message(producer_id=self.producer_id, queue_id=queue_id, data=evt.data, creation_time=evt.created)
             except P2PQueueIsOverloaded as exc:
                 lg.warn('queue_id=%s producer_id=%s: %s' % (queue_id, self.producer_id, exc))
         return True

@@ -49,24 +49,16 @@ class SupplierContractsService(LocalService):
         ]
 
     def start(self):
-        from twisted.internet import task  # @UnresolvedImport
-        self.accept_payments_loop = task.LoopingCall(self.on_accept_payments_task)
-        self.accept_payments_loop.start(60*60, now=True)
-        self.sync_my_transactions_loop = task.LoopingCall(self.on_sync_my_transactions_task)
-        self.sync_my_transactions_loop.start(30*60, now=True)
+        from bitdust.main import events
+        events.add_subscriber(self.on_blockchain_transaction_received, 'blockchain-transaction-received')
         return True
 
     def stop(self):
-        self.accept_payments_loop.stop()
-        self.accept_payments_loop = None
-        self.sync_my_transactions_loop.stop()
-        self.sync_my_transactions_loop = None
+        from bitdust.main import events
+        events.remove_subscriber(self.on_blockchain_transaction_received, 'blockchain-transaction-received')
         return True
 
-    def on_sync_my_transactions_task(self):
-        from bitdust.blockchain import bismuth_wallet
-        bismuth_wallet.sync_my_transactions()
-
-    def on_accept_payments_task(self):
-        from bitdust.supplier import storage_contract
-        storage_contract.accept_storage_payments()
+    def on_blockchain_transaction_received(self, evt):
+        if evt.data.get('operation') == 'storage':
+            from bitdust.supplier import storage_contract
+            storage_contract.verify_accept_storage_payment(evt.data)

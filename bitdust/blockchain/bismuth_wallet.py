@@ -19,6 +19,7 @@ from bitdust.logs import lg
 from bitdust.lib import jsn
 
 from bitdust.main import settings
+from bitdust.main import events
 
 from bitdust.system import local_fs
 
@@ -28,7 +29,7 @@ from bitdust.services import driver
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -195,7 +196,7 @@ def pack_transaction_id(tx):
 def sync_my_transactions():
     global _MyTransactionsDirPath
     global _MyLatestTransactionBlockHeight
-    all_known_transactions = {}
+    all_known_transactions = set()
     for filename in os.listdir(_MyTransactionsDirPath):
         filepath = os.path.join(_MyTransactionsDirPath, filename)
         try:
@@ -204,7 +205,7 @@ def sync_my_transactions():
         except:
             lg.exc()
             continue
-        all_known_transactions[filename] = tx
+        all_known_transactions.add(filename)
         if _MyLatestTransactionBlockHeight < int(tx['block_height']):
             _MyLatestTransactionBlockHeight = int(tx['block_height'])
     blockchain_transactions = []
@@ -215,11 +216,13 @@ def sync_my_transactions():
         filename = pack_transaction_id(tx)
         if filename in all_known_transactions:
             continue
-        all_known_transactions[filename] = tx
+        all_known_transactions.add(filename)
         if _MyLatestTransactionBlockHeight < int(tx['block_height']):
             _MyLatestTransactionBlockHeight = int(tx['block_height'])
         filepath = os.path.join(_MyTransactionsDirPath, filename)
         local_fs.WriteTextFile(filepath, jsn.dumps(tx))
         new_transactions += 1
+        tx['filename'] = filename
+        events.send('blockchain-transaction-received', data=tx)
     if _Debug:
         lg.args(_DebugLevel, new_transactions=new_transactions, known_transactions=len(all_known_transactions), latest_block=_MyLatestTransactionBlockHeight)

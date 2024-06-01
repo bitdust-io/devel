@@ -29,105 +29,91 @@ services:
   id-a:
     image: bitdust/app
     ports:
-      - "10701:22"
-
-  id-b:
-    image: bitdust/app
-    ports:
-      - "10702:22"
-
-  id-c:
-    image: bitdust/app
-    ports:
-      - "10703:22"
-
-  id-dead:
-    image: bitdust/app
-    ports:
-      - "10704:22"
+      - "10801:22"
 
   dht-1:
     image: bitdust/app
     ports:
-      - "10711:22"
+      - "10811:22"
 
   dht-2:
     image: bitdust/app
     ports:
-      - "10712:22"
+      - "10812:22"
     links:
       - dht-1
+
+  dht-3:
+    image: bitdust/app
+    ports:
+      - "10813:22"
+    links:
+      - dht-1
+      - dht-2
 
   stun-1:
     image: bitdust/app
     ports:
-      - "10721:22"
+      - "10821:22"
     links:
       - dht-2
+      - dht-3
 
   supplier-1:
     image: bitdust/app
     ports:
-      - "10741:22"
+      - "10841:22"
     links:
       - dht-2
+      - dht-3
       - stun-1
       - id-a
-      - id-b
-      - id-c
-      - id-dead
 
   supplier-2:
     image: bitdust/app
     ports:
-      - "10742:22"
+      - "10842:22"
     links:
       - dht-2
+      - dht-3
       - stun-1
       - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  supplier-rotated:
-    image: bitdust/app
-    ports:
-      - "10746:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
 
   customer-1:
     image: bitdust/app
     ports:
-      - "10751:22"
+      - "10851:22"
     volumes:
       - customer_1:/customer_1
     links:
       - dht-2
+      - dht-3
       - stun-1
       - id-a
-      - id-b
-      - id-c
-      - id-dead
 
   customer-2:
     image: bitdust/app
     ports:
-      - "10752:22"
+      - "10852:22"
     volumes:
       - customer_2:/customer_2
     links:
       - dht-2
+      - dht-3
       - stun-1
       - id-a
-      - id-b
-      - id-c
-      - id-dead
+
+  customer-3:
+    image: bitdust/app
+    ports:
+      - "10853:22"
+    volumes:
+      - customer_3:/customer_3
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - id-a
 
 
 
@@ -140,25 +126,25 @@ services:
     tty: true
     links:
       - id-a
-      - id-b
-      - id-c
-      - id-dead
       - dht-1
       - dht-2
+      - dht-3
       - stun-1
       - supplier-1
       - supplier-2
-      - supplier-rotated
       - customer-1
       - customer-2
+      - customer-3
 
     volumes:
       - customer_1:/customer_1
       - customer_2:/customer_2
+      - customer_3:/customer_3
 
 
 
 volumes:
   customer_1:
   customer_2:
+  customer_3:
 

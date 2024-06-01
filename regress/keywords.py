@@ -1156,7 +1156,7 @@ def queue_list_v1(node, extract_ids=False):
     return [f['queue_id'] for f in response.json()['result']]
 
 
-def queue_consumer_list_v1(node, extract_ids=False):
+def queue_consumer_list_v1(node, extract_ids=False, ignore_aliases=[]):
     response = request_get(node, 'queue/consumer/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
@@ -1168,10 +1168,23 @@ def queue_consumer_list_v1(node, extract_ids=False):
     assert response.json()['status'] == 'OK', response.json()
     if not extract_ids:
         return response.json()
+    if ignore_aliases:
+        consumers = []
+        for r in response.json()['result']:
+            ignored = True
+            for alias in ignore_aliases:
+                for queue_id in r['queues']:
+                    if not queue_id.startswith(alias):
+                        ignored = False
+                        continue
+            if not ignored:
+                if r['consumer_id'] not in consumers:
+                    consumers.append(r['consumer_id'])
+        return consumers
     return [f['consumer_id'] for f in response.json()['result']]
 
 
-def queue_producer_list_v1(node, extract_ids=False):
+def queue_producer_list_v1(node, extract_ids=False, ignore_aliases=[]):
     response = request_get(node, 'queue/producer/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
@@ -1183,29 +1196,27 @@ def queue_producer_list_v1(node, extract_ids=False):
     assert response.json()['status'] == 'OK', response.json()
     if not extract_ids:
         return response.json()
+    if ignore_aliases:
+        producers = []
+        for r in response.json()['result']:
+            ignored = True
+            for alias in ignore_aliases:
+                for queue_id in r['queues']:
+                    if not queue_id.startswith(alias):
+                        ignored = False
+                        continue
+            if not ignored:
+                if r['producer_id'] not in producers:
+                    producers.append(r['producer_id'])
+        return producers
     return [f['producer_id'] for f in response.json()['result']]
 
 
-def queue_keeper_list_v1(node, extract_ids=False):
-    response = request_get(node, 'queue/keeper/list/v1', timeout=20)
+def queue_stream_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/stream/list/v1', timeout=20)
     assert response.status_code == 200
     dbg(
-        'queue/keeper/list/v1 [%s] : %s\n' % (
-            node,
-            pprint.pformat(response.json()),
-        )
-    )
-    assert response.json()['status'] == 'OK', response.json()
-    if not extract_ids:
-        return response.json()
-    return [f['customer_id'] for f in response.json()['result']]
-
-
-def queue_peddler_list_v1(node, extract_ids=False):
-    response = request_get(node, 'queue/peddler/list/v1', timeout=20)
-    assert response.status_code == 200
-    dbg(
-        'queue/peddler/list/v1 [%s] : %s\n' % (
+        'queue/stream/list/v1 [%s] : %s\n' % (
             node,
             pprint.pformat(response.json()),
         )
@@ -1214,7 +1225,6 @@ def queue_peddler_list_v1(node, extract_ids=False):
     if not extract_ids:
         return response.json()
     return [f['queue_id'] for f in response.json()['result']]
-
 
 #------------------------------------------------------------------------------
 

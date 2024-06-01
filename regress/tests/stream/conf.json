@@ -1,6 +1,6 @@
 {
     "default_image": "bitdust/app",
-    "ports_offset": 700,
+    "ports_offset": 800,
     "pause_before": 0,
     "containers": {
         "id-a": {
@@ -8,27 +8,6 @@
             "node": {
                 "role": "identity-server",
                 "name": "id-a"
-            }
-        },
-        "id-b": {
-            "ports": "10002:22",
-            "node": {
-                "role": "identity-server",
-                "name": "id-b"
-            }
-        },
-        "id-c": {
-            "ports": "10003:22",
-            "node": {
-                "role": "identity-server",
-                "name": "id-c"
-            }
-        },
-        "id-dead": {
-            "ports": "10004:22",
-            "node": {
-                "role": "identity-server",
-                "name": "id-dead"
             }
         },
         "dht-1": {
@@ -52,25 +31,37 @@
                 "known_dht_seeds": "dht-1:14441"
             }
         },
+        "dht-3": {
+            "links": [
+                "dht-1",
+                "dht-2"
+            ],
+            "ports": "10013:22",
+            "node": {
+                "role": "dht-seed",
+                "name": "dht-3",
+                "attached_layers": "2,3,7",
+                "known_dht_seeds": "dht-1:14441,dht-2:14441"
+            }
+        },
         "stun-1": {
             "links": [
-                "dht-2"
+                "dht-2",
+                "dht-3"
             ],
             "ports": "10021:22",
             "node": {
                 "role": "stun-server",
                 "name": "stun-1",
-                "known_dht_seeds": "dht-2:14441"
+                "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
         "supplier-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10041:22",
             "node": {
@@ -78,60 +69,33 @@
                 "name": "supplier-1",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": ""
             }
         },
         "supplier-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10042:22",
             "node": {
                 "role": "supplier",
                 "name": "supplier-2",
                 "join_network": true,
-                "known_id_servers": "id-b:8084",
-                "known_dht_seeds": "dht-2:14441",
-                "preferred_routers": ""
-            }
-        },
-        "supplier-rotated": {
-            "links": [
-                "dht-2",
-                "stun-1",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
-            ],
-            "ports": "10046:22",
-            "node": {
-                "role": "supplier",
-                "name": "supplier-rotated",
-                "join_network": true,
-                "known_dht_seeds": "dht-2:14441",
-                "min_servers": 2,
-                "max_servers": 2,
-                "known_id_servers": "id-dead:8084,id-a:8084",
-                "preferred_servers": "id-dead,id-a",
-                "health_check_interval_seconds": 5,
+                "known_id_servers": "id-a:8084",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": ""
             }
         },
         "customer-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10051:22",
             "volumes": [
@@ -141,23 +105,20 @@
                 "role": "customer",
                 "name": "customer-1",
                 "join_network": true,
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "known_id_servers": "id-a:8084",
                 "preferred_routers": "",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-dead:8084/supplier-rotated.xml,http://id-b:8084/supplier-2.xml",
-                "preferred_brokers": ""
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml"
             }
         },
         "customer-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10052:22",
             "volumes": [
@@ -167,36 +128,59 @@
                 "role": "customer",
                 "name": "customer-2",
                 "join_network": true,
-                "known_dht_seeds": "dht-2:14441",
-                "known_id_servers": "id-b:8084",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "known_id_servers": "id-a:8084",
                 "preferred_routers": "",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-b:8084/supplier-2.xml",
-                "preferred_brokers": ""
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml"
+            }
+        },
+        "customer-3": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a"
+            ],
+            "ports": "10053:22",
+            "volumes": [
+                "customer_3:/customer_3"
+            ],
+            "node": {
+                "role": "customer",
+                "name": "customer-3",
+                "join_network": true,
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "known_id_servers": "id-a:8084",
+                "preferred_routers": "",
+                "block_size": "10 KB",
+                "num_suppliers": 2,
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml"
             }
         }
+
     },
     "containers_volumes": [
         "customer_1:",
-        "customer_2:"
+        "customer_2:",
+        "customer_3:"
     ],
     "tester_links": [
         "id-a",
-        "id-b",
-        "id-c",
-        "id-dead",
         "dht-1",
         "dht-2",
+        "dht-3",
         "stun-1",
         "supplier-1",
         "supplier-2",
-        "supplier-rotated",
         "customer-1",
-        "customer-2"
+        "customer-2",
+        "customer-3"
     ],
     "tester_volumes": [
         "customer_1:/customer_1",
-        "customer_2:/customer_2"
+        "customer_2:/customer_2",
+        "customer_3:/customer_3"
     ]
 }

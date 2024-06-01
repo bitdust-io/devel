@@ -347,9 +347,11 @@ def sizebackups():
 
 
 class FSItemInfo():
+
     """
     A class to represent a remote file or folder.
     """
+
     def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None):
         self.unicodename = strng.to_text(name)
         self.path_id = path_id
@@ -719,6 +721,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
     Operates like ``AddDir()`` but also recursively reads the entire folder and
     put all items in the index. Parameter ``localpath`` can be a file or folder path.
     """
+
     def recursive_read_dir(local_path, path_id, iter, iterID):
         c = 0
         lastID = -1

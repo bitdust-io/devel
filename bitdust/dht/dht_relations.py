@@ -206,15 +206,9 @@ def write_customer_suppliers(
 #------------------------------------------------------------------------------
 
 
-def read_customer_message_brokers(
-    customer_idurl,
-    positions=[
-        0,
-    ],
-    return_details=True,
-    as_fields=True,
-    use_cache=True,
-):
+def read_customer_message_brokers(customer_idurl, positions=[
+    0,
+], return_details=True, as_fields=True, use_cache=True):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, use_cache=use_cache, positions=positions)
     if as_fields:

@@ -47,7 +47,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -112,6 +112,7 @@ def Destroy():
 
 
 class CustomersRejector(automat.Automat):
+
     """
     This class implements all the functionality of the ``customers_rejector()``
     state machine.

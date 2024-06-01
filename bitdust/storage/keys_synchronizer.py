@@ -124,6 +124,7 @@ def A(event=None, *args, **kwargs):
 
 
 class KeysSynchronizer(automat.Automat):
+
     """
     This class implements all the functionality of ``keys_synchronizer()`` state machine.
     """
@@ -244,13 +245,15 @@ class KeysSynchronizer(automat.Automat):
         Action method.
         """
         from bitdust.customer import list_files_orator
-        if list_files_orator.A().state in [
-            'SAW_FILES',
-            'NO_FILES',
-        ]:
+        from bitdust.customer import fire_hire
+        from bitdust.storage import backup_monitor
+        list_files_orator_is_ready = list_files_orator.A().state == 'SAW_FILES'
+        backup_monitor_is_ready = backup_monitor.A().state == 'READY'
+        fire_hire_is_ready = fire_hire.A().state == 'READY'
+        if list_files_orator_is_ready and backup_monitor_is_ready and fire_hire_is_ready:
             self.automat('run')
         else:
-            reactor.callLater(1, self.automat, 'sync')  # @UndefinedVariable
+            reactor.callLater(5, self.automat, 'sync')  # @UndefinedVariable
 
     def doPrepare(self, *args, **kwargs):
         """

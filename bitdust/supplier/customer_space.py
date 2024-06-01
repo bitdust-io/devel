@@ -848,6 +848,7 @@ def on_identity_url_changed(evt):
             lg.exc()
     # update customer idurl in "spaceused" file
     local_tester.TestSpaceTime()
+    # TODO: reconnect "supplier-file-modified" consumers & producers
     return True
 
 
