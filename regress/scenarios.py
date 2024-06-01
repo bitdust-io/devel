@@ -1424,6 +1424,8 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     customer_1_supplier_idurls_before = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert len(customer_1_supplier_idurls_before) == 2
 
+    kw.file_list_all_v1('customer-1', reliable_shares=True, expected_reliable=100)
+
     possible_suppliers = set([
         'http://id-a:8084/supplier-1.xml',
         'http://id-a:8084/supplier-2.xml',
@@ -1476,6 +1478,8 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     kw.file_sync_v1('customer-1')
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
+
+    kw.file_list_all_v1('customer-1', reliable_shares=True, expected_reliable=100)
 
     # make sure we can still download the file back on customer-1
     kw.verify_file_download_start(
