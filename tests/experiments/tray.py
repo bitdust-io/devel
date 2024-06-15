@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # tray.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (tray.py) is part of BitDust Software.
 #
@@ -40,9 +40,9 @@ class IconBar:
     # \brief the constructor default left: red, default right: green
     #
     def __init__(self, l_off=[128, 0, 0], l_on=[255, 0, 0], r_off=[0, 128, 0], r_on=[0, 255, 0]):
-        self.s_line = "\xff\xff\xff" + "\0" * 45
-        self.s_border = "\xff\xff\xff\0\0\0"
-        self.s_point = "\0" * 3
+        self.s_line = '\xff\xff\xff' + '\0' * 45
+        self.s_border = '\xff\xff\xff\0\0\0'
+        self.s_point = '\0' * 3
         self.sl_off = string.join(list(map(chr, l_off)), '') * 6
         self.sl_on = string.join(list(map(chr, l_on)), '') * 6
         self.sr_off = string.join(list(map(chr, r_off)), '') * 6
@@ -52,7 +52,7 @@ class IconBar:
     # \brief gets a new icon with 0 <= l,r <= 5
     #
     def Get(self, l, r):
-        s = "" + self.s_line
+        s = '' + self.s_line
         for i in range(5):
             if i < (5 - l):
                 sl = self.sl_off
@@ -78,6 +78,7 @@ class IconBar:
         icon.CopyFromBitmap(bmp)
 
         return icon
+
 
 ##
 # The TaskBarIcon class
@@ -117,13 +118,15 @@ class MyTaskBarIcon(wx.TaskBarIcon):
             self.r += 1
             if self.r > 5:
                 self.r = 0
+
     ##
     # \brief sets the icon bar and a message
     #
 
     def SetIconBar(self, l, r):
         icon = self.IconBar.Get(l, r)
-        self.SetIcon(icon, "L:%d,R:%d" % (l, r))
+        self.SetIcon(icon, 'L:%d,R:%d' % (l, r))
+
 
 ##
 # The task bar application
@@ -136,13 +139,13 @@ class TaskBarApp(wx.Frame):
     # \brief the constructor
     #
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, -1, title, size=(1, 1),
-                          style=wx.FRAME_NO_TASKBAR | wx.NO_FULL_REPAINT_ON_RESIZE)
+        wx.Frame.__init__(self, parent, -1, title, size=(1, 1), style=wx.FRAME_NO_TASKBAR | wx.NO_FULL_REPAINT_ON_RESIZE)
 
         self.tbicon = MyTaskBarIcon(self)
         self.tbicon.SetIconTimer()
 
         self.Show(True)
+
 
 ##
 # The main application wx.App class
@@ -164,6 +167,7 @@ def main(argv=None):
 
     app = MyApp(0)
     app.MainLoop()
+
 
 if __name__ == '__main__':
     main()

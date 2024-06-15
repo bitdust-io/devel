@@ -1,0 +1,28 @@
+# You need to manually run the following line first
+# pip3 install simple-crypt --no-deps
+
+aiohttp
+aioprocessing>=1.0.1
+aiosqlite3>=0.3.0
+base58
+
+# Bismuth Wallet (wallet/wallet.py):
+bismuthclient>=0.0.52
+bismuthcore>=0.0.18
+cachetools
+coincurve
+mnemonic
+polysign>=0.1.0
+psutil>=5.6.3
+pycryptodomex
+# Bismuth Node (node.py):
+PySocks
+requests
+# pycryptodomex
+requests_oauth2
+teslapy
+# coincurve
+# ed25519
+
+# Bismuth Wallet Server (wallet_server.py):
+tornado>=6.0.3

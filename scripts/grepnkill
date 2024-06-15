@@ -16,4 +16,3 @@ NUM=`echo "$LINES" | awk '{print $2}'`
 [ -n "$NUM" ] && echo "killed process $NUM"
 
 exit 0
-

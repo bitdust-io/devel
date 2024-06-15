@@ -1,9 +1,20 @@
 #!/bin/bash
 
-echo "";
+alive=0
+total=0
 
-for srv in `python -c "import userid.known_servers; s=userid.known_servers.by_host(); print(' '.join(['{}:{}'.format(i, s[i][0]) for i in s]))"`; do
-    echo "$srv";
-    curl -I --connect-timeout 10 $srv 2>/dev/null | grep "HTTP";
-    echo "";
+for srv in `python3 -c "import bitdust.userid.known_servers; s=bitdust.userid.known_servers.by_host(); print(' '.join(['{}:{}'.format(i.decode(), s[i][0]) for i in s]))"`; do
+    total=$((total+1))
+    curl -I --connect-timeout 10 $srv 1>/dev/null 2>/dev/null
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        echo "$srv OFFLINE";
+    else
+        alive=$((alive+1))
+        echo "$srv OK";
+    fi
 done
+
+echo ""
+echo "from $total known ID servers $alive is alive"
+echo ""

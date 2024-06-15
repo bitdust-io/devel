@@ -36,7 +36,7 @@ Install BitDust software
 
 Seems like in Ubuntu (probably most other distros) you can install all dependencies in that way:
 
-        sudo apt-get install git gcc python-dev python-virtualenv
+        sudo apt-get install git gcc python3-dev python3-virtualenv
 
 
 Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
@@ -46,7 +46,7 @@ Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) too
 
 On MacOSX platform you can install requirements in that way:
 
-        brew install git python2
+        brew install git python3
 
 And use pip to get all required packages:
 
@@ -76,20 +76,20 @@ Then you need to build virtual environment with all required Python dependencies
 Single command should make it for you, all required files will be generated in `~/.bitdust/venv/` sub-folder:
 
         cd bitdust
-        python bitdust.py install
+        python3 bitdust.py install
 
 
 Last step to make BitDust software ready is to make a short alias in your OS, then you can just type `bitdust` in command line to fast access the program:
-        
+
         sudo ln -s -f /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
-        
+
 
 4. Run BitDust
 
 Start using the software by creating an identity for your device in BitDust network:
-       
+
         bitdust id create <some nick name>
-       
+
 
 I recommend you to create another copy of your Private Key in a safe place to be able to recover your data in the future. You can do it with such command:
 
@@ -106,7 +106,7 @@ Type this command to read more info about BitDust commands:
 To run the software type:
 
         bitdust
-        
+
 
 Start as background process:
 
@@ -114,7 +114,7 @@ Start as background process:
 
 
 To get some more insights or just to know how to start playing with software
-you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
+you can visit [BitDust Commands](https://bitdust.io/commands.html) page.
 
 To get more info about API methods available go to [BitDust API](https://bitdust.io/api.html) page.
 
@@ -125,12 +125,32 @@ If you are installing BitDust on Windows platforms, you may require some binary 
 
 * cygwin: [cygwin.com](https://cygwin.com/install.html)
 * git: [git-scm.com](https://git-scm.com/download/win)
-* python 2.7 (python3 is not supported yet): [python.org](http://python.org/download/releases)
-* twisted 11.0 or higher: [twistedmatrix.com](http://twistedmatrix.com)
+* python2.7 or python3: [python.org](http://python.org/download/releases)
+* twisted: [twistedmatrix.com](http://twistedmatrix.com)
 * pyasn1: [pyasn1.sourceforge.net](http://pyasn1.sourceforge.net)
-* pyOpenSSL: [launchpad.net/pyopenssl](https://launchpad.net/pyopenssl)
-* pycrypto: [dlitz.net/software/pycrypto](https://www.dlitz.net/software/pycrypto/)
 * miniupnpc: [miniupnp.tuxfamily.org](http://miniupnp.tuxfamily.org/)
+
+
+
+Docker Hub container image
+==========================
+
+You can also run bitdust inside Docker. We prepared a container which have BitDust installed and easy to run. You will have to SSH into the running container after start it and manually configure bitdust as you wish and run it:
+
+        docker run -d -P --name bdnode bitdust/app1
+        docker port bdnode 22
+        0.0.0.0:32771  <-  learn which SSH port was opened on your host
+
+
+Now you can ssh to the container, password is `bitdust`:
+
+        ssh root@localhost -p 32771
+        password: bitdust
+
+
+Inside the container you will have BitDust installed and ready to use, so you can run it directly:
+
+        root@1ef6a46c3042:~# bitdust
 
 
 
@@ -139,5 +159,3 @@ Feedback
 
 You can contact [BitDust contributors](https://github.com/bitdust-io) on GitHub if you have any questions or ideas.
 Welcome to the future!
-
-                                

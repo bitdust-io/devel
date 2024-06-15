@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # transport_udp_test.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (transport_udp_test.py) is part of BitDust Software.
 #
@@ -25,33 +25,18 @@ import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
-from logs import lg
-from userid import my_id
-from lib import misc
-from main import settings
-from lib import nameurl
-from lib import udp
-from system import bpio
-from p2p import commands
-from crypt import signed
-from dht import dht_service
-from transport.http import http_node
-from transport import gateway
+from bitdust.logs import lg
+from bitdust.system import bpio
+from bitdust.transport import gateway
 
 #------------------------------------------------------------------------------
 
@@ -59,19 +44,23 @@ from transport import gateway
 def main():
     lg.set_debug_level(18)
     lg.life_begins()
-    from crypt import key
+    from bitdust.crypt import key
     key.InitMyKey()
-    from contacts import identitycache
+    from bitdust.contacts import identitycache
     identitycache.init()
-    from system import tmpfile
+    from bitdust.system import tmpfile
     tmpfile.init()
-    from services import driver
+    from bitdust.services import driver
 
-    required_services = ['service_http_connections', 'service_http_transport', 'service_gateway', 'service_network', ]
+    required_services = [
+        'service_http_connections',
+        'service_http_transport',
+        'service_gateway',
+        'service_network',
+    ]
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
     for filename in os.listdir(available_services_dir):
-        if not filename.endswith('.py') and not filename.endswith(
-                '.pyo') and not filename.endswith('.pyc'):
+        if not filename.endswith('.py') and not filename.endswith('.pyo') and not filename.endswith('.pyc'):
             continue
         if not filename.startswith('service_'):
             continue
@@ -86,8 +75,8 @@ def main():
     driver.enabled_services().add('service_gateway')
     driver.enabled_services().add('service_network')
     driver.start()
-    # options = { 'idurl': my_id.getLocalID(),}
-    # options['host'] = nameurl.GetName(my_id.getLocalID())+'@'+'somehost.org'
+    # options = { 'idurl': my_id.getIDURL(),}
+    # options['host'] = nameurl.GetName(my_id.getIDURL())+'@'+'somehost.org'
     # options['dht_port'] = int(settings.getDHTPort())
     # options['udp_port'] = int(settings.getUDPPort())
     # udp.listen(int(settings.getUDPPort()))
@@ -106,6 +95,7 @@ def main():
             pass
             # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
 
+
 #             def _try_reconnect():
 #                 sess = udp_session.get_by_peer_id(sys.argv[2])
 #                 reconnect = False
@@ -123,7 +113,7 @@ def main():
 #                         sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
 #                     udp_node.A('connect', sys.argv[2])
 #                 reactor.callLater(0.5, _try_reconnect)
-# 
+#
 #             def _try_connect():
 #                 if udp_node.A().state == 'LISTEN':
 #                     print 'connect'
@@ -135,14 +125,14 @@ def main():
 #                 else:
 #                     reactor.callLater(1, _try_connect)
 #             # _try_connect()
-# 
+#
 #             def _send(c):
-#                 from transport.udp import udp_stream
+#                 from bitdust.transport.udp import udp_stream
 #                 for idurl in sys.argv[2:]:
 #                     print '_send', udp_stream.streams().keys()
 #                     p = signed.Packet(commands.Data(),
-#                                       my_id.getLocalID(),
-#                                       my_id.getLocalID(),
+#                                       my_id.getIDURL(),
+#                                       my_id.getIDURL(),
 #                                       'packet%d' % c,
 #                                       bpio.ReadBinaryFile(sys.argv[1]),
 #                                       idurl)
@@ -153,7 +143,6 @@ def main():
 
     gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()
-
 
 if __name__ == '__main__':
     main()

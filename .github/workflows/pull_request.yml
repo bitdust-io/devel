@@ -1,0 +1,40 @@
+name: BitDust Regression Test
+
+on:
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  self_hosted:
+
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: clean-up docker network
+      run: docker network prune -f
+
+    - name: clean venv
+      run: make clean venv
+
+    - name: test_unit
+      run: make test_unit
+
+    - name: regress_stop before
+      run: make regress_stop
+
+    - name: regress_clean before
+      run: make regress_clean
+
+    - name: regress_prepare
+      run: make regress_prepare
+
+    - name: regress_run_parallel
+      run: make regress_run_parallel
+
+    - name: regress_report
+      run: make regress_report
+
+    - name: regress_stop after
+      run: make regress_stop

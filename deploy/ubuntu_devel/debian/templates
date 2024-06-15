@@ -1,7 +1,0 @@
-
-Template: bitdust/installdir
-Type: string
-Description: Select install location:
- Python sources will be cloned locally from public Git repository.
- Program will receive fresh updates periodically and stay synchronized with
- the whole BitDust society. BitDust do not need root permissions to start.

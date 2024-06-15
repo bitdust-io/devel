@@ -1,7 +1,0 @@
-@echo off
-cd bin
-start bitdust.exe
-@echo.
-@echo starting BitDust 
-@echo.
-pause

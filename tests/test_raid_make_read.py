@@ -30,38 +30,35 @@ class TestMakeRead(TestCase):
         dir_to_files = self.dir_to_files
         dir_to_restored_file = self.dir_to_restored_file
 
-        subprocess.call(['python', 'raid/make.py', dir_to_copied_file, 'ecc/4x4', 'myID_ABC', '100', dir_to_files])
+        subprocess.call(['./venv/bin/python3', 'bitdust/raid/make.py', dir_to_copied_file, 'ecc/4x4', 'myID_ABC', '100', dir_to_files])
 
-        subprocess.call(['python', 'raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
+        subprocess.call(['./venv/bin/python3', 'bitdust/raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
         r = subprocess.call(['diff', dir_to_restored_file, dir_to_copied_file])
-        self.assertEqual(r, 0, 'ERROR %s' % r)
+        self.assertEqual(r, 0, 'ERROR:%s  %r ~ %r are not equal' % (r, dir_to_restored_file, dir_to_copied_file, ))
 
         subprocess.call(['rm', '%s/100-0-Data' % dir_to_files])
 
-        subprocess.call(['python', 'raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
+        subprocess.call(['./venv/bin/python3', 'bitdust/raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
         r = subprocess.call(['diff', dir_to_restored_file, dir_to_copied_file])
-        self.assertEqual(r, 0, 'ERROR %s' % r)
+        self.assertEqual(r, 0, 'ERROR:%s  %r ~ %r are not equal' % (r, dir_to_restored_file, dir_to_copied_file, ))
 
         subprocess.call(['rm', '%s/100-1-Data' % dir_to_files])
 
-        subprocess.call(['python', 'raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
+        subprocess.call(['./venv/bin/python3', 'bitdust/raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
         r = subprocess.call(['diff', dir_to_restored_file, dir_to_copied_file])
-        self.assertEqual(r, 0, 'ERROR %s' % r)
+        self.assertEqual(r, 0, 'ERROR:%s  %r ~ %r are not equal' % (r, dir_to_restored_file, dir_to_copied_file, ))
 
         subprocess.call(['rm', '%s/100-2-Data' % dir_to_files])
 
-        subprocess.call(['python', 'raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
+        subprocess.call(['./venv/bin/python3', 'bitdust/raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
         r = subprocess.call(['diff', dir_to_restored_file, dir_to_copied_file])
-        self.assertEqual(r, 0, 'ERROR %s' % r)
+        self.assertEqual(r, 0, 'ERROR:%s  %r ~ %r are not equal' % (r, dir_to_restored_file, dir_to_copied_file, ))
 
         subprocess.call(['rm', '%s/100-3-Data' % dir_to_files])
 
-        subprocess.call(['python', 'raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
+        subprocess.call(['./venv/bin/python3', 'bitdust/raid/read.py', dir_to_restored_file, 'ecc/4x4', 'bitdust', '100', dir_to_test])
         r = subprocess.call(['diff', dir_to_restored_file, dir_to_copied_file])
-        self.assertEqual(r, 0, 'ERROR %s' % r)
+        self.assertEqual(r, 0, 'ERROR:%s  %r ~ %r are not equal' % (r, dir_to_restored_file, dir_to_copied_file, ))
 
     def test_small_file(self):
         self._test_file('bitdust.png')
-
-    # def test_big_file(self):
-    #     self._test_file('book.pdf')

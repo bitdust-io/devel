@@ -2,7 +2,7 @@
 
 echo "running 'loop_bitdust'"
 
-while true; do 
+while true; do
     echo "loop iteration"
     ./pskill bitdust.py
     ./up

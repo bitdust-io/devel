@@ -1,9 +1,39 @@
-twisted==18.7.0
-service_identity
-pycryptodomex
-pyparsing
-appdirs
-psutil
-cffi
-six
+# Twisted==22.10.0
+# service_identity
+# pycryptodomex
+# pyparsing
+# appdirs
+# psutil
+# cffi
+# six
+# pre_commit
 
+appdirs==1.4.4
+attrs==22.2.0
+Automat==22.10.0
+
+base58==2.1.1
+cffi==1.15.1
+coincurve==16.0.0
+constantly==15.1.0
+coverage==6.2
+cryptography==39.0.0
+hyperlink==21.0.0
+idna==3.4
+incremental==22.10.0
+mock==5.0.1
+psutil==5.9.4
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pycparser==2.21
+pycryptodomex==3.16.0
+PyNaCl==1.5
+pynacl==1.5.0
+pyparsing==3.0.9
+PySocks==1.7.1
+requests==2.27.1
+service-identity==21.1.0
+six==1.16.0
+Twisted==22.4.0
+typing_extensions==4.1.1
+zope.interface==5.5.2

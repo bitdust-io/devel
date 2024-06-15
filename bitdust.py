@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
 # bitdust.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (bitdust.py) is part of BitDust Software.
 #
@@ -19,25 +21,32 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-#
-#
-#
-#
 
 from __future__ import absolute_import
 import os
+import sys
+
+try:
+    import locale
+    locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
+except:
+    pass
 
 
 def main():
     executable_path = os.getcwd()
-    try:
-        os.chdir(os.path.dirname(__file__))
-    except:
-        pass
-    from main.bpmain import main
+
+    if executable_path not in sys.path:
+        sys.path.append(executable_path)
+
+    from bitdust.main.bpmain import main
+
     ret = main(executable_path)
+
     os._exit(ret)
 
+    return ret
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()

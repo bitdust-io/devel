@@ -1,0 +1,192 @@
+#
+# docker-compose.yml
+#
+# Copyright (C) 2008 Stanislav Evseev, Veselin Penev  https://bitdust.io
+#
+# This file (docker-compose.yml) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
+version: "3.4"
+
+services:
+
+
+
+  id-a:
+    image: bitdust/app
+    ports:
+      - "10501:22"
+
+  dht-1:
+    image: bitdust/app
+    ports:
+      - "10511:22"
+
+  dht-2:
+    image: bitdust/app
+    ports:
+      - "10512:22"
+    links:
+      - dht-1
+
+  dht-3:
+    image: bitdust/app
+    ports:
+      - "10513:22"
+    links:
+      - dht-1
+      - dht-2
+
+  dht-4:
+    image: bitdust/app
+    ports:
+      - "10514:22"
+    links:
+      - dht-3
+
+  dht-5:
+    image: bitdust/app
+    ports:
+      - "10515:22"
+    links:
+      - dht-2
+
+  dht-6:
+    image: bitdust/app
+    ports:
+      - "10516:22"
+    links:
+      - dht-3
+      - dht-4
+      - dht-5
+
+  stun-1:
+    image: bitdust/app
+    ports:
+      - "10521:22"
+    links:
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+
+  stun-2:
+    image: bitdust/app
+    ports:
+      - "10522:22"
+    links:
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+
+  supplier-1:
+    image: bitdust/app
+    ports:
+      - "10541:22"
+    links:
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+      - stun-1
+      - stun-2
+      - id-a
+
+  supplier-2:
+    image: bitdust/app
+    ports:
+      - "10542:22"
+    links:
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+      - stun-1
+      - stun-2
+      - id-a
+
+  customer-1:
+    image: bitdust/app
+    ports:
+      - "10551:22"
+    volumes:
+      - customer_1:/customer_1
+    links:
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+      - stun-1
+      - stun-2
+      - id-a
+
+  customer-2:
+    image: bitdust/app
+    ports:
+      - "10552:22"
+    volumes:
+      - customer_2:/customer_2
+    links:
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+      - stun-1
+      - stun-2
+      - id-a
+
+
+
+  tester:
+    image: bitdust/tester
+    cap_add:
+      - SYS_PTRACE
+    privileged: true
+    stdin_open: true
+    tty: true
+    links:
+      - id-a
+      - dht-1
+      - dht-2
+      - dht-3
+      - dht-4
+      - dht-5
+      - dht-6
+      - stun-1
+      - stun-2
+      - supplier-1
+      - supplier-2
+      - customer-1
+      - customer-2
+
+    volumes:
+      - customer_1:/customer_1
+      - customer_2:/customer_2
+
+
+
+volumes:
+  customer_1:
+  customer_2:
+

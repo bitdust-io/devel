@@ -1,6 +1,20 @@
 from unittest import TestCase
 import os
 
+from bitdust.system import bpio
+
+from bitdust.logs import lg
+
+from bitdust.main import settings
+
+from bitdust.lib import jsn
+from bitdust.lib import serialization
+
+from bitdust.crypt import key
+from bitdust.crypt import signed
+from bitdust.crypt import encrypted
+
+from bitdust.userid import my_id
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -52,67 +66,67 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 class Test(TestCase):
 
     def setUp(self):
-        from logs import lg
-        from main import settings
-        from crypt import key
-        from userid import my_id
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
         lg.set_debug_level(30)
-        settings.init()
+        settings.init(base_dir='/tmp/.bitdust_tmp')
         self.my_current_key = None
-        if key.isMyKeyExists():
-            os.rename(settings.KeyFileName(), '/tmp/_current_priv_key')
-        fout = open('/tmp/_some_priv_key', 'w')
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/default/metadata/')
+        except:
+            pass
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/logs/')
+        except:
+            pass
+        fout = open(settings.KeyFileName(), 'w')
         fout.write(_some_priv_key)
         fout.close()
-        if my_id.isLocalIdentityExists():
-            os.rename(settings.LocalIdentityFilename(), '/tmp/_current_localidentity')
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
-        self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
+        self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
 
     def tearDown(self):
-        from main import settings
-        from crypt import key
-        from userid import my_id
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
-        if os.path.isfile('/tmp/_current_localidentity'):
-            os.rename('/tmp/_current_localidentity', settings.LocalIdentityFilename())
-        if os.path.isfile('/tmp/_current_priv_key'):
-            os.rename('/tmp/_current_priv_key', settings.KeyFileName())
-        os.remove('/tmp/_some_priv_key')
+        settings.shutdown()
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def test_jsn(self):
-        from lib import jsn
         data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
+        dct1 = {
+            'd': {
+                'data': data1,
+            },
+        }
         raw = jsn.dumps(dct1, encoding='latin1')
         dct2 = jsn.loads(raw, encoding='latin1')
         data2 = dct2['d']['data']
         self.assertEqual(data1, data2)
 
     def test_serialization(self):
-        from lib import serialization
         data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
+        dct1 = {
+            'd': {
+                'data': data1,
+            },
+        }
         raw = serialization.DictToBytes(dct1, encoding='latin1')
         dct2 = serialization.BytesToDict(raw, encoding='latin1')
         data2 = dct2['d']['data']
         self.assertEqual(data1, data2)
 
     def test_signed_packet(self):
-        from crypt import key
-        from crypt import signed
-        from userid import my_id
-
         key.InitMyKey()
         data1 = os.urandom(1024)
         p1 = signed.Packet(
             'Data',
-            my_id.getLocalID(),
-            my_id.getLocalID(),
+            my_id.getIDURL(),
+            my_id.getIDURL(),
             'SomeID',
             data1,
             'RemoteID:abc',
@@ -128,17 +142,13 @@ class Test(TestCase):
         self.assertEqual(raw1, raw2)
 
     def test_encrypted_block(self):
-        from crypt import key
-        from crypt import encrypted
-        from userid import my_id
-
         key.InitMyKey()
         data1 = os.urandom(1024)
         b1 = encrypted.Block(
-            CreatorID=my_id.getLocalIDURL(),
+            CreatorID=my_id.getIDURL(),
             BackupID='BackupABC',
             BlockNumber=123,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
             Data=data1,

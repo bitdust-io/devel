@@ -5,7 +5,7 @@ IFS=$'\n' read -d '' -r -a nodes < $1
 echo "target nodes:"
 echo "${nodes[@]}"
 
-copy_files="./grepnkill ./deploy ./random_identity ./see ./states ./monitor ./up ./exec ./stop ./daemon"
+copy_files="./grepnkill ./deploy ./random_identity ./see ./states ./packets ./monitor ./up ./exec ./stop ./kill ./restart ./daemon ./dumpdhtdb ./opened_connections"
 echo "will copy those file with scp to each node: $copy_files"
 
 for node in ${nodes[@]}

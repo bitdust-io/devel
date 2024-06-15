@@ -1,0 +1,28 @@
+pp-1.5.7:
+    1) Added ppworker restart after task completion functionality
+    2) Added pickle protocol option
+    3) Merges patch for Python 2.6 compatibility (contributed by mrtss)
+    4) Merged patch for config file support (contributed by stevemilner)
+    5) Documentation has been moved to doc folder.
+
+pp-1.5.6
+    1) Fixed problem with autodiscovery service on Winsows XP and Vista
+    2) Merged new code quality improvement patches (contributed by stevemilner)
+
+pp-1.5.5
+    1) Fixed bug which caused segmentation fault when calling destroy() method.
+    2) Merged performance and quality improvement patches (contributed by stevemilner)
+
+pp-1.5.4
+    1) Fixed bug with unindented comments
+    2) easy_intall functionality repaired
+    3) Code quality improved (many small changes)
+
+pp-1.5.3
+    1) Added support for methods of new-style classes.
+    2) Added ability to read secret key from pp_secret variable of .pythonrc.py
+    3) ppdoc.html and ppserver.1 are included in the distribution
+    4) examples bundled with the distribution
+CHANGELOG started
+
+* - nicknames of the contributors refer to the PP forum profile login names.

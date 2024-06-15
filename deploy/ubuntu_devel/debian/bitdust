@@ -1,7 +1,0 @@
-#!/bin/sh
-BITDUST_DIR="~/.bitdust"
-if [ -f /usr/share/bitdust/installdir ]; then
-    BITDUST_DIR=`cat /usr/share/bitdust/installdir`
-fi
-cd $BITDUST_DIR/src
-/usr/bin/python bitdust.py $@

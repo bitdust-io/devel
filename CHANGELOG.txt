@@ -1,6 +1,1493 @@
 Change Log
 ==========
 
+2024-06-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* introduce new group streaming solution
+* also a new solution for messages history sharing between group participants
+* introduce process to accept storage payments by suppliers
+* introduce sequence_number for storage contracts
+* made keys_synchronizer() more reliable
+* able to force restart of fire_hire() in api.files_sync()
+* added regression test for new streaming methods
+
+
+
+2024-04-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added HMTL WEB template
+* updated id_server.py
+* built new service_blockchain_explorer()
+* updated bitdust/customer/payment.py
+* Bump cryptography from 39.0.0 to 41.0.6
+* disabled and removed few un-used services
+* updated api.services_list()
+* updated api.suppliers_list()
+* introducing storage contracts
+* bug fix in bitdust/storage/accounting.py
+* bug fixes in bitdust/supplier/storage_contract.py
+* bug fix in supplier_connector()
+* IDURL fix in contacts/contactsdb.py
+* small fix in main/config.py
+
+
+
+2023-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in bitdust/system/deploy.py related to python3.11
+* IDURL fix in bitdust/supplier/customer_space.py
+* bug fix in butdust/userid/id_url.py
+* disabled un-used Bismuth crypto methods
+* Bump twisted from 22.4.0 to 23.8.0
+
+
+
+2023-10-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* removed bitdust_forks/Bismuth/wallet/
+
+
+
+2023-10-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* removed two seed nodes from the default_network.json file
+* initial implementation of Bismuth blockchain node, miner, wallet and mining pool
+* introducing a solution for foundation miners
+* introducing storage contract between customer and supplier
+* built multiple new service_bismuth_*() services
+* built new service_blockchain_id() service
+* built new service_blockchain_authority() service
+* built new blockchain_registrator() automat
+* built new authority_node() automat
+* built new api.blockchain_*() methods
+* added new module in bitdust/supplier/storage_contract.py
+* added new module in bitdust/customer/payment.py
+* added new module in bitdust/blockchain/known_bismuth_nodes.py
+* added new settings for blockchain management
+* make possible to register user identity in blockchain
+* make sure to use UTC-based timestamps
+* changes for Android, always use bz2 compression, minor API update (#182)
+* use SIGKILL instead of SIGTERM for closing the main process
+* renamed main process to BitDust-node for OSX release
+* use same Bismuth wallet address for pool and miner
+* use fixed mining difficulty
+* use custom port numbers for Bismuth blockchain TCP connections
+* modifications in Bismuth mining pool, switching off payouts
+* modifications in Bismuth mining, disabled mining rewards
+* updated default settings for few services
+* updated customers_rejector() automat
+* updated code to match config type changes
+* Bump cryptography from 39.0.0 to 41.0.4
+* Bump requests from 2.30.0 to 2.31.0
+* solved relations issue between service_blockchain_id() should not start when service_blockchain_authority() is enabled
+* solved issue in bitdust/userid/id_url.py
+* bug fixes with config string types
+* bug fix in lib.utime.unpack_time()
+* bug fix in service_message_history() and group_member() (#184)
+* bug fix in service_message_history()
+* bug fix in group_member()
+* bug fix python3.10 logging
+* bug fix logging issue on Android
+* Update README.md
+
+
+
+2023-02-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in shared_access_coordinator()
+* added 'local_path' field to api.file_info() and api.files_list()
+* set to always use bz2 as a default tar file reading/writing mode
+* use internal Android app data location for restore
+* Android fixes related to internal storage location
+* removed some legacy scripts
+
+
+
+2023-01-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor fix in bitdust/transport/tcp/tcp_node.py
+* some more fixes related to WindowsOS
+
+
+
+2023-01-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* moved apisecret file from .bitdust/default/metadata/apisecret to .bitdust/apisecret
+* renamed main process on Windows to bitdust-node.exe
+* some more updates to make app working on Windows
+* version bump Twisted==22.10.0
+
+
+
+2023-01-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to create new configurations and switch between different networks
+* bug fix in shared_access_coordinator()
+* some changes in bitdust/main/listeners.py
+
+
+
+2022-11-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated CHANGELOG, prepare next release
+* decrease _Debug logging
+* fix in   tests/test_raid_worker.py
+* catching some unhandled failures from defered calls
+* switched regression tests to python3.8
+* added new services/gateway/p2p-timeout option
+* cosmetic modifications in proxy_sender() and p2p_connector()
+
+
+
+2022-11-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* catching some unhandled failures from defered calls
+* switched regression tests to python3.8
+* added new services/gateway/p2p-timeout option
+* keep track of deleted shared files in backup_fs
+* proper handling of backup_fs revision number
+* updated shared_access_coordinator()
+* solved an issue in archive_reader()
+* more accurate streaming of the websocket events about the shared files
+* updated api.share_info() with additional "revision" field
+* make sure it is also possible to delete shared file
+* bug fixes in list_files.py
+* bug fixes in backup_matrix.py
+* bug fixes in customer_assistant()
+* updated "bitdust alias" command line method
+* rework in backup_fs.py
+
+
+
+2022-11-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* solved issue with p2p_queue consumer callbacks
+* solved an issue related to message streaming in the message_peddler()
+
+
+
+2022-11-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added file bitdust/main/default_network.py to simplify package distribution
+* bug fix to make shared_access_coordinator() more reliable
+* updated few timeout values in shared_access_coordinator() and index_synchronizer()
+* few minor fixes in dev scripts
+* small fix in the regression tests
+
+
+
+2022-10-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* moved source code into bitdust/ sub-folder and all external libs to bitdust_forks/ sub-folder
+* reformatting code using custom yapf style
+* added pre-commit hook with "yapf" code-formatter
+* updated unit tests to properly use settings.KeyFileName()
+* found and fixed critical issue related to master key location
+* solved issue with unit tests data isolation
+* bug fix in userid.my_id
+* bug fix in main.config
+* disabled customer key in service_customer()
+* deleted main/control.py
+* deleted networks.json
+* bug fix in interface/cmd_line_json.py
+* bug fix in shared_access_coordinator()
+* bug fix in gateway.on_outbox_packet()
+
+
+
+2022-10-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated Pull Request build status badge in the README.md
+* fix in raid/read.py
+* turned off debug logging
+
+
+
+2022-10-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added Layerfile for webapp.io CI/CD
+* use "supplier-file-modified" event in the service_shared_data()
+* auto-refreshing live status of the shared files to other authorized customers
+* increase timeout in packet_out()
+* compressed Blockchain Wallet static files
+* also added files from Optipoolware, TornadoWallet, WalletServer repositories
+* hard-code mining difficulty to 10
+* copied source files of the Bismuth project, started working with internal blockchain
+* make possible to set active/inactive state for a key
+* make possible to respond with multiple simillar Ack()/Fail() packets at once
+* cleanup empty doc text
+* few IDURL bug fixed
+* added api.share_info() method
+* updated api response messages
+* bug fix in api.file_info()
+* bug fix in gateway.py
+* bug fix in shared_access_coordinator()
+
+
+
+2022-07-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make sure all known shared locations are opened during start-up
+* websocket api streaming of the shared locations
+* bug fixes in few api methods related to key_aliases in backup_fs
+
+
+
+2022-07-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump twisted from 20.3.0 to 22.4.0
+* do not publish device OS version in the identity file
+* real-time data streaming via WebSocket API to support front-end apps (#161)
+* keep track of key alias in storage/backup_fs.py (#163)
+* transition from ParseGlobalID to NormalizeGlobalID
+* rework in backup_fs and backup_control
+* store backup_db file index separately for each private key
+* changed dependecies of service_backups() and service_keys_storage()
+* rework in shared_access_coordinator()
+* keep track of suppliers's index file revision in the shared_access_coordinator()
+* moved GetBackupStatusInfo() to restore_monitor.py
+* bug fixes in customer_space.py and customer_assistant.py
+* changed config services/customer/suppliers-number type to integer
+* bug fixes in few services
+* bug fixes in few API methods
+* IDURL fix in message_peddler()
+
+
+
+2022-05-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* populate more information in API streaming for private/shared files
+* added api streaming of shared files
+* use jsn.dumps() instead of pprint.pprint() in the interface/cmd_line_json.py
+* fallback fix in packet_out() state machine
+* small change in api.file_info() method
+
+
+
+2022-04-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added api streaming of remote files versions
+* added API streaming of private files
+* added api.service_health() method
+* added API steaming of online statuses
+* added API streaming of correspondents
+* bug fixes in lib/txws.py, p2p/p2p_service.py and system/deploy.py
+* IDURL fix in p2p_service related to identity revision number
+* bug fix in group_member()
+* IDURL bug fix in identitydb
+* bug fixing cmd line "daemon" command
+* bug fix in userid/id_url.py
+* adjusted ack timeouts in few places
+
+
+
+2022-01-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix related to pycryptodomex version bump
+* updated scripts for setuptools distribution
+* make possible to delete model data via websocket api streams
+* make possible to populate model data once service is started
+* added API streaming for messages and conversations
+* added main/listeners.py and implemented real-time api updates with streaming via WebSocket
+* home folder on Android is /storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust
+* enabled protection of API websocket and HTTP REST interfaces with secret token
+
+
+
+2021-12-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* improvements related to logging
+* make sure identity sources are never duplicated
+* changed api.share_*() methods response format
+* changed api.group_info() response format
+* cleaned up unused api jsonrpc_server code
+* added retries for dht lookup in proxy_receiver()
+* IDURL fixes for my keys
+* IDURL bug fixes in group_member() and message_peddler()
+* minor fix in packet_out() related to automatic network reconnection process
+* bug fix in few network services related to DHT layers connection process
+* fixes in websocket command line interface
+* bug fix in broker_negotiator()
+* bug fix in api.services_list()
+
+
+
+2021-12-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in lib/net_misc.py
+* run regression tests in parallel
+* fix issues between broker_negotiator() and queue_keeper()
+* fix issues between message_broker() and group_member()
+* few fixes in identitycache.immediatelyCaching()
+* archive_folder_path to be stored separately by brokers for each queue
+* capturing "Unhandled error in Deferred" errors
+* updated .circleci/config.yml
+* changes in identity propagate
+* bug fix in p2p_connector()
+* added "attempts" input parameter to p2p_service_seeker()
+* IDURL fix in group_member()
+* bug fix in p2p/propagate.py
+* bug fix in packet_out()
+
+
+
+2021-12-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in message_peddler()
+* group_member() must always have access to the correct registered private key
+* bug fix in packet_out()
+
+
+
+2021-11-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in contacts/contactsdb.py
+* bug fix in restore_worker()
+* updated some regression tests
+
+
+
+2021-11-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in message_peddler()
+* solved issue in api.process()
+* IDURL fix in queue_keeper()
+* bug fixes related to raid_worker()
+* some improvements in p2p.propagate and id_rotator()
+* IDURL fix in group_member()
+* improvement in broker_negotiator()
+
+
+
+2021-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* solved issue in api.process()
+* improvements in p2p.propagate and id_rotator()
+* bug fixes related to raid_worker()
+* message_peddler() auto-start queue_keepers() on startup
+* fix in stream.message
+* added few more regression tests
+* IDURL fix in p2p/propagate.py
+* bug fixes in message_peddler()
+* bug fixes in supplier_finder()
+* bug fixes in group_member()
+* improvement in broker_negotiator()
+* adding verbosity level control to regression tests
+* critical bug fix in userid.id_url
+* enabling regression testing via ssh tunnel in CircleCI
+* solved code coverage issues in the regression tests
+* multiple IDURL fixes
+* added start_suspended to local_service()
+* added driver.suspend() and driver.resume() methods
+* rework in network_connector() state machine
+* solved a low-level issue in regression app Dockerfile
+* added "no_debug" Makefile target
+* some rework in list_files_orator() automat
+* added .circleci/config.yml and disabled regression tests on travis ci
+* refactoring regression tests
+* bug fix in lib.websock
+* logging changes
+
+
+
+2021-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added "request-failed" event to packet_out() automat
+* for single customer group_members() must be in sync when connected to same message brokers
+* renaming queue ID when first broker is rotated
+* added websocket_timeout argument to WebSocket cmd line client
+* disabled JSONRPC API interface
+* command line tool migrated to WebSocket API client
+* built new Twisted-based WebSocket API client
+* introduced a new algorithm for message brokers rotation
+* rebuilt queue_keeper() state machine
+* built new broker_negotiator() state machine
+* regenerating digital signature when sharing a private key to another user
+* fixes in proxy_receiver() state machine
+* some of the services to be stopped explicitly in case failed to start right away
+* added api.queue_peddlers_list() method
+* added api.queue_keepers_list() method
+* rebuilt group_member() state machine
+
+
+
+2021-06-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in dht_relations.read_customer_message_brokers()
+* added new services/message-broker/message-ack-timeout config option
+* fixes in shared_access_donor() and group_access_donor()
+* bug fix in p2p.propagate
+* small updates in api methods
+* inreased PK transfer timout in group_access_donor() and shared_access_donor()
+* fixing issue with message brokers lookup order in group_member()
+* switching IdServer input traffic to HTTP POST protocol
+* bug fix in id_server()
+* fixed IDURL bug in identitycache.py
+* bug fix in queue_keeper()
+* fixing network reconnection in proxy transport
+* updated some regression test keywords
+
+
+
+2021-05-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added option "services/keys-storage/reset-unreliable-backup-copies"
+* bug fix in proxy_router()
+* bug fixes in messages streaming (#147)
+
+
+
+2021-05-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in message_peddler()
+* IDURL bug fix in queue_keeper()
+* bug fix in p2p_service_seeker()
+* bug fix in group_member()
+* update dht revision number of the dht records storing  message brokers info
+
+
+
+2021-03-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* few critical changes in group_member(), queue_keeper() and message_peddler()
+* solved concurency issues between message brokers
+* solved critical issue with signature verifications using RSA keys
+* solve some issues when broker IDURL was rotated
+* added api.automat_info() method
+* fix issue in proxy_receiver()
+* added timeout to p2p_service.SendListFiles()
+* added response_timeout to CancelService()
+* bug fix in restore_worker()
+* IDURL fix in contactsdb.get_supplier_meta_info()
+* bug fix in accounting.report_donated_storage()
+* rebuilt customers_rejector() state machine
+* fix in message broker to deliver messages properly
+* do not share group key label with message brokers
+* fix in p2p_service_seeker()
+* bug fixes in access/groups.py
+
+
+
+2021-02-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* do not use DHT cache for group_member()
+* more aggressive rejecting of idle customers
+* IDURL bug fix in transport/packet_out.py
+* always cleanup identitycache on startup
+* added new api.events_list() method
+* added services/customer-patrol/customer-idle-days option
+* new feature to cleanup inactive customers automaticslly
+
+
+
+2021-02-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* able to replace existing public keys received from other nodes
+* bump cryptography from 3.2 to 3.4.4
+
+
+
+2021-02-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* api.group_reconnect() should not use DHT cache
+* fixed issue in message group reconnecting
+* another issue with duplicated DHT records for message brokers
+* bug fix in  access/groups.py
+
+
+
+2021-02-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* one more minor fix in message_peddler()
+* added api.group_reconnect() method
+
+
+
+2021-02-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL bug fixes in  access/groups.py
+* cache missing IDURLs in message_peddler() before loading all known streams
+* added refresh task to queue_keeper() to keep DHT record alive
+* set message_ack_timeout=25 in message_peddler()
+* do not enable service_message_broker() by default
+
+
+
+2021-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* adjusted logging to be able to trace down IDURL rotation issues
+
+
+
+2021-02-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* properly rotate customer and broker IDURL in service_private_groups()
+* bug fix in archive_reader()
+* make possible to start/stop publishing events from any state machine in real-time
+* small fix in api.friend_add()
+* fixes in id_rotator()
+* use routed packets to deliver "direct" traffic from router node
+
+
+
+2021-01-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added host filtering for proxy_router() - make sure to not send to my own host
+* solving issue with proxy_router()
+* fixes for group messaging (#135)
+
+
+
+2021-01-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fixes in group chat
+* fixes in dht_service
+* decommissiong old code for windows release auto-update
+
+
+
+2021-01-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* solve issue with signatures for renamed keys after id rotations
+* few Android fixes
+
+
+
+2021-01-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* attach to pre-defined DHT layers at startup
+* added a new file_sending_filter_callback
+* solving some of proxy transport issues
+* small fixes in group_member()
+
+
+
+2021-01-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* another IDURL fix in  supplier/customer_space.py
+* solved issues with keys signing and verification during transfers
+* also erase customer key in customers_rejector() and api.customer_reject()
+* fix in keys_synchronizer()
+* updated docs
+
+
+
+2020-12-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* stop building PRs with python2
+* updated README
+* fix in api.customer_reject()
+* solved issue with sender id in group messages
+* do not force utf-8 locale
+
+
+
+2020-12-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in io_throttle
+* added CICD config for CircleCI
+
+
+
+2020-12-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* disabled few unused modules and skip creating some of the local folders
+* force utf-8 for the locale
+* fix for cmd line on Windows
+
+
+
+2020-12-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fixed few typos and small bugs on Windows
+
+
+
+2020-11-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* update conversations list when new group created
+* added "keys" table also in message history db
+* fix in shared_access_coordinator()
+* my master key always registered locally with local_key_id=0
+* index all locally registered keys by permanent local_key_id
+
+
+
+2020-11-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in shared_access_coordinator()
+* fix in dht_relations.py
+* bug fix in stream.file_up()
+* built new api.message_conversations_list() method
+* fix in keys_synchronizer()
+* added descriptions for all settings
+* always use identity name when search for people
+* cleaned up some of the settings
+* populate service-started and service-stopped events
+* Bump cryptography from 2.8 to 3.2
+* adjusted some settings related to packet timeouts
+* fix in storage.restore_worker()
+* IDURL fixes in group messaging
+* added new state machine message_producer() and fixed api.group_leave() method
+* added new service_personal_messages()
+
+
+
+2020-08-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in backup_rebuilder()
+* IDURL fix in customer_assistant()
+
+
+
+2020-08-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* small bug fixes
+
+
+
+2020-08-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* try to fix issue with unreliable keys
+
+
+
+2020-08-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix issue with detecting already runnign BitDust process
+
+
+
+2020-06-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix deploy script for Mac
+
+
+
+2020-06-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* enrypted group chat messages
+
+
+
+2020-06-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in message_peddler()
+* bug fix in packet_in()
+* bug fix in lib/jsontemplate.py
+
+
+
+2020-06-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix setuptools==40.9.0 for MacOsX distribution
+* working with group messages encryption
+* updated  requirements.txt and made a fix for MacOsX distribution
+
+
+
+2020-06-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump Twisted==20.3.0
+* stabilyze regression
+* recognize when route has changed in proxy_router()
+* added "timeout" parameter to api.group_create_v1()
+* bug fix in proxy_sender()
+* improved proxy communications
+
+
+
+2020-06-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* skip matching to outbox packets all incoming Relay*() packets in packet_in.handle()
+* make 1 retry in proxy_sender() after receving RelayFail()
+* drop routed connection in proxy_receiver() and proxy_router() when active session disconnects
+* propagate my identity to contacts which are related only to active services
+* added "services/employer/replace-critically-offline-enabled" option
+* properly cleanup failed routed packets
+* proxy_router() to remember recently closed routes to be able to properly reply
+* added RelayAck(), RelayFail(), RelayIn() and RelayOut() p2p commands
+* record and process later incoming group messages when group_member() is busy
+* bug fix in message_peddler()
+* bug fix in shared_access_coordinator()
+* bug fix in index_synchronizer()
+* bug fix in service_keys_storage()
+
+
+
+2020-05-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to run service_private_groups() and service_message_broker() together
+
+
+
+2020-05-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in service_proxy_transport()
+* bug fix in group_member()
+* bug fix in DHT core
+
+
+
+2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in dht_relations.py
+* added 10 second timeout for ListFiles() request to archive_reader()
+* bug fix in  message_peddler()
+* try to re-run the failed regression test case 1 time
+
+
+
+2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added new option services/private-messages/acknowledge-unread-messages-enabled
+* reply back with Ack() for every incoming Message() even if it was not consumed
+
+
+
+2020-05-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to ignore specific idurls in p2p.lookup
+* fix scenario 12
+* fix scenario 14
+
+
+
+2020-05-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* get back to sequential regression tests
+* merged all regression test into one "alpha" test
+* added "join_network" parameter to api.identity_recover()
+* group_member() state machine to be able to handle intermedieate states
+* fix in online_status()
+* attempt to fix signature error issue
+* fix in id_registrator()
+* IDURL fix in proxy_router
+* make sure after identity rotate customer is still available via old IDURL
+
+
+
+2020-05-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* try to run tests in parallel mode
+* small fix in  supplier/customer_space.py
+
+
+
+2020-05-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* cleanup responses in few api methods
+* several bug fixes
+
+
+
+2020-05-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added new api.process_info() method
+
+
+
+2020-05-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added p2p.network_service and new task for automatic network reconnect in service_p2p_notifications()
+* added parameter "join_network" to api.identity_create() method
+* start group_member() instances for active groups at startup
+* make sure to restore all archived snapshots when reading message history
+
+
+
+2020-05-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* disabled some API methods
+* more updates in API & Docs
+
+
+
+2020-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in group_member()
+* renamed and updated some API methods
+* added a new example script in scripts/websocket_example.html
+* fixed a bug in access.groups
+* updated API docs
+* websocket interface to be able to accept multiple connections at same time
+
+
+
+2020-05-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* built a simple WebSocket API client for BitDust in scripts/websocket_client.html
+* restore messages from archive when member joins the grouo
+* store streamed messages in local sqlite3 DB as well
+* improvements in restore_worker()
+* pre-create archive folder for group communications history archive backups
+* added list files query callbacks to simplify fetching list files from suppliers
+* fix: make sure to not run duplicated backups in keys_synchronizer()
+* new archive_reader() state machines
+* new archive_writer() state machines
+* make possible to request list files for selected files/folders only with a query
+* added supplier/customer_space.py file to simplify service_supplier()
+* added new service service_data_disintegration()
+* share public part of group key to my supplier when creating a new group
+* added message types: queue_message, queue_message_replica, private_message, group_message
+* new feature: local DHT cache in .bitdust/servicedata/entangled_dht/cache/
+* fix: make sure to select DHT record with latest revision always
+* for every group there are 3 brokers: first is active, second and third are stand-by
+* able to automatically detect "dead" broker and switch to next stand-by broker
+* new file:   CONTRIBUTING.md
+* refactor API responses - all must have consistent response structure from now
+* able to read messages from archive which is stored on group owner's suppliers
+* possible to set group_member() status to active/inactive to be able to "mute" the group
+* skip auto-update python sources if BitDust was clonned manually
+* fetch logs from containers after regression test finishes more faster
+* all group messages are delivered in sequential order, controlled by a broker
+* use Message() packet instead of Event() to deliver group communications to consumers
+* api.message_receive() can filter messages by type
+* use streams.message queue to run group communications
+* use sys.setrecursionlimit(2000) workaround fix for Py2 in txrestapi
+* proper close settings in the end of the app execution
+* make possible to sign my keys with my master key
+* new streaming methods in service_message_broker()
+* new queue_keeper() state machine to keep DHT records for the group
+* new message_peddler() machine to run message broker duties and deliver messages
+* new group_access_donor() state machine to be able to add new members to existing group
+* new group_memeber() automat to make possible to join an existing private group
+* added API methods to manage groups: create/join/leave/share
+* added methods to read/write customer-message_broker relation from/to DHT
+* rebuilt p2p_service_seeker() machine
+* new role "message_broker" and
+* new customer service private_groups()
+
+
+
+2020-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added logs/automat-events-enabled and logs/automat-transitions-enabled options
+
+
+
+2020-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in proxy_sender() state machine
+* bug fix in packet_out() and set default debug level to 0 (#94)
+* set debug level 18 in regression tests
+
+
+
+2020-02-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* set option "services/proxy-server/enabled" by default to "false"
+* bug fix in packet_out()
+* added "logs/api-enabled" option
+
+
+
+2020-02-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 fixes in DHT and API
+
+
+
+2020-01-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* decrease number of testing networks in regression tests
+* added .bitdust/logs/api.log file
+* fix in   stun/stun_client.py
+* py3 fixes in DHT
+* IDURL fix in service_supplier()
+* make sure python3 is building properly in regression
+* added few devops scripts
+* supplier to take in account ecc_map when leaving customer family
+
+
+
+2020-01-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in family_member() state machine
+* set DHT bucket size to 4
+* refactoring in regression tests
+* fix in shared_access_donor() state machine
+* changes in API responses for Renato
+* warnings all to be logged with debug level 2 and also stored in a separate file
+* populate friend-connected/friend-disconnected events
+* populate friend-add/friend-remove events
+* force git_proc.sync to RESET instead of REBASE
+* make possible to run regression tests in 2 parallel threads
+* logging improvements and boost in p2p/lookup.py
+* added few methods for DHT to the API interface
+* renamed service_queue_keeper() into service_message_broker()
+* added empty service_message_broker and service_private_groups() for the future
+* change dependency of service_message_history()
+* try to investigate most CPU consuming calls
+
+
+
+2020-01-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* introduce new feature: multi layered DHT network inside BitDust !
+* remove option "services/entangled-dht/node-id"
+* added new option "services/entangled-dht/attached-layers"
+* make possible to only "join" to DHT layer instead of "attach" directly
+* use DHT layer_id=2 for proxy routers lookups
+* use DHT layer_id=3 for suppliers lookups
+* make possible to activate and suspend DHT layers
+* docker files updated for DHT producer/consumer performance tests
+* added Dockerfile to be able to publish on docker hub
+
+
+
+2020-01-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* new file: main/network_config.py (#462)
+* make possible to use DES3 encryption for session keys
+* new default_network.json file instead of networks.json
+* bug fix in tcp_connection(), make sure pending transfers are properly closed
+* adjusted timers in list_files_orator() automat
+* freeze requirements.txt
+
+
+
+2020-01-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added main/network_config.py
+* set copyright year to 2008 instead of range as no necessary
+
+
+
+2019-12-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* protect REST HTTP and WebSocket interfaces with /metadata/apisecret file (#460)
+
+
+
+2019-12-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added incoming API calls from UI to WebSocket API inteface (#459)
+* added private messages to WebSocket API and /v1/*** aliases for Papitto (#458)
+* set "Access-Control-Allow-Origin" in API to "*" : another protection method to be implemented  (#455)
+
+
+
+2019-12-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* switching chat messages database from CodernityDB to sqlite3 (#454)
+
+
+
+2019-11-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* set services/rebuilding/child-processes-enabled to "false" by default (#452)
+
+
+
+2019-11-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump twisted to 19.10.0 in requirements.txt
+
+
+
+2019-11-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* more Android fixes (#449)
+* idurl fix in service_private_messages()
+* use Access-Control-Allow-Origin response header to protect REST HTTP Api (#448)
+
+
+
+2019-11-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* built api_web_socket interface and added events to the web socket API  (#445)
+
+
+
+2019-11-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to run RAID tasks inside a thread, not only inside a child process (#443)
+
+
+
+2019-11-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* switching backup tar stream from pipe to in-memory buffer  (#440)
+
+
+
+2019-10-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* moved local_tester from subprocess into thread (#438)
+* few networking bug fixes (#437)
+
+
+
+2019-10-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* new regression test approach with better data isolation (#431)
+* automatic identity rotate, speed up automats, fixes
+* implemented coverage report in regression tests
+* added BITDUST_LOG_USE_COLORS environment variable
+* more bug fixes in several state machines
+* run a handshake when add a friend
+
+
+
+2019-10-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* starting with WebSocket API interface
+* IDURL bug fix in proxy_router() (#429)
+* rebuilding regression tests with a new approach (#427)
+* set fast=True for all automats by default (#426)
+* automatic identity rotate when my main ID server is down (#424)
+
+
+
+2019-10-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* more smart events in list_files_orator() and index_synchronizer() (#422)
+* make sure corresponding files are removed after api.key_erase() call  (#421)
+
+
+
+2019-10-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* extended api.network_status() method with DHT details (#420)
+* logging improvements (#419)
+* running on Android, part 1  (#418)
+
+
+
+2019-09-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added "label" field to api.share_*() methods (#417)
+
+
+
+2019-09-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in proxy_router() machine
+* bug fix in supplier_finder() machine
+* added "services/employer/candidates" option
+* added "keep_alive" parameter to online_status() automat
+* increased ping timeouts and response time in few places
+* bug fix in online_status() machine
+* built new handshaker() automat
+* improvements in supplier_connector()
+* replaced propagate.PingContact() with online_status ping()/hanshake() methods
+* bug fix in tcp transport
+* solving issues with messaging
+* make possible to set "label" for a key
+
+
+
+2019-09-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor changes in api interface
+* small fix in messaging
+* fix in id_url when my identity not exists yet
+* make possible to set "label" for shares
+* added "label" meta field to all my keys
+* added new api.key_label() method to modify key labels
+* minor py3 fixex
+
+
+
+2019-09-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* share pub key from customer to supplier if key is missing for shared access
+* also make sure local backup files are removed after upload/download finished (#415)
+
+
+
+2019-09-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* few more fixes for file uploading / downloading (#413)
+
+
+
+2019-09-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in keys_synchronizer()
+
+
+
+2019-09-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* raising "my-keys-synchronize-failed" event from keys_synchronizer() (#411)
+* prevent backup_rebuilder() and restore_worker() automats to work on same file at once
+* added slashes to folder paths in settings
+* solving issues with keys_synchronizer() automat (#64)
+
+
+
+2019-09-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* small fix in packets logging
+* improve keys_synchronizer() automat
+* improve list_files_orator() machine
+* populate 'supplier-connected' event from supplier_connector()
+* added services/data-motion/supplier-sending-queue-size config
+* added services/data-motion/supplier-request-queue-size config
+* populate "my-keys-synchronize-failed" event from keys_synchronizer()
+
+
+
+2019-09-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* improved service_my_ip_port()
+* fixed index_synchronizer()
+
+
+
+2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor logging changes (#408)
+* updated api interface with IDURL fixes
+* solving proxy router issues
+
+
+
+2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* trying to solve proxy router issue for nodes behind same proxy router  (#407)
+* bug fix in id_rotator() machine when not enough sources are found need to continue
+
+
+
+2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in id_url
+* minor fixes in packet logging
+
+
+
+2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 bug fix in command line interface
+* restore keys one by one instead of all at once (#403)
+* fix in key_ring (#402)
+* fix in backup_rebuilder() automat
+* added main/config_defaults.py to simplify configurations
+* fixes in index_synchronizer() automat
+* added 'services/gateway/packet-log-enabled' config and improved packets logging
+
+
+
+2019-09-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in restore_worker()  (#401)
+
+
+
+2019-09-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* prevent sending outdated data to my suppliers (#399)
+* few more critical bug fixes
+
+
+
+2019-08-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor adjustments in packets logging
+* fix issue when supplier is switching (#398)
+* bug fix in proxy_receiver() (#397)
+* critical bug fix in contactsdb (#396)
+* minor fixes in logging (#395)
+* open all known shares at startup (#394)
+
+
+
+2019-08-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* process "identity-url-changed" event in service_private_messages() (#392)
+* process "identity-url-changed" event in service_supplier() (#391)
+
+
+
+2019-08-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in api.supplier_switch_v1() method (#389)
+* more idurl fixes
+* added helper devops script devops/dumpdhtdb (#388)
+
+
+
+2019-08-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added helper devops script devops/dumpdhtdb
+* more bug fixes in family_member() automat  (#387)
+
+
+
+2019-08-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 fix in fastjsonrpc (#386)
+* bug fix in family_member() state machine
+
+
+
+2019-08-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fixed missing DeleteBackup() packet handling in service_supplier()  (#384)
+* bug fix in lib.fastjsonrpc
+* bug fix in backup_matrix  (#382)
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* for proxy router keep current routes only in RAM, do not store on disk as not required (#381)
+* one more bug fix in transport/gateway.py  (#380)
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* one more bug fix in  transport/gateway.py
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in transport.gateway
+* bug fix in service_my_data()
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* big rework in io_throttle
+* added file_up() and file_down() state machines (#378)
+* changes in service_my_data()
+* bug fix in sorage.accounting
+
+
+
+2019-08-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+*  added option services/identity-propagate/automatic-rotate-enabled (#377)
+
+
+
+2019-08-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* extended development network with two more seed nodes (#376)
+
+
+
+2019-08-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 and idurl fixes
+* must try to ping supplier first before fire him to make sure identity cached
+* fixes in api interface method /supplier/switch/v1
+* checking situation when username in identity changed intentionaly
+* try to cache other sources when identitycache failed
+
+
+
+2019-08-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* refresh customer family and republish DHT info after customer identity rotated (#373)
+* reconnect proxy_receiver from the router if found "connection failed" transfers
+* process "identity-url-changed" event in service_data_motion() and service_customer()
+* IDURL and key_id fixes for identity rotate
+* process identity-rotate event in service_keys_storage() (#372)
+
+
+
+2019-08-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* update key_id in backup index after identity rotated
+* added keys_synchronizer() automat
+* rename local key when owner's identity was rotated
+
+
+
+2019-07-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump twisted==19.2.1
+* solved regression tests issues with aiohttp call to process/health/v1
+* added /file/exists/v1 REST API method
+
+
+
+2019-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* some changes in service_p2p_hookups() and p2p_connector()
+* make sure identity propagate is working correctly
+
+
+
+2019-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* idurl fixes in contactsdb and api  (#363)
+* able to read networks.json file from metadata folder if it exists
+* improved index_synchronizer() automat
+
+
+
+2019-07-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* check if key file already exists in the catalog
+* py3 fix in contactsdb
+* idurl fix in get_contact_identity()
+* idurl bug fix in service_customer_family()
+
+
+
+2019-07-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* protect code from idurl caching errors when identiy history is broken
+* more idurl fixes in packet_out
+* idurl fixes in service_identity_propagate() and service_customer_family() (#359)
+
+
+
+2019-07-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* idurl fixes in supplier services (#358)
+* catch and process "identity-url-changed" event in proxy_router()
+* made packetid more unique
+
+
+
+2019-07-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fixes in supplier service
+
+
+
+2019-07-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* critical bug fix in id_url
+* bug fix in online_status.shutdown()
+* bug fix in customer/supplier_connector.py
+* solved id_url issues in proxy transport
+* keep track of identity revisions in id_url and populate always latest revision
+* bug fix in DHT code
+
+
+
+2019-06-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in index_synchronizer()
+* bug fix in supplier_finder()
+* reading my suppliers from DHT during identiy restore
+* tried to fix issue with signature verification
+* one more issue fixed in proxy_transport() (#351)
+* fixed few issues in family_memeber() state machine  (#349)
+* added "services/entangled-dht/node-id" setting
+* populate DHT constants in networks.json
+* fixed "unanswered" Identity() packets
+* added "skip_ack" parameter to packet_out()
+* changed PacketID format for Identity() & Ack() commands
+* good progress with identity rotate (#344)
+* added few more makefile regression commands (#342)
+* new core module userid/id_url.py added  (#341)
+* bug fix in initializer.py (#340)
+
+
+
+2019-05-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* critical bug fix in CodernityDB3
+* chat history fixed to be stored after BitDust process stopped
+* a bunch of other Py3 fixes in CodernityDB3 (#338)
+
+
+
+2019-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* workaround fix in CodernityDB  (#336)
+* fix in backup_rebuilder when changing supplietrs number
+* bug fix in tcp_stream  (#334)
+
+
+
+2019-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* logging bug fix
+* few bug fixes found in Renato's RaspberryPI logs  (#331)
+
+
+
+2019-05-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* speed up tcp transport (#329)
+* implemented MultipleFilesSender() producer and set MAX_SIMULTANEOUS_OUTGOING_FILES = 10
+
+
+
+2019-05-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* on windows we must use "rmdir /S /Q xxx" during deployment (#325)
+* py3 fixes in CodernityDB and added few unit tests (#324)
+* added devops scripts to simplify release process (#322)
+
+
+
+2019-04-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* populating few more events from transport.gateway  (#320)
+* more fixes in network services (#319)
+
+
+
+2019-04-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor changes in logging and events
+* bug fix in my_keys (#317)
+* make sure suppliers receive and register my customer public key every time (#316)
+
+
+
+2019-04-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added new feature: backup/restore/sync my keys to suppliers encrypting with my "master" key (#313)
+* reorganized service_private_messages()
+* populate "my-keys-synchronized" event
+* added service_keys_storage()
+* added service_message_history()
+* disabled few unused services, development to be contunue later (#312)
+
+
+
+2019-04-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated Copyright period to 2008-2019
+* bug fix in /message/history/v1
+* added test for search users
+* made regression test setup more reliable
+* do not load all local keys at startup
+* reading remote matrix for shared files to be able to show availability
+* updated online_status() automat : reduce amount of "ping" packets sent to offline users
+* added /config/tree/v1 endpoint
+* improved config/*/v1 and service/list/v1 endpoints
+* added ~/.bitdust/logs/packet.log to debug/monitor p2p traffic
+* added ~/.bitdust/logs/event.log
+
+
+
+2019-03-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* improved config/list/v1 endpoint
+* changed contact_status() state machine and added bug fix in family_member()
+* added more info in file/list/v1 api,
+* enabled CRITICALLY_OFFLINE supplier replacing feature (#291)
+* bug fix in service_employer()  (#290)
+* home folder on Android is /storage/emulated/0/ (#288)
+* updated setup.py (#286)
+* added more flexibility in main.bpmain (#285)
+* bug fix in crypt.encrypted.Block unserialize, clean up in parallelp code (#283)
+* added more logging for jsn serialization and signatures verification issues debugging (#282)
+* rebuilt raid_worker() to use parallelp instead of multiprocessing (#281)
+* fixed .travis.yml
+* able to set python version for unit tests on travis
+* rebuilt raid_worker() to use parallelp instead of multiprocessing
+* copied and adopted parallelp 1.5.7 sources in the code base, thanks to Vitalii Vanovschi
+* removed pybc blockchain files, we are moving towards Bismuth project
+* fix bug in chat messages (#279)
+* passing text arguments to child_process() (#277)
+* fixes in raid and backup/restore pipe  (#274)
+
 
 
 2019-03-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
@@ -54,7 +1541,7 @@ Change Log
 * get rid of data_sender.log
 * all suppliers must be already hired before you start uploading
 * few more py3 bug fixes
-* more stability in service_shared_data() 
+* more stability in service_shared_data()
 
 
 
@@ -292,7 +1779,7 @@ Change Log
 2018-01-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added id server blog.bitdust.io, removed id server whmcs.whois.ai
-* fixed DHT init/connect scripts, 
+* fixed DHT init/connect scripts,
 * limit twisted and django versions in requirements, set --index-url=https://pypi.python.org/simple/ in deployment script
 * proper handling customer location of ".bitdust" folder
 
@@ -484,13 +1971,13 @@ Change Log
 * made upgrade on stun client - multiple stun requests at same time to increase performance
 * changed user settings engine, now it is splited on single files in sub folder: .bitdust/config/
 * many fixes in GUI and command line interface
-* hash method was changed from MD5 to SHA1 
+* hash method was changed from MD5 to SHA1
 * added a small feature - can request a single random packet for given backup from GUI
 
 
 2014-10-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
-* fixed messages - p2p chat is working now! 
+* fixed messages - p2p chat is working now!
 * did small fixes in: GUI, DHT code, API
 * changed UDP PING timeout again, from 1 minute to 30 seconds
 
@@ -530,7 +2017,5 @@ Change Log
 2014-08-20 Veselin Penev <veselin@bitdust.io>
 
 * start tracking of change log history
-* prepared a Demo version with GUI interface 
+* prepared a Demo version with GUI interface
 * new tray icons for Microsoft Windows
-
-
