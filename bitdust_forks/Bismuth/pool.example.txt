@@ -1,0 +1,7 @@
+mine_diff=10
+min_payout=100000
+pool_fee=1
+alt_fee=1
+alt_add=1aae2cfe5d01acc8d7cbc90fcf8bb715ca24927504d0d8071c0979c7
+worker_time=10
+m_timeout=5

@@ -12,6 +12,7 @@ push
 *_off.py
 COMMITS.txt
 HISTORY.txt
+build/
 .identities/
 release/
 screenshots/
@@ -24,6 +25,15 @@ venv
 bitdust.egg-info/
 dist/
 tests/data/test_*
+devops/nodes.txt
+devops/development_net.txt
+devops/main_net.txt
+.coverage
+.import
+bitdust/blockchain/genesis/
 
 # IDE specific
 .idea
+
+.DS_Store
+

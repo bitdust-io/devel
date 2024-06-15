@@ -1,0 +1,14 @@
+# Pip3 requirements - synced with requirements-node since wallet is now separate.
+
+base58
+polysign>=0.1.0
+pycryptodomex
+# You need to manually run the following line first
+# pip3 install simple-crypt --no-deps
+
+# Now the minimal modules needed for a full install
+
+PySocks
+requests
+# coincurve
+# ed25519

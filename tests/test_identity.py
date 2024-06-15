@@ -1,6 +1,15 @@
 from unittest import TestCase
 import os
 
+from bitdust.logs import lg
+
+from bitdust.system import bpio
+
+from bitdust.main import settings
+
+from bitdust.crypt import key
+
+from bitdust.userid import my_id
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -52,46 +61,42 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 class Test(TestCase):
 
     def setUp(self):
-        from logs import lg
-        from main import settings
-        from crypt import key
-        from userid import my_id
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
         lg.set_debug_level(30)
-        settings.init()
+        settings.init(base_dir='/tmp/.bitdust_tmp')
         self.my_current_key = None
-        if key.isMyKeyExists():
-            os.rename(settings.KeyFileName(), '/tmp/_current_priv_key')
-        fout = open('/tmp/_some_priv_key', 'w')
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/default/metadata/')
+        except:
+            pass
+        fout = open(settings.KeyFileName(), 'w')
         fout.write(_some_priv_key)
         fout.close()
-        if my_id.isLocalIdentityExists():
-            os.rename(settings.LocalIdentityFilename(), '/tmp/_current_localidentity')
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
-        self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
+        self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
 
     def tearDown(self):
-        from main import settings
-        from crypt import key
-        from userid import my_id
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
-        if os.path.isfile('/tmp/_current_localidentity'):
-            os.rename('/tmp/_current_localidentity', settings.LocalIdentityFilename())
-        if os.path.isfile('/tmp/_current_priv_key'):
-            os.rename('/tmp/_current_priv_key', settings.KeyFileName())
-        os.remove('/tmp/_some_priv_key')
+        settings.shutdown()
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def test_identity_valid(self):
-        from userid import identity
+        from bitdust.userid import identity
         some_identity = identity.identity(xmlsrc=_some_identity_xml)
         self.assertTrue(some_identity.isCorrect())
         self.assertTrue(some_identity.Valid())
+        self.assertEqual(some_identity.getIDURL().to_bin(), b'http://127.0.0.1:8084/alice.xml')
+        self.assertEqual(some_identity.getIDURL().to_id(), 'alice@127.0.0.1_8084')
 
     def test_identity_not_valid(self):
-        from userid import identity
+        from bitdust.userid import identity
         _broken_identity_xml = _some_identity_xml.replace('alice', 'bob')
         broken_identity = identity.identity(xmlsrc=_broken_identity_xml)
         self.assertTrue(broken_identity.isCorrect())

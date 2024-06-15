@@ -1,0 +1,151 @@
+#
+# docker-compose.yml
+#
+# Copyright (C) 2008 Stanislav Evseev, Veselin Penev  https://bitdust.io
+#
+# This file (docker-compose.yml) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
+version: "3.4"
+
+services:
+
+
+
+  id-a:
+    image: bitdust/app
+    ports:
+      - "10801:22"
+
+  id-b:
+    image: bitdust/app
+    ports:
+      - "10802:22"
+
+  id-c:
+    image: bitdust/app
+    ports:
+      - "10803:22"
+
+  id-dead:
+    image: bitdust/app
+    ports:
+      - "10804:22"
+
+  dht-1:
+    image: bitdust/app
+    ports:
+      - "10811:22"
+
+  dht-2:
+    image: bitdust/app
+    ports:
+      - "10812:22"
+    links:
+      - dht-1
+
+  stun-1:
+    image: bitdust/app
+    ports:
+      - "10821:22"
+    links:
+      - dht-2
+
+  supplier-1:
+    image: bitdust/app
+    ports:
+      - "10841:22"
+    links:
+      - dht-2
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
+  supplier-2:
+    image: bitdust/app
+    ports:
+      - "10842:22"
+    links:
+      - dht-2
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
+  customer-1:
+    image: bitdust/app
+    ports:
+      - "10851:22"
+    volumes:
+      - customer_1:/customer_1
+    links:
+      - dht-2
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
+  customer-rotated:
+    image: bitdust/app
+    ports:
+      - "10855:22"
+    volumes:
+      - customer_rotated:/customer_rotated
+    links:
+      - dht-2
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
+
+
+  tester:
+    image: bitdust/tester
+    cap_add:
+      - SYS_PTRACE
+    privileged: true
+    stdin_open: true
+    tty: true
+    links:
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+      - dht-1
+      - dht-2
+      - stun-1
+      - supplier-1
+      - supplier-2
+      - customer-1
+      - customer-rotated
+
+    volumes:
+      - customer_1:/customer_1
+      - customer_rotated:/customer_rotated
+
+
+
+volumes:
+  customer_1:
+  customer_rotated:
+

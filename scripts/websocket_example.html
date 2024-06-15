@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>BitDust websocket example</title>
+      <script type="text/javascript">
+         function socket_restart() {
+            var websocket = null;
+            websocket = new WebSocket("ws://127.0.0.1:8280?api_secret=abc");
+            websocket.binaryType = "arraybuffer";
+            websocket.onopen = function() {
+                websocket.send('{"command": "api_call", "method": "process_health", "kwargs": {} }');
+            };
+            websocket.onmessage = function(e) {
+                if (typeof e.data == "string") {
+                    console.log("WebSocket message received: " + e.data);
+                }
+            };
+         };
+
+         window.onload = function() {
+            socket_restart();
+         };
+      </script>
+   </head>
+   <body>
+    Please open dev console with F12 to see the output, you should see "WebSocket message received ..." messages.
+   </body>
+</html>

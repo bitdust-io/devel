@@ -1,0 +1,12 @@
+[style]
+based_on_style=facebook
+column_limit=240
+indent_width=4
+continuation_indent_width=4
+blank_line_before_class_docstring=True
+blank_line_before_nested_class_or_def=True
+blank_lines_around_top_level_definition=2
+blank_lines_between_top_level_imports_and_variables=1
+no_spaces_around_selected_binary_operators=*,/
+indent_dictionary_value=False
+split_before_named_assigns=False

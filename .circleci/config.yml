@@ -1,0 +1,35 @@
+version: 2.1
+executors:
+  my-custom-executor:
+    docker:
+      - image: cimg/python:3.8.12
+
+jobs:
+  bitdust-job:
+
+    executor: my-custom-executor
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "a5:22:3f:fe:a2:66:38:e0:9b:c9:84:7f:2c:14:44:94"
+      - checkout
+      - run:
+          no_output_timeout: 30m
+          command: |
+            ls -la /home/circleci/.ssh/
+            cat /home/circleci/.ssh/config
+            cat /home/circleci/.ssh/known_hosts
+            git archive -o latest.zip HEAD
+            ls -la ./latest.zip
+            scp -o StrictHostKeyChecking=no ./latest.zip tester@p2p-alice.ai:.
+            cat /home/circleci/.ssh/known_hosts
+            echo "archived file latest.zip uploaded to the intermediate machine"
+            ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip ubumac0:.'
+            echo "archived file latest.zip uploaded to the testing machine"
+            ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh ubumac0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; sudo service docker restart; docker network prune -f; make regress_stop; make regress_clean; make test_unit && make regress_prepare && make regress_run_parallel && ( make regress_report 1>./regress_report.txt ) && make regress_stop && make regress_clean && cat ./regress_report.txt; "'
+            echo "OK!"
+
+workflows:
+  my-custom-workflow:
+    jobs:
+      - bitdust-job

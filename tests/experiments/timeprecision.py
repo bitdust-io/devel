@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # timeprecision.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (timeprecision.py) is part of BitDust Software.
 #
@@ -22,7 +22,6 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-import os
 import sys
 import time
 from six.moves import range
@@ -67,7 +66,7 @@ def _time_windows():
     return _InitTime + ((_TimeStart - time_now.value) / _Frequency)
 
 
-if sys.platform == "win32":
+if sys.platform == 'win32':
     # On Windows, the best timer is time.clock()
     _time = _time_windows
     init()

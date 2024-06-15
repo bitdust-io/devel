@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # net_misc.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (net_misc.py) is part of BitDust Software.
 #
@@ -21,42 +21,36 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 from __future__ import absolute_import
 from __future__ import print_function
-import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..', '..')))
-
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', '..')))
 
 
 def main():
+
     def _ok(x):
         print('ok', x)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     def _fail(x):
         print('fail', x)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
-    from lib import net_misc
-    from main import settings
+    from bitdust.lib import net_misc
+    from bitdust.main import settings
     settings.init()
     settings.update_proxy_settings()
-    # url = 'http://p2p-id.ru/atg314.xml'
     url = 'http://localhost:8084'
     r = net_misc.getPageTwisted(url)
     r.addCallback(_ok)
     r.addErrback(_fail)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
+    settings.shutdown()
+
 
 if __name__ == '__main__':
     main()

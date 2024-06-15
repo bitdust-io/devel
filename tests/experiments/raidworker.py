@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # raidworker.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (raidworker.py) is part of BitDust Software.
 #
@@ -26,12 +26,11 @@ import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
 sys.path.append(os.path.abspath('.'))
 sys.path.append(os.path.abspath('..'))
 
-from logs import lg
+from bitdust.logs import lg
 
 
 def main():
@@ -52,13 +51,12 @@ def main():
 
     def _add(blocknum):
         tasks[blocknum] = (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5])
-        raid_worker.A('new-task',
-                      ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]),
-                       _cb))
-    from system import bpio
+        raid_worker.A('new-task', ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]), _cb))
+
+    from bitdust.system import bpio
     bpio.init()
     lg.set_debug_level(20)
-    from raid import raid_worker
+    from bitdust.raid import raid_worker
     reactor.callWhenRunning(raid_worker.A, 'init')
     start_block_num = int(sys.argv[4])
     reactor.callLater(0.01, _add, start_block_num)

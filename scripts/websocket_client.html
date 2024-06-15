@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>simple BitDust websocket client</title>
+      <script type="text/javascript">
+         var socket = null;
+         var isopen = false;
+         var call_id = 0;
+
+         function socket_restart() {
+            isopen = false;
+            socket = null;
+            var api_secret = document.getElementById("api_secret").value;
+            if ( api_secret != "" ) {
+               socket = new WebSocket("ws://127.0.0.1:8280?api_secret=" + api_secret);
+            } else {
+               socket = new WebSocket("ws://127.0.0.1:8280");
+            }
+            socket.binaryType = "arraybuffer";
+            socket.onopen = function() {
+               console.log("Connected!");
+               isopen = true;
+            }
+            socket.onmessage = function(e) {
+               if (typeof e.data == "string") {
+                  console.log("Text message received: " + e.data);
+                  var response_type = null;
+                  var response_call_id = null;
+                  var response_data = JSON.parse(e.data);
+                  try {
+                     response_type = response_data.type;
+                     response_call_id = response_data.payload.call_id;
+                  } catch { }
+                  if ( response_type == "api_call" ) {
+                     if ( response_call_id == call_id ) {
+                        document.getElementById('result_field').innerHTML = JSON.stringify(response_data, undefined, 4);
+                     } else {
+                        console.log("Unexpected call_id: " + response_call_id);
+                     }
+                  }
+               } else {
+                  var arr = new Uint8Array(e.data);
+                  var hex = '';
+                  for (var i = 0; i < arr.length; i++) {
+                     hex += ('00' + arr[i].toString(16)).substr(-2);
+                  }
+                  console.log("Binary message received: " + hex);
+               }
+            }
+            socket.onclose = function(e) {
+               console.log("Connection closed.");
+               socket = null;
+               isopen = false;
+            }
+         };
+
+         function api_send() {
+            if (isopen) {
+               call_id = call_id + 1;
+               var api_method = document.getElementById("api_method").value;
+               var api_kwargs = document.getElementById("api_kwargs").value;
+               if ( !api_kwargs ) api_kwargs = "{}";
+               document.getElementById('result_field').innerHTML = "...";
+               socket.send('{"command": "api_call", "method": "' + api_method + '", "kwargs": ' + api_kwargs + ', "call_id": "' + call_id + '"}');
+            } else {
+               console.log("Connection was not opened.");
+            }
+         };
+
+         window.onload = function() {
+            socket_restart();
+
+            var api_method_input = document.getElementById("api_method");
+            // Execute a function when the user releases a key on the keyboard
+            api_method_input.addEventListener("keyup", function(event) {
+              // Number 13 is the "Enter" key on the keyboard
+              if (event.keyCode === 13) {
+                // Cancel the default action, if needed
+                event.preventDefault();
+                // Trigger the button element with a click
+                document.getElementById("api_send").click();
+              }
+            });
+
+            var api_kwargs_input = document.getElementById("api_kwargs");
+            // Execute a function when the user releases a key on the keyboard
+            api_kwargs_input.addEventListener("keyup", function(event) {
+              // Number 13 is the "Enter" key on the keyboard
+              if (event.keyCode === 13) {
+                // Cancel the default action, if needed
+                event.preventDefault();
+                // Trigger the button element with a click
+                document.getElementById("api_send").click();
+              }
+            });
+
+         };
+
+      </script>
+   </head>
+   <body>
+      <h1>simple BitDust websocket client</h1>
+      <p>
+         1. Make sure your BitDust engine process is already running on that machine first.
+      </p>
+      <p>
+         2. If access to BitDust API interface is protected with a token (it is enabled by default), you need to go to the folder
+         <code>.bitdust/metadata/</code> and open the file <code>apisecret</code>.
+         <br>
+         It contains the secret token that HTTP or WebSocket client must know and provide to the engine to be able to access and execute
+         any API methods in BitDust.
+         <br>
+         This way you can be sure that malicious WEB site you may opened in your browser have no access to
+         the BitDust engine process.
+         <br>
+         To authorize that WebClient you simply copy & paste token from the <code>apisecret</code> file into the field bellow and click "reload" button:
+         <br>
+         <input type="text" name="api_secret" id="api_secret" size="50" placeholder="copy & paste token from .bitdust/metadata/apisecret file" />
+         <br>
+         <button onclick='socket_restart();'>reload</button>
+      </p>
+      <p>
+         3. Open your browser's JavaScript console to see the output results and errors from the WebSocket (hit F12).
+      </p>
+      <p>
+         4. Enter name of the API method in the first field and arguments as a JSON dictionary in the second field and press "send" button.
+         <br>
+         List of all available BitDust API methods you can find on the Wiki page: <a href="https://bitdust.io/wiki/api" target=_blank>https://bitdust.io/wiki/api</a>
+      </p>
+
+      <br>
+
+      <input type="text" name="api_method" id="api_method" size="30" placeholder="files_list" />
+      <input type="text" name="api_kwargs" id="api_kwargs" size="100" placeholder='{"remote_path": "/"}' />
+      <br>
+      <button id="api_send" onclick='api_send();'>send</button>
+
+      <br>
+
+      <div>
+         <pre id="result_field">
+         </pre>
+      </div>
+
+   </body>
+</html>

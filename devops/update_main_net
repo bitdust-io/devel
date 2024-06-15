@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./@dops "./exec 'hostname; hostname -I; ~/.bitdust/venv/bin/python --version; df -h; ps aux | grep bitdust.py | grep -v /bin/bash | grep -v grep; cd bitdust; git remote -v; git status; git log -1; cd ..; ./kill; rm -rf ~/.bitdust/logs/; ./up; sleep 1; ./daemon; sleep 3; ps aux | grep bitdust.py | grep -v /bin/bash | grep -v grep; echo ok;'" main_net.txt

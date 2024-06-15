@@ -1,0 +1,2 @@
+[tool.pycln]
+all = true

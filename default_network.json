@@ -1,0 +1,98 @@
+{
+  "service_bismuth_blockchain": {
+    "initial_difficulty": 10,
+    "genesis_address": "cc846806ba14b8ec5a042d254beeeb637ee91033fa0f84c66063e0a9",
+    "foundation_miners": [
+        "884dbabd8e214cf1ac80c0718d6c66fd9cdb7a28cfdd0d2bc3b053fe",
+        "d6d7e856b50ea783c388e17137eb789dd21a08295bbaa834a4b9b9ea"
+    ],
+    "known_nodes": [
+      {
+        "host": "p2p-id.ru",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      },
+      {
+        "host": "bahamas.ai",
+        "node_tcp_port": 15658,
+        "mining_pool_tcp_port": 18525,
+        "explorer_http_port": 19080
+      }
+    ]
+  },
+  "service_entangled_dht": {
+    "bucket_size": 4,
+    "default_age": 43200,
+    "known_nodes": [
+      {
+        "host": "p2p-id.ru",
+        "udp_port": 14441
+      },
+      {
+        "host": "p2p-alice.ai",
+        "udp_port": 14441
+      },
+      {
+        "host": "bitdust.ai",
+        "udp_port": 14441
+      },
+      {
+        "host": "root-node.ai",
+        "udp_port": 14441
+      },
+      {
+        "host": "bahamas.ai",
+        "udp_port": 14441
+      },
+      {
+        "host": "peer2peer.ai",
+        "udp_port": 14441
+      },
+      {
+        "host": "seed.bitdust.io",
+        "udp_port": 14441
+      }
+    ],
+    "max_age": 86400,
+    "parallel_calls": 4,
+    "refresh_timeout": 600,
+    "rpc_timeout": 10
+  },
+  "service_gateway": {
+    "session_key_type": "AES"
+  },
+  "service_identity_propagate": {
+    "known_servers": [
+      {
+        "host": "p2p-id.ru",
+        "http_port": 80
+      },
+      {
+        "host": "p2p-alice.ai",
+        "http_port": 80
+      },
+      {
+        "host": "bitdust.ai",
+        "http_port": 80
+      },
+      {
+        "host": "root-node.ai",
+        "http_port": 80
+      },
+      {
+        "host": "bahamas.ai",
+        "http_port": 80
+      },
+      {
+        "host": "peer2peer.ai",
+        "http_port": 80
+      },
+      {
+        "host": "seed.bitdust.io",
+        "http_port": 80
+      }
+    ],
+    "whitelisted_servers": []
+  }
+}

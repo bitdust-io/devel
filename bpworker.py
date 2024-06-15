@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # bpworker.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (bpworker.py) is part of BitDust Software.
 #
@@ -31,6 +31,9 @@ import os
 
 import six
 import platform
+
+_Debug = False
+
 ostype = platform.uname()[0]
 if ostype == 'Windows':
     if six.PY3:
@@ -46,14 +49,13 @@ else:
     if six.PY3:
         sys.stdout = sys.stdout.buffer
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         sys.path.append(os.path.abspath(os.path.join('.', 'parallelp', 'pp')))
-        from parallelp.pp.ppworker import _WorkerProcess
+        from bitdust_forks.parallelp.pp.ppworker import _WorkerProcess
         wp = _WorkerProcess()
         wp.run()
     except Exception as exc:
-        pass
-        # import traceback
-        # open('/tmp/raid.log', 'a').write(traceback.format_exc())
+        if _Debug:
+            import traceback
+            open('/tmp/raid.log', 'a').write(traceback.format_exc())

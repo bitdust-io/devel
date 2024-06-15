@@ -1,3 +1,0 @@
-#!/bin/bash
-cd /usr/share/bitdust
-/usr/bin/python bitdust.py

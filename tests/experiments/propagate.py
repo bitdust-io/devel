@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # propagate.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (propagate.py) is part of BitDust Software.
 #
@@ -25,11 +25,10 @@ import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
 sys.path.append(os.path.abspath('..'))
 
-from logs import lg
+from bitdust.logs import lg
 
 
 def main():
@@ -37,7 +36,9 @@ def main():
 
     # TEST
     import transport.gate
-    transport.gate.init(['tcp', ])
+    transport.gate.init([
+        'tcp',
+    ])
     import userid.propagate
     userid.propagate.SendServers()
     reactor.run()

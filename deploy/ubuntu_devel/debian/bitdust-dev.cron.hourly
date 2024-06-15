@@ -1,4 +1,0 @@
-#!/bin/sh
-
-apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust-dev.list" -o Dir::Etc::sourceparts="-"
-apt-get install bitdust-dev

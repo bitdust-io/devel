@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo
+echo "##### file CHANGELOG.txt to be updated"
+cd ../../bitdust.devel/
+git add CHANGELOG.txt
+git commit -m "updated CHANGELOG, prepare next release"
+git push origin master
+
+
+echo
+echo "##### publishing CHANGELOG.txt and all other files in the release"
+cp CHANGELOG.txt ../bitdust/
+cd ../bitdust/
+git add CHANGELOG.txt
+
+
+read -p "##### ready? you will need to provide a commit message for release"
+git commit
+git push origin master
+
+
+echo
+echo "##### now start a Pull Request, go to https://github.com/bitdust-io/public/pulls"
+echo

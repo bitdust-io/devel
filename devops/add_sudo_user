@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 # use: add_sudo_user alice myownhost.com
 

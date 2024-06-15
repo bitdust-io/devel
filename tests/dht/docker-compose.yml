@@ -4,161 +4,140 @@ x-common: &common
   context: ./../../
 
 services:
-  base:
+
+  app:
+    image: bitdust_perf/app
     build:
       <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust_perf/base
+      dockerfile: regress/Dockerfiles/app/Dockerfile
+    environment:
+      dht_seeds: genesis
+      delayed: 0
 
-  dht_producer:
-    image: bitdust_perf/dht_producer
+  genesis:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: genesis
+      delayed: 0
+
+  seed1:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: genesis:14441
+      delayed: 1
+      attach_layer: 1
+
+  seed2:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: genesis:14441
+      delayed: 2
+      attach_layer: 1
+
+  seed3:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: genesis:14441
+      delayed: 3
+      attach_layer: 1
+
+  seed4:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: genesis:14441
+      delayed: 4
+      attach_layer: 1
+
+  node1:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
+
+  node2:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
+
+  node3:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
+
+  node4:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
+
+  node5:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  node6:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  node7:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  node8:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  producer:
+    image: bitdust_perf/producer
     build:
       context: .
       dockerfile: Dockerfile_producer
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
 
-  dht_consumer:
-    image: bitdust_perf/dht_consumer
+  consumer:
+    image: bitdust_perf/consumer
     build:
       context: .
       dockerfile: Dockerfile_consumer
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-
-  dht_seed_1:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 1
-
-  dht_seed_2:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 10
-
-  dht_node_3:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_4:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_5:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_6:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_7:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_8:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_9:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_10:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_11:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_12:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_13:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_14:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
-
-  dht_node_15:
-    image: bitdust_perf/dht_seed
-    build:
-      context: .
-    environment:
-      dht_seed_1: dht_seed_1:14441
-      dht_seed_2: dht_seed_2:14441
-      delayed: 20
