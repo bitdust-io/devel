@@ -12,14 +12,12 @@ appdirs==1.4.4
 attrs==22.2.0
 Automat==22.10.0
 
-# Bismuth
 base58==2.1.1
 cffi==1.15.1
 coincurve==16.0.0
 constantly==15.1.0
 coverage==6.2
 cryptography==39.0.0
-ed25519==1.5
 hyperlink==21.0.0
 idna==3.4
 incremental==22.10.0
@@ -29,6 +27,7 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
 pycryptodomex==3.16.0
+PyNaCl==1.5
 pynacl==1.5.0
 pyparsing==3.0.9
 PySocks==1.7.1

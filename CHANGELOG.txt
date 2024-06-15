@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+2024-06-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* introduce new group streaming solution
+* also a new solution for messages history sharing between group participants
+* introduce process to accept storage payments by suppliers
+* introduce sequence_number for storage contracts
+* made keys_synchronizer() more reliable
+* able to force restart of fire_hire() in api.files_sync()
+* added regression test for new streaming methods
+
+
+
 2024-04-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added HMTL WEB template

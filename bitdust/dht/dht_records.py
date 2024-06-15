@@ -210,7 +210,7 @@ _Rules = {
             {
                 'op': 'exist',
             },
-        ],  # 'archive_folder_path': [{'op': 'exist', }, ],
+        ],
     },
     'bismuth_identity_request': {
         'type': [
@@ -412,7 +412,7 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
             'timestamp': utime.utcnow_to_sec1970(),
             'revision': 0 if revision is None else revision,
             'customer_idurl': customer_idurl.to_text(),
-            'broker_idurl': broker_idurl.to_text(),  # 'archive_folder_path': archive_folder_path,
+            'broker_idurl': broker_idurl.to_text(),
             'position': position,
         },
         rules=get_rules('message_broker'),
