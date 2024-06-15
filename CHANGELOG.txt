@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+2024-06-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* switched from ed25519 to PyNaCl
+
+
+
 2024-06-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * introduce new group streaming solution
