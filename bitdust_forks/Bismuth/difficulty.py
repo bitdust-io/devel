@@ -6,7 +6,7 @@ from fork import Fork
 from quantizer import quantize_two, quantize_ten
 
 
-_Debug = True
+_Debug = False
 
 DEFAULT_DIFFICULTY = 10
 
