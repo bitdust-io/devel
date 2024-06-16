@@ -1,0 +1,22 @@
+name: MacOS build
+on: [push]
+
+jobs:
+  macos_build_venv:
+    name: macos build
+    runs-on: macos-11
+
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: make clean venv
+      run: make clean venv
