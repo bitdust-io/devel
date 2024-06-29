@@ -9,7 +9,7 @@ from os import urandom
 from typing import Union
 
 import base58
-import ed25519
+from nacl.signing import SigningKey, VerifyKey
 from polysign.signer import Signer, SignerType, SignerSubType
 
 
@@ -60,10 +60,10 @@ class SignerED25519(Signer):
         try:
             # print("SEED", seed)
             # TODO: check flow, there may be many unnecessary hex-byte-hex-bytes conversions from top to bottom
-            key = ed25519.SigningKey(bytes.fromhex(seed))
+            key = SigningKey(bytes.fromhex(seed))
             hexa = key.to_ascii(encoding="hex").decode('utf-8')
             # print("ED25519 Privk Key", hexa)  # e5b42f3c-3fe02e16-1d42ff47-07a174a5 715b2badc7d4d3aebbea9081bd9123d5
-            verifying_key = key.get_verifying_key()
+            verifying_key = key.verify_key
             public_key = verifying_key.to_ascii(encoding="hex").decode('utf-8')
             # public_key = hexa[32:]
             # print("ED25519 Public Key", public_key)
@@ -105,8 +105,8 @@ class SignerED25519(Signer):
         """Verify signature from raw signature. Address may be used to determine the sig subtype"""
         try:
             # print("verif", signature, public_key, len(public_key))
-            verifying_key = ed25519.VerifyingKey(public_key)
-            verifying_key.verify(signature, buffer)
+            verifying_key = VerifyKey(public_key)
+            verifying_key.verify(buffer, signature)
         except Exception as e:
             print(e)
             raise ValueError(f"Invalid ED25519 signature from {address}")
