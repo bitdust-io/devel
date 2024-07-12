@@ -757,6 +757,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
     # use shorter key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/message-broker/enabled false;'
@@ -793,6 +794,7 @@ async def start_identity_server_async(node, loop, verbose=True):
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set services/gateway/p2p-timeout 20;'
     cmd += 'bitdust set personal/private-key-size 1024;'
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/message-broker/enabled false;'
@@ -825,6 +827,7 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/message-broker/enabled false;'
@@ -862,6 +865,7 @@ async def start_proxy_server_async(
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/proxy-transport/enabled false;'
@@ -919,6 +923,7 @@ async def start_supplier_async(
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'
     # configure ID servers
@@ -984,6 +989,7 @@ async def start_message_broker_async(
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'
@@ -1066,6 +1072,7 @@ async def start_customer_async(
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
+    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/message-broker/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'

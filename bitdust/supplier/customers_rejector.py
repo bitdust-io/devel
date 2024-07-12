@@ -280,7 +280,9 @@ class CustomersRejector(automat.Automat):
             rejected_customers = storage_contract.verify_all_current_customers_contracts()
         if rejected_customers:
             lg.warn('found unpaid customers: %r' % rejected_customers)
-            self.automat('found-unpaid-customers', rejected_customers)
+            # TODO: disabled for now...
+            # self.automat('found-unpaid-customers', rejected_customers)
+            self.automat('contracts-verified')
         else:
             lg.info('all customers have valid contracts')
             self.automat('contracts-verified')

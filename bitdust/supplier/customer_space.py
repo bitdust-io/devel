@@ -953,7 +953,8 @@ def on_service_supplier_request(json_payload, newpacket, info):
             current_contract = {}
         if current_contract and current_contract.get('deny'):
             lg.warn('contract processing denied with user %s' % customer_idurl)
-            return p2p_service.SendFail(newpacket, 'deny:' + jsn.dumps(current_contract))
+            # TODO: disabled for now...
+            # return p2p_service.SendFail(newpacket, 'deny:' + jsn.dumps(current_contract))
     # check if this is a new customer or an existing one
     # for existing one, we have to first release currently allocated resources
     if customer_idurl in current_customers:

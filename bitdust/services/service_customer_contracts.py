@@ -55,7 +55,7 @@ class CustomerContractsService(LocalService):
         return True
 
     def stop(self):
-        if self.payment_loop.running:
+        if self.payment_loop and self.payment_loop.running:
             self.payment_loop.stop()
         self.payment_loop = None
         return True
