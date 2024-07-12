@@ -66,7 +66,7 @@ class BlockchainIDService(LocalService):
 
     def stop(self):
         from bitdust.blockchain import blockchain_registrator
-        if self.sync_my_transactions_loop.running:
+        if self.sync_my_transactions_loop and self.sync_my_transactions_loop.running:
             self.sync_my_transactions_loop.stop()
         self.sync_my_transactions_loop = None
         blockchain_registrator.A('shutdown')

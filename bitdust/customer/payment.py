@@ -26,7 +26,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -66,6 +66,8 @@ def get_supplier_contracts_dir(supplier_idurl):
 
 
 def save_storage_contract(supplier_idurl, json_data):
+    if _Debug:
+        lg.args(_DebugLevel, s=supplier_idurl, json_data=json_data)
     supplier_contracts_dir = get_supplier_contracts_dir(supplier_idurl)
     if not os.path.isdir(supplier_contracts_dir):
         bpio._dirs_make(supplier_contracts_dir)
@@ -85,13 +87,18 @@ def list_storage_contracts(supplier_idurl):
         json_data = jsn.loads_text(local_fs.ReadTextFile(contract_path))
         l.append(json_data)
     l.sort(key=lambda json_data: utime.unpack_time(json_data['started']))
+    if _Debug:
+        lg.args(_DebugLevel, s=supplier_idurl, l=l)
     return l
 
 
 def list_contracted_suppliers():
+    customer_contracts_dir = settings.ServiceDir('service_customer_contracts')
+    if not os.path.isdir(customer_contracts_dir):
+        bpio._dirs_make(customer_contracts_dir)
     supplier_idurls = []
-    for supplier_contracts_prefix in os.listdir(settings.ServiceDir('service_customer_contracts')):
-        supplier_contracts_dir = os.path.join(settings.ServiceDir('service_customer_contracts'), supplier_contracts_prefix)
+    for supplier_contracts_prefix in os.listdir(customer_contracts_dir):
+        supplier_contracts_dir = os.path.join(customer_contracts_dir, supplier_contracts_prefix)
         for contract_filename in os.listdir(supplier_contracts_dir):
             contract_path = os.path.join(supplier_contracts_dir, contract_filename)
             json_data = jsn.loads_text(local_fs.ReadTextFile(contract_path))
@@ -113,6 +120,8 @@ def pay_for_storage():
         return False
     now = utime.utcnow_to_sec1970()
     my_customer_prefix = my_id.getIDURL().unique_name()
+    if _Debug:
+        lg.args(_DebugLevel, my_balance=cur_balance, my_customer_prefix=my_customer_prefix)
     for supplier_idurl in list_contracted_suppliers():
         supplier_contracts = list_storage_contracts(supplier_idurl)
         unpaid_contracts = []

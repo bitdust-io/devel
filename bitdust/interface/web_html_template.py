@@ -64,13 +64,17 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
                     <a href="%(site_url)s/index.html#ecosystem">Ecosystem</a>
                 </li>
                 <!-- Nav Item -->
+                <!--
                 <li>
                     <a href="%(site_url)s/index.html#roadmap">Roadmap</a>
                 </li>
+                -->
                 <!-- Nav Item -->
+                <!--
                 <li>
                     <a href="%(site_url)s/index.html#team">Team</a>
                 </li>
+                -->
                 <!-- Nav Item -->
                 <li class="active">
                     <a href="%(wikipath)s">Wiki</a>
@@ -100,6 +104,11 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
             Get Started
         </a>
 
+        <!-- Navbar Button -->
+        <a href="https://forms.gle/RkJW3L7NTamZ5K8m6" target="_blank"
+           class="btn btn-sm ui-gradient-peach pull-right">
+            Give Feedback
+        </a>
 
     </div><!-- .container -->
 </nav> <!-- nav -->

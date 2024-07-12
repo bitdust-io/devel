@@ -85,7 +85,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/backups/keep-local-copies-enabled', 'true')
     conf_obj.setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
 
-    conf_obj.setDefaultValue('services/blockchain-id/enabled', 'false')
+    conf_obj.setDefaultValue('services/blockchain-id/enabled', 'true')
 
     conf_obj.setDefaultValue('services/blockchain-authority/enabled', 'false')
     conf_obj.setDefaultValue('services/blockchain-authority/registration-bonus-coins', 100)
@@ -96,13 +96,13 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/blockchain-explorer/host', '127.0.0.1')
     conf_obj.setDefaultValue('services/blockchain-explorer/web-port', 19080)
 
-    conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'false')
+    conf_obj.setDefaultValue('services/bismuth-blockchain/enabled', 'true')
 
     conf_obj.setDefaultValue('services/bismuth-node/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-node/host', '127.0.0.1')
     conf_obj.setDefaultValue('services/bismuth-node/tcp-port', 15658)
 
-    conf_obj.setDefaultValue('services/bismuth-wallet/enabled', 'false')
+    conf_obj.setDefaultValue('services/bismuth-wallet/enabled', 'true')
 
     conf_obj.setDefaultValue('services/bismuth-pool/enabled', 'false')
     conf_obj.setDefaultValue('services/bismuth-pool/host', '127.0.0.1')
@@ -110,7 +110,7 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/bismuth-miner/enabled', 'false')
 
-    conf_obj.setDefaultValue('services/bismuth-identity/enabled', 'false')
+    conf_obj.setDefaultValue('services/bismuth-identity/enabled', 'true')
 
     conf_obj.setDefaultValue('services/broadcasting/enabled', 'false')
     conf_obj.setDefaultValue('services/broadcasting/routing-enabled', 'false')
@@ -122,7 +122,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/customer/needed-space', diskspace.MakeStringFromBytes(settings.DefaultNeededBytes()))
     conf_obj.setDefaultValue('services/customer/suppliers-number', settings.DefaultDesiredSuppliers())
 
-    conf_obj.setDefaultValue('services/customer-contracts/enabled', 'false')
+    conf_obj.setDefaultValue('services/customer-contracts/enabled', 'true')
 
     conf_obj.setDefaultValue('services/customer-family/enabled', 'true')
 
@@ -247,7 +247,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/supplier/enabled', 'true')
     conf_obj.setDefaultValue('services/supplier/donated-space', diskspace.MakeStringFromBytes(settings.DefaultDonatedBytes()))
 
-    conf_obj.setDefaultValue('services/supplier-contracts/enabled', 'false')
+    conf_obj.setDefaultValue('services/supplier-contracts/enabled', 'true')
     conf_obj.setDefaultValue('services/supplier-contracts/initial-duration-hours', 6)
     conf_obj.setDefaultValue('services/supplier-contracts/duration-raise-factor', 2.0)
 
