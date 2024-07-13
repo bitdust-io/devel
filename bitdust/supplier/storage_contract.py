@@ -503,7 +503,7 @@ def verify_accept_storage_payment(tx):
         lg.exc()
         return
     try:
-        sequence_numbers = map(int, sequence_numbers.split(','))
+        sequence_numbers = list(map(int, sequence_numbers.split(',')))
     except:
         lg.exc()
         return
@@ -516,7 +516,7 @@ def verify_accept_storage_payment(tx):
             if isinstance(contract_started_time, int):
                 json_data = contracts_list[contract_started_time]
                 if json_data['state'] == 'completed':
-                    if json_data['sequence_number'] in sequence_numbers:
+                    if int(json_data['sequence_number']) in sequence_numbers:
                         recently_paid_contracts.append(json_data)
     if _Debug:
         lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers, recently_paid_contracts=len(recently_paid_contracts))
