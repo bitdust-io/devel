@@ -505,50 +505,65 @@ def verify_all_current_customers_contracts():
 def verify_accept_storage_payment(tx):
     try:
         customer_prefix, sequence_numbers = tx['openfield'].split(' ')
+        int(tx['block_height'])
     except:
         lg.exc()
-        return
+        return 0
     try:
         sequence_numbers = list(map(int, sequence_numbers.split(',')))
     except:
-        lg.exc()
-        return
-    recently_paid_contracts = []
-    if _Debug:
-        lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers)
+        return 0
+    recently_completed_contracts = []
     try:
         customer_idurl = id_url.field(id_url.unique_names(customer_prefix)[0])
     except:
         lg.exc()
-        return
+        return 0
     if _Debug:
         lg.args(_DebugLevel, c=customer_idurl, unique_name=customer_idurl.unique_name())
     if customer_idurl.unique_name() != customer_prefix:
         lg.err('customer %r identity name do not match' % customer_idurl)
-        return
+        return 0
     contracts_list = list_customer_contracts(customer_idurl)
-    if _Debug:
-        lg.args(_DebugLevel, c=customer_idurl, contracts_list=len(contracts_list))
     for contract_started_time in contracts_list.keys():
         if isinstance(contract_started_time, int):
             json_data = contracts_list[contract_started_time]
-            if _Debug:
-                lg.args(_DebugLevel, c=customer_idurl, state=json_data['state'], sequence_number=json_data['sequence_number'])
             if json_data['state'] == 'completed':
                 if int(json_data['sequence_number']) in sequence_numbers:
-                    recently_paid_contracts.append(json_data)
+                    recently_completed_contracts.append(json_data)
     if _Debug:
-        lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers, recently_paid_contracts=len(recently_paid_contracts))
-    if not recently_paid_contracts:
-        return
+        lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers, recently_completed_contracts=len(recently_completed_contracts))
+    if not recently_completed_contracts:
+        return 0
     customer_contracts_dir = get_customer_contracts_dir(customer_idurl)
-    for json_data in recently_paid_contracts:
+    count = 0
+    for json_data in recently_completed_contracts:
         # rename "<started_time>.completed" file to "<started_time>.paid"
         completed_contract_path = os.path.join(customer_contracts_dir, json_data['filename'])
         paid_contract_path = os.path.join(customer_contracts_dir, '{}.paid'.format(utime.unpack_time(json_data['started'])))
         if _Debug:
-            lg.args(_DebugLevel, old_path=completed_contract_path, new_path=paid_contract_path)
+            lg.args(_DebugLevel, block_height=int(tx['block_height']), old_path=completed_contract_path, new_path=paid_contract_path)
         os.rename(completed_contract_path, paid_contract_path)
         paid_contract = jsn.loads_text(local_fs.ReadTextFile(paid_contract_path))
         paid_contract['customer'] = customer_idurl
         events.send('storage-contract-paid', data=dict(contract=paid_contract))
+        count += 1
+    return count
+
+
+def scan_recent_storage_transactions():
+    transactions_dir_path = os.path.join(settings.ServiceDir('bismuth_blockchain'), 'transactions')
+    if not os.path.isdir(transactions_dir_path):
+        return
+    for block_height, operation, _, filename in bismuth_wallet.my_known_transactions():
+        if operation == 'storage':
+            filepath = os.path.join(transactions_dir_path, filename)
+            try:
+                tx = jsn.loads_text(local_fs.ReadTextFile(filepath))
+                int(tx['block_height'])
+            except:
+                lg.exc()
+                continue
+            accepted = verify_accept_storage_payment(tx)
+            if _Debug:
+                lg.args(_DebugLevel, block_height=block_height, accepted=accepted)

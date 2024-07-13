@@ -88,7 +88,7 @@ def list_storage_contracts(supplier_idurl):
         l.append(json_data)
     l.sort(key=lambda json_data: utime.unpack_time(json_data['started']))
     if _Debug:
-        lg.args(_DebugLevel, s=supplier_idurl, l=l)
+        lg.args(_DebugLevel, s=supplier_idurl, l=len(l))
     return l
 
 
