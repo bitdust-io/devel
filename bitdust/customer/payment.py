@@ -88,7 +88,7 @@ def list_storage_contracts(supplier_idurl):
         l.append(json_data)
     l.sort(key=lambda json_data: utime.unpack_time(json_data['started']))
     if _Debug:
-        lg.args(_DebugLevel, s=supplier_idurl, l=l)
+        lg.args(_DebugLevel, s=supplier_idurl, l=len(l))
     return l
 
 
@@ -146,7 +146,7 @@ def pay_for_storage():
             unpaid_contracts.sort(key=lambda i: utime.unpack_time(i['started']))
             started = unpaid_contracts[0]['started']
             complete_after = unpaid_contracts[-1]['complete_after']
-            pay_before_earliest = utime.unpack_time(unpaid_contracts[0]['pay_before'])
+            pay_before_earliest = utime.unpack_time(complete_after)
             pay_before_latest = utime.unpack_time(unpaid_contracts[-1]['pay_before'])
             supplier_wallet_address = unpaid_contracts[-1]['wallet_address']
             for unpaid_contract in unpaid_contracts:
