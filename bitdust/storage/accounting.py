@@ -331,6 +331,13 @@ def report_local_storage():
 
 def verify_storage_contract(json_data):
     try:
+        deny = json_data.get('deny')
+    except:
+        deny = False
+    if deny:
+        lg.warn(repr(json_data))
+        return False
+    try:
         utime.unpack_time(json_data['started'])
         utime.unpack_time(json_data['complete_after'])
         utime.unpack_time(json_data['pay_before'])
