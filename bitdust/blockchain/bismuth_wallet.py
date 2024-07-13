@@ -189,7 +189,7 @@ def find_transaction(address=None, recipient=None, operation=None, openfield=Non
         lg.exc()
         return []
     if _Debug:
-        lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=openfield[:10], lim=limit, ofs=offset, ret=repr(ret)[:10])
+        lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=str(openfield)[:20], lim=limit, ofs=offset, ret=str(ret)[:20])
     return ret
 
 
