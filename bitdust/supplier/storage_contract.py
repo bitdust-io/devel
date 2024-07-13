@@ -22,6 +22,7 @@
 #
 #
 #
+from bitdust.coins.contract_chain_consumer import _Debug
 """
 .. module:: storage_contract.
 
@@ -508,13 +509,21 @@ def verify_accept_storage_payment(tx):
         lg.exc()
         return
     recently_paid_contracts = []
+    if _Debug:
+        lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers)
     for customer_idurl in contactsdb.customers():
+        if _Debug:
+            lg.args(_DebugLevel, c=customer_idurl, unique_name=customer_idurl.unique_name())
         if customer_idurl.unique_name() != customer_prefix:
             continue
         contracts_list = list_customer_contracts(customer_idurl)
+        if _Debug:
+            lg.args(_DebugLevel, c=customer_idurl, contracts_list=len(contracts_list))
         for contract_started_time in contracts_list.keys():
             if isinstance(contract_started_time, int):
                 json_data = contracts_list[contract_started_time]
+                if _Debug:
+                    lg.args(_DebugLevel, c=customer_idurl, state=json_data['state'], sequence_number=json_data['sequence_number'])
                 if json_data['state'] == 'completed':
                     if int(json_data['sequence_number']) in sequence_numbers:
                         recently_paid_contracts.append(json_data)

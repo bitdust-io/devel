@@ -75,7 +75,7 @@ class BlockchainIDService(LocalService):
     def on_blockchain_registrator_ready(self, success):
         from twisted.internet import task  # @UnresolvedImport
         self.sync_my_transactions_loop = task.LoopingCall(self.on_sync_my_transactions_task)
-        self.sync_my_transactions_loop.start(15*60, now=False)
+        self.sync_my_transactions_loop.start(15*60, now=True)
         return success
 
     def on_sync_my_transactions_task(self):
