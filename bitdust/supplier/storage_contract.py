@@ -51,8 +51,6 @@ from bitdust.main import config
 from bitdust.main import settings
 from bitdust.main import events
 
-from bitdust.contacts import contactsdb
-
 from bitdust.storage import accounting
 
 from bitdust.blockchain import bismuth_wallet
@@ -474,7 +472,14 @@ def complete_current_customer_contract(customer_idurl):
 def verify_all_current_customers_contracts():
     rejected_customers = []
     now = utime.utcnow_to_sec1970()
-    for customer_idurl in contactsdb.customers():
+    if not os.path.isdir(settings.ServiceDir('service_supplier_contracts')):
+        return []
+    for customer_unique_name in os.listdir(settings.ServiceDir('service_supplier_contracts')):
+        try:
+            customer_idurl = id_url.field(id_url.unique_names(customer_unique_name)[0])
+        except:
+            lg.exc()
+            continue
         contracts_list = list_customer_contracts(customer_idurl)
         latest_contract = contracts_list['latest']
         if contracts_list['current']:
@@ -511,22 +516,27 @@ def verify_accept_storage_payment(tx):
     recently_paid_contracts = []
     if _Debug:
         lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers)
-    for customer_idurl in contactsdb.customers():
-        if _Debug:
-            lg.args(_DebugLevel, c=customer_idurl, unique_name=customer_idurl.unique_name())
-        if customer_idurl.unique_name() != customer_prefix:
-            continue
-        contracts_list = list_customer_contracts(customer_idurl)
-        if _Debug:
-            lg.args(_DebugLevel, c=customer_idurl, contracts_list=len(contracts_list))
-        for contract_started_time in contracts_list.keys():
-            if isinstance(contract_started_time, int):
-                json_data = contracts_list[contract_started_time]
-                if _Debug:
-                    lg.args(_DebugLevel, c=customer_idurl, state=json_data['state'], sequence_number=json_data['sequence_number'])
-                if json_data['state'] == 'completed':
-                    if int(json_data['sequence_number']) in sequence_numbers:
-                        recently_paid_contracts.append(json_data)
+    try:
+        customer_idurl = id_url.field(id_url.unique_names(customer_prefix)[0])
+    except:
+        lg.exc()
+        return
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, unique_name=customer_idurl.unique_name())
+    if customer_idurl.unique_name() != customer_prefix:
+        lg.err('customer %r identity name do not match' % customer_idurl)
+        return
+    contracts_list = list_customer_contracts(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, contracts_list=len(contracts_list))
+    for contract_started_time in contracts_list.keys():
+        if isinstance(contract_started_time, int):
+            json_data = contracts_list[contract_started_time]
+            if _Debug:
+                lg.args(_DebugLevel, c=customer_idurl, state=json_data['state'], sequence_number=json_data['sequence_number'])
+            if json_data['state'] == 'completed':
+                if int(json_data['sequence_number']) in sequence_numbers:
+                    recently_paid_contracts.append(json_data)
     if _Debug:
         lg.args(_DebugLevel, customer_prefix=customer_prefix, sequence_numbers=sequence_numbers, recently_paid_contracts=len(recently_paid_contracts))
     if not recently_paid_contracts:

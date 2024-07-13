@@ -78,6 +78,7 @@ _KnownUsers = {}
 _KnownIDURLs = {}
 _MergedIDURLs = {}
 _KnownSources = {}
+_KnownUniqueNames = {}
 _Ready = False
 
 #------------------------------------------------------------------------------
@@ -89,6 +90,7 @@ def init():
     global _KnownIDURLs
     global _MergedIDURLs
     global _KnownSources
+    global _KnownUniqueNames
     global _Ready
     from bitdust.userid import identity
     if _Debug:
@@ -133,6 +135,10 @@ def init():
             one_revision = known_id_obj.getRevisionValue()
             if one_pub_key not in _KnownUsers:
                 _KnownUsers[one_pub_key] = one_user_dir_path
+            one_unique_name = '{}_{}'.format(
+                strng.to_text(one_ident_file).strip()[0:-4],
+                strng.to_text(hashes.sha1(one_pub_key, hexdigest=True)),
+            )
             known_sources = known_id_obj.getSources(as_originals=True)
             for known_idurl in reversed(known_sources):
                 if known_idurl not in _KnownIDURLs:
@@ -158,11 +164,17 @@ def init():
                         lg.out(_DebugLevel, '        revision %d merged with other %d known items' % (one_revision, len(_MergedIDURLs[one_pub_key])))
                 if one_pub_key not in _KnownSources:
                     _KnownSources[one_pub_key] = []
+                if one_unique_name not in _KnownUniqueNames:
+                    _KnownUniqueNames[one_unique_name] = []
                 for one_source in known_id_obj.getSources(as_originals=True):
                     if one_source not in _KnownSources[one_pub_key]:
                         _KnownSources[one_pub_key].append(one_source)
                         if _Debug:
                             lg.out(_DebugLevel, '    new source %r added for %r' % (one_source, one_pub_key[-10:]))
+                    if one_source not in _KnownUniqueNames[one_unique_name]:
+                        _KnownUniqueNames[one_unique_name].append(one_source)
+                        if _Debug:
+                            lg.out(_DebugLevel, '    new source %r added for unique name %r' % (one_source, one_unique_name))
     for one_ident_path in for_cleanup:
         if os.path.isfile(one_ident_path):
             lg.warn('about to erase broken historical identity file: %r' % one_ident_path)
@@ -180,11 +192,13 @@ def shutdown():
     global _Ready
     global _MergedIDURLs
     global _KnownSources
+    global _KnownUniqueNames
     _IdentityHistoryDir = None
     _KnownUsers.clear()
     _KnownIDURLs.clear()
     _MergedIDURLs.clear()
     _KnownSources.clear()
+    _KnownUniqueNames.clear()
     _Ready = False
 
 
@@ -217,6 +231,13 @@ def sources(pub_key=None):
     return _KnownSources.get(pub_key, [])
 
 
+def unique_names(unique_name=None):
+    global _KnownUniqueNames
+    if unique_name is None:
+        return _KnownUniqueNames
+    return _KnownUniqueNames.get(unique_name, [])
+
+
 #------------------------------------------------------------------------------
 
 
@@ -237,6 +258,7 @@ def identity_cached(new_id_obj):
     global _KnownIDURLs
     global _MergedIDURLs
     global _KnownSources
+    global _KnownUniqueNames
     from bitdust.userid import identity
     pub_key = new_id_obj.getPublicKey()
     user_name = new_id_obj.getIDName()
@@ -341,6 +363,17 @@ def identity_cached(new_id_obj):
             _KnownSources[pub_key].append(one_source)
             if _Debug:
                 lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for user %r' % (one_source, user_name))
+    unique_name = '{}_{}'.format(
+        user_name,
+        strng.to_text(hashes.sha1(pub_key, hexdigest=True)),
+    )
+    if unique_name not in _KnownUniqueNames:
+        _KnownUniqueNames[unique_name] = []
+    for one_source in new_sources:
+        if one_source not in _KnownUniqueNames[unique_name]:
+            _KnownUniqueNames[unique_name].append(one_source)
+            if _Debug:
+                lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for unique name %r' % (one_source, unique_name))
     if _Debug:
         lg.args(_DebugLevel, is_identity_rotated=is_identity_rotated, latest_id_obj=bool(latest_id_obj))
     if is_identity_rotated and latest_id_obj is not None:
