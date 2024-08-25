@@ -73,7 +73,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -342,12 +342,14 @@ class BackupMonitor(automat.Automat):
                 pathID = global_id.CanonicalID(pathID)
                 if backup_control.IsPathInProcess(pathID):
                     continue
-                versions = itemInfo.list_versions()
-                # TODO: do we need to sort the list? it comes from a set, so must be sorted may be
+                versions = itemInfo.list_versions(True, False)
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %r %r' % (pathID, len(versions)))
                 while len(versions) > versionsToKeep:
-                    backupID = packetid.MakeBackupID(customerGlobID, pathID, versions.pop(0))
+                    oldest_version = versions.pop(0)
+                    backupID = packetid.MakeBackupID(path_id=pathID, version=oldest_version, normalize_key_alias=False)
                     if _Debug:
-                        lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
+                        lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions) + 1, versionsToKeep, pathID, oldest_version))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                     delete_count += 1
         # we need also to fit used space into needed space (given from other users)
@@ -364,7 +366,7 @@ class BackupMonitor(automat.Automat):
                 if len(versions) <= 1:
                     continue
                 for version in versions[1:]:
-                    backupID = packetid.MakeBackupID(customerGlobID, pathID, version)
+                    backupID = packetid.MakeBackupID(path_id=pathID, version=version, normalize_key_alias=False)
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
                         if _Debug:
@@ -385,7 +387,7 @@ class BackupMonitor(automat.Automat):
                 lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' % self.backups_progress_last_iteration)
             reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         if _Debug:
-            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
+            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups delete_count=%r GC collected=%d' % (delete_count, collected))
 
     def doOverallCheckUp(self, *args, **kwargs):
         """

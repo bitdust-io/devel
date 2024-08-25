@@ -525,6 +525,9 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
         return modified, backups2remove, paths2remove, found_backups, newfiles
+    else:
+        if _Debug:
+            lg.out(_DebugLevel, '        VERSION "%s" is found in the index' % backupID)
     item_version_info = item.get_version_info(versionName)
     missingBlocksSet = {'Data': set(), 'Parity': set()}
     if len(words) > 4:
@@ -702,7 +705,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
                 ignored_path_ids=current_ignored_path_ids,
-                auto_create=True,
+                auto_create=False,
             )
             paths2remove.update(_paths2remove)
             remote_files_changed = remote_files_changed or modified
@@ -724,7 +727,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
                 ignored_path_ids=current_ignored_path_ids,
-                auto_create=True,
+                auto_create=False,
             )
             backups2remove.update(_backups2remove)
             paths2remove.update(_paths2remove)

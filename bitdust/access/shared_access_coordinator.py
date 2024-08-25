@@ -280,6 +280,8 @@ def on_index_file_updated(customer_idurl, key_alias):
 
 
 def on_supplier_file_modified(evt):
+    if evt.data['key_alias'] == 'master':
+        return
     key_id = global_id.MakeGlobalID(idurl=evt.data['customer_idurl'], key_alias=evt.data['key_alias'])
     if _Debug:
         lg.args(_DebugLevel, e=evt, d=evt.data, k=key_id)
