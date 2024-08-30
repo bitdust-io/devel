@@ -779,7 +779,11 @@ def portablePath(path):
         path += u'/'
     if path.count(u'~'):
         path = os.path.expanduser(path)
-    p = os.path.abspath(path)
+    try:
+        p = os.path.abspath(path)
+    except:
+        lg.exc()
+        p = path
     if Windows():
         p = p.replace(u'\\', u'/')
         if len(p) >= 2:

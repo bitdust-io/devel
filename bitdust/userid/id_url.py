@@ -272,6 +272,11 @@ def identity_cached(new_id_obj):
         user_path = tempfile.mkdtemp(prefix=user_name + '@', dir=_IdentityHistoryDir)
         _KnownUsers[pub_key] = user_path
         first_identity_file_path = os.path.join(user_path, '0')
+        if os.path.exists(first_identity_file_path):
+            try:
+                os.remove(first_identity_file_path)
+            except:
+                lg.exc()
         local_fs.WriteBinaryFile(first_identity_file_path, new_id_obj.serialize())
         if _Debug:
             lg.out(_DebugLevel, 'id_url.identity_cached wrote first item for user %r in identity history: %r' % (user_name, first_identity_file_path))
@@ -320,12 +325,22 @@ def identity_cached(new_id_obj):
                 latest_sources = latest_id_obj.getSources(as_originals=True)
                 new_sources = new_id_obj.getSources(as_originals=True)
                 if latest_sources == new_sources:
+                    if os.path.exists(latest_identity_file_path):
+                        try:
+                            os.remove(latest_identity_file_path)
+                        except:
+                            lg.exc()
                     local_fs.WriteBinaryFile(latest_identity_file_path, new_id_obj.serialize())
                     if _Debug:
                         lg.out(_DebugLevel, 'id_url.identity_cached latest identity sources for user %r did not changed, updated file %r' % (user_name, latest_identity_file_path))
                 else:
                     next_identity_file = user_identity_files[-1] + 1
                     next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
+                    if os.path.exists(next_identity_file_path):
+                        try:
+                            os.remove(next_identity_file_path)
+                        except:
+                            lg.exc()
                     local_fs.WriteBinaryFile(next_identity_file_path, new_id_obj.serialize())
                     is_identity_rotated = True
                     if _Debug:
