@@ -67,7 +67,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 16
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -147,6 +147,7 @@ def Destroy():
 
 
 class BackupRebuilder(automat.Automat):
+
     """
     A class to prepare and run rebuilding operations.
     """

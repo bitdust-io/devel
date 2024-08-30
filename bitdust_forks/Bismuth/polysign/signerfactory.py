@@ -54,7 +54,7 @@ class SignerFactory:
             else:
                 return SignerECDSA
 
-        raise ValueError("Unsupported Address type")
+        raise ValueError("Unsupported Address type: %r" % address)
 
     @classmethod
     def address_is_valid(cls, address: str) -> bool:

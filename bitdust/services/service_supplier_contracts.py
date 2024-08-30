@@ -50,7 +50,9 @@ class SupplierContractsService(LocalService):
 
     def start(self):
         from bitdust.main import events
+        from bitdust.supplier import storage_contract
         events.add_subscriber(self.on_blockchain_transaction_received, 'blockchain-transaction-received')
+        storage_contract.scan_recent_storage_transactions()
         return True
 
     def stop(self):

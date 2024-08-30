@@ -319,7 +319,7 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None, deleted_path_ids=[]):
     #                 newpacket.RemoteID, supplier_revision, backup_fs.revision(), ))
     #         return supplier_revision
     if _Debug:
-        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, sz=len(text_data), inp=len(newpacket.Payload), deleted=len(deleted_path_ids))
+        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, c=newpacket.CreatorID, sz=len(text_data), inp=len(newpacket.Payload), deleted=len(deleted_path_ids))
     count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision, deleted_path_ids=deleted_path_ids)
     if updated_customers_keys:
         # backup_fs.commit(supplier_revision)
@@ -384,7 +384,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     from bitdust.stream import io_throttle
     from bitdust.storage import backup_rebuilder
     if _Debug:
-        lg.out(_DebugLevel, 'backup_control.DeleteBackup ' + backupID)
+        lg.out(_DebugLevel, 'backup_control.DeleteBackup %r' % backupID)
     # if we requested for files for this backup - we do not need it anymore
     io_throttle.DeleteBackupRequests(backupID)
     io_throttle.DeleteBackupSendings(backupID)
@@ -479,12 +479,14 @@ def NewTaskNumber():
 
 
 class Task():
+
     """
     A class to represent a ``Task`` - a path to be backed up as soon as other backups will be finished.
     All tasks are stored in the list, see ``tasks()`` method.
     As soon as task get executed it fires the result call back and removed from the list.
     When task executes a new backup job gets created.
     """
+
     def __init__(self, pathID, localPath=None, keyID=None):
         self.number = NewTaskNumber()  # index number for the task
         self.created = time.time()

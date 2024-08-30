@@ -1,6 +1,20 @@
 Change Log
 ==========
 
+2024-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* do not reject unpaid customers for now, storage contracts are still in progress
+* fixed ed25519 to pynacl migration in Bismuth polysign
+* removed un-used files
+
+
+
+2024-06-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* switched from ed25519 to PyNaCl
+
+
+
 2024-06-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * introduce new group streaming solution

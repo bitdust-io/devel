@@ -29,7 +29,7 @@ from bitdust.services import driver
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -38,6 +38,7 @@ _BismuthClient = None
 _DataDirPath = None
 _MyTransactionsDirPath = None
 _MyLatestTransactionBlockHeight = 0
+_MyKnownTransactions = []
 
 #------------------------------------------------------------------------------
 
@@ -57,7 +58,7 @@ def init():
     _BismuthClient = bismuthclient.BismuthClient(
         servers_list=servers_list,
         wallet_file=wallet_file_path(),
-        verbose=_Debug,
+        verbose=(_Debug and (_DebugLevel >= 12)),
     )
     ret = Deferred()
     reactor.callLater(0, check_create_wallet, ret)  # @UndefinedVariable
@@ -94,6 +95,11 @@ def wallet_file_path(wallet_name=None):
 def my_transactions_dir():
     global _MyTransactionsDirPath
     return _MyTransactionsDirPath
+
+
+def my_known_transactions():
+    global _MyKnownTransactions
+    return _MyKnownTransactions
 
 
 #------------------------------------------------------------------------------
@@ -183,7 +189,7 @@ def find_transaction(address=None, recipient=None, operation=None, openfield=Non
         lg.exc()
         return []
     if _Debug:
-        lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=openfield, lim=limit, ofs=offset, ret=ret)
+        lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=str(openfield)[:20], lim=limit, ofs=offset, ret=str(ret)[:20])
     return ret
 
 
@@ -196,6 +202,7 @@ def pack_transaction_id(tx):
 def sync_my_transactions():
     global _MyTransactionsDirPath
     global _MyLatestTransactionBlockHeight
+    global _MyKnownTransactions
     all_known_transactions = set()
     for filename in os.listdir(_MyTransactionsDirPath):
         filepath = os.path.join(_MyTransactionsDirPath, filename)
@@ -208,6 +215,14 @@ def sync_my_transactions():
         all_known_transactions.add(filename)
         if _MyLatestTransactionBlockHeight < int(tx['block_height']):
             _MyLatestTransactionBlockHeight = int(tx['block_height'])
+        _MyKnownTransactions.append((
+            int(tx['block_height']),
+            tx['operation'],
+            tx['openfield'],
+            filename,
+        ))
+        if len(_MyKnownTransactions) > 500:
+            _MyKnownTransactions.pop(0)
     blockchain_transactions = []
     blockchain_transactions.extend(find_transaction(address=my_wallet_address(), block_height_from=_MyLatestTransactionBlockHeight))
     blockchain_transactions.extend(find_transaction(recipient=my_wallet_address(), block_height_from=_MyLatestTransactionBlockHeight))
@@ -219,6 +234,14 @@ def sync_my_transactions():
         all_known_transactions.add(filename)
         if _MyLatestTransactionBlockHeight < int(tx['block_height']):
             _MyLatestTransactionBlockHeight = int(tx['block_height'])
+        _MyKnownTransactions.append((
+            int(tx['block_height']),
+            tx['operation'],
+            tx['openfield'],
+            filename,
+        ))
+        if len(_MyKnownTransactions) > 500:
+            _MyKnownTransactions.pop(0)
         filepath = os.path.join(_MyTransactionsDirPath, filename)
         local_fs.WriteTextFile(filepath, jsn.dumps(tx))
         new_transactions += 1
