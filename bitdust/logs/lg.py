@@ -808,7 +808,7 @@ def setup_unbuffered_stderr():
     """
     global _OriginalStdErr
     _OriginalStdErr = sys.stderr
-    sys.stderr = STDERR_unbuffered(sys.stdout)
+    sys.stderr = STDERR_unbuffered(sys.stderr)
 
 
 def restore_original_stderr():
