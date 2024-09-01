@@ -40,7 +40,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -492,11 +492,15 @@ class Task():
         self.created = time.time()
         self.backupID = None
         self.pathID = None
+        self.dataID = None
+        self.totalSize = None
         self.fullGlobPath = None
         self.fullCustomerID = None
         self.customerGlobID = None
         self.customerIDURL = None
         self.remotePath = None
+        self.localPath = None
+        self.sourcePath = None
         self.keyID = None
         self.keyAlias = None
         self.result_defer = Deferred()
@@ -507,8 +511,7 @@ class Task():
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)
-        # yapf: disable
-        events.send('backup-task-created', data=dict(
+        data = dict(
             number=self.number,
             created=self.created,
             backup_id=self.backupID,
@@ -518,8 +521,16 @@ class Task():
             path=self.remotePath,
             local_path=self.localPath,
             remote_path=self.fullGlobPath,
-        ))
-        # yapf: enable
+        )
+        events.send('backup-task-created', data=data)
+
+    def __repr__(self):
+        """
+        Return a string like:
+
+            "Task-5: 0/1/2/3 from /home/veselin/Documents/myfile.txt"
+        """
+        return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
     def destroy(self, message=None):
         if _Debug:
@@ -561,14 +572,6 @@ class Task():
     def set_local_path(self, localPath):
         self.localPath = localPath
 
-    def __repr__(self):
-        """
-        Return a string like:
-
-            "Task-5: 0/1/2/3 from /home/veselin/Documents/myfile.txt"
-        """
-        return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
-
     def run(self):
         """
         Runs a new ``Job`` from that ``Task``.
@@ -581,6 +584,7 @@ class Task():
             OnTaskFailed(self.pathID, err)
             return err
         itemInfo, sourcePath = iter_and_path
+        self.sourcePath = sourcePath
         if isinstance(itemInfo, dict):
             try:
                 itemInfo = itemInfo[backup_fs.INFO_KEY]
@@ -608,29 +612,67 @@ class Task():
             while itemInfo.has_version(dataID + str(i)):
                 i += 1
             dataID += str(i)
+        self.dataID = dataID
         self.backupID = packetid.MakeBackupID(
             customer=self.fullCustomerID,
             path_id=self.remotePath,
-            version=dataID,
+            version=self.dataID,
         )
         if self.backupID in jobs():
             lg.warn('backup job %s already started' % self.backupID)
             return 'backup job %s already started' % self.backupID
+        if itemInfo.type == backup_fs.DIR:
+            dirsize.ask(self.localPath, self.on_folder_size_counted, itemInfo)
+        else:
+            sz = os.path.getsize(self.localPath)
+            reactor.callLater(0, self.on_folder_size_counted, self.localPath, sz, itemInfo)  # @UndefinedVariable
+        return None
+
+    def on_folder_size_counted(self, pth, sz, itemInfo):
+        """
+        This is a callback, fired from ``lib.dirsize.ask()`` method after finish
+        calculating of folder size.
+        """
+        self.totalSize = sz
+        if id_url.is_the_same(self.customerIDURL, my_id.getIDURL()):
+            # TODO: need to rethink that approach
+            # here not taking in account compressing rate of the local files
+            # but taking in account remote version size - it is always doubled
+            if int(backup_fs.sizebackups()) + self.totalSize*2 > settings.getNeededBytes():
+                err = 'insufficient storage space expected'
+                pth_id = self.pathID
+                self.result_defer.errback((pth_id, err))
+                reactor.callLater(0, OnTaskFailed, pth_id, err)  # @UndefinedVariable
+                self.destroy(err)
+                return None
         try:
             backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), self.backupID)
         except:
             lg.exc()
             if _Debug:
-                lg.out(_DebugLevel, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
+                lg.out(_DebugLevel, 'backup_control.Task.on_folder_size_counted ERROR creating destination folder for %s' % self.pathID)
             err = 'failed creating destination folder for "%s"' % self.backupID
-            return OnTaskFailed(self.backupID, err)
+            pth_id = self.pathID
+            self.result_defer.errback((pth_id, err))
+            reactor.callLater(0, OnTaskFailed, pth_id, err)  # @UndefinedVariable
+            self.destroy(err)
+            return None
+
+        itemInfo.set_size(self.totalSize)
+        itemInfo.add_version(self.dataID)
+
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.Task.on_folder_size_counted %s %d for %r' % (pth, sz, itemInfo))
+
         compress_mode = 'bz2'
-        arcname = os.path.basename(sourcePath)
+        arcname = os.path.basename(self.sourcePath)
+
         from bitdust.storage import backup_tar
         if bpio.pathIsDir(self.localPath):
             backupPipe = backup_tar.backuptardir_thread(self.localPath, arcname=arcname, compress=compress_mode)
         else:
             backupPipe = backup_tar.backuptarfile_thread(self.localPath, arcname=arcname, compress=compress_mode)
+
         job = backup.backup(
             self.backupID,
             backupPipe,
@@ -641,24 +683,25 @@ class Task():
             sourcePath=self.localPath,
             keyID=self.keyID or itemInfo.key_id,
         )
+        job.totalSize = self.totalSize
         jobs()[self.backupID] = job
-        itemInfo.add_version(dataID)
-        if itemInfo.type == backup_fs.DIR:
-            dirsize.ask(self.localPath, OnFoundFolderSize, (self.pathID, dataID))
-        else:
-            sz = os.path.getsize(self.localPath)
-            jobs()[self.backupID].totalSize = sz
-            itemInfo.set_size(sz)
-            backup_fs.Calculate(iterID=backup_fs.fsID(self.customerIDURL, self.keyAlias))
-            backup_fs.SaveIndex(customer_idurl=self.customerIDURL, key_alias=self.keyAlias)
-            if self.keyAlias == 'master':
-                if driver.is_on('service_backup_db'):
-                    from bitdust.storage import index_synchronizer
-                    index_synchronizer.A('push')
+
+        backup_fs.Calculate(iterID=backup_fs.fsID(self.customerIDURL, self.keyAlias))
+        SaveFSIndex(customer_idurl=self.customerIDURL, key_alias=self.keyAlias)
+
         jobs()[self.backupID].automat('start')
-        reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)  # @UndefinedVariable
+        reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, self.dataID)  # @UndefinedVariable
+
+        if self.keyAlias == 'master':
+            if driver.is_on('service_backup_db'):
+                from bitdust.storage import index_synchronizer
+                index_synchronizer.A('push')
+
         if _Debug:
-            lg.out(_DebugLevel, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (self.number, self.pathID, dataID, itemInfo.size, self.localPath))
+            lg.out(_DebugLevel, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (self.number, self.pathID, self.dataID, itemInfo.size, self.localPath))
+
+        self.result_defer.callback((self.backupID, None))
+        self.destroy(None)
         return None
 
 
@@ -715,10 +758,10 @@ def RunTask():
             message=message,
         ))
         T.result_defer.errback((T.pathID, message))
-    else:
-        #     events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))
-        T.result_defer.callback((T.backupID, None))
-    T.destroy(message)
+        T.destroy(message)
+    # else:
+    #     T.result_defer.callback((T.backupID, None))
+    # T.destroy(message)
     return True
 
 
