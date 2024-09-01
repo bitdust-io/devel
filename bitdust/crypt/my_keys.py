@@ -401,18 +401,17 @@ def load_key(key_id, keys_folder=None):
         label=key_object.label,
         key_size=key_object.size(),
     ))
-    listeners.push_snapshot(
-        'key', snap_id=key_id, data=make_key_info(
-            key_object=key_object,
-            key_id=key_id,
-            event='key-loaded',
-            include_private=False,
-            include_local_id=True,
-            include_signature=True,
-            include_label=True,
-            include_state=True,
-        )
+    snapshot = make_key_info(
+        key_object=key_object,
+        key_id=key_id,
+        event='key-loaded',
+        include_private=False,
+        include_local_id=True,
+        include_signature=True,
+        include_label=True,
+        include_state=True,
     )
+    listeners.push_snapshot('key', snap_id=key_id, data=snapshot)
     return True
 
 
@@ -499,18 +498,17 @@ def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None)
         label=label,
         key_size=key_size,
     ))
-    listeners.push_snapshot(
-        'key', snap_id=key_id, data=make_key_info(
-            key_object=key_object,
-            key_id=key_id,
-            event='key-generated',
-            include_private=False,
-            include_local_id=True,
-            include_signature=True,
-            include_label=True,
-            include_state=True,
-        )
+    snapshot = make_key_info(
+        key_object=key_object,
+        key_id=key_id,
+        event='key-generated',
+        include_private=False,
+        include_local_id=True,
+        include_signature=True,
+        include_label=True,
+        include_state=True,
     )
+    listeners.push_snapshot('key', snap_id=key_id, data=snapshot)
     return key_object
 
 
@@ -566,18 +564,17 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
         label=label,
         key_size=key_object.size(),
     ))
-    listeners.push_snapshot(
-        'key', snap_id=key_id, data=make_key_info(
-            key_object=key_object,
-            key_id=key_id,
-            event='key-registered',
-            include_private=False,
-            include_local_id=True,
-            include_signature=True,
-            include_label=True,
-            include_state=True,
-        )
+    snapshot = make_key_info(
+        key_object=key_object,
+        key_id=key_id,
+        event='key-registered',
+        include_private=False,
+        include_local_id=True,
+        include_signature=True,
+        include_label=True,
+        include_state=True,
     )
+    listeners.push_snapshot('key', snap_id=key_id, data=snapshot)
     return key_object
 
 
@@ -607,19 +604,18 @@ def erase_key(key_id, keys_folder=None):
     if _Debug:
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
     events.send('key-erased', data=dict(key_id=key_id, local_key_id=erased_local_key_id, is_private=is_private))
-    listeners.push_snapshot(
-        'key', snap_id=key_id, deleted=True, data=make_key_info(
-            key_object=None,
-            key_id=key_id,
-            local_id=erased_local_key_id,
-            event='key-erased',
-            include_private=False,
-            include_local_id=True,
-            include_signature=True,
-            include_label=True,
-            include_state=True,
-        )
+    snapshot = make_key_info(
+        key_object=None,
+        key_id=key_id,
+        local_id=erased_local_key_id,
+        event='key-erased',
+        include_private=False,
+        include_local_id=True,
+        include_signature=True,
+        include_label=True,
+        include_state=True,
     )
+    listeners.push_snapshot('key', snap_id=key_id, deleted=True, data=snapshot)
     return True
 
 
@@ -709,18 +705,17 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
         label=key_object.label,
         key_size=key_object.size(),
     ))
-    listeners.push_snapshot(
-        'key', snap_id=key_id, data=make_key_info(
-            key_object=key_object,
-            key_id=key_id,
-            event='key-signed',
-            include_private=False,
-            include_local_id=True,
-            include_signature=True,
-            include_label=True,
-            include_state=True,
-        )
+    snapshot = make_key_info(
+        key_object=key_object,
+        key_id=key_id,
+        event='key-signed',
+        include_private=False,
+        include_local_id=True,
+        include_signature=True,
+        include_label=True,
+        include_state=True,
     )
+    listeners.push_snapshot('key', snap_id=key_id, data=snapshot)
     return key_object
 
 

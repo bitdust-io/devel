@@ -1957,16 +1957,15 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
             DeleteByID(path_id, iter=fs(customer_idurl, key_alias), iterID=fsID(customer_idurl, key_alias))
             count_modified += 1
             if deleted_info:
-                listeners.push_snapshot(
-                    'shared_file', snap_id=full_glob_id, deleted=True, data=dict(
-                        global_id=deleted_info['global_id'],
-                        remote_path=deleted_info['remote_path'],
-                        size=deleted_info['size'],
-                        type=deleted_info['type'],
-                        customer=deleted_info['customer'],
-                        versions=deleted_info['versions'],
-                    )
+                snapshot = dict(
+                    global_id=deleted_info['global_id'],
+                    remote_path=deleted_info['remote_path'],
+                    size=deleted_info['size'],
+                    type=deleted_info['type'],
+                    customer=deleted_info['customer'],
+                    versions=deleted_info['versions'],
                 )
+                listeners.push_snapshot('shared_file', snap_id=full_glob_id, deleted=True, data=snapshot)
             if driver.is_on('service_shared_data'):
                 from bitdust.access import shared_access_coordinator
                 shared_access_coordinator.on_file_deleted(customer_idurl, key_alias, path_id)
@@ -1987,16 +1986,15 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
                     if new_file_path:
                         full_glob_id = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_item.path_id, key_alias=key_alias)
                         full_remote_path = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_path, key_alias=key_alias)
-                        listeners.push_snapshot(
-                            'shared_file', snap_id=full_glob_id, data=dict(
-                                global_id=full_glob_id,
-                                remote_path=full_remote_path,
-                                size=max(0, new_file_item.size),
-                                type=TYPES.get(new_file_item.type, 'unknown').lower(),
-                                customer=customer_idurl.to_id(),
-                                versions=[dict(backup_id=v) for v in new_file_item.versions.keys()],
-                            )
+                        snapshot = dict(
+                            global_id=full_glob_id,
+                            remote_path=full_remote_path,
+                            size=max(0, new_file_item.size),
+                            type=TYPES.get(new_file_item.type, 'unknown').lower(),
+                            customer=customer_idurl.to_id(),
+                            versions=[dict(backup_id=v) for v in new_file_item.versions.keys()],
                         )
+                        listeners.push_snapshot('shared_file', snap_id=full_glob_id, data=snapshot)
             if _Debug:
                 lg.args(_DebugLevel, count=count, modified=count_modified, c=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
     if _Debug:
@@ -2117,16 +2115,15 @@ def populate_private_files():
     for itm in lst:
         if itm['path'] == 'index':
             continue
-        listeners.push_snapshot(
-            'private_file', snap_id=itm['global_id'], data=dict(
-                global_id=itm['global_id'],
-                remote_path=itm['remote_path'],
-                size=itm['size'],
-                type=itm['type'],
-                customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
-            )
+        snapshot = dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
         )
+        listeners.push_snapshot('private_file', snap_id=itm['global_id'], data=snapshot)
 
 
 def populate_shared_files(key_id=None):
@@ -2148,16 +2145,15 @@ def populate_shared_files(key_id=None):
     for itm in lst:
         if itm['path'] == 'index':
             continue
-        listeners.push_snapshot(
-            'shared_file', snap_id=itm['global_id'], data=dict(
-                global_id=itm['global_id'],
-                remote_path=itm['remote_path'],
-                size=itm['size'],
-                type=itm['type'],
-                customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
-            )
+        snapshot = dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
         )
+        listeners.push_snapshot('shared_file', snap_id=itm['global_id'], data=snapshot)
 
 
 #------------------------------------------------------------------------------

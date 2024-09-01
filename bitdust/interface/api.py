@@ -336,7 +336,11 @@ def request_model_data(model_name, query_details=None):
     elif model_name == 'remote_version':
         if driver.is_on('service_backups'):
             from bitdust.storage import backup_matrix
-            backup_matrix.populate_remote_versions()
+            backup_matrix.populate_remote_versions(
+                key_id=(query_details or {}).get('key_id'),
+                remote_path=(query_details or {}).get('remote_path'),
+                backup_id=(query_details or {}).get('backup_id'),
+            )
         else:
             listeners.populate_later('remote_version')
     elif model_name == 'shared_location':
@@ -2133,6 +2137,8 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     from bitdust.userid import my_id
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['path']:
+        if _Debug:
+            lg.args(_DebugLevel, remote_path=remote_path, inp=parts)
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     customer_idurl = parts['idurl']
@@ -2205,27 +2211,25 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and key_alias == 'master':
-        listeners.push_snapshot(
-            'private_file', snap_id=full_glob_id, data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=max(0, itemInfo.size),
-                type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            )
+        snapshot = dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=max(0, itemInfo.size),
+            type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
         )
+        listeners.push_snapshot('private_file', snap_id=full_glob_id, data=snapshot)
     else:
-        listeners.push_snapshot(
-            'shared_file', snap_id=full_glob_id, data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=max(0, itemInfo.size),
-                type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            )
+        snapshot = dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=max(0, itemInfo.size),
+            type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
         )
+        listeners.push_snapshot('shared_file', snap_id=full_glob_id, data=snapshot)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_create : %r' % full_glob_id)
     return OK(
@@ -2296,27 +2300,25 @@ def file_delete(remote_path):
     backup_control.SaveFSIndex(customer_idurl, key_alias)
     backup_monitor.A('restart')
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
-        listeners.push_snapshot(
-            'private_file', snap_id=full_glob_id, deleted=True, data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=0 if not itemInfo else itemInfo.size,
-                type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            )
+        snapshot = dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=0 if not itemInfo else itemInfo.size,
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
         )
+        listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=snapshot)
     else:
-        listeners.push_snapshot(
-            'shared_file', snap_id=full_glob_id, deleted=True, data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=0 if not itemInfo else itemInfo.size,
-                type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            )
+        snapshot = dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=0 if not itemInfo else itemInfo.size,
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
         )
+        listeners.push_snapshot('shared_file', snap_id=full_glob_id, deleted=True, data=snapshot)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_delete %s' % parts)
     return OK(

@@ -155,6 +155,7 @@ def read_api_secret():
 
 
 class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
+
     def validateHeaders(self):
         global _APISecret
         if _APISecret:
@@ -367,7 +368,11 @@ def push(json_data):
         return False
     raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
     for _key, transp in _WebSocketTransports.items():
-        transp.write(raw_bytes)
+        try:
+            transp.write(raw_bytes)
+        except:
+            lg.exc()
+            continue
         if _Debug:
             lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2])))
     if _Debug:

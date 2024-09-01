@@ -333,7 +333,6 @@ class BackupMonitor(automat.Automat):
         else:
             bytesUsed = backup_fs.sizebackups()/contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
-        customerGlobID = my_id.getGlobalID()
         if _Debug:
             lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0

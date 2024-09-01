@@ -55,6 +55,7 @@ _DebugLevel = 12
 import os
 import sys
 import tempfile
+import traceback
 
 #------------------------------------------------------------------------------
 
@@ -891,6 +892,8 @@ class ID_URL_FIELD(object):
             else:
                 exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
+            if _Debug:
+                lg.out(_DebugLevel, traceback.format_list(traceback.format_stack()))
             raise exc
 
         # now compare based on public key
@@ -934,6 +937,8 @@ class ID_URL_FIELD(object):
             else:
                 exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
+            if _Debug:
+                lg.out(_DebugLevel, traceback.format_list(traceback.format_stack()))
             raise exc
 
         # now compare based on public key
@@ -1066,6 +1071,8 @@ class ID_URL_FIELD(object):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
+            if _Debug:
+                lg.out(_DebugLevel, traceback.format_list(traceback.format_stack()))
             raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key
