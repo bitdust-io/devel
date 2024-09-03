@@ -40,7 +40,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -267,6 +267,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         lg.args(_DebugLevel, s=nameurl.GetName(supplier_idurl), c=nameurl.GetName(customer_idurl), backups2remove=len(backups2remove), paths2remove=len(paths2remove), files_changed=remote_files_changed, missed_backups=len(missed_backups))
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
+        backup_matrix.populate_remote_versions_deleted(backups2remove)
         if _Debug:
             lg.out(_DebugLevel, '    also sent requests to remove %d backups' % len(backups2remove))
     if len(paths2remove) > 0:
@@ -313,24 +314,14 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None, deleted_path_ids=[]):
             pass
         return None
     inpt.close()
-    #     if supplier_revision >= 0 and backup_fs.revision() > supplier_revision:
-    #         if _Debug:
-    #             lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
-    #                 newpacket.RemoteID, supplier_revision, backup_fs.revision(), ))
-    #         return supplier_revision
     if _Debug:
         lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, c=newpacket.CreatorID, sz=len(text_data), inp=len(newpacket.Payload), deleted=len(deleted_path_ids))
     count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision, deleted_path_ids=deleted_path_ids)
     if updated_customers_keys:
-        # backup_fs.commit(supplier_revision)
-        # backup_fs.Scan()
-        # backup_fs.Calculate()
         for customer_idurl, key_alias in updated_customers_keys:
             backup_fs.SaveIndex(customer_idurl, key_alias)
             if _Debug:
                 lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d for %s of %s from %s' % (backup_fs.revision(customer_idurl, key_alias), customer_idurl, key_alias, newpacket.RemoteID))
-    # else:
-    #     lg.warn('failed to read catalog index from supplier')
     return supplier_revision
 
 
@@ -759,9 +750,6 @@ def RunTask():
         ))
         T.result_defer.errback((T.pathID, message))
         T.destroy(message)
-    # else:
-    #     T.result_defer.callback((T.backupID, None))
-    # T.destroy(message)
     return True
 
 
@@ -833,7 +821,6 @@ def OnJobDone(backupID, result):
     Here we need to save the index data base.
     """
     from bitdust.storage import backup_rebuilder
-    # from bitdust.customer import io_throttle
     lg.info('job done [%s] with result "%s", %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     keyAlias, customerGlobalID, remotePath, version = packetid.SplitBackupIDFull(backupID)
@@ -849,8 +836,6 @@ def OnJobDone(backupID, result):
                         item.delete_version(version)
                         backupID = packetid.MakeBackupID(customerGlobalID, remotePath, version, key_alias=keyAlias)
                         backup_rebuilder.RemoveBackupToWork(backupID)
-                        # io_throttle.DeleteBackupRequests(backupID)
-                        # io_throttle.DeleteBackupSendings(backupID)
                         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)

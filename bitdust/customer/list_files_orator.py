@@ -119,20 +119,14 @@ def synchronize_files(customer_idurl=None):
         ret.errback(Exception('not initialized'))
         return ret
     customer_idurl = customer_idurl or my_id.getIDURL()
-    if A().state in [
-        'SAW_FILES',
-        'NO_FILES',
-    ]:
+    if A().state in ['SAW_FILES', 'NO_FILES']:
         A('need-files', customer_idurl=customer_idurl, result_defer=ret)
         return ret
 
     def _on_list_files_orator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event=event_string)
-        if newstate != oldstate and newstate in [
-            'SAW_FILES',
-            'NO_FILES',
-        ]:
+        if newstate != oldstate and newstate in ['SAW_FILES', 'NO_FILES']:
             A().removeStateChangedCallback(_on_list_files_orator_state_changed)
             A('need-files', customer_idurl=customer_idurl, result_defer=ret)
 

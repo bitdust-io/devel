@@ -708,18 +708,6 @@ def Correspondent(request):
 #------------------------------------------------------------------------------
 
 
-def RequestDeleteBackup(BackupID):
-    """
-    Need to send a "DeleteBackup" command to all suppliers.
-    """
-    if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.RequestDeleteBackup with BackupID=' + str(BackupID))
-    for supplier_idurl in contactsdb.suppliers(customer_idurl=packetid.CustomerIDURL(BackupID)):
-        if not supplier_idurl:
-            continue
-        SendDeleteBackup(supplier_idurl, BackupID)
-
-
 def RequestDeleteListBackups(backupIDs):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.RequestDeleteListBackups wish to delete %d backups' % len(backupIDs))

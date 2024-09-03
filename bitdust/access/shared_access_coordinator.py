@@ -768,6 +768,8 @@ class SharedAccessCoordinator(automat.Automat):
             _rev = backup_fs.revision(customer_idurl=self.customer_idurl, key_alias=self.key_alias)
             if supplier_index_file_revision <= _rev:
                 is_in_sync = True
+        if _Debug:
+            lg.args(_DebugLevel, rev=supplier_index_file_revision, is_in_sync=is_in_sync)
         remote_files_changed, backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
             supplier_num=kwargs['supplier_pos'],
             list_files_text_body=kwargs['payload'],
@@ -785,11 +787,11 @@ class SharedAccessCoordinator(automat.Automat):
             if len(backups2remove) > 0:
                 p2p_service.RequestDeleteListBackups(backups2remove)
                 if _Debug:
-                    lg.out(_DebugLevel, '    also sent requests to remove %d backups' % len(backups2remove))
+                    lg.out(_DebugLevel, '    also sent requests to remove %d shared backups' % len(backups2remove))
             if len(paths2remove) > 0:
                 p2p_service.RequestDeleteListPaths(paths2remove)
                 if _Debug:
-                    lg.out(_DebugLevel, '    also sent requests to remove %d paths' % len(paths2remove))
+                    lg.out(_DebugLevel, '    also sent requests to remove %d shared paths' % len(paths2remove))
 
     def doRemember(self, event, *args, **kwargs):
         """

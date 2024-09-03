@@ -443,6 +443,10 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         return modified, backups2remove, paths2remove, found_backups, newfiles
     if remotePath in ignored_path_ids:
         # this mean supplier have old files and we do not need those files
+        # if not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+        #     if _Debug:
+        #         lg.out(_DebugLevel, '        VERSION "%s" skip removing, found unknown data from another customer: %r' % (backupID, customer_idurl))
+        #     return modified, backups2remove, paths2remove, found_backups, newfiles
         backups2remove.add(backupID)
         paths2remove.add(packetid.MakeBackupID(
             customer=global_id.UrlToGlobalID(customer_idurl),
@@ -454,6 +458,10 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             lg.out(_DebugLevel, '        VERSION "%s" to be removed, ignoring path %s because it was deleted' % (backupID, remotePath))
         return modified, backups2remove, paths2remove, found_backups, newfiles
     if lineSupplierNum != supplier_num:
+        # if not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+        #     if _Debug:
+        #         lg.out(_DebugLevel, '        VERSION "%s" skip removing, found unknown data from another customer: %r' % (backupID, customer_idurl))
+        #     return modified, backups2remove, paths2remove, found_backups, newfiles
         # this mean supplier have old files and we do not need those files
         backups2remove.add(backupID)
         if _Debug:
@@ -471,7 +479,10 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     if item is None:
         # this path is not found in the index at all
         if is_in_sync:
-            # if customer_idurl == my_id.getIDURL():
+            # if not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+            #     if _Debug:
+            #         lg.out(_DebugLevel, '        VERSION "%s" skip removing, found unknown data from another customer: %r' % (backupID, customer_idurl))
+            #     return modified, backups2remove, paths2remove, found_backups, newfiles
             found_backups.add(backupID)
             backups2remove.add(backupID)
             paths2remove.add(packetid.MakeBackupID(
@@ -481,12 +492,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 version=None,
             ))
             if _Debug:
-                lg.out(_DebugLevel, '        VERSION "%s" to be remove, path not found in the index' % backupID)
-
-
-#             else:
-#                 if _Debug:
-#                     lg.out(_DebugLevel, '        found unknown stored data from another customer: %r' % backupID)
+                lg.out(_DebugLevel, '        VERSION "%s" to be removed, path not found in the index' % backupID)
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
@@ -514,13 +520,13 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                     lg.warn('skip auto create version %r for path %r because key %r not registered' % (versionName, remotePath, authorized_key_id))
     if not item.has_version(versionName):
         if is_in_sync:
-            # if customer_idurl == my_id.getIDURL():
+            # if not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+            #     if _Debug:
+            #         lg.out(_DebugLevel, '        VERSION "%s" skip removing, found unknown data from another customer: %r' % (backupID, customer_idurl))
+            #     return modified, backups2remove, paths2remove, found_backups, newfiles
             backups2remove.add(backupID)
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" to be removed, version is not found in the index' % backupID)
-            # else:
-            #     if _Debug:
-            #         lg.out(_DebugLevel, '        found unknown version from another customer: %r' % backupID)
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
@@ -576,7 +582,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             ))
         item.set_version_info(versionName, maxBlockNum, versionSize)
         modified = True
-    if file_auto_created:
+    if file_auto_created or newfiles:
         full_remote_path = global_id.MakeGlobalID(path=item.name(), key_id=item.key_id)
         full_remote_path_id = global_id.MakeGlobalID(path=item.path_id, key_id=item.key_id)
         _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
@@ -586,7 +592,8 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             remote_path=full_remote_path,
             global_id=full_remote_path_id,
             type=item.type,
-            size=item.size,
+            filesize=item.size,
+            size=versionSize,
             key_id=item.key_id,
             delivered=misc.percent2string(percent),
             reliable=misc.percent2string(weakPercent),
@@ -924,13 +931,15 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, item
     full_remote_path = global_id.MakeGlobalID(path=itemInfo['name'], key_id=itemInfo['key_id'])
     full_remote_path_id = global_id.MakeGlobalID(path=itemInfo['path_id'], key_id=itemInfo['key_id'])
     _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
+    _, _, versionName = backupID.rpartition('/')
     snapshot = dict(
         backup_id=backupID,
         max_block=maxBlockNum,
         remote_path=full_remote_path,
         global_id=full_remote_path_id,
         type=itemInfo['type'],
-        size=itemInfo['size'],
+        filesize=itemInfo['size'],
+        size=itemInfo['versions'].get(versionName, [0, 0])[1],
         key_id=itemInfo['key_id'],
         delivered=misc.percent2string(percent),
         reliable=misc.percent2string(weakPercent),
@@ -973,7 +982,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
     if not supplier_idurl:
         if _Debug:
-            lg.out(_DebugLevel, 'empty supplier at position %s for customer %s' % (supplierNum, customer_idurl))
+            lg.dbg(_DebugLevel, 'empty supplier at position %s for customer %s' % (supplierNum, customer_idurl))
         return
     localDest = os.path.join(settings.getLocalBackupsDir(), customer, filename)
     if backupID not in local_files():
@@ -1764,7 +1773,7 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
     if key_id:
         for backupID in GetBackupIDs(remote=True, local=False, sorted_ids=False):
             customer_idurl = packetid.CustomerIDURL(backupID)
-            keyAlias, _, pathID, _ = packetid.SplitBackupIDFull(backupID)
+            keyAlias, _, pathID, versionName = packetid.SplitBackupIDFull(backupID)
             if key_id == my_keys.make_key_id(alias=keyAlias, creator_idurl=customer_idurl):
                 itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
                 if itemInfo:
@@ -1778,7 +1787,8 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
                             remote_path=full_remote_path,
                             global_id=full_remote_path_id,
                             type=backup_fs.TYPES.get(itemInfo.type, 'UNKNOWN').lower(),
-                            size=itemInfo.size,
+                            filesize=itemInfo.size,
+                            size=max(0, itemInfo.get_version_size(versionName)),
                             key_id=itemInfo.key_id,
                             delivered=misc.percent2string(percent),
                             reliable=misc.percent2string(weakPercent),
@@ -1788,7 +1798,7 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
     if remote_path:
         for backupID in GetBackupIDs(remote=True, local=False, sorted_ids=False):
             customer_idurl = packetid.CustomerIDURL(backupID)
-            keyAlias, _, pathID, _ = packetid.SplitBackupIDFull(backupID)
+            keyAlias, _, pathID, versionName = packetid.SplitBackupIDFull(backupID)
             itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
             if itemInfo:
                 full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
@@ -1801,7 +1811,8 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
                         remote_path=full_remote_path,
                         global_id=full_remote_path_id,
                         type=backup_fs.TYPES.get(itemInfo.type, 'UNKNOWN').lower(),
-                        size=itemInfo.size,
+                        filesize=itemInfo.size,
+                        size=max(0, itemInfo.get_version_size(versionName)),
                         key_id=itemInfo.key_id,
                         delivered=misc.percent2string(percent),
                         reliable=misc.percent2string(weakPercent),
@@ -1811,7 +1822,7 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
     if backup_id:
         backupID = backup_id
         customer_idurl = packetid.CustomerIDURL(backupID)
-        keyAlias, _, pathID, _ = packetid.SplitBackupIDFull(backupID)
+        keyAlias, _, pathID, versionName = packetid.SplitBackupIDFull(backupID)
         itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
         if itemInfo:
             full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
@@ -1823,7 +1834,8 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
                 remote_path=full_remote_path,
                 global_id=full_remote_path_id,
                 type=backup_fs.TYPES.get(itemInfo.type, 'UNKNOWN').lower(),
-                size=itemInfo.size,
+                filesize=itemInfo.size,
+                size=max(0, itemInfo.get_version_size(versionName)),
                 key_id=itemInfo.key_id,
                 delivered=misc.percent2string(percent),
                 reliable=misc.percent2string(weakPercent),
@@ -1832,7 +1844,7 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
         return
     for backupID in GetBackupIDs(remote=True, local=False, sorted_ids=False):
         customer_idurl = packetid.CustomerIDURL(backupID)
-        keyAlias, _, pathID, _ = packetid.SplitBackupIDFull(backupID)
+        keyAlias, _, pathID, versionName = packetid.SplitBackupIDFull(backupID)
         itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
         if itemInfo:
             full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
@@ -1844,12 +1856,25 @@ def populate_remote_versions(key_id=None, remote_path=None, backup_id=None):
                 remote_path=full_remote_path,
                 global_id=full_remote_path_id,
                 type=backup_fs.TYPES.get(itemInfo.type, 'UNKNOWN').lower(),
-                size=itemInfo.size,
+                filesize=itemInfo.size,
+                size=max(0, itemInfo.get_version_size(versionName)),
                 key_id=itemInfo.key_id,
                 delivered=misc.percent2string(percent),
                 reliable=misc.percent2string(weakPercent),
             )
             listeners.push_snapshot('remote_version', snap_id=backupID, data=snapshot)
+
+
+def populate_remote_versions_deleted(backups2remove):
+    for backupID in backups2remove:
+        global_id, _, _ = backupID.rpartition('/')
+        keyAlias, customerGlobalID, _, _ = packetid.SplitBackupIDFull(backupID)
+        snapshot = dict(
+            backup_id=backupID,
+            global_id=global_id,
+            key_id=my_keys.make_key_id(alias=keyAlias, creator_glob_id=customerGlobalID),
+        )
+        listeners.push_snapshot('remote_version', snap_id=backupID, deleted=True, data=snapshot)
 
 
 #------------------------------------------------------------------------------
