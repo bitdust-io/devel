@@ -504,6 +504,8 @@ class FSItemInfo():
             self.set_version_info(version, maxblock, sz)
 
     def serialize(self, encoding='utf-8', to_json=False):
+        if _Debug:
+            lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()), i=id(self), iv=id(self.versions))
         if to_json:
             return {
                 'n': strng.to_text(self.unicodename, encoding=encoding),
@@ -532,6 +534,8 @@ class FSItemInfo():
             except:
                 lg.exc()
                 raise KeyError('Incorrect item format:\n%s' % src)
+            if _Debug:
+                lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()), i=id(self), iv=id(self.versions))
             return True
 
         try:
@@ -549,6 +553,8 @@ class FSItemInfo():
         except:
             lg.exc()
             raise KeyError('incorrect item format:\n%s' % src)
+        if _Debug:
+            lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()), i=id(self), iv=id(self.versions))
         return True
 
 
@@ -811,7 +817,11 @@ def SetFile(item, customer_idurl=None):
                 iter[item.name()] = id
                 iterID[id] = item
                 return True, True
-            return True, False
+            if item.pack_versions() == iterID[id].pack_versions():
+                return True, False
+            iterID[id] = item
+            lg.warn('updated list of versions for %r' % item)
+            return True, True
         found = False
         for name in iter.keys():
             if name == 0:
@@ -1062,16 +1072,21 @@ def DeleteBackupID(backupID, iterID=None):
     """
     keyAlias, customerGlobalID, remotePath, versionName = packetid.SplitBackupIDFull(backupID)
     if remotePath is None:
+        lg.warn('%r has wrong format, remote path is not recognized' % backupID)
         return False
+    customer_idurl = global_id.GlobalUserToIDURL(customerGlobalID)
     if iterID is None:
-        iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID), keyAlias)
+        iterID = fsID(customer_idurl, keyAlias)
     info = GetByID(remotePath, iterID=iterID)
     if info is None:
+        lg.warn('not able to find file info for %r' % remotePath)
         return False
     if not info.has_version(versionName):
         lg.warn('%s do not have version %s' % (remotePath, versionName))
         return False
     info.delete_version(versionName)
+    if _Debug:
+        lg.args(_DebugLevel, backupID=backupID, versionName=versionName)
     return True
 
 
@@ -1643,10 +1658,7 @@ def DeleteLocalBackup(basedir, backupID):
     """
     Remove local files for that backup.
     """
-    count_and_size = [
-        0,
-        0,
-    ]
+    count_and_size = [0, 0]
     if not bpio.pathIsDir(basedir):
         raise Exception('directory not exist: %s' % basedir)
     customer, pth = packetid.SplitPacketID(backupID)
@@ -1665,7 +1677,9 @@ def DeleteLocalBackup(basedir, backupID):
                 pass
         return True
 
-    bpio.rmdir_recursive(backupDir, ignore_errors=True, pre_callback=visitor)
+    counter = bpio.rmdir_recursive(backupDir, ignore_errors=True, pre_callback=visitor)
+    if _Debug:
+        lg.args(_DebugLevel, backupDir=backupDir, counter=counter)
     return count_and_size[0], count_and_size[1]
 
 
@@ -1913,6 +1927,9 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
             else:
                 raise ValueError('Incorrect entry type')
 
+        if _Debug:
+            lg.args(_DebugLevel, c=customer_idurl, k=key_alias, new_files=len(new_files))
+
         def _one_item(path_id, path, info):
             if path_id not in known_items:
                 if path_id != settings.BackupIndexFileName():
@@ -1940,16 +1957,15 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
             DeleteByID(path_id, iter=fs(customer_idurl, key_alias), iterID=fsID(customer_idurl, key_alias))
             count_modified += 1
             if deleted_info:
-                listeners.push_snapshot(
-                    'shared_file', snap_id=full_glob_id, deleted=True, data=dict(
-                        global_id=deleted_info['global_id'],
-                        remote_path=deleted_info['remote_path'],
-                        size=deleted_info['size'],
-                        type=deleted_info['type'],
-                        customer=deleted_info['customer'],
-                        versions=deleted_info['versions'],
-                    )
+                snapshot = dict(
+                    global_id=deleted_info['global_id'],
+                    remote_path=deleted_info['remote_path'],
+                    size=deleted_info['size'],
+                    type=deleted_info['type'],
+                    customer=deleted_info['customer'],
+                    versions=deleted_info['versions'],
                 )
+                listeners.push_snapshot('shared_file', snap_id=full_glob_id, deleted=True, data=snapshot)
             if driver.is_on('service_shared_data'):
                 from bitdust.access import shared_access_coordinator
                 shared_access_coordinator.on_file_deleted(customer_idurl, key_alias, path_id)
@@ -1970,16 +1986,15 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
                     if new_file_path:
                         full_glob_id = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_item.path_id, key_alias=key_alias)
                         full_remote_path = global_id.MakeGlobalID(idurl=customer_idurl, path=new_file_path, key_alias=key_alias)
-                        listeners.push_snapshot(
-                            'shared_file', snap_id=full_glob_id, data=dict(
-                                global_id=full_glob_id,
-                                remote_path=full_remote_path,
-                                size=max(0, new_file_item.size),
-                                type=TYPES.get(new_file_item.type, 'unknown').lower(),
-                                customer=customer_idurl.to_id(),
-                                versions=[dict(backup_id=v) for v in new_file_item.versions.keys()],
-                            )
+                        snapshot = dict(
+                            global_id=full_glob_id,
+                            remote_path=full_remote_path,
+                            size=max(0, new_file_item.size),
+                            type=TYPES.get(new_file_item.type, 'unknown').lower(),
+                            customer=customer_idurl.to_id(),
+                            versions=[dict(backup_id=v) for v in new_file_item.versions.keys()],
                         )
+                        listeners.push_snapshot('shared_file', snap_id=full_glob_id, data=snapshot)
             if _Debug:
                 lg.args(_DebugLevel, count=count, modified=count_modified, c=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
     if _Debug:
@@ -2100,16 +2115,15 @@ def populate_private_files():
     for itm in lst:
         if itm['path'] == 'index':
             continue
-        listeners.push_snapshot(
-            'private_file', snap_id=itm['global_id'], data=dict(
-                global_id=itm['global_id'],
-                remote_path=itm['remote_path'],
-                size=itm['size'],
-                type=itm['type'],
-                customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
-            )
+        snapshot = dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
         )
+        listeners.push_snapshot('private_file', snap_id=itm['global_id'], data=snapshot)
 
 
 def populate_shared_files(key_id=None):
@@ -2131,16 +2145,15 @@ def populate_shared_files(key_id=None):
     for itm in lst:
         if itm['path'] == 'index':
             continue
-        listeners.push_snapshot(
-            'shared_file', snap_id=itm['global_id'], data=dict(
-                global_id=itm['global_id'],
-                remote_path=itm['remote_path'],
-                size=itm['size'],
-                type=itm['type'],
-                customer=itm['customer'],
-                versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
-            )
+        snapshot = dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(backup_id=v['backup_id'].split('/')[-1]) for v in itm['versions']],
         )
+        listeners.push_snapshot('shared_file', snap_id=itm['global_id'], data=snapshot)
 
 
 #------------------------------------------------------------------------------

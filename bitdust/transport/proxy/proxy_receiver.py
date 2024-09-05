@@ -199,6 +199,7 @@ def A(event=None, *args, **kwargs):
 
 
 class ProxyReceiver(automat.Automat):
+
     """
     This class implements all the functionality of the ``proxy_receiver()``
     state machine.
@@ -728,7 +729,8 @@ class ProxyReceiver(automat.Automat):
         if newpacket.Command == commands.RelayIn() and routed_packet.Command == commands.Fail():
             if routed_packet.Payload == b'route not exist' or routed_packet.Payload == b'route already closed':
                 for pout in packet_out.search_by_packet_id(routed_packet.PacketID):
-                    lg.warn('received %r from %r, outgoing packet is failed: %r' % (routed_packet.Payload, newpacket.CreatorID, pout))
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'received %r from %r, outgoing packet is failed: %r' % (routed_packet.Payload, newpacket.CreatorID, pout))
                     pout.automat('request-failed')
                 return
 

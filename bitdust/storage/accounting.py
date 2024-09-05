@@ -187,7 +187,7 @@ def report_consumed_storage():
     result['suppliers_num'] = contactsdb.num_suppliers()
     result['needed'] = settings.getNeededBytes()
     # result['needed_str'] = diskspace.MakeStringFromBytes(result['needed'])
-    result['used'] = int(backup_fs.sizebackups()/2)
+    result['used'] = int(backup_fs.sizebackups())
     # result['used_str'] = diskspace.MakeStringFromBytes(result['used'])
     result['available'] = result['needed'] - result['used']
     # result['available_str'] = diskspace.MakeStringFromBytes(result['available'])

@@ -65,6 +65,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import traceback
 import base64
 
 #------------------------------------------------------------------------------
@@ -84,6 +85,7 @@ from bitdust.crypt import my_keys
 
 
 class Block(object):
+
     """
     A class to represent an encrypted Data block. The only 2 things secret in
     here will be the ``EncryptedSessionKey`` and ``EncryptedData``. Scrubbers
@@ -102,6 +104,7 @@ class Block(object):
     Other                  could be be for professional timestamp company or other future features
     Signature              digital signature by Creator - verifiable by public key in creator identity
     """
+
     def __init__(
         self,
         CreatorID=None,
@@ -278,16 +281,21 @@ def Unserialize(data, decrypt_key=None):
         lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:100])
     try:
         _c = dct['c']
-        _b = dct['b']
+        _p = dct['p']
         _n = dct['n']
         _e = dct['e']
         _k = dct['k']
         _t = dct['t']
         _l = dct['l']
-        _p = dct['p']
         _s = dct['s']
+        _b = dct['b']
     except Exception as exc:
-        lg.exc('data unserialize failed with %r: %r' % (exc, list(dct.keys())))
+        lg.exc('data unserialize failed with %r: %r\n%r\n%s' % (
+            exc,
+            list(dct.keys()),
+            (dct.get('c'), dct.get('b'), dct.get('i'), dct.get('r')),
+            traceback.format_tb(),
+        ))
         if _Debug:
             lg.out(_DebugLevel, repr(dct))
         return None

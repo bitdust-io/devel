@@ -421,15 +421,14 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
     cur().execute(sql, params)
     db().commit()
     if not found_conversation:
-        listeners.push_snapshot(
-            'conversation', snap_id=conversation_id, data=build_json_conversation(
-                conversation_id=conversation_id,
-                type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
-                started=payload_time,
-                last_updated=payload_time,
-                last_message_id=payload_message_id,
-            )
+        snapshot = build_json_conversation(
+            conversation_id=conversation_id,
+            type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
+            started=payload_time,
+            last_updated=payload_time,
+            last_message_id=payload_message_id,
         )
+        listeners.push_snapshot('conversation', snap_id=conversation_id, data=snapshot)
     return conversation_id
 
 
@@ -806,18 +805,17 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
         if conversation_id is None:
             continue
         snap_id = '{}/{}'.format(conversation_id, row[7])
-        listeners.push_snapshot(
-            'message', snap_id=snap_id, created=row[6], data=build_json_message(
-                sender=row[1],
-                recipient=row[3],
-                direction='in' if row[4] == 0 else 'out',
-                conversation_id=conversation_id,
-                message_type=MESSAGE_TYPE_CODES.get(int(row[5]), 'private_message'),
-                message_time=row[6],
-                message_id=row[7],
-                data=json.loads(row[8]),
-            )
+        snapshot = build_json_message(
+            sender=row[1],
+            recipient=row[3],
+            direction='in' if row[4] == 0 else 'out',
+            conversation_id=conversation_id,
+            message_type=MESSAGE_TYPE_CODES.get(int(row[5]), 'private_message'),
+            message_time=row[6],
+            message_id=row[7],
+            data=json.loads(row[8]),
         )
+        listeners.push_snapshot('message', snap_id=snap_id, created=row[6], data=snapshot)
 
 
 #------------------------------------------------------------------------------

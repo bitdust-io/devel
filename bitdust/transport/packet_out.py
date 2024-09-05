@@ -299,20 +299,26 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
                     # outgoing packet was addressed to another node, so that means we need to expect response from another node also
                     expected_recipient.append(id_url.field(p.remote_idurl))
         matched = False
-        if incoming_owner_idurl in expected_recipient and id_url.is_the_same(my_id.getIDURL(), incoming_remote_idurl):
-            if _Debug:
-                lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming owner: %s' % expected_recipient)
-            matched = True
-        if not matched:
-            if incoming_creator_idurl in expected_recipient and id_url.is_the_same(my_id.getIDURL(), incoming_remote_idurl):
-                if _Debug:
-                    lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming creator: %s' % expected_recipient)
-                matched = True
-        if not matched:
-            if incoming_remote_idurl in expected_recipient and id_url.is_the_same(my_id.getIDURL(), incoming_owner_idurl) and incoming_command == commands.Data():
-                if _Debug:
-                    lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched my own incoming Data with incoming remote: %s' % expected_recipient)
-                matched = True
+        if not id_url.is_cached(incoming_remote_idurl):
+            identitycache.start_one(incoming_remote_idurl)
+        else:
+            if id_url.is_in(incoming_owner_idurl, expected_recipient, as_field=False):
+                if id_url.is_the_same(my_id.getIDURL(), incoming_remote_idurl):
+                    if _Debug:
+                        lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming owner: %s' % expected_recipient)
+                    matched = True
+            if not matched:
+                if id_url.is_in(incoming_creator_idurl, expected_recipient, as_field=False):
+                    if id_url.is_the_same(my_id.getIDURL(), incoming_remote_idurl):
+                        if _Debug:
+                            lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming creator: %s' % expected_recipient)
+                        matched = True
+            if not matched:
+                if id_url.is_in(incoming_remote_idurl, expected_recipient, as_field=False):
+                    if id_url.is_the_same(my_id.getIDURL(), incoming_owner_idurl) and incoming_command == commands.Data():
+                        if _Debug:
+                            lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched my own incoming Data with incoming remote: %s' % expected_recipient)
+                        matched = True
         if matched:
             result.append(p)
             if _Debug:
@@ -356,6 +362,7 @@ def on_outgoing_packet_failed(result, *a, **kw):
 
 
 class WorkItem(object):
+
     def __init__(self, proto, host, size=0):
         self.proto = proto
         self.host = net_misc.pack_address(host)
@@ -374,6 +381,7 @@ class WorkItem(object):
 
 
 class PacketOut(automat.Automat):
+
     """
     This class implements all the functionality of the ``packet_out()`` state
     machine.

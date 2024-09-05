@@ -132,6 +132,7 @@ from bitdust.crypt import key
 
 
 class backup(automat.Automat):
+
     """
     A class to run the backup process, data is read from pipe.
     """
@@ -320,6 +321,7 @@ class backup(automat.Automat):
         """
         Action method.
         """
+
         def readChunk():
             size = self.blockSize - self.currentBlockSize
             if size < 0:
@@ -372,6 +374,7 @@ class backup(automat.Automat):
         """
         Action method.
         """
+
         def _doBlock():
             dt = time.time()
             raw_bytes = self.currentBlockData.getvalue()
