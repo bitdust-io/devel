@@ -478,7 +478,7 @@ def verify_all_current_customers_contracts():
         try:
             customer_idurl = id_url.field(id_url.unique_names(customer_unique_name)[0])
         except:
-            lg.exc()
+            lg.exc(msg=customer_unique_name)
             continue
         contracts_list = list_customer_contracts(customer_idurl)
         latest_contract = contracts_list['latest']

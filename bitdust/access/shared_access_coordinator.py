@@ -669,7 +669,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.suppliers_in_progress.clear()
         self.suppliers_succeed.clear()
         for supplier_idurl in self.known_suppliers_list:
-            self.suppliers_in_progress.append(supplier_idurl)
+            self.suppliers_in_progress.append(id_url.field(supplier_idurl))
             if id_url.is_cached(supplier_idurl):
                 self._do_connect_with_supplier(supplier_idurl)
             else:
@@ -689,7 +689,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        supplier_idurl = kwargs['supplier_idurl']
+        supplier_idurl = id_url.field(kwargs['supplier_idurl'])
         pkt_out = None
         if event == 'supplier-file-modified':
             remote_path = kwargs['remote_path']
@@ -797,8 +797,8 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        supplier_idurl = kwargs['supplier_idurl']
-        if supplier_idurl in self.suppliers_in_progress:
+        supplier_idurl = id_url.field(kwargs['supplier_idurl'])
+        if id_url.is_in(supplier_idurl, self.suppliers_in_progress):
             self.suppliers_in_progress.remove(supplier_idurl)
             if event in ['index-sent', 'index-up-to-date']:
                 if supplier_idurl not in self.suppliers_succeed:
