@@ -515,13 +515,14 @@ def process_info():
             }
     if driver.is_on('service_backup_db'):
         from bitdust.storage import backup_fs
+        v = backup_fs.total_stats()
         result['file'] = {
-            'items': backup_fs.counter(),
-            'files': backup_fs.numberfiles(),
-            'files_size': backup_fs.sizefiles(),
-            'folders': backup_fs.numberfolders(),
-            'folders_size': backup_fs.sizefolders(),
-            'backups_size': backup_fs.sizebackups(),
+            'items': v['items'],
+            'files': v['files'],
+            'folders': v['folders'],
+            'files_size': v['size_files'],
+            'folders_size': v['size_folders'],
+            'backups_size': v['size_backups'],
             'customers': len(backup_fs.known_customers()),
         }
     if driver.is_on('service_shared_data'):
@@ -2292,7 +2293,7 @@ def file_delete(remote_path):
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
     backup_fs.DeleteByID(pathID, iter=backup_fs.fs(customer_idurl, key_alias), iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
-    backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
     if key_alias != 'master':
         if driver.is_on('service_shared_data'):
             from bitdust.access import shared_access_coordinator
@@ -2478,7 +2479,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             ),
             api_method='file_upload_start',
         ), ), )
-        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+        backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
         backup_control.SaveFSIndex(customer_idurl, key_alias)
         if _Debug:
             lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
@@ -2492,7 +2493,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     # if key_alias != 'master':
     #     tsk.result_defer.addCallback(_restart_active_share)
     tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1])))
-    backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
     backup_control.SaveFSIndex(customer_idurl, key_alias)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))

@@ -396,7 +396,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # check and calculate used space
     if calculate or key_alias != 'master':
         backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
-        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+        backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
     # in some cases we want to save the DB later
     if saveDB or key_alias != 'master':
         SaveFSIndex(customer_idurl, key_alias)
@@ -448,7 +448,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # check and calculate used space
     if calculate or key_alias != 'master':
         backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
-        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+        backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
     # save the index if needed
     if saveDB or key_alias != 'master':
         SaveFSIndex(customer_idurl, key_alias)
@@ -629,7 +629,7 @@ class Task():
             # TODO: need to rethink that approach
             # here not taking in account compressing rate of the local files
             # but taking in account remote version size - it is always doubled
-            if int(backup_fs.sizebackups()) + self.totalSize*2 > settings.getNeededBytes():
+            if backup_fs.total_stats()['size_backups'] + self.totalSize*2 > settings.getNeededBytes():
                 err = 'insufficient storage space expected'
                 pth_id = self.pathID
                 self.result_defer.errback((pth_id, err))
@@ -677,7 +677,7 @@ class Task():
         job.totalSize = self.totalSize
         jobs()[self.backupID] = job
 
-        backup_fs.Calculate(iterID=backup_fs.fsID(self.customerIDURL, self.keyAlias))
+        backup_fs.Calculate(customer_idurl=self.customerIDURL, key_alias=self.keyAlias)
         SaveFSIndex(customer_idurl=self.customerIDURL, key_alias=self.keyAlias)
 
         jobs()[self.backupID].automat('start')
@@ -801,8 +801,8 @@ def OnFoundFolderSize(pth, sz, arg):
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL, keyAlias))
         if item:
             item.set_size(sz)
-            backup_fs.Calculate(iterID=backup_fs.fsID(customerIDURL, keyAlias))
-            SaveFSIndex(customerIDURL, keyAlias)
+            backup_fs.Calculate(customer_idurl=customerIDURL, key_alias=keyAlias)
+            SaveFSIndex(customer_idurl=customerIDURL, key_alias=keyAlias)
         if version:
             backupID = packetid.MakeBackupID(customerGlobID, pathID, version, key_alias=keyAlias)
             job = GetRunningBackupObject(backupID)
@@ -839,9 +839,9 @@ def OnJobDone(backupID, result):
                         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
-        backup_fs.ScanID(remotePath)
-        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, keyAlias))
-        SaveFSIndex(customer_idurl, keyAlias)
+        backup_fs.ScanID(remotePath, customer_idurl=customer_idurl, key_alias=keyAlias)
+        backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=keyAlias)
+        SaveFSIndex(customer_idurl=customer_idurl, key_alias=keyAlias)
         # TODO: check used space, if we have over use - stop all tasks immediately
     elif result == 'abort':
         DeleteBackup(backupID)

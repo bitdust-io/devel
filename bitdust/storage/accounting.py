@@ -187,7 +187,7 @@ def report_consumed_storage():
     result['suppliers_num'] = contactsdb.num_suppliers()
     result['needed'] = settings.getNeededBytes()
     # result['needed_str'] = diskspace.MakeStringFromBytes(result['needed'])
-    result['used'] = int(backup_fs.sizebackups())
+    result['used'] = backup_fs.total_stats()['size_backups']
     # result['used_str'] = diskspace.MakeStringFromBytes(result['used'])
     result['available'] = result['needed'] - result['used']
     # result['available_str'] = diskspace.MakeStringFromBytes(result['available'])
@@ -195,8 +195,8 @@ def report_consumed_storage():
     result['used_per_supplier'] = 0
     result['available_per_supplier'] = 0
     if result['suppliers_num'] > 0:
-        result['needed_per_supplier'] = int(math.ceil(2.0*result['needed']/result['suppliers_num']))
-        result['used_per_supplier'] = int(math.ceil(2.0*result['used']/result['suppliers_num']))
+        result['needed_per_supplier'] = int(math.ceil(result['needed']/result['suppliers_num']))
+        result['used_per_supplier'] = int(math.ceil(result['used']/result['suppliers_num']))
         result['available_per_supplier'] = result['needed_per_supplier'] - result['used_per_supplier']
     # result['needed_per_supplier_str'] = diskspace.MakeStringFromBytes(result['needed_per_supplier'])
     # result['used_per_supplier_str'] = diskspace.MakeStringFromBytes(result['used_per_supplier'])
