@@ -271,8 +271,7 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
             if another_packet_id not in matching_packet_ids:
                 matching_packet_ids.append(another_packet_id)
     if len(matching_packet_ids) > 1:
-        if _Debug:
-            lg.dbg(_DebugLevel, 'multiple packet IDs expecting to match for that packet: %r' % matching_packet_ids)
+        lg.warn('multiple packet IDs expecting to match for %r: %r' % (newpacket, matching_packet_ids))
     matching_packet_ids_count = 0
     matching_command_ack_count = 0
     for p in queue():
