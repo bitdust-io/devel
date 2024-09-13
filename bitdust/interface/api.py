@@ -970,6 +970,20 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                         i['queue'] = len(s.pending_packets)
                     sessions.append(i)
                 r['proxy']['sessions'] = sessions
+            if driver.is_on('service_proxy_server'):
+                from bitdust.transport.proxy import proxy_router
+                if proxy_router.A():
+                    r['proxy']['routes'] = []
+                    for v in proxy_router.A().routes.values():
+                        _r = v['connection_info'].copy()
+                        _r['contacts'] = ', '.join(['{}:{}'.format(c[0], c[1]) for c in v['contacts']])
+                        _r['address'] = ', '.join(['{}:{}'.format(a[0], a[1]) for a in v['address']])
+                        _r.pop('id', None)
+                        _r.pop('index', None)
+                        r['proxy']['routes'].append(_r)
+                    r['proxy']['closed_routes'] = [(strng.to_text(k), strng.to_text(v)) for k, v in proxy_router.A().closed_routes.items()]
+                    r['proxy']['acks'] = len(proxy_router.A().acks)
+                    r['proxy']['hosts'] = ', '.join([('{}://{}:{}'.format(strng.to_text(k), strng.to_text(v[0]), strng.to_text(v[1]))) for k, v in proxy_router.A().my_hosts.items()])
     if dht:
         from bitdust.dht import dht_service
         r['dht'] = {}

@@ -141,10 +141,12 @@ def A(event=None, *args, **kwargs):
 
 
 class ProxyRouter(automat.Automat):
+
     """
     This class implements all the functionality of the ``proxy_router()`` state
     machine.
     """
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
@@ -293,10 +295,7 @@ class ProxyRouter(automat.Automat):
         """
         idurl, _, item, _, _, _ = args[0]
         idurl = id_url.field(idurl).original()
-        new_address = (
-            strng.to_text(item.proto),
-            strng.to_text(item.host),
-        )
+        new_address = (strng.to_text(item.proto), strng.to_text(item.host))
         if idurl not in self.routes:
             lg.exc(exc_value=Exception('route with %r is not registered yet' % idurl))
         else:
@@ -384,10 +383,7 @@ class ProxyRouter(automat.Automat):
             return None, None
         hosts = []
         try:
-            hosts.append((
-                active_user_session_machine.get_proto(),
-                active_user_session_machine.get_host(),
-            ))
+            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host()))
         except:
             lg.exc()
         if not hosts:
@@ -712,7 +708,17 @@ class ProxyRouter(automat.Automat):
         routes_keys = list(self.routes.keys())
         closed_route_keys = list(self.closed_routes.keys())
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'], closed_routes=closed_route_keys, is_retry=is_retry, route_changed=route_changed)
+            lg.args(
+                _DebugLevel,
+                newpacket=newpacket,
+                info=info,
+                sender_idurl=sender_idurl,
+                receiver_idurl=receiver_idurl,
+                route_contacts=route['contacts'],
+                closed_routes=closed_route_keys,
+                is_retry=is_retry,
+                route_changed=route_changed,
+            )
         routed_packet = signed.Unserialize(routed_data)
         #--- invalid packet
         if not routed_packet:
@@ -980,7 +986,16 @@ class ProxyRouter(automat.Automat):
 
     def _on_routed_out_packet_sent(self, pkt_out, msg, newpacket, info, sender_idurl, routed_command, routed_packet_id, routed_remote_id, wide, response_timeout, keep_alive):
         if _Debug:
-            lg.args(_DebugLevel, pkt_out=pkt_out, msg=msg, newpacket=newpacket, sender_idurl=sender_idurl, routed_command=routed_command, routed_packet_id=routed_packet_id, routed_remote_id=routed_remote_id)
+            lg.args(
+                _DebugLevel,
+                pkt_out=pkt_out,
+                msg=msg,
+                newpacket=newpacket,
+                sender_idurl=sender_idurl,
+                routed_command=routed_command,
+                routed_packet_id=routed_packet_id,
+                routed_remote_id=routed_remote_id,
+            )
         publickey = identitycache.GetPublicKey(newpacket.CreatorID)
         if not publickey:
             lg.err('routed packet sent but can not send RelayAck(), identity %r is not cached' % newpacket.CreatorID)

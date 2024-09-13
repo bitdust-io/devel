@@ -629,7 +629,7 @@ class FamilyMember(automat.Automat):
         try:
             my_revision = int(my_info['revision'])
         except:
-            lg.warn('my own info is unknown or invalid, assume my revision is 0')
+            lg.warn('my own info is unknown or invalid in %r, assume my revision is 0' % self)
             my_revision = 0
         try:
             dht_revision = int(dht_info['revision'])
