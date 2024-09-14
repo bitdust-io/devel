@@ -475,11 +475,11 @@ def verify_all_current_customers_contracts():
     if not os.path.isdir(settings.ServiceDir('service_supplier_contracts')):
         return []
     for customer_unique_name in os.listdir(settings.ServiceDir('service_supplier_contracts')):
-        try:
-            customer_idurl = id_url.field(id_url.unique_names(customer_unique_name)[0])
-        except:
-            lg.exc()
+        known_idurls = id_url.unique_names(customer_unique_name)
+        if not known_idurls:
+            lg.warn('not possible to verify customer contract, unknown customer name found: %r' % customer_unique_name)
             continue
+        customer_idurl = id_url.field(known_idurls[0])
         contracts_list = list_customer_contracts(customer_idurl)
         latest_contract = contracts_list['latest']
         if contracts_list['current']:
@@ -514,11 +514,11 @@ def verify_accept_storage_payment(tx):
     except:
         return 0
     recently_completed_contracts = []
-    try:
-        customer_idurl = id_url.field(id_url.unique_names(customer_prefix)[0])
-    except:
-        lg.exc()
+    known_idurls = id_url.unique_names(customer_prefix)
+    if not known_idurls:
+        lg.warn('not possible to accept storage payment, unknown customer name found: %r' % customer_prefix)
         return 0
+    customer_idurl = id_url.field(known_idurls[0])
     if _Debug:
         lg.args(_DebugLevel, c=customer_idurl, unique_name=customer_idurl.unique_name())
     if customer_idurl.unique_name() != customer_prefix:

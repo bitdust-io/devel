@@ -1,6 +1,30 @@
 Change Log
 ==========
 
+
+2024-09-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump pycryptodomex==3.20.0
+* solved another issue with removing old versions of the same file
+* calculate original file size before start the backup
+* able to populate web-socket stream data for specific files/locations
+* fix in bitdust/userid/id_url.py
+* fix bug in logging
+* fixed bug related to auto-removing oldest versions of the files
+
+
+
+2024-07-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* downgrade coincurve version
+* built supplier.storage_contract.scan_recent_storage_transactions() method
+* added caching of identities unique names
+* fix in supplier.storage_contract.verify_accept_storage_payment()
+* fix in bitdust/supplier/customer_space.py
+* fix in bitdust/blockchain/bismuth_wallet.py
+
+
+
 2024-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * do not reject unpaid customers for now, storage contracts are still in progress

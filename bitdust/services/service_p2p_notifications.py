@@ -141,7 +141,6 @@ class P2PNotificationsService(LocalService):
                 resp['result'] = 'denied'
                 resp['reason'] = str(exc)
             service_responses_list.append(resp)
-            lg.out(self.debug_level, 'service_p2p_notifications.request  %s:%s  is  [%s] : %s' % (r_scope, r_action, resp['result'], resp.get('reason', 'OK')))
         payload = serialization.DictToBytes({'items': service_responses_list}, values_to_text=True)
         return p2p_service.SendAck(newpacket, payload)
 

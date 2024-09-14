@@ -67,6 +67,8 @@ from bitdust.userid import id_url
 
 from bitdust.storage import backup_fs
 
+from bitdust.userid import my_id
+
 #------------------------------------------------------------------------------
 
 
@@ -183,28 +185,38 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
 
 
 def report_consumed_storage():
+    my_own_stats = backup_fs.total_stats()
+    shared_stats = backup_fs.total_stats(customer_idurl=my_id.getIDURL(), exclude=True)
     result = {}
     result['suppliers_num'] = contactsdb.num_suppliers()
     result['needed'] = settings.getNeededBytes()
-    # result['needed_str'] = diskspace.MakeStringFromBytes(result['needed'])
-    result['used'] = int(backup_fs.sizebackups())
-    # result['used_str'] = diskspace.MakeStringFromBytes(result['used'])
+    result['used'] = my_own_stats['size_backups']
     result['available'] = result['needed'] - result['used']
-    # result['available_str'] = diskspace.MakeStringFromBytes(result['available'])
     result['needed_per_supplier'] = 0
     result['used_per_supplier'] = 0
     result['available_per_supplier'] = 0
     if result['suppliers_num'] > 0:
-        result['needed_per_supplier'] = int(math.ceil(2.0*result['needed']/result['suppliers_num']))
-        result['used_per_supplier'] = int(math.ceil(2.0*result['used']/result['suppliers_num']))
+        result['needed_per_supplier'] = int(math.ceil(result['needed']/result['suppliers_num']))
+        result['used_per_supplier'] = int(math.ceil(result['used']/result['suppliers_num']))
         result['available_per_supplier'] = result['needed_per_supplier'] - result['used_per_supplier']
-    # result['needed_per_supplier_str'] = diskspace.MakeStringFromBytes(result['needed_per_supplier'])
-    # result['used_per_supplier_str'] = diskspace.MakeStringFromBytes(result['used_per_supplier'])
-    # result['available_per_supplier_str'] = diskspace.MakeStringFromBytes(result['available_per_supplier'])
     try:
         result['used_percent'] = misc.value2percent(float(result['used']), float(result['needed']))
     except:
         result['used_percent'] = '0%'
+    result['my_catalog_items'] = my_own_stats['items']
+    result['my_files'] = my_own_stats['files']
+    result['my_folders'] = my_own_stats['folders']
+    result['my_files_size'] = my_own_stats['size_files']
+    result['my_folders_size'] = my_own_stats['size_folders']
+    result['my_backups_size'] = my_own_stats['size_backups']
+    result['my_keys'] = my_own_stats['keys']
+    result['shared_catalog_items'] = shared_stats['items']
+    result['shared_files'] = shared_stats['files']
+    result['shared_folders'] = shared_stats['folders']
+    result['shared_files_size'] = shared_stats['size_files']
+    result['shared_folders_size'] = shared_stats['size_folders']
+    result['shared_backups_size'] = shared_stats['size_backups']
+    result['shared_keys'] = shared_stats['keys']
     return result
 
 

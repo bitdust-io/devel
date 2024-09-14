@@ -51,6 +51,10 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------
+
 from bitdust.logs import lg
 
 from bitdust.contacts import contactsdb
@@ -66,8 +70,11 @@ from bitdust.lib import serialization
 from bitdust.crypt import signed
 from bitdust.crypt import my_keys
 
+from bitdust.services import driver
+
 from bitdust.transport import gateway
 from bitdust.transport import callback
+from bitdust.transport import packet_out
 
 from bitdust.userid import my_id
 
@@ -190,6 +197,91 @@ def outbox(outpacket, wide, callbacks, target=None, route=None, response_timeout
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.outbox [%s:%s] to %s with route %r' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(outpacket.RemoteID), route))
     return None
+
+
+#------------------------------------------------------------------------------
+
+
+def on_request_service_received(newpacket, info):
+    if len(newpacket.Payload) > 1024*10:
+        lg.warn('too long payload')
+        SendFail(newpacket, 'too long payload')
+        return True
+    try:
+        json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
+        json_payload['name']
+        json_payload['payload']
+    except:
+        lg.warn('json payload invalid')
+        SendFail(newpacket, 'json payload invalid')
+        return True
+    service_name = str(json_payload['name'])
+    if _Debug:
+        lg.out(_Debug, 'service_p2p_hookups.RequestService {%s} from %s' % (service_name, newpacket.OwnerID))
+    if not driver.is_exist(service_name):
+        lg.warn('got wrong payload in %s' % service_name)
+        SendFail(newpacket, 'service %s not exist' % service_name)
+        return True
+    if not driver.is_on(service_name):
+        SendFail(newpacket, 'service %s is off' % service_name)
+        return True
+    try:
+        result = driver.request(service_name, json_payload['payload'], newpacket, info)
+    except:
+        lg.exc()
+        SendFail(newpacket, 'request processing failed with exception')
+        return True
+    if not result:
+        if _Debug:
+            lg.out(_Debug, 'service_p2p_hookups._send_request_service SKIP request %s' % service_name)
+        return False
+    if isinstance(result, Deferred):
+        if _Debug:
+            lg.out(_Debug, 'service_p2p_hookups._send_request_service fired delayed execution')
+    elif isinstance(result, packet_out.PacketOut):
+        if _Debug:
+            lg.out(_Debug, 'service_p2p_hookups._send_request_service outbox packet sent')
+    return True
+
+
+def on_cancel_service_received(newpacket, info):
+    if len(newpacket.Payload) > 1024*10:
+        SendFail(newpacket, 'too long payload')
+        return True
+    try:
+        json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
+        json_payload['name']
+        json_payload['payload']
+    except:
+        SendFail(newpacket, 'json payload invalid')
+        return True
+    service_name = json_payload['name']
+    if _Debug:
+        lg.out(_Debug, 'service_p2p_hookups.CancelService {%s} from %s' % (service_name, newpacket.OwnerID))
+    if not driver.is_exist(service_name):
+        lg.warn('got wrong payload in %s' % newpacket)
+        SendFail(newpacket, 'service %s not exist' % service_name)
+        return True
+    if not driver.is_on(service_name):
+        SendFail(newpacket, 'service %s is off' % service_name)
+        return True
+    try:
+        result = driver.cancel(service_name, json_payload['payload'], newpacket, info)
+    except:
+        lg.exc()
+        SendFail(newpacket, 'request processing failed with exception')
+        return True
+    if not result:
+        if _Debug:
+            lg.out(_Debug, 'service_p2p_hookups._send_cancel_service SKIP request %s' % service_name)
+        return False
+    if isinstance(result, Deferred):
+        if _Debug:
+            lg.out(_Debug, 'service_p2p_hookups._send_cancel_service fired delayed execution')
+    elif isinstance(result, packet_out.PacketOut):
+        if _Debug:
+            lg.out(_Debug, 'service_p2p_hookups._send_cancel_service outbox packet sent')
+    return True
 
 
 #------------------------------------------------------------------------------

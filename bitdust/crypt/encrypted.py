@@ -294,7 +294,7 @@ def Unserialize(data, decrypt_key=None):
             exc,
             list(dct.keys()),
             (dct.get('c'), dct.get('b'), dct.get('i'), dct.get('r')),
-            traceback.format_tb(),
+            '\n'.join(traceback.format_stack()),
         ))
         if _Debug:
             lg.out(_DebugLevel, repr(dct))

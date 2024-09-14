@@ -110,88 +110,12 @@ class P2PHookupsService(LocalService):
         return False
 
     def _on_request_service_received(self, newpacket, info):
-        from twisted.internet.defer import Deferred
-        from bitdust.logs import lg
-        from bitdust.lib import serialization
-        from bitdust.services import driver
         from bitdust.p2p import p2p_service
-        from bitdust.transport import packet_out
-        if len(newpacket.Payload) > 1024*10:
-            lg.warn('too long payload')
-            p2p_service.SendFail(newpacket, 'too long payload')
-            return True
-        try:
-            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
-            json_payload['name']
-            json_payload['payload']
-        except:
-            lg.warn('json payload invalid')
-            p2p_service.SendFail(newpacket, 'json payload invalid')
-            return True
-        service_name = str(json_payload['name'])
-        lg.out(self.debug_level, 'service_p2p_hookups.RequestService {%s} from %s' % (service_name, newpacket.OwnerID))
-        if not driver.is_exist(service_name):
-            lg.warn('got wrong payload in %s' % service_name)
-            p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
-            return True
-        if not driver.is_on(service_name):
-            p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
-            return True
-        try:
-            result = driver.request(service_name, json_payload['payload'], newpacket, info)
-        except:
-            lg.exc()
-            p2p_service.SendFail(newpacket, 'request processing failed with exception')
-            return True
-        if not result:
-            lg.out(self.debug_level, 'service_p2p_hookups._send_request_service SKIP request %s' % service_name)
-            return False
-        if isinstance(result, Deferred):
-            lg.out(self.debug_level, 'service_p2p_hookups._send_request_service fired delayed execution')
-        elif isinstance(result, packet_out.PacketOut):
-            lg.out(self.debug_level, 'service_p2p_hookups._send_request_service outbox packet sent')
-        return True
+        return p2p_service.on_request_service_received(newpacket, info)
 
     def _on_cancel_service_received(self, newpacket, info):
-        from twisted.internet.defer import Deferred
-        from bitdust.logs import lg
-        from bitdust.lib import serialization
-        from bitdust.services import driver
         from bitdust.p2p import p2p_service
-        from bitdust.transport import packet_out
-        if len(newpacket.Payload) > 1024*10:
-            p2p_service.SendFail(newpacket, 'too long payload')
-            return True
-        try:
-            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
-            json_payload['name']
-            json_payload['payload']
-        except:
-            p2p_service.SendFail(newpacket, 'json payload invalid')
-            return True
-        service_name = json_payload['name']
-        lg.out(self.debug_level, 'service_p2p_hookups.CancelService {%s} from %s' % (service_name, newpacket.OwnerID))
-        if not driver.is_exist(service_name):
-            lg.warn('got wrong payload in %s' % newpacket)
-            p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
-            return True
-        if not driver.is_on(service_name):
-            p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
-            return True
-        try:
-            result = driver.cancel(service_name, json_payload['payload'], newpacket, info)
-        except:
-            lg.exc()
-            p2p_service.SendFail(newpacket, 'request processing failed with exception')
-            return True
-        if not result:
-            lg.out(self.debug_level, 'service_p2p_hookups._send_cancel_service SKIP request %s' % service_name)
-            return False
-        if isinstance(result, Deferred):
-            lg.out(self.debug_level, 'service_p2p_hookups._send_cancel_service fired delayed execution')
-        elif isinstance(result, packet_out.PacketOut):
-            lg.out(self.debug_level, 'service_p2p_hookups._send_cancel_service outbox packet sent')
-        return True
+        return p2p_service.on_cancel_service_received(newpacket, info)
 
     def _on_p2p_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
         if newstate == 'INCOMMING?':

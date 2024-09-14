@@ -331,7 +331,7 @@ class BackupMonitor(automat.Automat):
         if not contactsdb.num_suppliers():
             bytesUsed = 0
         else:
-            bytesUsed = backup_fs.sizebackups()/contactsdb.num_suppliers()
+            bytesUsed = backup_fs.total_stats()['size_backups']/contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         if _Debug:
             lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))

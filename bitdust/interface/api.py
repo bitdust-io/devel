@@ -515,13 +515,14 @@ def process_info():
             }
     if driver.is_on('service_backup_db'):
         from bitdust.storage import backup_fs
+        v = backup_fs.total_stats()
         result['file'] = {
-            'items': backup_fs.counter(),
-            'files': backup_fs.numberfiles(),
-            'files_size': backup_fs.sizefiles(),
-            'folders': backup_fs.numberfolders(),
-            'folders_size': backup_fs.sizefolders(),
-            'backups_size': backup_fs.sizebackups(),
+            'items': v['items'],
+            'files': v['files'],
+            'folders': v['folders'],
+            'files_size': v['size_files'],
+            'folders_size': v['size_folders'],
+            'backups_size': v['size_backups'],
             'customers': len(backup_fs.known_customers()),
         }
     if driver.is_on('service_shared_data'):
@@ -693,6 +694,7 @@ def network_select(name):
 
     def _on_network_disconnected(x):
         cur_base_dir = deploy.current_base_dir()
+        # TODO: must wait shutdown and init to complete with defered
         shutdowner.shutdown_services()
         shutdowner.shutdown_local()
         shutdowner.shutdown_automats()
@@ -969,6 +971,20 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                         i['queue'] = len(s.pending_packets)
                     sessions.append(i)
                 r['proxy']['sessions'] = sessions
+            if driver.is_on('service_proxy_server'):
+                from bitdust.transport.proxy import proxy_router
+                if proxy_router.A():
+                    r['proxy']['routes'] = []
+                    for v in proxy_router.A().routes.values():
+                        _r = v['connection_info'].copy()
+                        _r['contacts'] = ', '.join(['{}:{}'.format(c[0], c[1]) for c in v['contacts']])
+                        _r['address'] = ', '.join(['{}:{}'.format(a[0], a[1]) for a in v['address']])
+                        _r.pop('id', None)
+                        _r.pop('index', None)
+                        r['proxy']['routes'].append(_r)
+                    r['proxy']['closed_routes'] = [(strng.to_text(k), strng.to_text(v)) for k, v in proxy_router.A().closed_routes.items()]
+                    r['proxy']['acks'] = len(proxy_router.A().acks)
+                    r['proxy']['hosts'] = ', '.join([('{}://{}:{}'.format(strng.to_text(k), strng.to_text(v[0]), strng.to_text(v[1]))) for k, v in proxy_router.A().my_hosts.items()])
     if dht:
         from bitdust.dht import dht_service
         r['dht'] = {}
@@ -2292,7 +2308,7 @@ def file_delete(remote_path):
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
     backup_fs.DeleteByID(pathID, iter=backup_fs.fs(customer_idurl, key_alias), iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
-    backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
     if key_alias != 'master':
         if driver.is_on('service_shared_data'):
             from bitdust.access import shared_access_coordinator
@@ -2428,24 +2444,10 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     if not pathID:
         return ERROR('path %s was not registered yet' % remote_path)
     keyID = my_keys.make_key_id(alias=key_alias, creator_glob_id=parts['customer'])
-    # customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=key_alias)
     pathIDfull = packetid.MakeBackupID(keyID, pathID)
     if key_alias != 'master':
         if not driver.is_on('service_shared_data'):
             return ERROR('service_shared_data() is not started')
-
-
-#     def _restart_active_share(result):
-#         if _Debug:
-#             lg.args(_DebugLevel, result=result, key_id=keyID, path=path, pathID=pathID)
-#         if key_alias != 'master':
-#             from bitdust.access import shared_access_coordinator
-#             active_share = shared_access_coordinator.get_active_share(keyID)
-#             if not active_share:
-#                 active_share = shared_access_coordinator.SharedAccessCoordinator(key_id=keyID, publish_events=publish_events)
-#             active_share.automat('restart')
-#         return result
-
     if wait_result:
         task_created_defer = Deferred()
         tsk = backup_control.StartSingle(
@@ -2453,8 +2455,6 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             localPath=local_path,
             keyID=keyID,
         )
-        # if key_alias != 'master':
-        #     tsk.result_defer.addCallback(_restart_active_share)
         tsk.result_defer.addCallback(
             lambda result: task_created_defer.callback(
                 OK(
@@ -2470,15 +2470,16 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
                 )
             )
         )
-        tsk.result_defer.addErrback(lambda result: task_created_defer.callback(ERROR(
-            'uploading task %d for %s failed: %s' % (
-                tsk.number,
-                tsk.pathID,
-                result[1],
-            ),
-            api_method='file_upload_start',
-        ), ), )
-        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+        tsk.result_defer.addErrback(lambda result: task_created_defer.callback(ERROR(result, api_method='file_upload_start')))
+        # tsk.result_defer.addErrback(lambda result: task_created_defer.callback(ERROR(
+        #     'uploading task %d for %s failed: %s' % (
+        #         tsk.number,
+        #         tsk.pathID,
+        #         result,
+        #     ),
+        #     api_method='file_upload_start',
+        # ), ), )
+        backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
         backup_control.SaveFSIndex(customer_idurl, key_alias)
         if _Debug:
             lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
@@ -2489,10 +2490,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
         localPath=local_path,
         keyID=keyID,
     )
-    # if key_alias != 'master':
-    #     tsk.result_defer.addCallback(_restart_active_share)
-    tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1])))
-    backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    tsk.result_defer.addErrback(lambda result: lg.err('errback from api.file_upload_start.task() failed with %r' % result))
+    backup_fs.Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
     backup_control.SaveFSIndex(customer_idurl, key_alias)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))

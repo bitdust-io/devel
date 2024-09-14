@@ -104,9 +104,9 @@ from bitdust.contacts import identitycache
 
 from bitdust.interface import api
 
-from bitdust.userid import my_id
 from bitdust.userid import global_id
 from bitdust.userid import id_url
+from bitdust.userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -125,12 +125,7 @@ TYPES = {
 _FileSystemIndexByName = {}
 _FileSystemIndexByID = {}
 _RevisionNumber = {}
-_ItemsCount = 0
-_FilesCount = 0
-_DirsCount = 0
-_SizeFiles = 0
-_SizeFolders = 0
-_SizeBackups = 0
+_Stats = {}
 
 #------------------------------------------------------------------------------
 
@@ -204,7 +199,7 @@ def fsID(customer_idurl=None, key_alias='master'):
 
 def revision(customer_idurl=None, key_alias='master'):
     """
-    Mutator method to access current software revision number.
+    Method to access current revision number of the corresponding catalogue.
     """
     global _RevisionNumber
     if customer_idurl is None:
@@ -292,55 +287,115 @@ def known_keys_aliases(customer_idurl):
 #------------------------------------------------------------------------------
 
 
-def counter():
+def stats(customer_idurl=None, key_alias='master'):
+    global _Stats
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    if customer_idurl not in _Stats:
+        return {}
+    if key_alias not in _Stats[customer_idurl]:
+        return {}
+    return _Stats[customer_idurl][key_alias]
+
+
+def set_stat(dict_value, customer_idurl=None, key_alias='master'):
+    global _Stats
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    if customer_idurl not in _Stats:
+        _Stats[customer_idurl] = {}
+    if key_alias not in _Stats[customer_idurl]:
+        _Stats[customer_idurl][key_alias] = {
+            'items': 0,
+            'files': 0,
+            'folders': 0,
+            'size_files': 0,
+            'size_folders': 0,
+            'size_backups': 0,
+        }
+    v = _Stats[customer_idurl][key_alias]
+    v.update(dict_value)
+    _Stats[customer_idurl][key_alias] = v
+
+
+def total_stats(customer_idurl=None, exclude=False):
+    global _Stats
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    ret = {
+        'items': 0,
+        'files': 0,
+        'folders': 0,
+        'size_files': 0,
+        'size_folders': 0,
+        'size_backups': 0,
+        'keys': 0,
+    }
+    if exclude:
+        for another_customer_idurl in known_customers():
+            if id_url.is_the_same(customer_idurl, another_customer_idurl):
+                continue
+            for val in _Stats.get(another_customer_idurl, {}).values():
+                for k in val.keys():
+                    ret[k] += val[k]
+                ret['keys'] += 1
+    else:
+        for val in _Stats.get(customer_idurl, {}).values():
+            for k in val.keys():
+                ret[k] += val[k]
+            ret['keys'] += 1
+    return ret
+
+
+#------------------------------------------------------------------------------
+
+
+def counter(customer_idurl=None, key_alias='master'):
     """
     Software keeps track of total number of indexed items, this returns that
     value.
     """
-    global _ItemsCount
-    return _ItemsCount
+    return stats(customer_idurl=customer_idurl, key_alias=key_alias).get('items')
 
 
-def numberfiles():
+def numberfiles(customer_idurl=None, key_alias='master'):
     """
     Number of indexed files.
     """
-    global _FilesCount
-    return _FilesCount
+    return stats(customer_idurl=customer_idurl, key_alias=key_alias).get('files')
 
 
-def numberfolders():
+def numberfolders(customer_idurl=None, key_alias='master'):
     """
     Number of indexed files.
     """
-    global _DirsCount
-    return _DirsCount
+    return stats(customer_idurl=customer_idurl, key_alias=key_alias).get('folders')
 
 
-def sizefiles():
+def sizefiles(customer_idurl=None, key_alias='master'):
     """
     Total size of all indexed files.
     """
-    global _SizeFiles
-    return _SizeFiles
+    return stats(customer_idurl=customer_idurl, key_alias=key_alias).get('size_files')
 
 
-def sizefolders():
+def sizefolders(customer_idurl=None, key_alias='master'):
     """
     Total size of all indexed folders.
 
     May be incorrect, because folder size is not calculated regular yet.
     """
-    global _SizeFolders
-    return _SizeFolders
+    return stats(customer_idurl=customer_idurl, key_alias=key_alias).get('size_folders')
 
 
-def sizebackups():
+def sizebackups(customer_idurl=None, key_alias='master'):
     """
     Total size of all indexed backups.
     """
-    global _SizeBackups
-    return _SizeBackups
+    return stats(customer_idurl=customer_idurl, key_alias=key_alias).get('size_backups')
 
 
 #------------------------------------------------------------------------------
@@ -1700,10 +1755,7 @@ def Scan(basedir=None, customer_idurl=None, key_alias='master'):
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
     iterID = fsID(customer_idurl, key_alias=key_alias)
-    summ = [
-        0,
-        0,
-    ]
+    summ = [0, 0]
 
     def visitor(path_id, path, info):
         info.read_stats(path)
@@ -1744,29 +1796,23 @@ def ScanID(pathID, basedir=None, customer_idurl=None, key_alias='master'):
     itr.read_versions(bpio.portablePath(os.path.join(basedir, customer_id)))
 
 
-def Calculate(iterID=None):
+def Calculate(customer_idurl=None, key_alias='master'):
     """
     Scan all items in the index and calculate folder and backups sizes.
     """
-    global _SizeFiles
-    global _SizeFolders
-    global _SizeBackups
-    global _ItemsCount
-    global _FilesCount
-    _ItemsCount = 0
-    _FilesCount = 0
-    _DirsCount = 0
-    _SizeFiles = 0
-    _SizeFolders = 0
-    _SizeBackups = 0
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    val = {
+        'items': 0,
+        'files': 0,
+        'folders': 0,
+        'size_files': 0,
+        'size_folders': 0,
+        'size_backups': 0,
+    }
 
     def recursive_calculate(i):
-        global _SizeFiles
-        global _SizeFolders
-        global _SizeBackups
-        global _ItemsCount
-        global _FilesCount
-        global _DirsCount
         folder_size = 0
         for id in i.keys():
             if id == INFO_KEY:
@@ -1775,18 +1821,18 @@ def Calculate(iterID=None):
                 if i[id].exist():
                     folder_size += i[id].size
                 if i[id].type == FILE:
-                    _FilesCount += 1
+                    val['files'] += 1
                     if i[id].exist():
-                        _SizeFiles += i[id].size
+                        val['size_files'] += i[id].size
                 if i[id].type == DIR:
-                    _DirsCount += 1
+                    val['folders'] += 1
                     if i[id].exist():
-                        _SizeFolders += i[id].size
+                        val['size_folders'] += i[id].size
                 for version in i[id].list_versions():
                     versionSize = i[id].get_version_info(version)[1]
                     if versionSize > 0:
-                        _SizeBackups += versionSize
-                _ItemsCount += 1
+                        val['size_backups'] += versionSize
+                val['items'] += 1
             elif isinstance(i[id], dict):
                 sub_folder_size = recursive_calculate(i[id])
                 if sub_folder_size != -1:
@@ -1796,25 +1842,26 @@ def Calculate(iterID=None):
         if INFO_KEY in i:
             i[INFO_KEY].size = folder_size
             if i[INFO_KEY].type == FILE:
-                _FilesCount += 1
+                val['files'] += 1
                 if i[INFO_KEY].exist():
-                    _SizeFiles += i[INFO_KEY].size
+                    val['size_files'] += i[INFO_KEY].size
             if i[INFO_KEY].type == DIR:
-                _DirsCount += 1
+                val['folders'] += 1
                 if i[INFO_KEY].exist():
-                    _SizeFolders += i[INFO_KEY].size
+                    val['size_folders'] += i[INFO_KEY].size
             for version in i[INFO_KEY].list_versions():
                 versionSize = i[INFO_KEY].get_version_info(version)[1]
                 if versionSize > 0:
-                    _SizeBackups += versionSize
-            _ItemsCount += 1
+                    val['size_backups'] += versionSize
+            val['items'] += 1
         return folder_size
 
-    if iterID is None:
-        iterID = fsID()
+    iterID = fsID(customer_idurl=customer_idurl, key_alias=key_alias)
     ret = recursive_calculate(iterID)
+    set_stat(val, customer_idurl=customer_idurl, key_alias=key_alias)
+
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Calculate %d %d %d %d' % (_ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
+        lg.out(_DebugLevel, 'backup_fs.Calculate %r %r : %r' % (customer_idurl, key_alias, val))
     return ret
 
 
@@ -2066,7 +2113,7 @@ def ReadIndex(text_data, new_revision=None, deleted_path_ids=[], encoding='utf-8
         total_modified_count += modified_count
         if updated_keys:
             for key_alias in updated_keys:
-                Calculate(iterID=fsID(customer_idurl, key_alias))
+                Calculate(customer_idurl=customer_idurl, key_alias=key_alias)
                 updated_customers_keys.append((customer_idurl, key_alias))
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.ReadIndex %d items loaded for %d keys' % (total_count, len(updated_customers_keys)))
