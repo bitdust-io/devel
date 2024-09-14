@@ -474,7 +474,7 @@ def restart(service_name, wait_timeout=None):
 
     def _on_failed(err):
         lg.warn('failed service %s in driver.restart() : %r' % (service_name, err))
-        restart_result.errback(str(err))
+        restart_result.errback(Exception(str(err)))
         return None
 
     def _do_start(stop_result=None, dependencies_results=None):

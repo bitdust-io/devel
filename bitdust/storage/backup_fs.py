@@ -104,9 +104,9 @@ from bitdust.contacts import identitycache
 
 from bitdust.interface import api
 
-from bitdust.userid import my_id
 from bitdust.userid import global_id
 from bitdust.userid import id_url
+from bitdust.userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -320,7 +320,7 @@ def set_stat(dict_value, customer_idurl=None, key_alias='master'):
     _Stats[customer_idurl][key_alias] = v
 
 
-def total_stats(customer_idurl=None):
+def total_stats(customer_idurl=None, exclude=False):
     global _Stats
     if customer_idurl is None:
         customer_idurl = my_id.getIDURL()
@@ -332,10 +332,21 @@ def total_stats(customer_idurl=None):
         'size_files': 0,
         'size_folders': 0,
         'size_backups': 0,
+        'keys': 0,
     }
-    for val in _Stats.get(customer_idurl, {}).values():
-        for k in val.keys():
-            ret[k] += val[k]
+    if exclude:
+        for another_customer_idurl in known_customers():
+            if id_url.is_the_same(customer_idurl, another_customer_idurl):
+                continue
+            for val in _Stats.get(another_customer_idurl, {}).values():
+                for k in val.keys():
+                    ret[k] += val[k]
+                ret['keys'] += 1
+    else:
+        for val in _Stats.get(customer_idurl, {}).values():
+            for k in val.keys():
+                ret[k] += val[k]
+            ret['keys'] += 1
     return ret
 
 

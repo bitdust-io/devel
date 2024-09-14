@@ -630,11 +630,11 @@ class Task():
             # here not taking in account compressing rate of the local files
             # but taking in account remote version size - it is always doubled
             if backup_fs.total_stats()['size_backups'] + self.totalSize*2 > settings.getNeededBytes():
-                err = 'insufficient storage space expected'
+                err_str = 'insufficient storage space expected'
                 pth_id = self.pathID
-                self.result_defer.errback((pth_id, err))
-                reactor.callLater(0, OnTaskFailed, pth_id, err)  # @UndefinedVariable
-                self.destroy(err)
+                self.result_defer.errback(Exception(err_str))
+                reactor.callLater(0, OnTaskFailed, pth_id, err_str)  # @UndefinedVariable
+                self.destroy(err_str)
                 return None
         try:
             backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), self.backupID)
@@ -642,11 +642,11 @@ class Task():
             lg.exc()
             if _Debug:
                 lg.out(_DebugLevel, 'backup_control.Task.on_folder_size_counted ERROR creating destination folder for %s' % self.pathID)
-            err = 'failed creating destination folder for "%s"' % self.backupID
+            err_str = 'failed creating destination folder for "%s"' % self.backupID
             pth_id = self.pathID
-            self.result_defer.errback((pth_id, err))
-            reactor.callLater(0, OnTaskFailed, pth_id, err)  # @UndefinedVariable
-            self.destroy(err)
+            self.result_defer.errback(Exception(err_str))
+            reactor.callLater(0, OnTaskFailed, pth_id, err_str)  # @UndefinedVariable
+            self.destroy(err_str)
             return None
 
         itemInfo.set_size(self.totalSize)
@@ -748,7 +748,7 @@ def RunTask():
             path_id=T.pathID,
             message=message,
         ))
-        T.result_defer.errback((T.pathID, message))
+        T.result_defer.errback(Exception(message))
         T.destroy(message)
     return True
 
@@ -893,7 +893,7 @@ def OnTaskExecutedCallback(result):
 
 
 def OnTaskFailedCallback(result):
-    lg.err('pathID: %s, error: %s' % (result[0], result[1]))
+    lg.err(str(result))
     return result
 
 
