@@ -14,7 +14,7 @@
         "explorer_http_port": 19080
       },
       {
-        "host": "bahamas.ai",
+        "host": "bitdust.app",
         "node_tcp_port": 15658,
         "mining_pool_tcp_port": 18525,
         "explorer_http_port": 19080
@@ -42,7 +42,7 @@
         "udp_port": 14441
       },
       {
-        "host": "bahamas.ai",
+        "host": "bitdust.app",
         "udp_port": 14441
       },
       {
@@ -81,7 +81,7 @@
         "http_port": 80
       },
       {
-        "host": "bahamas.ai",
+        "host": "bitdust.app",
         "http_port": 80
       },
       {
