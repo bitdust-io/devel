@@ -158,6 +158,8 @@ def init(filepath=None):
     _HistoryDB.commit()
     _HistoryCursor = _HistoryDB.cursor()
 
+    check_create_keys()
+
 
 def shutdown():
     global _HistoryDB
@@ -665,7 +667,43 @@ def rebuild_conversations():
 #------------------------------------------------------------------------------
 
 
-def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
+def check_create_keys():
+    to_be_opened = []
+    to_be_cached = []
+    for key_id in my_keys.known_keys():
+        if not key_id.startswith('group_'):
+            continue
+        if not my_keys.is_key_private(key_id):
+            continue
+        if not my_keys.is_active(key_id):
+            continue
+        _, customer_idurl = my_keys.split_key_id(key_id)
+        if not id_url.is_cached(customer_idurl):
+            to_be_cached.append(customer_idurl)
+        else:
+            to_be_opened.append(key_id)
+    if to_be_cached:
+        lg.warn('still see %d not cached identities, not able to process those customers: %r' (len(to_be_cached), to_be_cached))
+    if _Debug:
+        lg.args(_DebugLevel, to_be_opened=to_be_opened, to_be_cached=to_be_cached)
+    for key_id in to_be_opened:
+        check_create_rename_key(new_key_id=key_id)
+
+
+def check_create_rename_key(new_key_id):
+    try:
+        new_public_key = my_keys.get_public_key_raw(new_key_id)
+    except:
+        lg.exc()
+        return False
+    try:
+        new_local_key_id = my_keys.get_local_key_id(new_key_id)
+    except:
+        lg.exc()
+        return False
+    if new_local_key_id is None:
+        lg.err('did not found local_key_id for %r' % new_key_id)
+        return False
     conversation_type = None
     if new_key_id.startswith('group_'):
         conversation_type = 'group_message'
@@ -680,6 +718,8 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
         new_public_key,
     ]
     found_public_keys = list(cur().execute(sql, params))
+    if _Debug:
+        lg.args(_DebugLevel, found_public_keys=found_public_keys)
     if found_public_keys:
         if len(found_public_keys) > 1:
             raise Exception('found multiple records for same public key: %r' % found_public_keys)

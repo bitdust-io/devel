@@ -45,7 +45,7 @@ class MessageHistoryService(LocalService):
     def dependent_on(self):
         return [
             'service_my_data',
-            'service_private_messages',
+            'service_private_groups',
         ]
 
     def start(self):
@@ -83,13 +83,16 @@ class MessageHistoryService(LocalService):
         return True
 
     def on_key_generated(self, evt):
-        self.do_check_create_rename_key(evt.data['key_id'])
+        from bitdust.chat import message_database
+        message_database.check_create_rename_key(new_key_id=evt.data['key_id'])
 
     def on_key_registered(self, evt):
-        self.do_check_create_rename_key(evt.data['key_id'])
+        from bitdust.chat import message_database
+        message_database.check_create_rename_key(new_key_id=evt.data['key_id'])
 
     def on_key_renamed(self, evt):
-        self.do_check_create_rename_key(evt.data['new_key_id'])
+        from bitdust.chat import message_database
+        message_database.check_create_rename_key(new_key_id=evt.data['new_key_id'])
 
     def on_key_erased(self, evt):
         from bitdust.main import listeners
@@ -98,25 +101,25 @@ class MessageHistoryService(LocalService):
             conversation_id = message_database.get_conversation_id(evt.data['local_key_id'], evt.data['local_key_id'], 3)
             listeners.push_snapshot('conversation', snap_id=conversation_id, deleted=True)
 
-    def do_check_create_rename_key(self, new_key_id):
-        from bitdust.logs import lg
-        from bitdust.crypt import my_keys
-        from bitdust.chat import message_database
-        try:
-            new_public_key = my_keys.get_public_key_raw(new_key_id)
-        except:
-            lg.exc()
-            return
-        try:
-            new_local_key_id = my_keys.get_local_key_id(new_key_id)
-        except:
-            lg.exc()
-            return
-        if new_local_key_id is None:
-            lg.err('did not found local_key_id for %r' % new_key_id)
-            return
-        message_database.check_create_rename_key(
-            new_public_key=new_public_key,
-            new_key_id=new_key_id,
-            new_local_key_id=new_local_key_id,
-        )
+    # def do_check_create_rename_key(self, new_key_id):
+    #     from bitdust.logs import lg
+    #     from bitdust.crypt import my_keys
+    #     from bitdust.chat import message_database
+    #     try:
+    #         new_public_key = my_keys.get_public_key_raw(new_key_id)
+    #     except:
+    #         lg.exc()
+    #         return
+    #     try:
+    #         new_local_key_id = my_keys.get_local_key_id(new_key_id)
+    #     except:
+    #         lg.exc()
+    #         return
+    #     if new_local_key_id is None:
+    #         lg.err('did not found local_key_id for %r' % new_key_id)
+    #         return
+    #     message_database.check_create_rename_key(
+    #         new_public_key=new_public_key,
+    #         new_key_id=new_key_id,
+    #         new_local_key_id=new_local_key_id,
+    #     )

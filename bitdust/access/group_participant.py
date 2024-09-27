@@ -255,6 +255,8 @@ def start_group_participants():
                 existing_group_participant.automat('init')
             existing_group_participant.automat('connect')
             started += 1
+        if _Debug:
+            lg.args(_DebugLevel, started=started)
 
     def _on_cached(result):
         if _Debug:

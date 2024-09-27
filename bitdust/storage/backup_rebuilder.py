@@ -93,6 +93,8 @@ from bitdust.system import bpio
 
 from bitdust.main import settings
 
+from bitdust.main import listeners
+
 from bitdust.contacts import contactsdb
 
 from bitdust.userid import my_id
@@ -183,6 +185,13 @@ class BackupRebuilder(automat.Automat):
         Need to notify backup_monitor() machine about my new state.
         """
         # global_state.set_global_state('REBUILD ' + newstate)
+        data = self.to_json()
+        if newstate in ['STOPPED', 'DONE']:
+            data['rebuilding'] = False
+            listeners.push_snapshot('backup_rebuilder', snap_id='1', data=data)
+        else:
+            data['rebuilding'] = True
+            listeners.push_snapshot('backup_rebuilder', snap_id='1', data=data)
         if newstate in [
             'NEXT_BACKUP',
             'REQUEST',
