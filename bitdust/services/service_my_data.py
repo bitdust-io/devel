@@ -70,7 +70,6 @@ class MyDataService(SlowStartingLocalService):
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             self.confirm_service_started(result=True)
             if listeners.is_populate_required('private_file'):
-                # listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
         else:
             lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
@@ -90,7 +89,6 @@ class MyDataService(SlowStartingLocalService):
         if self.starting_deferred:
             self.confirm_service_started(result=True)
             if listeners.is_populate_required('private_file'):
-                # listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
         if driver.is_enabled('service_my_data'):
             if not driver.is_started('service_my_data'):

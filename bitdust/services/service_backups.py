@@ -73,7 +73,6 @@ class BackupsService(LocalService):
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         events.add_subscriber(self._on_key_erased, 'key-erased')
         if listeners.is_populate_required('remote_version'):
-            # listeners.populate_later().remove('remote_version')
             backup_matrix.populate_remote_versions()
         return True
 

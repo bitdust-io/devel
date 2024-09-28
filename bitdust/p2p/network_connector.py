@@ -90,7 +90,6 @@ from twisted.internet import threads
 from bitdust.logs import lg
 
 from bitdust.automats import automat
-from bitdust.automats import global_state
 
 from bitdust.lib import net_misc
 from bitdust.lib import misc
@@ -146,6 +145,7 @@ def Destroy():
 
 
 class NetworkConnector(automat.Automat):
+
     """
     Class to monitor Internet connection and reconnect when needed.
     """
@@ -174,7 +174,6 @@ class NetworkConnector(automat.Automat):
         net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('NETWORK ' + newstate)
         if driver.is_on('service_p2p_hookups'):
             from bitdust.p2p import p2p_connector
             from bitdust.system import tray_icon
