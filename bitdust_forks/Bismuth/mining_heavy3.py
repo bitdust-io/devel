@@ -11,6 +11,7 @@ import os
 import struct
 import sys
 import threading
+import time
 from hashlib import sha224
 
 from hmac_drbg import DRBG
@@ -190,6 +191,7 @@ def mining_open(file_name='heavy3a.bin'):
         print(f'Junction memory-map file already loaded in {threading.current_thread().name}')
         return
     print(f'Loading Junction memory-map file from {file_name} in {threading.current_thread().name}')
+    _t = time.time()
     if os.path.isfile(file_name):
         size = os.path.getsize(file_name)
         if size != 1073741824:
@@ -216,6 +218,7 @@ def mining_open(file_name='heavy3a.bin'):
         # print('error while loading Junction file: {}'.format(e))
         # sys.exit()
         raise e
+    print(f'Loaded memory-map in {time.time() - _t} seconds, RND_LEN={RND_LEN}')
     # print('mining_open', file_name, threading.current_thread())
 
 
@@ -225,6 +228,7 @@ def mining_close():
     """
     if (not heavy) and is_regnet:
         # print('Regnet, no heavy file to close')
+        print(f'Junction memory-map file already closed in {threading.current_thread().name}')
         return
     global F
     global MMAP
@@ -241,3 +245,4 @@ def mining_close():
     except:
         pass
     F = None
+    print(f'Junction memory-map file closed in {threading.current_thread().name}')

@@ -92,6 +92,7 @@ from bitdust.system import local_fs
 from bitdust.system import bpio
 
 from bitdust.contacts import contactsdb
+from bitdust.contacts import identitycache
 
 from bitdust.main import settings
 
@@ -115,7 +116,7 @@ _ActiveGroups = {}
 def init():
     if _Debug:
         lg.out(_DebugLevel, 'groups.init')
-    load_groups()
+    open_known_groups()
 
 
 def shutdown():
@@ -201,7 +202,7 @@ def send_group_pub_key_to_suppliers(group_key_id):
             d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False, include_signature=False)
             d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
-            # TODO: build some kind of retry mechanism - in case of a particular supplier did not receive the key
+            # TODO: build some kind of retry mechanism - in case of a particular supplier did not received the key
             # it must be some process with each supplier that first verifies a list of my public keys supplier currently possess
             # and then transfer the missing keys or send a note to erase "unused" keys to be able to cleanup old keys
             l.append(d)
@@ -209,6 +210,43 @@ def send_group_pub_key_to_suppliers(group_key_id):
 
 
 #------------------------------------------------------------------------------
+
+
+def open_known_groups():
+    to_be_opened = []
+    to_be_cached = []
+    for key_id in my_keys.known_keys():
+        if not key_id.startswith('group_'):
+            continue
+        if not my_keys.is_key_private(key_id):
+            continue
+        if not my_keys.is_active(key_id):
+            continue
+        to_be_opened.append(key_id)
+        _, customer_idurl = my_keys.split_key_id(key_id)
+        if not id_url.is_cached(customer_idurl):
+            to_be_cached.append(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, to_be_opened=to_be_opened, to_be_cached=to_be_cached)
+    if to_be_cached:
+        d = identitycache.start_multiple(to_be_cached)
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.open_known_groups')
+        d.addBoth(lambda _: prepare_known_groups(to_be_opened))
+        return
+    prepare_known_groups(to_be_opened)
+
+
+def prepare_known_groups(to_be_opened):
+    for group_key_id in to_be_opened:
+        _, customer_idurl = my_keys.split_key_id(group_key_id)
+        if not id_url.is_cached(customer_idurl):
+            lg.err('not able to open group %r, customer IDURL %r still was not cached' % (group_key_id, customer_idurl))
+            continue
+        if not is_group_stored(group_key_id):
+            set_group_info(group_key_id)
+            set_group_active(group_key_id, bool(my_keys.is_active(group_key_id)))
+            save_group_info(group_key_id)
+    load_groups()
 
 
 def load_groups():

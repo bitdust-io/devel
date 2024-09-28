@@ -179,47 +179,48 @@ def populate_shares():
 
 
 def open_known_shares():
-    known_offline_shares = []
+    to_be_opened = []
+    to_be_cached = []
     for key_id in my_keys.known_keys():
         if not key_id.startswith('share_'):
+            continue
+        if not my_keys.is_key_private(key_id):
             continue
         if not my_keys.is_active(key_id):
             continue
         active_share = get_active_share(key_id)
         if active_share:
             continue
-        known_offline_shares.append(key_id)
-    to_be_opened = []
-    for customer_idurl in backup_fs.known_customers():
-        for key_alias in backup_fs.known_keys_aliases(customer_idurl):
-            if not key_alias.startswith('share_'):
-                continue
-            key_id = my_keys.make_key_id(alias=key_alias, creator_idurl=customer_idurl)
-            if not key_id:
-                continue
-            if my_keys.latest_key_id(key_id) != key_id:
-                continue
-            if key_id in to_be_opened:
-                continue
-            if key_id not in known_offline_shares:
-                continue
-            if not my_keys.is_key_private(key_id):
-                continue
-            if not my_keys.is_active(key_id):
-                continue
-            to_be_opened.append(key_id)
+        to_be_opened.append(key_id)
+        _, customer_idurl = my_keys.split_key_id(key_id)
+        if not id_url.is_cached(customer_idurl):
+            to_be_cached.append(customer_idurl)
     if _Debug:
-        lg.args(_DebugLevel, known_offline_shares=known_offline_shares, to_be_opened=to_be_opened)
+        lg.args(_DebugLevel, to_be_opened=to_be_opened, to_be_cached=to_be_cached)
+    if to_be_cached:
+        d = identitycache.start_multiple(to_be_cached)
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_coordinator.open_known_shares')
+        d.addBoth(lambda _: start_known_shares(to_be_opened))
+        return
+    start_known_shares(to_be_opened)
+
+
+def start_known_shares(to_be_opened):
     populate_shared_files = listeners.is_populate_required('shared_file')
     for key_id in to_be_opened:
-        active_share = SharedAccessCoordinator(key_id, log_events=True, publish_events=False)
+        _, customer_idurl = my_keys.split_key_id(key_id)
+        if not id_url.is_cached(customer_idurl):
+            lg.err('not able to open share %r, customer IDURL %r still was not cached' % (key_id, customer_idurl))
+            continue
+        try:
+            active_share = SharedAccessCoordinator(key_id, log_events=True, publish_events=False)
+        except:
+            lg.exc()
+            continue
         active_share.automat('restart')
         if populate_shared_files:
             backup_fs.populate_shared_files(key_id=key_id)
-    # if populate_shared_files:
-    # listeners.populate_later().remove('shared_file')
     if listeners.is_populate_required('shared_location'):
-        # listeners.populate_later().remove('shared_location')
         populate_shares()
 
 
@@ -920,6 +921,14 @@ class SharedAccessCoordinator(automat.Automat):
             lg.err('incoming Data() is not valid from supplier %r' % supplier_idurl)
             self.automat('supplier-failed', supplier_idurl=supplier_idurl)
             return
+        if id_url.is_cached(supplier_idurl):
+            self._do_read_index_file(wrapped_packet, supplier_idurl)
+        else:
+            d = identitycache.start_one(supplier_idurl)
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_coordinator._do_process_index_file')
+            d.addBoth(lambda _: self._do_read_index_file(wrapped_packet, supplier_idurl))
+
+    def _do_read_index_file(self, wrapped_packet, supplier_idurl):
         supplier_revision = backup_control.IncomingSupplierBackupIndex(
             wrapped_packet,
             key_id=self.key_id,
