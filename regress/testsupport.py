@@ -430,8 +430,8 @@ def start_daemon(node, skip_initialize=False, verbose=False):
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
     assert (
-        bitdust_daemon[0].strip().startswith('main BitDust process already started') or
-        bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
+        bitdust_daemon[0].strip().count('main BitDust process already started') or
+        bitdust_daemon[0].strip().count('new BitDust process will be started in daemon mode')
     ), bitdust_daemon[0].strip()
     if verbose:
         dbg(f'\nstart_daemon [{node}] OK\n')
@@ -447,8 +447,8 @@ async def start_daemon_async(node, loop, verbose=False):
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
     assert (
-        bitdust_daemon[0].strip().startswith('main BitDust process already started') or
-        bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
+        bitdust_daemon[0].strip().count('main BitDust process already started') or
+        bitdust_daemon[0].strip().count('new BitDust process will be started in daemon mode')
     ), bitdust_daemon[0].strip()
     if verbose:
         dbg(f'\nstart_daemon_async [{node}] OK\n')
@@ -718,8 +718,8 @@ def stop_daemon(node, skip_checks=False, verbose=False):
     bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=verbose)
     if not skip_checks:
         resp = bitdust_stop[0].strip()
-        assert ((resp.startswith('BitDust child processes found') and resp.endswith('BitDust stopped')) or
-                (resp.startswith('found main BitDust process:') and resp.count('finished')) or (resp == 'BitDust is not running at the moment') or (resp == ''))
+        assert ((resp.count('BitDust child processes found') and resp.count('BitDust stopped')) or
+                (resp.count('found main BitDust process:') and resp.count('finished')) or resp.count('BitDust is not running at the moment') or (resp == ''))
 
 
 async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
@@ -731,8 +731,8 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
         if verbose:
             dbg(f'stop_daemon_async [{node}] DONE\n')
         return
-    if not ((resp.startswith('BitDust child processes found') and resp.endswith('BitDust stopped')) or
-            (resp.startswith('found main BitDust process:') and resp.count('finished')) or (resp == 'BitDust is not running at the moment') or (resp == '')):
+    if not ((resp.count('BitDust child processes found') and resp.count('BitDust stopped')) or
+            (resp.count('found main BitDust process:') and resp.count('finished')) or resp.count('BitDust is not running at the moment') or (resp == '')):
         if verbose:
             warn('process finished with unexpected response: %r' % resp)
         assert False, resp

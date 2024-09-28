@@ -44,7 +44,6 @@ class MessageHistoryService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_my_data',
             'service_private_groups',
         ]
 

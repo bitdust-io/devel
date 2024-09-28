@@ -90,6 +90,23 @@
                 "preferred_routers": ""
             }
         },
+        "supplier-3": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a"
+            ],
+            "ports": "10043:22",
+            "node": {
+                "role": "supplier",
+                "name": "supplier-3",
+                "join_network": true,
+                "known_id_servers": "id-a:8084",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": ""
+            }
+        },
         "customer-1": {
             "links": [
                 "dht-2",
@@ -174,6 +191,7 @@
         "stun-1",
         "supplier-1",
         "supplier-2",
+        "supplier-3",
         "customer-1",
         "customer-2",
         "customer-3"
