@@ -176,7 +176,7 @@ class RestoreWorker(automat.Automat):
         self.blockRestoredCallback = None
         self.Attempts = 0
 
-        super(RestoreWorker, self).__init__(name='restore_worker_%s' % self.version, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+        super(RestoreWorker, self).__init__(name='restore_%s' % self.version, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
         events.send('restore-started', data=dict(backup_id=self.backup_id))
 
     def set_packet_in_callback(self, cb):
@@ -377,7 +377,11 @@ class RestoreWorker(automat.Automat):
                         num_suppliers = settings.DefaultDesiredSuppliers()
                     self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
                     lg.warn('no meta info found, guessed ECC map %r from %d known suppliers' % (self.EccMap, len(self.known_suppliers)))
-        self.max_errors = eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())
+        # TODO: here we multiply by two because we have always two packets for each fragment: Data and Parity
+        # so number of possible errors can be two times larger
+        # however we may also add another check here to identify dead suppliers as well
+        # and dead suppliers number must be lower than "max_errors" in order restore to continue
+        self.max_errors = eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())*2
         if data_receiver.A():
             data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
 

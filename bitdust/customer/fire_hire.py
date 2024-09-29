@@ -120,7 +120,6 @@ except:
 
 from bitdust.logs import lg
 
-from bitdust.automats import global_state
 from bitdust.automats import automat
 
 from bitdust.lib import misc
@@ -267,7 +266,6 @@ class FireHire(automat.Automat):
         """
         This method intended to catch the moment when automat's state was changed.
         """
-        global_state.set_global_state('FIREHIRE ' + newstate)
         if newstate == 'READY' and event != 'instant':
             self.automat('instant')
 

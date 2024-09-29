@@ -847,7 +847,6 @@ def load_contacts():
         _CorrespondentsChangedCallback([], correspondents())
     AddContactsChangedCallback(on_contacts_changed)
     if listeners.is_populate_required('correspondent'):
-        # listeners.populate_later().remove('correspondent')
         populate_correspondents()
 
 

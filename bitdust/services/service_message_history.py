@@ -44,7 +44,6 @@ class MessageHistoryService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_my_data',
             'service_private_groups',
         ]
 
@@ -60,10 +59,8 @@ class MessageHistoryService(LocalService):
         events.add_subscriber(self.on_key_generated, 'key-generated')
         events.add_subscriber(self.on_key_erased, 'key-erased')
         if listeners.is_populate_required('conversation'):
-            # listeners.populate_later().remove('conversation')
             message_database.populate_conversations()
         if listeners.is_populate_required('message'):
-            # listeners.populate_later().remove('message')
             message_database.populate_messages()
         return True
 
@@ -100,26 +97,3 @@ class MessageHistoryService(LocalService):
         if evt.data['key_id'].startswith('group_'):
             conversation_id = message_database.get_conversation_id(evt.data['local_key_id'], evt.data['local_key_id'], 3)
             listeners.push_snapshot('conversation', snap_id=conversation_id, deleted=True)
-
-    # def do_check_create_rename_key(self, new_key_id):
-    #     from bitdust.logs import lg
-    #     from bitdust.crypt import my_keys
-    #     from bitdust.chat import message_database
-    #     try:
-    #         new_public_key = my_keys.get_public_key_raw(new_key_id)
-    #     except:
-    #         lg.exc()
-    #         return
-    #     try:
-    #         new_local_key_id = my_keys.get_local_key_id(new_key_id)
-    #     except:
-    #         lg.exc()
-    #         return
-    #     if new_local_key_id is None:
-    #         lg.err('did not found local_key_id for %r' % new_key_id)
-    #         return
-    #     message_database.check_create_rename_key(
-    #         new_public_key=new_public_key,
-    #         new_key_id=new_key_id,
-    #         new_local_key_id=new_local_key_id,
-    #     )

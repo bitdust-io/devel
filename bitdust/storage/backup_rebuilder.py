@@ -184,7 +184,6 @@ class BackupRebuilder(automat.Automat):
 
         Need to notify backup_monitor() machine about my new state.
         """
-        # global_state.set_global_state('REBUILD ' + newstate)
         data = self.to_json()
         if newstate in ['STOPPED', 'DONE']:
             data['rebuilding'] = False

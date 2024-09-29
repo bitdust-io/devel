@@ -79,6 +79,16 @@ services:
       - stun-1
       - id-a
 
+  supplier-3:
+    image: bitdust/app
+    ports:
+      - "10843:22"
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - id-a
+
   customer-1:
     image: bitdust/app
     ports:
@@ -132,6 +142,7 @@ services:
       - stun-1
       - supplier-1
       - supplier-2
+      - supplier-3
       - customer-1
       - customer-2
       - customer-3

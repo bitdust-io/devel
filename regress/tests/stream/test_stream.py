@@ -55,10 +55,10 @@ def test_stream():
 def prepare():
     set_active_scenario('PREPARE')
     kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_123, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_123, 'service_supplier', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_customer', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_message_history', 'ON')
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_joint_postman', 'ON')
-    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_123 + scenarios.SUPPLIERS_IDS_12)
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_123, 'service_joint_postman', 'ON')
+    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_123 + scenarios.SUPPLIERS_IDS_123)

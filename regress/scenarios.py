@@ -102,6 +102,11 @@ SUPPLIERS_IDS_12 = [
     'supplier-1',
     'supplier-2',
 ]
+SUPPLIERS_IDS_123 = [
+    'supplier-1',
+    'supplier-2',
+    'supplier-3',
+]
 CUSTOMERS_IDS = [
     'customer-1',
     'customer-2',
@@ -2676,10 +2681,20 @@ def scenario27():
     assert customer_1_groupB_messages_before > 0
     assert customer_2_groupB_messages_before > 0
 
+    # prepare customers before supplier-1 goes offline, replace supplier-1 with supplier-3
+    kw.config_set_v1('customer-1', 'services/employer/candidates', 'http://id-a:8084/supplier-3.xml,http://id-a:8084/supplier-2.xml')
+    kw.config_set_v1('customer-2', 'services/employer/candidates', 'http://id-a:8084/supplier-3.xml,http://id-a:8084/supplier-2.xml')
+    kw.config_set_v1('customer-3', 'services/employer/candidates', 'http://id-a:8084/supplier-3.xml,http://id-a:8084/supplier-2.xml')
+
     # stop supplier-1
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + SUPPLIERS_IDS_12)
     kw.config_set_v1('supplier-1', 'services/network/enabled', 'false')
-    kw.wait_packets_finished(CUSTOMERS_IDS_123 + ['supplier-2', ])
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + ['supplier-2', 'supplier-3', ])
+
+    # make sure customers are all switched to the new supplier
+    kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.supplier_list_v1('customer-3', expected_min_suppliers=2, expected_max_suppliers=2)
 
     # send again a message to the second group from customer-1
     # this should rotate active queue supplier for customer-1 in the second group only

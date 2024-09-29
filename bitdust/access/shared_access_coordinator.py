@@ -488,6 +488,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.customer_idurl = self.glob_id['idurl']
         self.known_suppliers_list = []
         self.known_ecc_map = None
+        self.critical_suppliers_number = 1
         self.dht_lookup_use_cache = True
         self.received_index_file_revision = {}
         self.last_time_in_sync = -1
@@ -595,18 +596,12 @@ class SharedAccessCoordinator(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-30sec' or event == 'all-suppliers-disconnected':
-                self.state = 'DISCONNECTED'
-                self.doReportDisconnected(*args, **kwargs)
             elif event == 'list-files-received':
                 self.doSupplierSendIndexFile(*args, **kwargs)
             elif event == 'key-not-registered':
                 self.doSupplierTransferPubKey(*args, **kwargs)
             elif event == 'supplier-connected' or event == 'key-sent':
                 self.doSupplierRequestIndexFile(*args, **kwargs)
-            elif event == 'all-suppliers-connected':
-                self.state = 'CONNECTED'
-                self.doReportConnected(*args, **kwargs)
             elif event == 'index-sent' or event == 'index-up-to-date' or event == 'index-failed' or event == 'list-files-failed' or event == 'supplier-failed':
                 self.doRemember(event, *args, **kwargs)
                 self.doCheckAllConnected(*args, **kwargs)
@@ -614,6 +609,12 @@ class SharedAccessCoordinator(automat.Automat):
                 self.doSupplierProcessListFiles(*args, **kwargs)
             elif event == 'supplier-file-modified' or event == 'index-received' or event == 'index-missing':
                 self.doSupplierRequestListFiles(event, *args, **kwargs)
+            elif (event == 'timer-30sec' and not self.isEnoughConnected(*args, **kwargs)) or event == 'all-suppliers-disconnected':
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(*args, **kwargs)
+            elif (event == 'timer-30sec' and self.isEnoughConnected(*args, **kwargs)) or event == 'all-suppliers-connected':
+                self.state = 'CONNECTED'
+                self.doReportConnected(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -638,6 +639,14 @@ class SharedAccessCoordinator(automat.Automat):
         elif self.state == 'CLOSED':
             pass
         return None
+
+    def isEnoughConnected(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.args(_DebugLevel, progress=len(self.suppliers_in_progress), succeed=self.suppliers_succeed, critical_suppliers_number=self.critical_suppliers_number)
+        return len(self.suppliers_succeed) >= self.critical_suppliers_number
 
     def doInit(self, *args, **kwargs):
         """
@@ -667,6 +676,10 @@ class SharedAccessCoordinator(automat.Automat):
             self.automat('all-suppliers-disconnected')
             return
         self.known_ecc_map = args[0].get('ecc_map')
+        self.critical_suppliers_number = 1
+        if self.known_ecc_map:
+            from bitdust.raid import eccmap
+            self.critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
         self.suppliers_in_progress.clear()
         self.suppliers_succeed.clear()
         for supplier_idurl in self.known_suppliers_list:
@@ -811,14 +824,10 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        critical_suppliers_number = 1
-        if self.known_ecc_map:
-            from bitdust.raid import eccmap
-            critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
         if _Debug:
-            lg.args(_DebugLevel, progress=len(self.suppliers_in_progress), succeed=self.suppliers_succeed, critical_suppliers_number=critical_suppliers_number)
+            lg.args(_DebugLevel, progress=len(self.suppliers_in_progress), succeed=self.suppliers_succeed, critical_suppliers_number=self.critical_suppliers_number)
         if len(self.suppliers_in_progress) == 0:
-            if len(self.suppliers_succeed) >= critical_suppliers_number:
+            if len(self.suppliers_succeed) >= self.critical_suppliers_number:
                 self.automat('all-suppliers-connected')
             else:
                 self.automat('all-suppliers-disconnected')
