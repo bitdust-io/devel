@@ -784,7 +784,7 @@ class SharedAccessCoordinator(automat.Automat):
                 is_in_sync = True
         if _Debug:
             lg.args(_DebugLevel, rev=supplier_index_file_revision, is_in_sync=is_in_sync)
-        remote_files_changed, backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
+        remote_files_changed, backups2remove, paths2remove, _ = backup_matrix.process_raw_list_files(
             supplier_num=kwargs['supplier_pos'],
             list_files_text_body=kwargs['payload'],
             customer_idurl=self.customer_idurl,

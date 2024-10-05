@@ -269,8 +269,10 @@ class KeysSynchronizer(automat.Automat):
         self.keys_to_erase = {}
         self.keys_to_rename = {}
         lookup = backup_fs.ListChildsByPath(path='.keys', recursive=False, backup_info_callback=restore_monitor.GetBackupStatusInfo)
+        minimum_reliable_percent = eccmap.GetCorrectablePercent(eccmap.Current().suppliers_number)
+        if _Debug:
+            lg.args(_DebugLevel, minimum_reliable_percent=minimum_reliable_percent, lookup=lookup)
         if isinstance(lookup, list):
-            minimum_reliable_percent = eccmap.GetCorrectablePercent(eccmap.Current().suppliers_number)
             for i in lookup:
                 if i['path'].endswith('.public'):
                     stored_key_id = i['path'].replace('.public', '').replace('.keys/', '')
@@ -292,6 +294,8 @@ class KeysSynchronizer(automat.Automat):
                     if reliable >= minimum_reliable_percent:
                         is_reliable = True
                         break
+                if _Debug:
+                    lg.args(_DebugLevel, i=i, stored_key_id=stored_key_id, is_reliable=is_reliable)
                 if is_reliable:
                     self.stored_keys[stored_key_id] = is_private
                 else:
