@@ -495,7 +495,15 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 lg.out(_DebugLevel, '        VERSION "%s" to be removed, path not found in the index' % backupID)
         else:
             if _Debug:
-                lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
+                lg.out(_DebugLevel, '        VERSION "%s" skip removing, path not found, index not in sync' % backupID)
+            # not in sync yet, and backup FS item do not exist, but there is a data stored on supplier host
+            # must remember that in the backup matrix
+            stored_files, is_complete = process_version_data(words, customer_idurl, backupID, supplier_num, maxBlockNum)
+            if stored_files is None and is_complete is None:
+                return modified, backups2remove, paths2remove, found_backups, newfiles
+            newfiles += stored_files
+            if is_complete:
+                found_backups.add(backupID)
         return modified, backups2remove, paths2remove, found_backups, newfiles
     if auto_create and is_in_sync:
         if not item.has_version(versionName):
@@ -529,48 +537,27 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 lg.out(_DebugLevel, '        VERSION "%s" to be removed, version is not found in the index' % backupID)
         else:
             if _Debug:
-                lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
-        return modified, backups2remove, paths2remove, found_backups, newfiles
-    else:
-        if _Debug:
-            lg.out(_DebugLevel, '        VERSION "%s" is found in the index' % backupID)
-    item_version_info = item.get_version_info(versionName)
-    missingBlocksSet = {'Data': set(), 'Parity': set()}
-    if len(words) > 4:
-        # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "434353" "missing" "Data:1,3" "Parity:0,1,2"
-        if words[4].strip() != 'missing':
-            lg.err('incorrect line:[%s]' % line)
-            return modified, backups2remove, paths2remove, found_backups, newfiles
-        for missingBlocksString in words[5:]:
-            try:
-                dp, blocks = missingBlocksString.split(':')
-                missingBlocksSet[dp] = set(blocks.split(','))
-            except:
-                lg.exc()
+                lg.out(_DebugLevel, '        VERSION "%s" skip removing, version is not found, index not in sync' % backupID)
+            # not in sync yet, and backup FS version do not exist, but there is a data stored on supplier host
+            # must remember that in the backup matrix
+            stored_files, is_complete = process_version_data(words, customer_idurl, backupID, supplier_num, maxBlockNum)
+            if stored_files is None and is_complete is None:
                 return modified, backups2remove, paths2remove, found_backups, newfiles
-    if backupID not in remote_files():
-        remote_files()[backupID] = {}
-        if _Debug:
-            lg.out(_DebugLevel, '            new remote entry for %s created in memory' % backupID)
-    # +1 because range(2) give us [0,1] but we want [0,1,2]
-    for blockNum in range(maxBlockNum + 1):
-        if blockNum not in remote_files()[backupID]:
-            remote_files()[backupID][blockNum] = {
-                'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
-                'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
-            }
-        for dataORparity in ['Data', 'Parity']:
-            # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
-            bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
-            remote_files()[backupID][blockNum][dataORparity[0]][supplier_num] = bit
-            newfiles += int((bit + 1)/2)  # this should switch -1 or 1 to 0 or 1
-    # save max block number for this backup
-    if backupID not in remote_max_block_numbers():
-        remote_max_block_numbers()[backupID] = -1
-    if maxBlockNum > remote_max_block_numbers()[backupID]:
-        remote_max_block_numbers()[backupID] = maxBlockNum
-    if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
+            newfiles += stored_files
+            if is_complete:
+                found_backups.add(backupID)
+        return modified, backups2remove, paths2remove, found_backups, newfiles
+    if _Debug:
+        lg.out(_DebugLevel, '        VERSION "%s" is found in the index' % backupID)
+    item_version_info = item.get_version_info(versionName)
+    # process single line related to a certain backupID and update backup matrix with actual stats
+    stored_files, is_complete = process_version_data(words, customer_idurl, backupID, supplier_num, maxBlockNum)
+    if stored_files is None and is_complete is None:
+        return modified, backups2remove, paths2remove, found_backups, newfiles
+    newfiles += stored_files
+    if is_complete:
         found_backups.add(backupID)
+    # updated backup FS item version
     if item_version_info[0] != maxBlockNum or (item_version_info[1] in [None, -1, 0] and versionSize > 0):
         if _Debug:
             lg.out(_DebugLevel, '            updating version %s info, maxBlockNum %r->%r, size %r->%r' % (
@@ -600,6 +587,50 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         )
         listeners.push_snapshot('remote_version', snap_id=backupID, data=snapshot)
     return modified, backups2remove, paths2remove, found_backups, newfiles
+
+
+def process_version_data(words, customer_idurl, backupID, supplier_num, maxBlockNum):
+    stored_files = 0
+    is_complete = False
+    missingBlocksSet = {'Data': set(), 'Parity': set()}
+    if len(words) > 4:
+        # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "434353" "missing" "Data:1,3" "Parity:0,1,2"
+        if words[4].strip() != 'missing':
+            lg.err('incorrect line: %r' % words)
+            return None, None
+        for missingBlocksString in words[5:]:
+            try:
+                dp, blocks = missingBlocksString.split(':')
+                missingBlocksSet[dp] = set(blocks.split(','))
+            except:
+                lg.exc()
+                return None, None
+    if backupID not in remote_files():
+        remote_files()[backupID] = {}
+        if _Debug:
+            lg.out(_DebugLevel, '            new remote entry for %s created in memory' % backupID)
+    # +1 because range(2) give us [0,1] but we want [0,1,2]
+    for blockNum in range(maxBlockNum + 1):
+        if blockNum not in remote_files()[backupID]:
+            remote_files()[backupID][blockNum] = {
+                'D': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+                'P': [0]*contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            }
+        for dataORparity in ['Data', 'Parity']:
+            # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
+            bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
+            remote_files()[backupID][blockNum][dataORparity[0]][supplier_num] = bit
+            stored_files += int((bit + 1)/2)  # this should switch -1 or 1 to 0 or 1
+    # save max block number for this backup
+    if backupID not in remote_max_block_numbers():
+        remote_max_block_numbers()[backupID] = -1
+    if maxBlockNum > remote_max_block_numbers()[backupID]:
+        remote_max_block_numbers()[backupID] = maxBlockNum
+    if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
+        is_complete = True
+    if _Debug:
+        lg.args(_DebugLevel, b=backupID, stored_files=stored_files, is_complete=is_complete)
+    return stored_files, is_complete
 
 
 def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=None, is_in_sync=None):

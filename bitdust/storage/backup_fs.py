@@ -242,6 +242,8 @@ def commit(new_revision_number=None, customer_idurl=None, key_alias='master'):
     new_v = _RevisionNumber[customer_idurl][key_alias]
     if _Debug:
         lg.args(_DebugLevel, old=old_v, new=new_v, c=customer_idurl, k=key_alias)
+    if old_v == -1 and new_v > old_v:
+        lg.info('committed first revision %r for customer:%s key_alias:%s' % (new_v, customer_idurl, key_alias))
     return old_v, new_v
 
 
@@ -1936,8 +1938,7 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
         if new_revision is not None:
             cur_revision = revision(customer_idurl, key_alias)
             if cur_revision >= new_revision:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d >= %d' % (customer_idurl, key_alias, cur_revision, new_revision))
+                lg.warn('ignoring items for %r with alias %r because current revision is up to date: %d >= %d' % (customer_idurl, key_alias, cur_revision, new_revision))
                 continue
         count = 0
         count_modified = 0
