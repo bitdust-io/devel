@@ -1,6 +1,27 @@
 Change Log
 ==========
 
+2024-10-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* Bump cryptography from 42.0.8 to 43.0.1
+* prepare to add uniqueness to Request()/Data() packets for index files
+* mulitple improvements related to files management (#207)
+* solved issue with keys auto-restore from suppliers data after identity recovery
+* various improvements in shared_access_coordinator(), restore_worker() and service_message_history()
+* bug fixing group message chats and shared files after identity restore
+
+
+
+2024-09-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* changed one of the seed nodes
+* blocking uploading of a file when there is insufficient storage space expected
+* populate details about service_proxy_server() in the api.network_status()
+* keep track of files/folders/backups statistics for individual customers in the catalog
+* bug fix in storage_contract.py
+* IDURL fix in shared_access_coordinator()
+
+
 
 2024-09-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 

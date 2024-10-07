@@ -101,6 +101,7 @@ from bitdust.logs import lg
 from bitdust.automats import automat
 
 from bitdust.lib import nameurl
+from bitdust.lib import packetid
 
 from bitdust.p2p import commands
 from bitdust.p2p import online_status
@@ -377,8 +378,7 @@ class IndexSynchronizer(automat.Automat):
         """
         packetID = global_id.MakeGlobalID(
             customer=my_id.getGlobalID(key_alias='master'),
-            # path=packetid.MakeIndexFileNamePacketID(),
-            path=settings.BackupIndexFileName(),
+            path=packetid.MakeIndexFileNamePacketID(),
         )
         self.sending_suppliers.clear()
         self.outgoing_packets_ids = []
@@ -514,8 +514,7 @@ class IndexSynchronizer(automat.Automat):
     def _do_retrieve(self, x=None):
         packetID = global_id.MakeGlobalID(
             customer=my_id.getGlobalID(key_alias='master'),
-            # path=packetid.MakeIndexFileNamePacketID(),
-            path=settings.BackupIndexFileName(),
+            path=packetid.MakeIndexFileNamePacketID(),
         )
         localID = my_id.getIDURL()
         for supplier_idurl in contactsdb.suppliers():
