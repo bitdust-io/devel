@@ -890,8 +890,7 @@ class SharedAccessCoordinator(automat.Automat):
     def _do_retrieve_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
-            # path=packetid.MakeIndexFileNamePacketID(),
-            path=settings.BackupIndexFileName(),
+            path=packetid.MakeIndexFileNamePacketID(),
         )
         sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
         if sc is None or sc.state != 'CONNECTED':
@@ -952,8 +951,7 @@ class SharedAccessCoordinator(automat.Automat):
     def _do_send_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
-            # path=packetid.MakeIndexFileNamePacketID(),
-            path=settings.BackupIndexFileName(),
+            path=packetid.MakeIndexFileNamePacketID(),
         )
         data = bpio.ReadBinaryFile(settings.BackupIndexFilePath(self.customer_idurl, self.key_alias))
         b = encrypted.Block(
