@@ -290,7 +290,8 @@ def Unserialize(data, decrypt_key=None):
         _s = dct['s']
         _b = dct['b']
     except Exception as exc:
-        lg.exc('data unserialize failed with %r: %r\n%r\n%s' % (
+        lg.exc('data unserialize failed using key %r with %r: %r\n%r\n%s' % (
+            decrypt_key,
             exc,
             list(dct.keys()),
             (dct.get('c'), dct.get('b'), dct.get('i'), dct.get('r')),

@@ -377,6 +377,7 @@ class IndexSynchronizer(automat.Automat):
         """
         packetID = global_id.MakeGlobalID(
             customer=my_id.getGlobalID(key_alias='master'),
+            # path=packetid.MakeIndexFileNamePacketID(),
             path=settings.BackupIndexFileName(),
         )
         self.sending_suppliers.clear()
@@ -513,6 +514,7 @@ class IndexSynchronizer(automat.Automat):
     def _do_retrieve(self, x=None):
         packetID = global_id.MakeGlobalID(
             customer=my_id.getGlobalID(key_alias='master'),
+            # path=packetid.MakeIndexFileNamePacketID(),
             path=settings.BackupIndexFileName(),
         )
         localID = my_id.getIDURL()
@@ -540,4 +542,4 @@ class IndexSynchronizer(automat.Automat):
                 self.requested_suppliers_number += 1
                 self.requests_packets_sent.append((packetID, supplier_idurl))
             if _Debug:
-                lg.out(_DebugLevel, '    %s sending to %s' % (pkt_out, nameurl.GetName(supplier_idurl)))
+                lg.dbg(_DebugLevel, '%s sending to %s' % (pkt_out, nameurl.GetName(supplier_idurl)))

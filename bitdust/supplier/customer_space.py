@@ -274,6 +274,8 @@ def make_filename(customerGlobID, filePath, keyAlias=None):
         if _Debug:
             lg.dbg(_DebugLevel, 'making a new folder: %s' % keyAliasDir)
         bpio._dir_make(keyAliasDir)
+    if packetid.IsIndexFileName(filePath):
+        filePath = settings.BackupIndexFileName()
     filename = os.path.join(keyAliasDir, filePath)
     return filename
 
@@ -289,7 +291,7 @@ def make_valid_filename(customerIDURL, glob_path):
     if not customerGlobID:
         lg.warn('customer id is empty: %r' % glob_path)
         return ''
-    if filePath != settings.BackupIndexFileName():
+    if filePath != settings.BackupIndexFileName() and not packetid.IsIndexFileName(filePath):
         if not packetid.Valid(filePath):  # SECURITY
             lg.warn('invalid file path')
             return ''
@@ -415,7 +417,7 @@ def on_data(newpacket):
     data_exists = not os.path.exists(filename)
     data_changed = True
     if not data_exists:
-        if remote_path == settings.BackupIndexFileName():
+        if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
             current_data = bpio.ReadBinaryFile(filename)
             if current_data == new_data:
                 lg.warn('skip rewriting existing file %s' % filename)
@@ -431,8 +433,8 @@ def on_data(newpacket):
     p2p_service.SendAck(newpacket, response=strng.to_text(sz), remote_idurl=authorized_idurl)
     reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
     if key_alias != 'master' and data_changed:
-        if remote_path == settings.BackupIndexFileName():
-            do_notify_supplier_file_modified(key_alias, remote_path, 'write', customer_idurl, authorized_idurl)
+        if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
+            do_notify_supplier_file_modified(key_alias, settings.BackupIndexFileName(), 'write', customer_idurl, authorized_idurl)
         else:
             if packetid.BlockNumber(newpacket.PacketID) == 0:
                 do_notify_supplier_file_modified(key_alias, remote_path, 'write', customer_idurl, authorized_idurl)
@@ -531,12 +533,15 @@ def on_retrieve(newpacket):
     # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
     # to solve the issue we will create a new Data() packet
     # which will be addressed directly to recipient and "wrap" stored data inside it
+    return_packet_id = stored_packet.PacketID
+    if packetid.IsIndexFileName(glob_path['path']):
+        return_packet_id = newpacket.PacketID
     payload = stored_packet.Serialize()
-    routed_packet = signed.Packet(
+    return_packet = signed.Packet(
         Command=commands.Data(),
         OwnerID=stored_packet.OwnerID,
         CreatorID=my_id.getIDURL(),
-        PacketID=stored_packet.PacketID,
+        PacketID=return_packet_id,
         Payload=payload,
         RemoteID=recipient_idurl,
     )
@@ -544,12 +549,12 @@ def on_retrieve(newpacket):
         lg.args(_DebugLevel, file_size=sz, payload_size=len(payload), fn=filename, recipient=recipient_idurl)
     if recipient_idurl == stored_packet.OwnerID:
         if _Debug:
-            lg.dbg(_DebugLevel, 'from request %r : sending %r back to owner: %s' % (newpacket, stored_packet, recipient_idurl))
-        gateway.outbox(routed_packet)
+            lg.dbg(_DebugLevel, 'from request %r : sending back %r in %r to owner: %s' % (newpacket, stored_packet, return_packet, recipient_idurl))
+        gateway.outbox(return_packet)
         return True
     if _Debug:
-        lg.dbg(_DebugLevel, 'from request %r : returning data owned by %s to %s' % (newpacket, stored_packet.OwnerID, recipient_idurl))
-    gateway.outbox(routed_packet)
+        lg.dbg(_DebugLevel, 'from request %r : returning data %r in %r owned by %s to %s' % (newpacket, stored_packet, return_packet, stored_packet.OwnerID, recipient_idurl))
+    gateway.outbox(return_packet)
     return True
 
 

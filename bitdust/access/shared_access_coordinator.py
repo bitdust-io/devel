@@ -707,7 +707,7 @@ class SharedAccessCoordinator(automat.Automat):
         pkt_out = None
         if event == 'supplier-file-modified':
             remote_path = kwargs['remote_path']
-            if remote_path == settings.BackupIndexFileName():
+            if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
                 if self.state == 'CONNECTED':
                     self.automat('restart')
                 else:
@@ -890,6 +890,7 @@ class SharedAccessCoordinator(automat.Automat):
     def _do_retrieve_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
+            # path=packetid.MakeIndexFileNamePacketID(),
             path=settings.BackupIndexFileName(),
         )
         sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
@@ -951,6 +952,7 @@ class SharedAccessCoordinator(automat.Automat):
     def _do_send_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
+            # path=packetid.MakeIndexFileNamePacketID(),
             path=settings.BackupIndexFileName(),
         )
         data = bpio.ReadBinaryFile(settings.BackupIndexFilePath(self.customer_idurl, self.key_alias))

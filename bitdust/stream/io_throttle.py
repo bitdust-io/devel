@@ -258,6 +258,7 @@ def GetRequestQueueLength(supplierIDURL):
 
 
 class SupplierQueue:
+
     def __init__(self, supplierIdentity, creatorID, customerIDURL=None):
         self.customerIDURL = customerIDURL
         if self.customerIDURL is None:
@@ -733,10 +734,12 @@ class SupplierQueue:
 
 
 class IOThrottle:
+
     """
     All of the backup rebuilds will run their data requests through this
     So it gets throttled, also to reduce duplicate requests.
     """
+
     def __init__(self):
         self.creatorID = my_id.getIDURL()
         self.supplierQueues = {}
@@ -796,7 +799,7 @@ class IOThrottle:
         remoteID = id_url.field(remoteID)
         ownerID = id_url.field(ownerID)
         creatorID = id_url.field(creatorID)
-        if packetID != settings.BackupIndexFileName():
+        if packetID != settings.BackupIndexFileName() and not packetid.IsIndexFileName(packetID):
             customer, pathID = packetid.SplitPacketID(packetID)
             filename = os.path.join(settings.getLocalBackupsDir(), customer, pathID)
             if os.path.exists(filename):

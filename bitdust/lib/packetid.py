@@ -517,3 +517,17 @@ def SplitQueueMessagePacketID(packet_id):
         packet_id = packet_id[6:]
     queue_id, _, unique_id = packet_id.rpartition('_')
     return queue_id, unique_id
+
+
+def MakeIndexFileNamePacketID():
+    return '.index.{}'.format(UniqueID())
+
+
+def IsIndexFileName(path):
+    if len(path) < 19 or len(path) > 23:
+        return False
+    if not path.startswith('.index.'):
+        return False
+    if not path[7:].isdecimal():
+        return False
+    return True
