@@ -260,10 +260,7 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
         )
     matching_packet_ids = []
     matching_packet_ids.append(incoming_packet_id.lower())
-    if incoming_command and incoming_command in [
-        commands.Data(),
-        commands.Retrieve(),
-    ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
+    if incoming_command and incoming_command in [commands.Data(), commands.Retrieve()] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
         my_rotated_idurls = id_url.list_known_idurls(my_id.getIDURL(), num_revisions=10, include_revisions=False)
         # TODO: my_rotated_idurls can be cached for optimization
         for another_idurl in my_rotated_idurls:

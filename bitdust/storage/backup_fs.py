@@ -628,7 +628,7 @@ def MakeID(itr, randomized=True):
     for k in itr.keys():
         if k == 0:
             continue
-        if k == settings.BackupIndexFileName():
+        if k == settings.BackupIndexFileName() or packetid.IsIndexFileName(k):
             continue
         try:
             if isinstance(itr[k], int):
@@ -1938,7 +1938,8 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
         if new_revision is not None:
             cur_revision = revision(customer_idurl, key_alias)
             if cur_revision >= new_revision:
-                lg.warn('ignoring items for %r with alias %r because current revision is up to date: %d >= %d' % (customer_idurl, key_alias, cur_revision, new_revision))
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'ignoring items for %r with alias %r because current revision is up to date: %d >= %d' % (customer_idurl, key_alias, cur_revision, new_revision))
                 continue
         count = 0
         count_modified = 0
@@ -1980,7 +1981,9 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
 
         def _one_item(path_id, path, info):
             if path_id not in known_items:
-                if path_id != settings.BackupIndexFileName():
+                if path_id == settings.BackupIndexFileName() or packetid.IsIndexFileName(path_id):
+                    pass
+                else:
                     to_be_removed_items.add(path_id)
 
         TraverseByID(_one_item, iterID=fsID(customer_idurl, key_alias))
@@ -2028,7 +2031,7 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
             updated_keys.append(key_alias)
             if key_alias.startswith('share_'):
                 for new_file_item in new_files:
-                    if new_file_item.path_id == settings.BackupIndexFileName():
+                    if new_file_item.path_id == settings.BackupIndexFileName() or packetid.IsIndexFileName(new_file_item.path_id):
                         continue
                     new_file_path = ToPath(new_file_item.path_id, iterID=fsID(customer_idurl, key_alias))
                     if new_file_path:

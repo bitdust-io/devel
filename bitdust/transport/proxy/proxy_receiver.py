@@ -756,7 +756,7 @@ class ProxyReceiver(automat.Automat):
             Command=commands.Identity(),
             OwnerID=my_id.getIDURL(),
             CreatorID=my_id.getIDURL(),
-            PacketID=('proxy_receiver:%s' % packetid.UniqueID()),
+            PacketID='proxy_receiver:%s' % packetid.UniqueID(),
             Payload=identity_obj.serialize(),
             RemoteID=self.router_idurl,
         )

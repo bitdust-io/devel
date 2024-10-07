@@ -300,7 +300,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
         pth = line
     path_id = pth.strip('/')
     if auto_create and is_in_sync:
-        if path_id != settings.BackupIndexFileName() and path_id not in ignored_path_ids:
+        if (path_id != settings.BackupIndexFileName() and not packetid.IsIndexFileName(path_id)) and path_id not in ignored_path_ids:
             if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
                 if _Debug:
                     lg.out(_DebugLevel, '        AUTO CREATE DIR "%s" in the index' % pth)
@@ -360,7 +360,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
         filesz = -1
     path_id = pth.strip('/')
     if auto_create and is_in_sync:
-        if path_id != settings.BackupIndexFileName() and path_id not in ignored_path_ids:
+        if (path_id != settings.BackupIndexFileName() and not packetid.IsIndexFileName(path_id)) and path_id not in ignored_path_ids:
             if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
                 if _Debug:
                     lg.out(_DebugLevel, '        AUTO CREATE FILE "%s" in the index' % pth)
@@ -376,12 +376,12 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                     modified = True
     if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
         # remote supplier have some file - but we don't have it in the index
-        if path_id == settings.BackupIndexFileName():
+        if path_id == settings.BackupIndexFileName() or packetid.IsIndexFileName(path_id):
             # this is the index file saved on remote supplier
             # must remember its size and put it in the backup_fs
             item = backup_fs.FSItemInfo(
-                name=path_id,
-                path_id=path_id,
+                name=settings.BackupIndexFileName(),
+                path_id=settings.BackupIndexFileName(),
                 typ=backup_fs.FILE,
                 key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
             )
@@ -878,7 +878,7 @@ def ReadLocalFiles():
             return True
         if realpath.startswith('newblock-'):
             return False
-        if subpath == settings.BackupIndexFileName():
+        if subpath == settings.BackupIndexFileName() or packetid.IsIndexFileName(subpath):
             return False
         try:
             version = subpath.split('/')[-2]
