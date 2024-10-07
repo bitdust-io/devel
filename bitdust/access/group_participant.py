@@ -1184,7 +1184,6 @@ class GroupParticipant(automat.Automat):
             },
             recipient_global_id=remote_id,
             packet_id=packet_id,
-            # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
             # skip_handshake=True,
             fire_callbacks=False,
         )
@@ -1212,7 +1211,6 @@ class GroupParticipant(automat.Automat):
             },
             recipient_global_id=remote_id,
             packet_id=packet_id,
-            # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
             # skip_handshake=True,
             fire_callbacks=False,
         )

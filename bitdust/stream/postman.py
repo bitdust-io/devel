@@ -354,7 +354,6 @@ def on_consumer_notify(message_info):
         },
         recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
         packet_id=packet_id,
-        # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
         skip_handshake=True,
         fire_callbacks=False,
     )

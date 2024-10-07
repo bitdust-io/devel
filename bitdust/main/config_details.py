@@ -290,23 +290,6 @@ This setting helps to overcome this situation by using locally stored copies of 
 The supplier does not know the real name of the file you uploaded to the network, but stores indexed fragments of your encrypted data.
 The `list-files` service synchronizes index data and file lists with your suppliers.
 
-{services/message-broker/enabled} help others to stream encrypted messages
-The `message-broker` service stores and organizes a message queue of encrypted JSON message thru your device.
-Other users are able to connect to your device to exchange messages and thus you will supports group chats for other users particularly.
-
-{services/message-broker/archive-chunk-size} archive chunk size
-Old messages in the queue are split into blocks, encrypted and archived on the suppliers nodes.
-
-{services/message-broker/message-ack-timeout} message acknowledgment timeout
-Due to network failures or slowness, peer-to-peer messages are considered as "undelivered" without receiving a confirmation of delivery within the specified number of seconds.
-
-{services/message-broker/broker-negotiate-ack-timeout} brokers synchronization timeout
-Each queue requires three message brokers at all time (main, secondary, third) and those three must cooperate with each other periodically to stay in sync.
-This value defines a timeout for an acknowledgment from another broker.
-When one of the brokers broker is unreliable, eventually all three will be "rotated" and "dead" broker will be replaced by fresh one.
-
-{services/message-broker/preferred-brokers}
-
 {services/message-history/enabled} store messaging history
 All your conversations are stored in a local SQLite3 database and are quickly searchable.
 
