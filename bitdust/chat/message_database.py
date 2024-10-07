@@ -200,11 +200,7 @@ def convert_json(blob):
 #------------------------------------------------------------------------------
 
 
-def get_conversation_id(
-    sender_local_key_id,
-    recipient_local_key_id,
-    payload_type,
-):
+def get_conversation_id(sender_local_key_id, recipient_local_key_id, payload_type):
     conversation_id = None
     if payload_type in [3, 4]:
         conversation_id = '{}&{}'.format(recipient_local_key_id, recipient_local_key_id)
@@ -625,10 +621,7 @@ def update_conversations_with_new_local_key_id(old_id, new_id):
         lg.args(_DebugLevel, modifications=modifications)
     for old_conv_id, new_conv_id in modifications.items():
         sql = 'UPDATE conversations SET conversation_id=? WHERE conversation_id=?'
-        params = [
-            new_conv_id,
-            old_conv_id,
-        ]
+        params = [new_conv_id, old_conv_id]
         cur().execute(sql, params)
         db().commit()
         if _Debug:
@@ -683,7 +676,7 @@ def check_create_keys():
         else:
             to_be_opened.append(key_id)
     if to_be_cached:
-        lg.warn('still see %d not cached identities, not able to process those customers: %r' (len(to_be_cached), to_be_cached))
+        lg.warn('still see %d not cached identities, not able to process those customers: %r' % (len(to_be_cached), to_be_cached))
     if _Debug:
         lg.args(_DebugLevel, to_be_opened=to_be_opened, to_be_cached=to_be_cached)
     for key_id in to_be_opened:
@@ -856,6 +849,29 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
             data=json.loads(row[8]),
         )
         listeners.push_snapshot('message', snap_id=snap_id, created=row[6], data=snapshot)
+
+
+#------------------------------------------------------------------------------
+
+
+def notify_group_conversation(oldstate, newstate, group_json_info):
+    sender_recipient_local_key_id = my_keys.get_local_key_id(group_json_info['group_key_id'])
+    if sender_recipient_local_key_id is None:
+        return
+    conversation_id = get_conversation_id(sender_recipient_local_key_id, sender_recipient_local_key_id, 3)
+    if conversation_id is None:
+        return
+    snapshot = dict(
+        conversation_id=conversation_id,
+        type=MESSAGE_TYPE_CODES[3],
+        started=None,
+        last_updated=None,
+        last_message_id=group_json_info['sequence_tail'],
+        key_id=group_json_info['group_key_id'],
+        old_state=oldstate,
+    )
+    snapshot.update(group_json_info)
+    listeners.push_snapshot('conversation', snap_id=conversation_id, data=snapshot)
 
 
 #------------------------------------------------------------------------------

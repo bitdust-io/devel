@@ -342,6 +342,9 @@ class GroupParticipant(automat.Automat):
             ), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs
         )
 
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        groups.run_group_state_callbacks(oldstate, newstate, self.to_json())
+
     def update_group_key_id(self, new_group_key_id):
         if _Debug:
             lg.args(_DebugLevel, old=self.group_key_id, new=new_group_key_id)
@@ -359,7 +362,7 @@ class GroupParticipant(automat.Automat):
                 'active': groups.is_group_active(self.group_key_id),
                 'participant_id': self.participant_id,
                 'group_key_id': self.group_key_id,
-                'alias': self.group_glob_id['key_alias'],
+                'alias': self.group_glob_id['key_alias'] if self.group_glob_id else '',
                 'label': my_keys.get_label(self.group_key_id) or '',
                 'creator': self.group_creator_id,
                 'active_supplier_pos': self.active_supplier_pos,
