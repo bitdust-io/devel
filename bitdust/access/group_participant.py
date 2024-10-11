@@ -236,16 +236,16 @@ def start_group_participants():
 
     def _start():
         started = 0
-        for group_key_id, group_info in groups.active_groups().items():
+        for group_key_id, _ in groups.active_groups().items():
             if not group_key_id:
-                continue
-            if not my_keys.is_key_registered(group_key_id):
-                lg.err('can not start GroupParticipant because key %r is not registered' % group_key_id)
                 continue
             if group_key_id.startswith('person'):
                 # TODO: temporarily disabled
                 continue
-            if not group_info['active']:
+            if not groups.is_group_active(group_key_id):
+                continue
+            if not my_keys.is_key_registered(group_key_id):
+                lg.err('can not start GroupParticipant because key %r is not registered' % group_key_id)
                 continue
             if not id_url.is_cached(global_id.glob2idurl(group_key_id, as_field=False)):
                 continue
@@ -269,10 +269,12 @@ def start_group_participants():
     for group_key_id, _ in groups.active_groups().items():
         if not group_key_id:
             continue
-        if not my_keys.is_key_registered(group_key_id):
-            continue
         if group_key_id.startswith('person'):
             # TODO: temporarily disabled
+            continue
+        if not groups.is_group_active(group_key_id):
+            continue
+        if not my_keys.is_key_registered(group_key_id):
             continue
         creator_idurl = global_id.glob2idurl(group_key_id)
         if id_url.is_the_same(creator_idurl, my_id.getIDURL()):

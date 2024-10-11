@@ -355,7 +355,7 @@ def is_group_active(group_key_id):
     group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         return False
-    return active_groups()[group_key_id]['active']
+    return active_groups()[group_key_id].get('active', False)
 
 
 def set_group_active(group_key_id, value):
