@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_ip_port_responder.py
+# service_api_server.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_ip_port_responder.py) is part of BitDust Software.
+# This file (service_api_server.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 """
 ..
 
-module:: service_ip_port_responder
+module:: service_api_server
 """
 
 from __future__ import absolute_import
@@ -34,13 +34,13 @@ from bitdust.services.local_service import LocalService
 
 
 def create_service():
-    return IPPortResponderService()
+    return APIServerService()
 
 
-class IPPortResponderService(LocalService):
+class APIServerService(LocalService):
 
-    service_name = 'service_ip_port_responder'
-    config_path = 'services/ip-port-responder/enabled'
+    service_name = 'service_api_server'
+    config_path = 'services/api-server/enabled'
     start_suspended = True
 
     def dependent_on(self):
@@ -49,31 +49,13 @@ class IPPortResponderService(LocalService):
         ]
 
     def start(self):
-        from bitdust.stun import stun_server
-        from bitdust.main import settings
-        from bitdust.lib import udp
-        from bitdust.logs import lg
-        if not udp.proto(settings.getUDPPort()):
-            lg.warn('udp port %s is not opened yet' % settings.getUDPPort())
-            return False
-        udp_port = int(settings.getUDPPort())
-        stun_server.A('start', udp_port)
         return True
 
     def stop(self):
-        from bitdust.stun import stun_server
-        stun_server.A('stop')
-        stun_server.Destroy()
         return True
 
     def on_suspend(self, *args, **kwargs):
-        from bitdust.stun import stun_server
-        stun_server.A('stop')
         return True
 
     def on_resume(self, *args, **kwargs):
-        from bitdust.stun import stun_server
-        from bitdust.main import settings
-        udp_port = int(settings.getUDPPort())
-        stun_server.A('start', udp_port)
         return True

@@ -37,12 +37,12 @@ try:
     from Cryptodome.Cipher import AES
     from Cryptodome.Cipher import DES3
     from Cryptodome.Util import Padding
-    from Cryptodome.Random import get_random_bytes
+    from Cryptodome.Random import get_random_bytes, random
 except:
     from Crypto.Cipher import AES  # @UnresolvedImport @Reimport
     from Crypto.Cipher import DES3  # @UnresolvedImport @Reimport
     from Crypto.Util import Padding  # @UnresolvedImport @Reimport
-    from Crypto.Random import get_random_bytes  # @UnresolvedImport @Reimport
+    from Crypto.Random import get_random_bytes, random  # @UnresolvedImport @Reimport
 
 #------------------------------------------------------------------------------
 
@@ -116,7 +116,6 @@ def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES'):
 
 #------------------------------------------------------------------------------
 
-
 def make_key(cipher_type='AES'):
     if cipher_type == 'AES':
         return get_random_bytes(AES.block_size)
@@ -127,3 +126,9 @@ def make_key(cipher_type='AES'):
 
 def generate_secret_text(size):
     return base64.b32encode(get_random_bytes(size)).decode()
+
+
+def generate_digits(length, as_text=True):
+    if as_text:
+        return ''.join(map(str, [random.randint(0, 9) for _ in range(length)]))
+    return [random.randint(0, 9) for _ in range(length)]

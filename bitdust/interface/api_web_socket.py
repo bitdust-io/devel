@@ -82,7 +82,7 @@ def init(port=None):
     if not port:
         port = settings.DefaultWebSocketPort()
     try:
-        ws = BitDistWrappedWebSocketFactory(BitDustWebSocketFactory())
+        ws = WrappedWebSocketFactory(WebSocketFactory())
         _WebSocketListener = listen('tcp:%d' % port, ws)
     except:
         lg.exc()
@@ -154,7 +154,7 @@ def read_api_secret():
 #------------------------------------------------------------------------------
 
 
-class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
+class WrappedWebSocketProtocol(txws.WebSocketProtocol):
 
     def validateHeaders(self):
         global _APISecret
@@ -172,15 +172,15 @@ class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
         return txws.WebSocketProtocol.validateHeaders(self)
 
 
-class BitDistWrappedWebSocketFactory(txws.WebSocketFactory):
+class WrappedWebSocketFactory(txws.WebSocketFactory):
 
-    protocol = BitDustWrappedWebSocketProtocol
+    protocol = WrappedWebSocketProtocol
 
 
 #------------------------------------------------------------------------------
 
 
-class BitDustWebSocketProtocol(Protocol):
+class WebSocketProtocol(Protocol):
 
     _key = None
 
@@ -224,9 +224,9 @@ class BitDustWebSocketProtocol(Protocol):
 #------------------------------------------------------------------------------
 
 
-class BitDustWebSocketFactory(Factory):
+class WebSocketFactory(Factory):
 
-    protocol = BitDustWebSocketProtocol
+    protocol = WebSocketProtocol
 
     def buildProtocol(self, addr):
         """

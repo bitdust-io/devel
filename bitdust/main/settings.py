@@ -665,6 +665,10 @@ def ConfigDir():
     return os.path.join(BaseDir(), 'config')
 
 
+def DevicesDir():
+    return os.path.join(BaseDir(), 'devices')
+
+
 def TempDir():
     """
     A place for temporary BitDust files, we really need some extra disk space
