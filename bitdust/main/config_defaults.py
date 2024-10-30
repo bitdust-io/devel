@@ -76,6 +76,10 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/accountant/enabled', 'false')
 
+    conf_obj.setDefaultValue('services/api-router/enabled', 'false')
+    conf_obj.setDefaultValue('services/api-router/host', '127.0.0.1')
+    conf_obj.setDefaultValue('services/api-router/port', settings.DefaultWebSocketRouterPort())
+
     conf_obj.setDefaultValue('services/backup-db/enabled', 'true')
 
     conf_obj.setDefaultValue('services/backups/enabled', 'true')

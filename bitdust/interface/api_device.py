@@ -23,9 +23,8 @@
 #
 #
 #
-from random import _inst
 """
-.. module:: api_device.
+.. module:: api_device
 
 """
 
@@ -44,8 +43,8 @@ import os
 
 #------------------------------------------------------------------------------
 
-from twisted.application.strports import listen
-from twisted.internet.protocol import Protocol, Factory
+from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -53,16 +52,18 @@ from bitdust.logs import lg
 
 from bitdust.automats import automat
 
-from bitdust.lib import txws
 from bitdust.lib import jsn
-from bitdust.lib import serialization
 
 from bitdust.main import settings
 
 from bitdust.system import local_fs
 
 from bitdust.crypt import rsa_key
-from bitdust.crypt import cipher
+
+from bitdust.services import driver
+
+from bitdust.interface import encrypted_web_socket
+from bitdust.interface import routed_web_socket
 
 #------------------------------------------------------------------------------
 
@@ -70,11 +71,52 @@ _Devices = {}
 _Listeners = {}
 _Transports = {}
 _Instances = {}
+_AllAPIMethods = []
 
 #------------------------------------------------------------------------------
 
 
 def init():
+    global _AllAPIMethods
+    from bitdust.interface import api
+    encrypted_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
+    _AllAPIMethods = set(dir(api))
+    _AllAPIMethods.difference_update(
+        [
+            # TODO: keep that list up to date when changing the api
+            'on_api_result_prepared',
+            'Deferred',
+            'ERROR',
+            'Failure',
+            'OK',
+            'RESULT',
+            '_Debug',
+            '_DebugLevel',
+            'strng',
+            'sys',
+            'time',
+            'gc',
+            'map',
+            'os',
+            '__builtins__',
+            '__cached__',
+            '__doc__',
+            '__file__',
+            '__loader__',
+            '__name__',
+            '__package__',
+            '__spec__',
+            'absolute_import',
+            'driver',
+            'filemanager',
+            'jsn',
+            'lg',
+            'event_listen',
+            'message_receive',
+        ]
+    )
+    if _Debug:
+        lg.out(_DebugLevel, 'api_device.init  with %d API methods' % len(_AllAPIMethods))
     if not os.path.exists(settings.DevicesDir()):
         if _Debug:
             lg.out(_DebugLevel, 'api_device.init will create folder: ' + settings.DevicesDir())
@@ -107,53 +149,77 @@ def instances(device_name=None):
 #------------------------------------------------------------------------------
 
 
-def save_device(device_name, device_key_object):
-    device_file_path = os.path.join(settings.DevicesDir(), device_name)
-    device_info_dict = device_key_object.toDict(include_private=True)
-    device_info_raw = jsn.dumps(device_info_dict, indent=1, separators=(',', ':'))
-    if not local_fs.WriteTextFile(device_file_path, device_info_raw):
-        lg.err('failed saving device info %r to %r' % (device_name, device_file_path))
-        return False
-    if _Debug:
-        lg.args(_DebugLevel, device_name=device_name, key=device_key_object)
-    return True
+class APIDevice(rsa_key.RSAKey):
 
+    def save(self):
+        device_file_path = os.path.join(settings.DevicesDir(), self.label)
+        device_info_dict = self.toDict(include_private=True)
+        device_info_raw = jsn.dumps(device_info_dict, indent=2, separators=(',', ':'))
+        if not local_fs.WriteTextFile(device_file_path, device_info_raw):
+            lg.err('failed saving device info %r to %r' % (self.label, device_file_path))
+            return False
+        if _Debug:
+            lg.args(_DebugLevel, device_name=self.label, key=self)
+        return True
 
-def load_device(device_name):
-    device_file_path = os.path.join(settings.DevicesDir(), device_name)
-    device_info_raw = local_fs.ReadTextFile(device_file_path)
-    if not device_info_raw:
-        lg.warn('failed reading device file %r' % device_file_path)
-        return None
-    device_info_dict = jsn.loads_text(device_info_raw.strip())
-    try:
-        device_key_object = rsa_key.RSAKey()
-        device_key_object.fromDict(device_info_dict)
-    except:
-        lg.exc()
-        return None
-    if _Debug:
-        lg.args(_DebugLevel, device_name=device_name, key=device_key_object)
-    return device_key_object
+    def load(self, device_file_path):
+        device_info_raw = local_fs.ReadTextFile(device_file_path)
+        if not device_info_raw:
+            lg.warn('failed reading device file %r' % device_file_path)
+            return False
+        device_info_dict = jsn.loads_text(device_info_raw.strip())
+        try:
+            self.fromDict(device_info_dict)
+        except:
+            lg.exc()
+            return False
+        if _Debug:
+            lg.args(_DebugLevel, device_name=self.label, key=self)
+        return True
 
 
 #------------------------------------------------------------------------------
 
 
-def add_device(device_name, port_number, key_size=4096):
+def add_encrypted_device(device_name, port_number, key_size=4096):
     global _Devices
     if device_name in _Devices:
         raise Exception('device %r already exist' % device_name)
-    device_key_object = rsa_key.RSAKey()
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name)
+    device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
-    device_key_object.active = False
+    device_key_object.active = True
+    device_key_object.meta['routed'] = False
     device_key_object.meta['port_number'] = port_number
-    device_key_object.meta['state'] = 'client_public_key'
     device_key_object.meta['auth_token'] = None
     device_key_object.meta['session_key'] = None
     device_key_object.meta['client_public_key'] = None
-    if not save_device(device_name, device_key_object):
+    if not device_key_object.save():
+        return False
+    _Devices[device_name] = device_key_object
+    return True
+
+
+def add_routed_device(device_name, port_number, key_size=4096):
+    global _Devices
+    if device_name in _Devices:
+        raise Exception('device %r already exist' % device_name)
+    if not driver.is_on('service_nodes_lookup'):
+        raise Exception('required service_nodes_lookup() is not currently ON')
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name)
+    device_key_object = APIDevice()
+    device_key_object.generate(key_size)
+    device_key_object.label = device_name
+    device_key_object.active = True
+    device_key_object.meta['routed'] = True
+    device_key_object.meta['port_number'] = None
+    device_key_object.meta['auth_token'] = None
+    device_key_object.meta['session_key'] = None
+    device_key_object.meta['client_public_key'] = None
+    if not device_key_object.save():
         return False
     _Devices[device_name] = device_key_object
     return True
@@ -175,15 +241,28 @@ def enable_device(device_name):
         lg.warn('device %r is already active' % device_name)
         return False
     device_key_object.active = True
-    save_device(device_name, device_key_object)
+    device_key_object.save()
     lg.info('device %r was activated' % device_name)
     return True
 
 
 def disable_device(device_name):
-    pass
+    device_key_object = devices(device_name)
+    if not device_key_object:
+        raise Exception('device %r does not exist' % device_name)
+    if instances(device_name):
+        stop_device(device_name)
+    if not device_key_object.active:
+        lg.warn('device %r is not active' % device_name)
+        return False
+    device_key_object.active = False
+    device_key_object.save()
+    lg.info('device %r was deactivated' % device_name)
+    return True
+
 
 #------------------------------------------------------------------------------
+
 
 def start_device(device_name):
     global _Instances
@@ -194,12 +273,16 @@ def start_device(device_name):
         raise Exception('device %r does not exist' % device_name)
     if not device_key_object.active:
         raise Exception('device %r is not active' % device_name)
-    port_number = device_key_object.meta['port_number']
-    inst = APIDevice()
+    if device_key_object.meta['routed']:
+        if not driver.is_on('service_nodes_lookup'):
+            raise Exception('required service_nodes_lookup() is not currently ON')
+        inst = routed_web_socket.RoutedWebSocket()
+    else:
+        inst = encrypted_web_socket.EncryptedWebSocket(port_number=device_key_object.meta['port_number'])
     if _Debug:
-        lg.args(_DebugLevel, device_name, port_number=port_number, instance=inst)
+        lg.args(_DebugLevel, device_name=device_name, instance=inst)
     _Instances[device_name] = inst
-    inst.automat('init', device_name=device_name, port_number=port_number)
+    inst.automat('start', device_object=device_key_object)
     return inst
 
 
@@ -211,14 +294,17 @@ def stop_device(device_name):
     inst.automat('shutdown')
     _Instances.pop(device_name)
 
+
 #------------------------------------------------------------------------------
 
 
 def load_devices():
     global _Devices
     for device_name in os.listdir(settings.DevicesDir()):
-        device_key_object = load_device(device_name)
-        if not device_key_object:
+        device_file_path = os.path.join(settings.DevicesDir(), device_name)
+        device_key_object = APIDevice()
+        if not device_key_object.load(device_file_path):
+            del device_key_object
             continue
         _Devices[device_name] = device_key_object
     if _Debug:
@@ -233,320 +319,151 @@ def start_devices():
         start_device(device_name)
 
 
+def stop_devices():
+    for device_name in devices():
+        device_key_object = devices(device_name)
+        if not device_key_object.active:
+            continue
+        stop_device(device_name)
+
+
 #------------------------------------------------------------------------------
 
 
-def on_incoming_message(device_name, json_data):
-    if _Debug:
-        lg.args(_DebugLevel, inp=json_data)
-    inst = instances(device_name)
-    if not inst:
-        lg.err('received API message for unknown device instance %r' % device_name)
-        return False
-    cmd = json_data.get('cmd')
-    if cmd == 'api':
-        device_key_object = devices(device_name)
-        if not device_key_object:
-            lg.err('received API message for unknown device %r' % device_name)
-            return False
-        auth_token = device_key_object.meta.get('auth_token')
-        if not auth_token:
-            lg.err('received API message for unauthorized device %r' % device_name)
-            return False
-        if auth_token != json_data.get('auth'):
-            lg.err('received unauthorized API message for device %r' % device_name)
-            return False
-        session_key = device_key_object.meta.get('session_key')
-        if not session_key:
-            lg.err('received API message for device %r, but session key is empty' % device_name)
-            return False
-        raw_data = cipher.decrypt_json(json_data.inp, session_key)
+def do_process_incoming_message(device_object, json_data):
+    global _AllAPIMethods
+    from bitdust.interface import api
+    command = json_data.get('command')
+    if command == 'api_call':
+        method = json_data.get('method', None)
+        kwargs = json_data.get('kwargs', {})
+        call_id = json_data.get('call_id', None)
+
+        if not method:
+            lg.warn('api method name was not provided')
+            return device_object.on_outgoing_message({
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': ['api method name was not provided'],
+                },
+            })
+
+        if method not in _AllAPIMethods:
+            lg.warn('invalid api method name: %r' % method)
+            return device_object.on_outgoing_message({
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': ['invalid api method name'],
+                },
+            })
+
+        if _Debug:
+            lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (call_id, method, kwargs))
+
+        # if _APILogFileEnabled:
+        #     lg.out(0, '*** %s  WS IN  %s(%r)' % (call_id, method, kwargs), log_name='api', showtime=True)
+
+        func = getattr(api, method)
         try:
-            api_message_payload = serialization.BytesToDict(raw_data, keys_to_text=True, values_to_text=True, encoding='utf-8')
-        except:
-            lg.exc()
-            return False
-        inst.event('api-message', api_message=api_message_payload)
-        return True
-    elif cmd == 'client-public-key':
-        client_public_key = json_data.get('client-public-key')
-        inst.automat('client-pub-key-received', client_public_key=client_public_key)
-        return True
-    elif cmd == 'server-code':
-        server_code = json_data.get('server-code')
-        inst.automat('valid-server-code-received', server_code=server_code)
-        return True
+            response = func(**kwargs)
+        except Exception as err:
+            lg.err(f'{method}({kwargs}) : {err}')
+            return device_object.on_outgoing_message({
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': [str(err)],
+                },
+            })
+
+        if isinstance(response, Deferred):
+
+            def _cb(r):
+                return device_object.on_outgoing_message({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'response': r,
+                    },
+                })
+
+            def _eb(err):
+                err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
+                return device_object.on_outgoing_message({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'errors': [err_msg],
+                    },
+                })
+
+            response.addCallback(_cb)
+            response.addErrback(_eb)
+            return True
+
+        return device_object.on_outgoing_message({
+            'type': 'api_call',
+            'payload': {
+                'call_id': call_id,
+                'response': response,
+            },
+        })
+
     return False
 
-#------------------------------------------------------------------------------
-
-
-class DeviceProtocol(Protocol):
-
-    _key = None
-
-    def dataReceived(self, data):
-        try:
-            json_data = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True, encoding='utf-8')
-        except:
-            lg.exc()
-            return
-        if _Debug:
-            lg.dbg(_DebugLevel, 'received %d bytes from web socket: %r' % (len(data), json_data))
-        on_incoming_message(self.factory.device_name, json_data)
-
-    def connectionMade(self):
-        global _Transports
-        Protocol.connectionMade(self)
-        peer = self.transport.getPeer()
-        self._key = (
-            peer.type,
-            peer.host,
-            peer.port,
-        )
-        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
-        if self.factory.device_name not in _Transports:
-            _Transports[_Transports] = {}
-        _Transports[self.factory.device_name][self._key] = self.transport
-        if _Debug:
-            lg.args(_DebugLevel, device_name=self.factory.device_name, peer=peer, ws_connections=len(_Transports))
-        # events.send('web-socket-connected', data=dict(peer=peer))
-
-    def connectionLost(self, *args, **kwargs):
-        global _Transports
-        Protocol.connectionLost(self, *args, **kwargs)
-        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
-        if self.factory.device_name in _Transports:
-            _Transports.pop(self._key)
-        else:
-            lg.err('device %r was already stopped, connection closed: %r' % (self.factory.device_name, peer))
-        self._key = None
-        if _Debug:
-            lg.args(_DebugLevel, device_name=self.factory.device_name, peer=peer, ws_connections=len(_Transports))
-        # events.send('web-socket-disconnected', data=dict(peer=peer))
-
-
-class DeviceFactory(Factory):
-
-    protocol = DeviceProtocol
-
-    def __init__(self, device_name):
-        self.device_name = device_name
 
 #------------------------------------------------------------------------------
 
 
-class WrappedDeviceProtocol(txws.WebSocketProtocol):
-    pass
+def on_event(evt):
+    for inst in instances().values():
+        inst.on_outgoing_message({
+            'type': 'event',
+            'payload': {
+                'event_id': evt.event_id,
+                'data': evt.data,
+            },
+        })
 
 
-class WrappedDeviceFactory(txws.WebSocketFactory):
+def on_stream_message(message_json):
+    for inst in instances().values():
+        inst.on_outgoing_message({
+            'type': 'stream_message',
+            'payload': message_json,
+        })
 
-    protocol = WrappedDeviceProtocol
+
+def on_online_status_changed(status_info):
+    for inst in instances().values():
+        inst.on_outgoing_message({
+            'type': 'online_status',
+            'payload': status_info,
+        })
+
+
+def on_model_changed(snapshot_object):
+    for inst in instances().values():
+        inst.on_outgoing_message({
+            'type': 'model',
+            'payload': snapshot_object.to_json(),
+        })
 
 
 #------------------------------------------------------------------------------
 
-
-class APIDevice(automat.Automat):
-
-    """
-    This class implements all the functionality of ``api_device()`` state machine.
-    """
-
-    def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
-        """
-        Builds `api_device()` state machine.
-        """
-        super(APIDevice, self).__init__(name='api_device', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
-
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `api_device()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `api_device()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `api_device()`
-        but automat state was not changed.
-        """
-
-    def A(self, event, *args, **kwargs):
-        """
-        The state machine code, generated using `visio2python <https://github.com/vesellov/visio2python>`_ tool.
-        """
-        #---READY---
-        if self.state == 'READY':
-            if event == 'api-message':
-                self.doProcess(*args, **kwargs)
-            elif event == 'client-pub-key-received':
-                self.state = 'CLIENT_PUB?'
-                self.doGenerateAuthToken(*args, **kwargs)
-                self.doGenerateServerCode(*args, **kwargs)
-                self.doSendServerPubKey(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'CLOSED'
-                self.doStopListener(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'auth-error':
-                self.state = 'CLOSED'
-                self.doRemoveAuthToken(*args, **kwargs)
-                self.doStopListener(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'start' and not self.isAuthenticated(*args, **kwargs):
-                self.state = 'CLIENT_PUB?'
-                self.doInit(*args, **kwargs)
-                self.doStartListener()
-            elif event == 'start' and self.isAuthenticated(*args, **kwargs):
-                self.state = 'READY'
-                self.doInit(*args, **kwargs)
-                self.doLoadDevice(*args, **kwargs)
-                self.doStartListener()
-        #---CLIENT_PUB?---
-        elif self.state == 'CLIENT_PUB?':
-            if event == 'client-pub-key-received':
-                self.state = 'SERVER_CODE?'
-                self.doGenerateAuthToken(*args, **kwargs)
-                self.doGenerateServerCode(*args, **kwargs)
-                self.doSendServerPubKey(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'CLOSED'
-                self.doStopListener(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---SERVER_CODE?---
-        elif self.state == 'SERVER_CODE?':
-            if event == 'client-pub-key-received':
-                self.state = 'CLIENT_PUB?'
-                self.doGenerateAuthToken(*args, **kwargs)
-                self.doGenerateServerCode(*args, **kwargs)
-                self.doSendServerPubKey(*args, **kwargs)
-            elif event == 'valid-server-code-received':
-                self.state = 'CLIENT_CODE?'
-                self.doWaitClientCodeInput(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'CLOSED'
-                self.doStopListener(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---CLIENT_CODE?---
-        elif self.state == 'CLIENT_CODE?':
-            if event == 'client-code-input-received':
-                self.state = 'READY'
-                self.doSendClientCode(*args, **kwargs)
-                self.doSaveAuthToken(*args, **kwargs)
-            elif event == 'client-pub-key-received':
-                self.state = 'CLIENT_PUB?'
-                self.doGenerateAuthToken(*args, **kwargs)
-                self.doGenerateServerCode(*args, **kwargs)
-                self.doSendServerPubKey(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'CLOSED'
-                self.doStopListener(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
-
-    def isAuthenticated(self, *args, **kwargs):
-        """
-        Condition method.
-        """
-        device_name = kwargs['device_name']
-        device_key_object = devices(device_name)
-        if not device_key_object:
-            return False
-        if not device_key_object.meta.get('auth_token'):
-            return False
-        return True
-
-    def doInit(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.device_name = kwargs['device_name']
-        self.port_number = kwargs['port_number']
-        self.auth_token = None
-        self.client_public_key = None
-
-    def doLoadDevice(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        device_key_object = devices(self.device_name)
-        self.auth_token = device_key_object.meta['auth_token']
-        self.client_public_key = device_key_object.meta['client_public_key']
-
-    def doGenerateServerCode(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.server_code = cipher.generate_digits(6, as_text=True)
-
-    def doGenerateAuthToken(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.auth_token = cipher.make_key()
-
-    def doProcess(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doSendServerPubKey(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doWaitClientCodeInput(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doSendClientCode(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doSaveAuthToken(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        device_key_object = devices(self.device_name)
-        device_key_object.meta['auth_token'] = self.auth_token
-        save_device(self.device_name, device_key_object)
-
-    def doRemoveAuthToken(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doStartListener(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        global _Listeners
-        try:
-            ws = WrappedDeviceFactory(DeviceFactory(device_name=self.device_name))
-            _Listeners[self.device_name] = listen('tcp:%d' % self.port_number, ws)
-        except:
-            lg.exc()
-        return _Listeners[self.device_name], ws
-
-    def doStopListener(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doDestroyMe(self, *args, **kwargs):
-        """
-        Remove all references to the state machine object to destroy it.
-        """
-        self.destroy()
+if __name__ == '__main__':
+    from twisted.internet import reactor
+    settings.init()
+    lg.set_debug_level(24)
+    automat.init()
+    automat.LifeBegins(lg.when_life_begins())
+    automat.SetGlobalLogEvents(True)
+    automat.SetGlobalLogTransitions(True)
+    automat.SetExceptionsHandler(lg.exc)
+    automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message))
+    init()
+    # add_device('test123', 12345)
+    reactor.run()  # @UndefinedVariable

@@ -36,7 +36,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-1",
-                "attached_layers": "2,3,7",
+                "attached_layers": "2,3",
                 "known_dht_seeds": "genesis"
             }
         },
@@ -48,7 +48,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-2",
-                "attached_layers": "2,3,7",
+                "attached_layers": "2,3",
                 "known_dht_seeds": "dht-1:14441"
             }
         },

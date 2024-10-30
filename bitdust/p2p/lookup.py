@@ -178,6 +178,12 @@ def random_customer(**kwargs):
     return start(**kwargs)
 
 
+def random_web_socket_router(**kwargs):
+    from bitdust.dht import dht_records
+    kwargs['layer_id'] = dht_records.LAYER_WEB_SOCKET_ROUTERS
+    return start(**kwargs)
+
+
 #------------------------------------------------------------------------------
 
 
@@ -332,6 +338,7 @@ def process_idurl(idurl, node):
 
 
 class DiscoveryTask(object):
+
     def __init__(
         self,
         count,

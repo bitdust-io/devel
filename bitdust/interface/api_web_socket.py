@@ -167,8 +167,8 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
                     access_granted = True
             if not access_granted:
                 events.send('web-socket-access-denied', data=dict())
-                self.loseConnection()
-                return
+                # self.loseConnection()
+                return False
         return txws.WebSocketProtocol.validateHeaders(self)
 
 
@@ -199,16 +199,12 @@ class WebSocketProtocol(Protocol):
         global _WebSocketTransports
         Protocol.connectionMade(self)
         peer = self.transport.getPeer()
-        self._key = (
-            peer.type,
-            peer.host,
-            peer.port,
-        )
-        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
+        self._key = (peer.type, peer.host, peer.port)
+        peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         _WebSocketTransports[self._key] = self.transport
         if _Debug:
             lg.args(_DebugLevel, key=self._key, ws_connections=len(_WebSocketTransports))
-        events.send('web-socket-connected', data=dict(peer=peer))
+        events.send('web-socket-connected', data=dict(peer=peer_text))
 
     def connectionLost(self, *args, **kwargs):
         global _WebSocketTransports
@@ -216,9 +212,9 @@ class WebSocketProtocol(Protocol):
             lg.args(_DebugLevel, key=self._key, ws_connections=len(_WebSocketTransports))
         Protocol.connectionLost(self, *args, **kwargs)
         _WebSocketTransports.pop(self._key)
-        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
+        peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         self._key = None
-        events.send('web-socket-disconnected', data=dict(peer=peer))
+        events.send('web-socket-disconnected', data=dict(peer=peer_text))
 
 
 #------------------------------------------------------------------------------
@@ -365,6 +361,7 @@ def on_model_changed(snapshot_object):
 def push(json_data):
     global _WebSocketTransports
     if not _WebSocketTransports:
+        lg.warn('there are currently no web socket transports open')
         return False
     raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
     for _key, transp in _WebSocketTransports.items():

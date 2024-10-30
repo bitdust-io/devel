@@ -82,6 +82,7 @@ from bitdust.userid import id_url
 
 
 class Packet(object):
+
     """
     Init with: Command, OwnerID, CreatorID, PacketID, Payload, RemoteID The
     core class.
@@ -95,6 +96,7 @@ class Packet(object):
     messages. This is outside work, here is most important things to
     make all network working.
     """
+
     def __init__(
         self,
         Command,
@@ -353,14 +355,6 @@ class Packet(object):
         Return a length of serialized packet .
         """
         return len(self.Serialize())
-
-
-class PacketZeroSigned(Packet):
-    """
-    I was playing with hacking packets and do some debug also.
-    """
-    def GenerateSignature(self):
-        return '0'
 
 
 def Unserialize(data):

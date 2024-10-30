@@ -1131,6 +1131,13 @@ def DefaultWebSocketPort():
     return 8280
 
 
+def DefaultWebSocketRouterPort():
+    """
+    Secure remote routed connection to access BitDust nodes from mobile devices.
+    """
+    return 8282
+
+
 def DefaultFTPPort():
     """
     Only Local! Never expose to outside of localhost.
