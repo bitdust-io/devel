@@ -31,6 +31,11 @@ module:: websock
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+_DebugAPIResponses = _Debug
+
+#------------------------------------------------------------------------------
+
 import os
 import time
 import json
@@ -47,12 +52,9 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 from bitdust_forks import websocket
 
-from bitdust.system import local_fs
-
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugAPIResponses = _Debug
+from bitdust.system import local_fs
 
 #------------------------------------------------------------------------------
 
@@ -264,7 +266,6 @@ def on_message(ws_inst, message):
 
 
 def on_error(ws_inst, error):
-    global _PendingCalls
     if _Debug:
         print('on_error', error)
     cb = registered_callbacks().get('on_error')
@@ -394,7 +395,6 @@ def websocket_thread():
 
 def verify_state():
     global _WebSocketReady
-    global _WebSocketConnecting
     if is_closed():
         _WebSocketReady = False
         if _Debug:

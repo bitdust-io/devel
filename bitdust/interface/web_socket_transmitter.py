@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# api_router.py
+# web_socket_transmitter.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (api_router.py) is part of BitDust Software.
+# This file (web_socket_transmitter.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -24,7 +24,7 @@
 #
 #
 """
-.. module:: api_router
+.. module:: web_socket_transmitter
 
 Secure remote routed connection to access BitDust nodes from mobile devices.
 """
@@ -47,6 +47,7 @@ from bitdust.logs import lg
 
 from bitdust.lib import txws
 from bitdust.lib import serialization
+from bitdust.lib import jsn
 
 from bitdust.crypt import cipher
 
@@ -57,18 +58,23 @@ from bitdust.main import config
 
 _WebSocketListener = None
 _WebSocketTransports = {}
+_WebSocketRouterLocation = None
 _Routes = {}
+_MaxRoutesNumber = 100
 
 #------------------------------------------------------------------------------
 
 
 def init():
     global _WebSocketListener
+    global _WebSocketRouterLocation
     if _WebSocketListener is not None:
         lg.warn('_WebSocketListener already initialized')
         return True
+    host = config.conf().getString('services/web-socket-router/host').strip()
+    port = config.conf().getInt('services/web-socket-router/port')
+    _WebSocketRouterLocation = 'ws://{}:{}'.format(host, port)
     load_routes()
-    port = config.conf().getInt('services/api-router/port')
     try:
         ws = WrappedWebSocketFactory(WebSocketFactory())
         _WebSocketListener = listen('tcp:%d' % port, ws)
@@ -76,15 +82,16 @@ def init():
         lg.exc()
         return False
     if _Debug:
-        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r' % _WebSocketListener)
+        lg.out(_DebugLevel, 'web_socket_transmitter.init  _WebSocketListener=%r' % _WebSocketListener)
     return True
 
 
 def shutdown():
     global _WebSocketListener
+    global _WebSocketRouterLocation
     if _WebSocketListener:
         if _Debug:
-            lg.out(_DebugLevel, 'api_web_socket.shutdown calling _WebSocketListener.stopListening()')
+            lg.out(_DebugLevel, 'web_socket_transmitter.shutdown calling _WebSocketListener.stopListening()')
         _WebSocketListener.stopListening()
         del _WebSocketListener
         _WebSocketListener = None
@@ -92,10 +99,16 @@ def shutdown():
             lg.out(_DebugLevel, '    _WebSocketListener destroyed')
     else:
         lg.warn('_WebSocketListener is None')
+    _WebSocketRouterLocation = None
     return True
 
 
 #------------------------------------------------------------------------------
+
+
+def location():
+    global _WebSocketRouterLocation
+    return _WebSocketRouterLocation
 
 
 def routes(route_id=None):
@@ -108,29 +121,29 @@ def routes(route_id=None):
 #------------------------------------------------------------------------------
 
 
-def add_route(idurl):
+def add_route():
     global _Routes
     route_id = None
     while not route_id or route_id in _Routes:
         route_id = cipher.generate_secret_text(5)
     # this is where Mobile device will be connecting
     route_url = 'ws://{}:{}/?r={}'.format(
-        config.conf().getString('services/api-router/host').strip(),
-        config.conf().getInt('services/api-router/port'),
+        config.conf().getString('services/web-socket-router/host').strip(),
+        config.conf().getInt('services/web-socket-router/port'),
         route_id,
     )
     # this is where BitDust node will be connecting
     internal_url = 'ws://{}:{}/?i={}'.format(
-        config.conf().getString('services/api-router/host').strip(),
-        config.conf().getInt('services/api-router/port'),
+        config.conf().getString('services/web-socket-router/host').strip(),
+        config.conf().getInt('services/web-socket-router/port'),
         route_id,
     )
     _Routes[route_id] = {
-        'idurl': idurl,
         'route_id': route_id,
         'route_url': route_url,
         'internal_url': internal_url,
     }
+    return route_id
 
 
 def remove_route(route_id):
@@ -155,6 +168,8 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
 
     def validateHeaders(self):
         _, _, parameter = self.location.partition('?')
+        if not parameter:
+            return txws.WebSocketProtocol.validateHeaders(self)
         param_name, _, route_id = parameter.partition('=')
         # SECURITY
         # TODO: add strict validation of the route_id
@@ -162,6 +177,9 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
             if not routes(route_id):
                 lg.warn('rejected connection %r, route %r is unknown' % (self, route_id))
                 return False
+        else:
+            lg.warn('rejected connection %r, invalid input parameters' % self)
+            return False
         self.is_client = param_name in ('r', 'route')
         self.route_id = route_id
         if _Debug:
@@ -189,7 +207,7 @@ class WebSocketProtocol(Protocol):
             return
         if _Debug:
             lg.dbg(_DebugLevel, 'received %d bytes from web socket at %r' % (len(data), self._key))
-        if not do_process_incoming_message(self.transport.route_id, self.transport.is_client, json_data):
+        if not do_process_incoming_message(self.transport, json_data):
             lg.warn('failed processing incoming message from web socket: %r' % json_data)
 
     def connectionMade(self):
@@ -226,15 +244,16 @@ class WebSocketFactory(Factory):
 
 #------------------------------------------------------------------------------
 
-
-def do_process_incoming_message(route_id, is_client, json_data):
+def do_process_incoming_message(transport, json_data):
     if _Debug:
-        lg.args(_DebugLevel, route_id=route_id, is_client=is_client, json_data=json_data)
+        lg.args(_DebugLevel, route_id=transport.route_id, is_client=transport.is_client, json_data=json_data)
+    if transport.route_id is None and transport.is_client is None:
+        cmd = json_data.get('cmd')
+        if cmd == 'connect-request':
+            return on_service_web_socket_router_request(transport, json_data)
     return True
 
-
 #------------------------------------------------------------------------------
-
 
 def push(route_id, json_data):
     global _WebSocketTransports
@@ -254,6 +273,36 @@ def push(route_id, json_data):
         lg.out(_DebugLevel, '***   API ROUTE PUSH  %d bytes' % len(raw_bytes))
     return True
 
+
+#------------------------------------------------------------------------------
+
+def on_service_web_socket_router_request(transport, json_data):
+    global _MaxRoutesNumber
+    if len(routes()) >= _MaxRoutesNumber:
+        if _Debug:
+            lg.dbg(_DebugLevel, 'request for a new route from %r was rejected: too many routes are currently registered' % transport)
+        json_response = {
+            "result": "rejected",
+        }
+        raw_bytes = serialization.DictToBytes(json_response, encoding='utf-8')
+        try:
+            transport.write(raw_bytes)
+        except:
+            lg.exc()
+        return False
+    json_response = {
+        "result": "accepted",
+    }
+    route_id = add_route()
+    json_response.update(routes(route_id))
+    raw_bytes = serialization.DictToBytes(json_response, encoding='utf-8')
+    try:
+        transport.write(raw_bytes)
+    except:
+        lg.exc()
+    if _Debug:
+        lg.args(_DebugLevel, transport=transport, json_response=json_response)
+    return True
 
 #------------------------------------------------------------------------------
 

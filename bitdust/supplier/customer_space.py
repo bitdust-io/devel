@@ -850,6 +850,7 @@ def on_identity_url_changed(evt):
 
 
 def on_service_supplier_request(json_payload, newpacket, info):
+    # SECURITY
     customer_idurl = newpacket.OwnerID
     customer_id = global_id.UrlToGlobalID(customer_idurl)
     bytes_for_customer = 0
@@ -1056,6 +1057,7 @@ def on_service_supplier_cancel(json_payload, newpacket, info):
     contactsdb.save_customers()
     if customer_public_key_id:
         my_keys.erase_key(customer_public_key_id)
+    # SECURITY
     # TODO: erase customer's groups keys also
     reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
     lg.info('EXISTING CUSTOMER TERMINATED %r' % customer_idurl)

@@ -47,25 +47,18 @@ class WebSocketRouterService(LocalService):
             'service_p2p_hookups',
         ]
 
-    def installed(self):
-        from bitdust.userid import my_id
-        if not my_id.isLocalIdentityReady():
-            return False
-        return True
-
     def attached_dht_layers(self):
         from bitdust.dht import dht_records
         return [
-            dht_records.LAYER_PROXY_ROUTERS,
+            dht_records.LAYER_WEB_SOCKET_ROUTERS,
         ]
 
     def start(self):
         from bitdust.logs import lg
         from bitdust.services import driver
         from bitdust.main import events
-        # from bitdust.transport.proxy import proxy_router
-        # proxy_router.A('init')
-        # proxy_router.A('start')
+        from bitdust.interface import web_socket_transmitter
+        web_socket_transmitter.init()
         if driver.is_on('service_entangled_dht'):
             self._do_connect_web_socket_routers_dht_layer()
         else:
@@ -76,34 +69,13 @@ class WebSocketRouterService(LocalService):
     def stop(self):
         from bitdust.services import driver
         from bitdust.main import events
-        # from bitdust.transport.proxy import proxy_router
+        from bitdust.interface import web_socket_transmitter
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
-        # proxy_router.A('stop')
-        # proxy_router.A('shutdown')
         if driver.is_on('service_entangled_dht'):
             from bitdust.dht import dht_service
             from bitdust.dht import dht_records
             dht_service.suspend(layer_id=dht_records.LAYER_WEB_SOCKET_ROUTERS)
-        return True
-
-    def request(self, json_payload, newpacket, info):
-        # TODO: ...
-        # from bitdust.transport.proxy import proxy_router
-        # proxy_router.A('request-route-received', (
-        #     json_payload,
-        #     newpacket,
-        #     info,
-        # ))
-        return True
-
-    def cancel(self, json_payload, newpacket, info):
-        # TODO: ...
-        # from bitdust.transport.proxy import proxy_router
-        # proxy_router.A('cancel-route-received', (
-        #     json_payload,
-        #     newpacket,
-        #     info,
-        # ))
+        web_socket_transmitter.shutdown()
         return True
 
     def _do_connect_web_socket_routers_dht_layer(self):
@@ -124,11 +96,10 @@ class WebSocketRouterService(LocalService):
         from bitdust.logs import lg
         from bitdust.dht import dht_service
         from bitdust.dht import dht_records
-        from bitdust.userid import my_id
+        from bitdust.interface import web_socket_transmitter
         lg.info('connected to DHT layer for web socket routers: %r' % ok)
-        if my_id.getIDURL():
-            dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_WEB_SOCKET_ROUTERS)
-        return
+        dht_service.set_node_data('location', web_socket_transmitter.location(), layer_id=dht_records.LAYER_WEB_SOCKET_ROUTERS)
+        return ok
 
     def _on_dht_layer_connected(self, evt):
         from bitdust.dht import dht_records

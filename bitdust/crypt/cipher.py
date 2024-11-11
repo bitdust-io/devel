@@ -51,7 +51,7 @@ from bitdust.lib import serialization
 #------------------------------------------------------------------------------
 
 
-def encrypt_json(raw_data, secret_bytes_key, cipher_type='AES'):
+def encrypt_json(raw_data, secret_bytes_key, cipher_type='AES', to_text=False):
     # TODO: add salt to raw_data
     padded_data = Padding.pad(
         data_to_pad=raw_data,
@@ -74,7 +74,7 @@ def encrypt_json(raw_data, secret_bytes_key, cipher_type='AES'):
         'iv': base64.b64encode(cipher.iv).decode('utf-8'),
         'ct': base64.b64encode(ct_bytes).decode('utf-8'),
     }
-    encrypted_data = serialization.DictToBytes(dct, encoding='utf-8')
+    encrypted_data = serialization.DictToBytes(dct, encoding='utf-8', to_text=to_text)
     return encrypted_data
 
 

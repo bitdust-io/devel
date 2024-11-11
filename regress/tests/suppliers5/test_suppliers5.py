@@ -24,6 +24,8 @@ SCENARIO 4: customer-1 share files to customer-2
 
 SCENARIO 7: customer-1 upload and download file encrypted with his master key
 
+SCENARIO 8: customer-1 added routed API device and able to accept remote web-socket connections
+
 SCENARIO 14: customer-1 replace supplier at position 0 by random node
 
 SCENARIO 15: customer-1 switch supplier at position 1 to specific node
@@ -48,6 +50,9 @@ def test_suppliers5():
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
+    
+    #--- SCENARIO 8: customer-1 added routed API device and able to accept remote web-socket connections
+    scenarios.scenario8()
 
     #--- SCENARIO 7: customer-1 upload/download with master key
     customer_1_file_info = scenarios.scenario7()

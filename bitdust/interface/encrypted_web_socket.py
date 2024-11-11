@@ -74,11 +74,8 @@ from bitdust.crypt import hashes
 
 #------------------------------------------------------------------------------
 
-_Devices = {}
 _Listeners = {}
 _Transports = {}
-_Instances = {}
-_AllAPIMethods = []
 _IncomingAPIMessageCallback = None
 
 #------------------------------------------------------------------------------

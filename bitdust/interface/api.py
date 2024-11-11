@@ -580,6 +580,174 @@ def process_debug():
 
 #------------------------------------------------------------------------------
 
+def devices_list(sort=False):
+    """
+    List all registered configurations of your configured API devices.
+
+    API Device provide remote access to BitDust node running on that machine.
+
+    Remote device (often mobile phone, tablet, etc.) acts as a thin-client and allows you to access and manage
+    this BitDust node via secure web socket connection. To be able to access this BitDust node from your mobile phone,
+    you first need to configure and authorize API device.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/device/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "devices_list", "kwargs": {} }');
+    """
+    from bitdust.interface import api_device
+    results = []
+    for device_name, device_object in api_device.devices().items():
+        result = device_object.toDict()
+        result['name'] = result.pop('label')
+        device_instance = api_device.instances(device_name)
+        if device_instance:
+            result.update({'instance': device_instance.to_json()})
+        results.append(result)
+    if sort:
+        results = sorted(results, key=lambda i: i['label'])
+    return RESULT(results)
+
+
+def device_info(name):
+    """
+    Returns detailed info about given API device.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/device/info/v1?name=my_iPhone_12'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_info", "kwargs": {"name": "my_iPhone_12"} }');
+    """
+    from bitdust.interface import api_device
+    device_object = api_device.devices(name)
+    if not device_object:
+        return ERROR('device %r does not exist' % name)
+    device_instance = api_device.instances(name)
+    result = device_object.toDict()
+    result['name'] = result.pop('label')
+    if not device_instance:
+        return OK(result)
+    result.update({'instance': device_instance.to_json()})
+    return OK(result)
+    
+
+def device_add(name, routed=False, activate=True, port_number=None, key_size=None):
+    """
+    Register a new API device configuration to be able to access this BitDust node remotely.
+
+    The `name` parameter is a user-specified local name to be used to identify new API device.
+    You can use ASCII characters, numbers and underscore.
+
+    When parameter `routed` is set to `true` new API device configuration will be using
+    intermediate BitDust nodes to route encrypted web socket traffic from your client-device to the BitDust node.
+
+    Such setup is especially useful to connect your pair your mobile phone to a PC running BitDust node at home.
+    Routed traffic is end-to-end encrypted and intermediate BitDust nodes have no way to read your private data.
+
+    The `port_number` parameter from other side is only used in non-routed setup. In that case you are connecting
+    from your mobile phone directly to the opened web socket of the running BitDust node. You have to have a static
+    publicly-accessible IP address and opened port on your machine in order to make this working.
+
+    Such setup is more suitable when you are hosting your BitDust node on the cloud-server and want to access it from
+    your mobile device, laptop or home PC.
+
+    If you pass `activate=true`, new device will be activated and started accepting incoming connections right away.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/add/v1' -d '{"name": "my_iPhone_12", "routed": true}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_add", "kwargs": {"name": "my_iPhone_12", "routed": true} }');
+    """
+    from bitdust.main import settings
+    from bitdust.interface import api_device
+    if not key_size:
+        key_size = settings.getPrivateKeySize()
+    try:
+        if routed:
+            ret = api_device.add_routed_device(name, key_size=key_size)
+        else:
+            ret = api_device.add_encrypted_device(name, port_number=port_number, key_size)
+    except Exception as exc:
+        return ERROR(exc)
+    if not ret:
+        return ERROR('failed to created device')
+    if activate:
+        return device_start(name)
+    return OK()
+
+
+def device_start(name):
+    """
+    Activates given API device and start accepting incoming connections.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/start/v1' -d '{"name": "my_iPhone_12"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_start", "kwargs": {"name": "my_iPhone_12"} }');
+    """
+    from bitdust.interface import api_device
+    try:
+        api_device.enable_device(name)
+    except Exception as exc:
+        return ERROR(exc)
+    try:
+        api_device.start_device(name)
+    except Exception as exc:
+        return ERROR(exc)
+    return OK()
+
+
+def device_stop(name):
+    """
+    This will stop accepting incoming connections from given API device and deactivate it.
+
+    Stored configuration will not be removed and the device can be started again later.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/stop/v1 -d '{"name": "my_iPhone_12"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_stop", "kwargs": {"name": "my_iPhone_12"} }');
+    """
+    from bitdust.interface import api_device
+    try:
+        api_device.disable_device(name)
+    except Exception as exc:
+        return ERROR(exc)
+    try:
+        api_device.stop_device(name)
+    except Exception as exc:
+        return ERROR(exc)
+    return OK()
+
+
+def device_remove(name):
+    """
+    Removes stored configuration of the given API device.
+
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/device/remove/v1' -d '{"name": "my_iPhone_12"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_remove", "kwargs": {"name": "my_iPhone_12"} }');
+    """
+    from bitdust.interface import api_device
+    if api_device.instances(name):
+        try:
+            api_device.stop_device(name)
+        except Exception as exc:
+            return ERROR(exc)
+    try:
+        api_device.remove_device(name)
+    except Exception as exc:
+        return ERROR(exc)
+    return OK()
+
+#------------------------------------------------------------------------------
 
 def network_create(url):
     """
@@ -3813,10 +3981,10 @@ def friend_remove(user_id):
     Removes given user from the list of correspondents.
 
     ###### HTTP
-        curl -X DELETE 'localhost:8180/friend/add/v1' -d '{"user_id": "dave@device-d.gov"}'
+        curl -X DELETE 'localhost:8180/friend/remove/v1' -d '{"user_id": "dave@device-d.gov"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "friend_add", "kwargs": {"user_id": "dave@device-d.gov"} }');
+        websocket.send('{"command": "api_call", "method": "friend_remove", "kwargs": {"user_id": "dave@device-d.gov"} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')

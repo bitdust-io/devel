@@ -212,6 +212,11 @@ def init_interfaces():
             api_web_socket.init(port=settings.getWebSocketServerPort())
         except:
             lg.exc()
+        try:
+            from bitdust.interface import api_device
+            api_device.init()
+        except:
+            lg.exc()
 
 
 def init_services():

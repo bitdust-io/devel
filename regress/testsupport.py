@@ -905,7 +905,8 @@ async def start_supplier_async(
     known_servers='',
     preferred_servers='',
     health_check_interval_seconds=None,
-    preferred_routers=''
+    preferred_routers='',
+    web_socket_router='',
 ):
     info(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
@@ -942,6 +943,12 @@ async def start_supplier_async(
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
     else:
         cmd += 'bitdust set services/proxy-transport/enabled false;'
+    # enabled web socket router if required
+    if web_socket_router:
+        ws_host, _, ws_port = web_socket_router.partition(':')
+        cmd += 'bitdust set services/web-socket-router/enabled true;'
+        cmd += f'bitdust set services/web-socket-router/host "{ws_host}";'
+        cmd += f'bitdust set services/web-socket-router/port "{ws_port}";'
     # enable supplier service
     cmd += 'bitdust set services/supplier/enabled true;'
     # disable message broker service
@@ -1107,6 +1114,7 @@ async def start_one_supplier_async(supplier, loop):
         health_check_interval_seconds=supplier.get('health_check_interval_seconds', None),
         dht_seeds=supplier.get('known_dht_seeds', ''),
         preferred_routers=supplier.get('preferred_routers', ''),
+        web_socket_router=supplier.get('web_socket_router', ''),
         loop=loop,
     )
 

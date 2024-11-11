@@ -78,7 +78,7 @@ def UrlParse(url):
         'None',
         b'None',
         '',
-        b'',
+        b''
     ]):
         return '', '', '', ''
     url = strng.to_bin(url)
@@ -151,7 +151,7 @@ def UrlFilename(url):
         'None',
         b'None',
         '',
-        b'',
+        b''
     ]):
         return None
     result = strng.to_text(url)
@@ -215,7 +215,7 @@ def GetName(url):
         'None',
         b'None',
         '',
-        b'',
+        b''
     ]):
         return ''
     url = strng.to_text(url)
@@ -232,7 +232,7 @@ def GetFileName(url):
         'None',
         b'None',
         '',
-        b'',
+        b''
     ]):
         return ''
     url = strng.to_text(url)

@@ -34,6 +34,8 @@ SCENARIO 6: users are able to use DHT network to store data
 
 SCENARIO 7: customer-1 upload and download file encrypted with his master key
 
+SCENARIO 8: customer-1 added routed API device and able to accept remote web-socket connections
+
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
 SCENARIO 10: customer-rotated IDURL was rotated but he can still download his files
@@ -558,6 +560,25 @@ def scenario7():
         'remote_path': customer_1_remote_path,
         'download_filepath': customer_1_download_filepath,
     }
+
+
+def scenario8():
+    set_active_scenario('SCENARIO 8')
+    msg('\n\n============\n[SCENARIO 8] customer-1 added routed API device and able to accept remote web-socket connections')
+
+    response = request_post(
+        'customer-1',
+        'device/add/v1',
+        json={
+            'name': 'device_ABC',
+            'routed': True,
+        },
+        timeout=20,
+    )
+    assert response.status_code == 200
+    import pprint
+    dbg('device/add/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
 
 
 def scenario9(target_nodes):

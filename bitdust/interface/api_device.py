@@ -72,6 +72,8 @@ _Listeners = {}
 _Transports = {}
 _Instances = {}
 _AllAPIMethods = []
+_LegalDeviceNameCharacters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
+_LegalDeviceNameFirstCharacter = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 #------------------------------------------------------------------------------
 
@@ -136,6 +138,7 @@ def devices(device_name=None):
     global _Devices
     if device_name is None:
         return _Devices
+    validate_device_name(device_name)
     return _Devices.get(device_name)
 
 
@@ -143,6 +146,7 @@ def instances(device_name=None):
     global _Instances
     if device_name is None:
         return _Instances
+    validate_device_name(device_name)
     return _Instances.get(device_name)
 
 
@@ -181,8 +185,30 @@ class APIDevice(rsa_key.RSAKey):
 #------------------------------------------------------------------------------
 
 
+def validate_device_name(device_name):
+    """
+    A method to validate device name entered by user.
+    """
+    global _LegalDeviceNameCharacters
+    global _LegalDeviceNameFirstCharacter
+    if len(device_name) < 3:
+        raise Exception('device name is too short')
+    if len(device_name) > 20:
+        raise Exception('device name is too long')
+    pos = 0
+    for c in device_name:
+        if c not in _LegalDeviceNameCharacters:
+            raise Exception('device name has illegal character at position: %d' % pos)
+        pos += 1
+    if device_name[0] not in _LegalDeviceNameFirstCharacter:
+        raise Exception('device name must begin with a letter')
+    return True
+
+#------------------------------------------------------------------------------
+
 def add_encrypted_device(device_name, port_number, key_size=4096):
     global _Devices
+    validate_device_name(device_name)
     if device_name in _Devices:
         raise Exception('device %r already exist' % device_name)
     if _Debug:
@@ -202,8 +228,9 @@ def add_encrypted_device(device_name, port_number, key_size=4096):
     return True
 
 
-def add_routed_device(device_name, port_number, key_size=4096):
+def add_routed_device(device_name, key_size=4096):
     global _Devices
+    validate_device_name(device_name)
     if device_name in _Devices:
         raise Exception('device %r already exist' % device_name)
     if not driver.is_on('service_nodes_lookup'):
@@ -226,20 +253,31 @@ def add_routed_device(device_name, port_number, key_size=4096):
 
 
 def remove_device(device_name):
-    if not devices(device_name):
+    validate_device_name(device_name)
+    device_key_object = devices(device_name)
+    if not device_key_object:
         raise Exception('device %r does not exist' % device_name)
+    if instances(device_name):
+        stop_device(device_name)
+    device_file_path = os.path.join(settings.DevicesDir(), device_name)
+    if not os.path.isfile(device_file_path):
+        lg.warn('device info file %s does not exist' % device_file_path)
+        return True
+    os.remove(device_file_path)
+    return True
 
 
 #------------------------------------------------------------------------------
 
 
 def enable_device(device_name):
+    validate_device_name(device_name)
     device_key_object = devices(device_name)
     if not device_key_object:
         raise Exception('device %r does not exist' % device_name)
     if device_key_object.active:
         lg.warn('device %r is already active' % device_name)
-        return False
+        return True
     device_key_object.active = True
     device_key_object.save()
     lg.info('device %r was activated' % device_name)
@@ -247,14 +285,15 @@ def enable_device(device_name):
 
 
 def disable_device(device_name):
+    validate_device_name(device_name)
     device_key_object = devices(device_name)
     if not device_key_object:
         raise Exception('device %r does not exist' % device_name)
     if instances(device_name):
         stop_device(device_name)
     if not device_key_object.active:
-        lg.warn('device %r is not active' % device_name)
-        return False
+        lg.warn('device %r was not active' % device_name)
+        return True
     device_key_object.active = False
     device_key_object.save()
     lg.info('device %r was deactivated' % device_name)
@@ -266,6 +305,7 @@ def disable_device(device_name):
 
 def start_device(device_name):
     global _Instances
+    validate_device_name(device_name)
     if device_name in _Instances:
         raise Exception('device %r was already started' % device_name)
     device_key_object = devices(device_name)
@@ -288,11 +328,13 @@ def start_device(device_name):
 
 def stop_device(device_name):
     global _Instances
+    validate_device_name(device_name)
     if device_name not in _Instances:
         raise Exception('device %r was not started' % device_name)
     inst = _Instances[device_name]
     inst.automat('shutdown')
     _Instances.pop(device_name)
+    return True
 
 
 #------------------------------------------------------------------------------
