@@ -42,6 +42,9 @@ Commands:
   stop
   show
   alias
+  device list
+  device add <direct | routed> <name>
+  device remove <name>
   id
   idurl
   identity create <username> [private key size]
@@ -113,6 +116,17 @@ Commands:
 
   alias                 helper to create a binary command-alias in OS,
                         you can put it in /usr/local/bin/bitdust
+
+  device list           list details of your paired remote devices
+
+  device add <direct | routed> <name>
+                        prepare to pair a new device to be able to connect to that node remotely
+
+  device remote <name>  remove paired remote device configuration
+
+  key delete <key_id>
+                        erase given private key
+                        WARNING!!! all data encrypted with that key will be lost
 
   id                    print your global ID in BitDust network
 

@@ -1131,6 +1131,13 @@ def DefaultWebSocketPort():
     return 8280
 
 
+def DefaultWebSocketEncryptedPort():
+    """
+    Only Local! Never expose to outside of localhost.
+    """
+    return 8281
+
+
 def DefaultWebSocketRouterPort():
     """
     Secure remote routed connection to access BitDust nodes from mobile devices.

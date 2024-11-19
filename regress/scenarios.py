@@ -74,15 +74,18 @@ SCENARIO 24: customer-2 able to upload files into shared location created by cus
 """
 
 import os
+import json
 import shutil
 import time
 import base64
 import threading
+import pprint
 
 from testsupport import (health_check, start_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario)
 from testsupport import dbg, msg
 
 import keywords as kw
+from lib import web_socket_client
 
 #------------------------------------------------------------------------------
 
@@ -573,12 +576,58 @@ def scenario8():
             'name': 'device_ABC',
             'routed': True,
         },
-        timeout=20,
     )
     assert response.status_code == 200
-    import pprint
     dbg('device/add/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
     assert response.json()['status'] == 'OK', response.json()
+
+    response = request_get('customer-1', 'device/info/v1?name=device_ABC')
+    assert response.status_code == 200
+    dbg('device/info/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    response = request_post(
+        'customer-1',
+        'device/start/v1',
+        json={
+            'name': 'device_ABC',
+        },
+    )
+    assert response.status_code == 200
+    dbg('device/start/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    target_web_socket_router_url = None
+    connected_routers = None
+    counter = 0
+    while target_web_socket_router_url is None and counter < 30:
+        time.sleep(5)
+        counter += 1
+        response = request_get('customer-1', 'device/info/v1?name=device_ABC')
+        assert response.status_code == 200
+        dbg('device/info/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+        assert response.json()['status'] == 'OK', response.json()
+        target_web_socket_router_url = response.json()['result'].get('instance', {}).get('active_router')
+        connected_routers = response.json()['result'].get('instance', {}).get('connected_routers')
+
+    if counter >= 20:
+        assert False, 'active web socket router was not found'
+
+    connected_routers.insert(0, 'ws://failing-router:8282/?r=ABCDEFGH')
+
+    open('client.json', 'w').write(json.dumps({
+        'routers': connected_routers,
+    }))
+    def _test_client():
+        test_ws_app = web_socket_client.TestApp()
+        test_ws_app.run()
+        time.sleep(60)
+
+    test_client_thread = threading.Thread(target=_test_client)
+    test_client_thread.daemon = True
+    test_client_thread.start()
+    test_client_thread.join(timeout=60)
+    msg('\n[SCENARIO 8] : PASS\n\n')
 
 
 def scenario9(target_nodes):
@@ -782,8 +831,8 @@ def scenario9(target_nodes):
         }
     else:
         new_supplier_info = {}
-    return old_proxy_info, old_customer_info, old_supplier_info, old_customer_keys, new_proxy_info, new_customer_info, new_supplier_info
     msg('\n[SCENARIO 9] : PASS\n\n')
+    return old_proxy_info, old_customer_info, old_supplier_info, old_customer_keys, new_proxy_info, new_customer_info, new_supplier_info
 
 
 def scenario10_begin():

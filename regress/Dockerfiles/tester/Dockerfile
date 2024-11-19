@@ -38,6 +38,7 @@ COPY ./testsupport.py /app/
 COPY ./keywords.py /app/
 COPY ./scenarios.py /app/
 COPY ./tests/ /app/tests/
+COPY ./lib/ /app/lib/
 
 RUN mkdir /app/coverage/
 

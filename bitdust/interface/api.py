@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _APILogFileEnabled = None
@@ -601,6 +601,8 @@ def devices_list(sort=False):
     for device_name, device_object in api_device.devices().items():
         result = device_object.toDict()
         result['name'] = result.pop('label')
+        result['instance'] = None
+        result.pop('local_key_id', None)
         device_instance = api_device.instances(device_name)
         if device_instance:
             result.update({'instance': device_instance.to_json()})
@@ -627,13 +629,15 @@ def device_info(name):
     device_instance = api_device.instances(name)
     result = device_object.toDict()
     result['name'] = result.pop('label')
+    result['instance'] = None
+    result.pop('local_key_id', None)
     if not device_instance:
         return OK(result)
     result.update({'instance': device_instance.to_json()})
     return OK(result)
     
 
-def device_add(name, routed=False, activate=True, port_number=None, key_size=None):
+def device_add(name, routed=False, activate=True, web_socket_port=None, key_size=None):
     """
     Register a new API device configuration to be able to access this BitDust node remotely.
 
@@ -646,7 +650,7 @@ def device_add(name, routed=False, activate=True, port_number=None, key_size=Non
     Such setup is especially useful to connect your pair your mobile phone to a PC running BitDust node at home.
     Routed traffic is end-to-end encrypted and intermediate BitDust nodes have no way to read your private data.
 
-    The `port_number` parameter from other side is only used in non-routed setup. In that case you are connecting
+    The `web_socket_port` parameter from other side is only used in non-routed setup. In that case you are connecting
     from your mobile phone directly to the opened web socket of the running BitDust node. You have to have a static
     publicly-accessible IP address and opened port on your machine in order to make this working.
 
@@ -665,18 +669,20 @@ def device_add(name, routed=False, activate=True, port_number=None, key_size=Non
     from bitdust.interface import api_device
     if not key_size:
         key_size = settings.getPrivateKeySize()
+    if _Debug:
+        lg.args(_DebugLevel, name=name, routed=routed, activate=activate, web_socket_port=web_socket_port, key_size=key_size)
     try:
         if routed:
-            ret = api_device.add_routed_device(name, key_size=key_size)
+            ret = api_device.add_routed_device(device_name=name, key_size=key_size)
         else:
-            ret = api_device.add_encrypted_device(name, port_number=port_number, key_size)
+            ret = api_device.add_encrypted_device(device_name=name, port_number=web_socket_port, key_size=key_size)
     except Exception as exc:
         return ERROR(exc)
     if not ret:
         return ERROR('failed to created device')
     if activate:
         return device_start(name)
-    return OK()
+    return device_info(name)
 
 
 def device_start(name):
@@ -690,15 +696,17 @@ def device_start(name):
         websocket.send('{"command": "api_call", "method": "device_start", "kwargs": {"name": "my_iPhone_12"} }');
     """
     from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
     try:
-        api_device.enable_device(name)
+        api_device.enable_device(device_name=name)
     except Exception as exc:
         return ERROR(exc)
     try:
-        api_device.start_device(name)
+        api_device.start_device(device_name=name)
     except Exception as exc:
         return ERROR(exc)
-    return OK()
+    return device_info(name)
 
 
 def device_stop(name):
@@ -714,6 +722,8 @@ def device_stop(name):
         websocket.send('{"command": "api_call", "method": "device_stop", "kwargs": {"name": "my_iPhone_12"} }');
     """
     from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
     try:
         api_device.disable_device(name)
     except Exception as exc:
@@ -722,7 +732,7 @@ def device_stop(name):
         api_device.stop_device(name)
     except Exception as exc:
         return ERROR(exc)
-    return OK()
+    return device_info(name)
 
 
 def device_remove(name):

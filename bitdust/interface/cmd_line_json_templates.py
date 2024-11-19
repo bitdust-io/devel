@@ -51,6 +51,14 @@ TPL_RAW = tpl_5_items.format(tpl_status, tpl_execution, tpl_result, tpl_message,
 
 #------------------------------------------------------------------------------
 
+TPL_DEVICES_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{name}\n'), tpl_errors)
+
+TPL_DEVICE_CREATE = tpl_5_items.format(tpl_status, tpl_execution, tpl_message, ls('\n\n[{name}]\nrouted:{routed}, active:{active}, {size} bits\n{meta}\n'), tpl_errors)
+
+TPL_DEVICE_INFO = tpl_4_items.format(tpl_status, tpl_execution, ls('{name} routed:{routed}, active:{active}, {size} bits\n{meta}\n'), tpl_errors)
+
+#------------------------------------------------------------------------------
+
 TPL_KEYS_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{key_id}\n'), tpl_errors)
 
 TPL_KEY_GET = tpl_4_items.format(tpl_status, tpl_execution, ls('{key_id} : {type}, {size} bits, {fingerprint}\n\n{public}\n\n{private}\n'), tpl_errors)

@@ -118,7 +118,7 @@ def stop():
         None,
         None,
         None,
-        None,
+        None
     ))
     if ws():
         if _Debug:
@@ -185,7 +185,7 @@ def on_open(ws_inst):
             json_data,
             cb,
             tm,
-            timeout,
+            timeout
         ))
     _PendingCalls.clear()
 
@@ -255,7 +255,7 @@ def on_message(ws_inst, message):
         if _DebugAPIResponses:
             print('WS API Response {} : {}'.format(
                 call_id,
-                json_data['payload']['response'],
+                json_data['payload']['response']
             ))
         if result_callback:
             reactor.callFromThread(result_callback, json_data)  # @UndefinedVariable
@@ -343,7 +343,7 @@ def requests_thread(active_queue):
                         call_id,
                         now,
                         tm,
-                        timeout,
+                        timeout
                     ))
                 on_fail(Exception('request timeout'), res_cb)
             else:
@@ -426,7 +426,7 @@ def ws_call(json_data, cb=None, timeout=None):
             json_data,
             cb,
             time.time(),
-            timeout,
+            timeout
         ))
         return True
     if st == 'closed':
@@ -440,7 +440,7 @@ def ws_call(json_data, cb=None, timeout=None):
             json_data,
             cb,
             time.time(),
-            timeout,
+            timeout
         ))
         return True
     if st == 'not-started':

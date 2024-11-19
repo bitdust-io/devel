@@ -55,6 +55,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
 import time
 import base64
 
@@ -65,6 +66,7 @@ except:
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
@@ -77,7 +79,6 @@ from bitdust.logs import lg
 
 from bitdust.automats import automat
 
-from bitdust.lib import txws
 from bitdust.lib import jsn
 from bitdust.lib import strng
 from bitdust.lib import serialization
@@ -158,15 +159,14 @@ def stop_client(url):
         try:
             raw_data, _, _, _ = ws_queue(url).get_nowait()
             if _Debug:
-                lg.dbg(_DebugLevel, 'in %s cleaned unfinished call with %d bytes' % (url, len(raw_data)))
+                lg.dbg(_DebugLevel, 'in %s cleaned unfinished call: %r' % (url, raw_data))
         except Empty:
             break
-    _WebSocketQueue.put_nowait((None, None, None, None))
+    _WebSocketQueue[url].put_nowait((None, None, None, None))
     if ws(url):
         if _Debug:
             lg.dbg(_DebugLevel, 'websocket %s already closed' % url)
         ws(url).close()
-
 
 #------------------------------------------------------------------------------
 
@@ -264,12 +264,15 @@ def on_close(ws_inst):
 def on_message(ws_inst, message):
     global _IncomingRoutedMessageCallback
     url = ws_inst.url
-    if _Debug:
-        lg.dbg(_DebugLevel, '        on_message %d bytes in %s' % (len(message), url))
     try:
-        json_data = jsn.loads(message)
+        json_data = serialization.BytesToDict(message, keys_to_text=True, values_to_text=True, encoding='utf-8')
     except:
         lg.exc()
+        return False
+    if _Debug:
+        lg.args(_DebugLevel, url=url, json_data=json_data)
+    if not _IncomingRoutedMessageCallback:
+        lg.warn('incoming web socket message was ignored, callback was already released')
         return False
     reactor.callFromThread(_IncomingRoutedMessageCallback, url, json_data)  # @UndefinedVariable
     return True
@@ -280,7 +283,7 @@ def on_error(ws_inst, err):
         lg.args(_DebugLevel, ws_inst=ws_inst, err=err)
     cb = registered_callbacks().get('on_error')
     if cb:
-        reactor.callFromThread(cb, err)  # @UndefinedVariable
+        reactor.callFromThread(cb, ws_inst, err)  # @UndefinedVariable
 
 
 def on_fail(err, result_callback=None):
@@ -340,7 +343,7 @@ def requests_thread(url, active_queue):
         # _CallbacksQueue[url][call_id] = result_callback
         # data = jsn.dumps(json_data)
         if _Debug:
-            lg.args(_DebugLevel, url=url, size=len(raw_data))
+            lg.args(_DebugLevel, url=url, size=len(raw_data), raw_data=raw_data)
         ws(url).send(raw_data)
         # if timeout is not None:
         #     now = time.time()
@@ -450,11 +453,11 @@ class RoutedWebSocket(automat.Automat):
     This class implements all the functionality of ``api_routed_device()`` state machine.
     """
 
-    def __init__(self, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `api_routed_device()` state machine.
         """
-        super(RoutedWebSocket, self).__init__(name='api_routed_device', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+        super(RoutedWebSocket, self).__init__(name='routed_web_socket', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def init(self):
         """
@@ -462,9 +465,10 @@ class RoutedWebSocket(automat.Automat):
         at creation phase of `api_routed_device()` machine.
         """
         # TODO: read known routers from local file
+        self.selected_routers = []
         self.connected_routers = {}
         self.active_router_url = None
-        self.selected_routers = []
+        self.handshaked_routers = []
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -477,9 +481,19 @@ class RoutedWebSocket(automat.Automat):
         but automat state was not changed.
         """
 
+    def to_json(self, short=True):
+        ret = super().to_json(short=short)
+        ret.update({
+            'active_router': self.active_router_url,
+            'connected_routers': self.handshaked_routers,
+        })
+        return ret
+
+    #------------------------------------------------------------------------------
+
     def on_incoming_message(self, url, json_data):
         if _Debug:
-            lg.args(_DebugLevel, inp=json_data)
+            lg.args(_DebugLevel, url=url, inp=json_data)
         if json_data.get('route_id'):
             self._on_web_socket_router_first_response(url, json_data)
             return True
@@ -488,7 +502,13 @@ class RoutedWebSocket(automat.Automat):
             self.active_router_url = url
             self.event('api-message', url=url, json_data=json_data)
             return True
-        elif cmd == 'client-public-key':
+        if cmd == 'handshake-accepted':
+            route_url = json_data.get('route_url')
+            if not route_url:
+                return False
+            self._on_web_socket_handshake_accepted(url, route_url)
+            return True
+        if cmd == 'client-public-key':
             try:
                 client_key_object = rsa_key.RSAKey()
                 client_key_object.fromString(json_data.get('client_public_key'))
@@ -499,7 +519,7 @@ class RoutedWebSocket(automat.Automat):
             self.active_router_url = url
             self.automat('client-pub-key-received', client_key_object=client_key_object)
             return True
-        elif cmd == 'server-code':
+        if cmd == 'server-code':
             try:
                 signature = json_data['signature']
                 encrypted_server_code = json_data['server_code']
@@ -512,6 +532,8 @@ class RoutedWebSocket(automat.Automat):
         return False
 
     def on_outgoing_message(self, json_data):
+        if _Debug:
+            lg.args(_DebugLevel, json_data)
         if self.state != 'READY':
             lg.warn('skip sending api message to client, %r state is %r' % (self, self.state))
             return False
@@ -541,6 +563,8 @@ class RoutedWebSocket(automat.Automat):
             lg.args(_DebugLevel, received_server_code=received_server_code)
         self.automat('valid-server-code-received')
 
+    #------------------------------------------------------------------------------
+
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://github.com/vesellov/visio2python>`_ tool.
@@ -549,52 +573,6 @@ class RoutedWebSocket(automat.Automat):
         if self.state == 'READY':
             if event == 'api-message':
                 self.doProcess(*args, **kwargs)
-            elif event == 'client-pub-key-received':
-                self.state = 'SERVER_CODE?'
-                self.doSaveClientPublicKey(*args, **kwargs)
-                self.doGenerateAuthToken(*args, **kwargs)
-                self.doGenerateServerCode(*args, **kwargs)
-                self.doSendServerPubKey(*args, **kwargs)
-            elif event == 'auth-error' or event == 'stop':
-                self.state = 'CLOSED'
-                self.doRemoveAuthToken(event, *args, **kwargs)
-                self.doDisconnectRouters(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'router-disconnected':
-                self.state = 'ROUTERS?'
-                self.doLookupRequestRouters(*args, **kwargs)
-        #---WEB_SOCKET?---
-        elif self.state == 'WEB_SOCKET?':
-            if event == 'routers-connected' and not self.isAuthenticated(*args, **kwargs):
-                self.state = 'CLIENT_PUB?'
-                self.doSaveRouters(*args, **kwargs)
-                self.doPrepareWebSocketURL(*args, **kwargs)
-            elif event == 'routers-connected' and self.isAuthenticated(*args, **kwargs):
-                self.state = 'READY'
-                self.doInit(*args, **kwargs)
-                self.doLoadAuthInfo(*args, **kwargs)
-            elif event == 'routers-failed':
-                self.state = 'ROUTERS?'
-                self.doLookupRequestRouters(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'CLOSED'
-                self.doDisconnectRouters(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---ROUTERS?---
-        elif self.state == 'ROUTERS?':
-            if event == 'routers-selected':
-                self.state = 'WEB_SOCKET?'
-                self.doConnectRouters(*args, **kwargs)
-            elif event == 'stop' or event == 'lookup-failed':
-                self.state = 'CLOSED'
-                self.doDisconnectRouters(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---CLIENT_CODE?---
-        elif self.state == 'CLIENT_CODE?':
-            if event == 'client-code-input-received':
-                self.state = 'READY'
-                self.doSaveAuthInfo(*args, **kwargs)
-                self.doSendClientCode(*args, **kwargs)
             elif event == 'client-pub-key-received':
                 self.state = 'SERVER_CODE?'
                 self.doSaveClientPublicKey(*args, **kwargs)
@@ -619,6 +597,52 @@ class RoutedWebSocket(automat.Automat):
                 self.state = 'WEB_SOCKET?'
                 self.doInit(*args, **kwargs)
                 self.doConnectRouters(*args, **kwargs)
+        #---ROUTERS?---
+        elif self.state == 'ROUTERS?':
+            if event == 'routers-selected':
+                self.state = 'WEB_SOCKET?'
+                self.doConnectRouters(*args, **kwargs)
+            elif event == 'stop' or event == 'lookup-failed':
+                self.state = 'CLOSED'
+                self.doDisconnectRouters(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+        #---WEB_SOCKET?---
+        elif self.state == 'WEB_SOCKET?':
+            if event == 'routers-connected' and not self.isAuthenticated(*args, **kwargs):
+                self.state = 'CLIENT_PUB?'
+                self.doSaveRouters(*args, **kwargs)
+                self.doPrepareWebSocketURL(*args, **kwargs)
+            elif event == 'routers-connected' and self.isAuthenticated(*args, **kwargs):
+                self.state = 'READY'
+                self.doInit(*args, **kwargs)
+                self.doLoadAuthInfo(*args, **kwargs)
+            elif event == 'routers-failed':
+                self.state = 'ROUTERS?'
+                self.doLookupRequestRouters(*args, **kwargs)
+            elif event == 'stop':
+                self.state = 'CLOSED'
+                self.doDisconnectRouters(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+        #---CLIENT_CODE?---
+        elif self.state == 'CLIENT_CODE?':
+            if event == 'client-code-input-received':
+                self.state = 'READY'
+                self.doSaveAuthInfo(*args, **kwargs)
+                self.doSendClientCode(*args, **kwargs)
+            elif event == 'client-pub-key-received':
+                self.state = 'SERVER_CODE?'
+                self.doSaveClientPublicKey(*args, **kwargs)
+                self.doGenerateAuthToken(*args, **kwargs)
+                self.doGenerateServerCode(*args, **kwargs)
+                self.doSendServerPubKey(*args, **kwargs)
+            elif event == 'auth-error' or event == 'stop':
+                self.state = 'CLOSED'
+                self.doRemoveAuthToken(event, *args, **kwargs)
+                self.doDisconnectRouters(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'router-disconnected':
+                self.state = 'ROUTERS?'
+                self.doLookupRequestRouters(*args, **kwargs)
         #---CLIENT_PUB?---
         elif self.state == 'CLIENT_PUB?':
             if event == 'client-pub-key-received':
@@ -672,6 +696,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Condition method.
         """
+        return len(self.selected_routers) >= 3
 
     def doInit(self, *args, **kwargs):
         """
@@ -697,12 +722,17 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        self.connecting_routers = []
+        self.handshaked_routers = []
+        self.active_router_url = None
         for url, route_id in self.connected_routers.items():
+            if not route_id:
+                continue
             route_url = '{}/?i={}'.format(url, route_id)
+            self.connecting_routers.append(route_url)
             start_client(url=route_url, callbacks={
                 'on_open': self._on_web_socket_router_connection_opened,
                 'on_error': self._on_web_socket_router_connection_error,
-                
             })
 
     def doDisconnectRouters(self, event, *args, **kwargs):
@@ -711,8 +741,15 @@ class RoutedWebSocket(automat.Automat):
         """
         # TODO: notify about failed result
         for url, route_id in self.connected_routers.items():
+            if not route_id:
+                continue
             route_url = '{}/?i={}'.format(url, route_id)
             stop_client(url=route_url)
+        self.handshaked_routers = []
+        self.active_router_url = None
+        if event == 'auth-error':
+            # TODO: erase stored authorization
+            pass
 
     def doSaveRouters(self, *args, **kwargs):
         """
@@ -747,7 +784,11 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        self.server_code = cipher.generate_digits(6, as_text=True)
+        BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED = os.environ.get('BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED', None)
+        if BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED:
+            self.server_code = BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED.strip()
+        else:
+            self.server_code = cipher.generate_digits(6, as_text=True)
         if _Debug:
             lg.args(_DebugLevel, server_code=self.server_code)
 
@@ -755,14 +796,14 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        confirmation_code = cipher.generate_secret_text(80)
+        confirmation_code = cipher.generate_secret_text(32)
         server_public_key = self.device_key_object.toPublicString()
         server_public_key_base = strng.to_bin(server_public_key + '-' + confirmation_code)
         hashed_server_public_key_base = hashes.sha1(server_public_key_base)
         if _Debug:
             lg.args(_DebugLevel, confirmation_code=confirmation_code)
         self._do_push({
-            'cmd': 'server_public_key',
+            'cmd': 'server-public-key',
             'server_public_key': server_public_key,
             'confirm': confirmation_code,
             'signature': strng.to_text(self.device_key_object.sign(hashed_server_public_key_base)),
@@ -774,12 +815,18 @@ class RoutedWebSocket(automat.Automat):
         """
         client_code = kwargs['client_code']
         session_key_text = strng.to_text(base64.b64encode(self.session_key))
-        salted_payload = jsn.dumps({
-            'client_code': client_code,
-            'auth_token': self.auth_token,
-            'session_key': session_key_text,
-            'salt': cipher.generate_secret_text(32),
-        })
+        salted_payload = '{}#{}#{}#{}'.format(
+            client_code,
+            self.auth_token,
+            session_key_text,
+            cipher.generate_secret_text(32)
+        )
+        # salted_payload = jsn.dumps({
+        #     'client_code': client_code,
+        #     'auth_token': self.auth_token,
+        #     'session_key': session_key_text,
+        #     'salt': cipher.generate_secret_text(32),
+        # })
         encrypted_payload = base64.b64encode(self.client_key_object.encrypt(strng.to_bin(salted_payload)))
         hashed_payload = hashes.sha1(strng.to_bin(salted_payload))
         if _Debug:
@@ -788,16 +835,21 @@ class RoutedWebSocket(automat.Automat):
             'cmd': 'client-code',
             'auth': strng.to_text(encrypted_payload),
             'signature': strng.to_text(self.device_key_object.sign(hashed_payload)),
+            'routers': self.handshaked_routers,
         })
 
     def doWaitClientCodeInput(self, *args, **kwargs):
         """
         Action method.
         """
+        BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT = os.environ.get('BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT', None)
+        if BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT:
+            client_code = BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT.strip()
+        else:
+            # TODO: call a callback here to request user input
+            client_code = input().strip()
         if _Debug:
-            lg.dbg(_DebugLevel, 'ready!!!')
-        # TODO: call a callback here to request user input
-        client_code = input().strip()
+            lg.args(_DebugLevel, client_code=client_code)
         self.automat('client-code-input-received', client_code=client_code)
 
     def doGenerateAuthToken(self, *args, **kwargs):
@@ -826,7 +878,7 @@ class RoutedWebSocket(automat.Automat):
             self.automat('auth-error')
             return
         try:
-            raw_data = cipher.decrypt_json(json_data['inp'], self.session_key)
+            raw_data = cipher.decrypt_json(json_data['payload'], self.session_key, from_dict=True)
         except:
             lg.exc()
             self.automat('auth-error')
@@ -837,6 +889,9 @@ class RoutedWebSocket(automat.Automat):
             lg.exc()
             self.automat('auth-error')
             return
+        api_message_payload['call_id'] = json_data.get('call_id')
+        if _Debug:
+            lg.args(_DebugLevel, payload=api_message_payload)
         if not ExecuteIncomingAPIMessageCallback(self, api_message_payload):
             lg.warn('incoming api message was not processed')
 
@@ -858,10 +913,45 @@ class RoutedWebSocket(automat.Automat):
     def _on_web_socket_router_connection_opened(self, ws_inst):
         if _Debug:
             lg.args(_DebugLevel, ws_inst=ws_inst)
+        ws_call(
+            url=ws_inst.url,
+            raw_data=jsn.dumps({
+                'cmd': 'handshake',
+                'internal': True,
+            }),
+        )
 
-    def _on_web_socket_router_connection_error(self, ws_inst):
+    def _on_web_socket_router_connection_error(self, ws_inst, err):
+        url = ws_inst.url
+        if not ws_inst.url:
+            lg.warn('missed connecting web router: %r' % url)
+        else:
+            self.connecting_routers.remove(url)
+        handshaked_count = len(self.handshaked_routers)
         if _Debug:
-            lg.args(_DebugLevel, ws_inst=ws_inst)
+            lg.args(_DebugLevel, ws_inst=ws_inst, err=err, connecting=len(self.connecting_routers), handshaked=handshaked_count)
+        if not self.connecting_routers:
+            if handshaked_count > 0:
+                self.automat('routers-connected')
+            else:
+                self.automat('routers-failed')
+
+    def _on_web_socket_handshake_accepted(self, url, route_url):
+        if not url:
+            lg.warn('missed connecting web router: %r' % url)
+        else:
+            self.connecting_routers.remove(url)
+        if not self.active_router_url:
+            self.active_router_url = route_url
+        self.handshaked_routers.append(route_url)
+        handshaked_count = len(self.handshaked_routers)
+        if _Debug:
+            lg.args(_DebugLevel, url=url, connecting=len(self.connecting_routers), handshaked=handshaked_count, active=self.active_router_url)
+        if not self.connecting_routers:
+            if handshaked_count > 0:
+                self.automat('routers-connected')
+            else:
+                self.automat('routers-failed')
 
     def _on_router_lookup_failed(self, err):
         if _Debug:
@@ -908,7 +998,10 @@ class RoutedWebSocket(automat.Automat):
             route_id = resp['route_id']
         except:
             lg.exc()
-        self.connected_routers[url] = route_id
+        if resp['result'] == 'accepted':
+            self.connected_routers[url] = route_id
+        else:
+            self.connected_routers[url] = None
         if len(self.connected_routers) >= 3:
             self.automat('routers-selected')
         return None
@@ -923,9 +1016,9 @@ class RoutedWebSocket(automat.Automat):
             }),
         )
 
-    def _on_web_socket_router_first_connection_error(self, ws_inst):
+    def _on_web_socket_router_first_connection_error(self, ws_inst, err):
         if _Debug:
-            lg.args(_DebugLevel, ws_inst=ws_inst)
+            lg.args(_DebugLevel, ws_inst=ws_inst, err=err)
         url = ws_inst.url
         try:
             stop_client(url)
@@ -936,11 +1029,13 @@ class RoutedWebSocket(automat.Automat):
             self.automat('routers-selected')
         return None
 
+    #------------------------------------------------------------------------------
+
     def _do_connect_routers(self):
         if _Debug:
             lg.args(_DebugLevel, selected_routers=self.selected_routers)
         for location in self.selected_routers:
-            start_client(url='ws://{}'.format(location), callbacks={
+            start_client(location, callbacks={
                 'on_open': self._on_web_socket_router_first_connection_opened,
                 'on_error': self._on_web_socket_router_first_connection_error,
             })
@@ -984,6 +1079,9 @@ class RoutedWebSocket(automat.Automat):
         return result
 
     def _do_push(self, json_data):
+        if not self.active_router_url:
+            lg.warn('no active web socket router is currently connected')
+            return False
         raw_data = jsn.dumps(json_data)
         ws_call(self.active_router_url, raw_data)
         if _Debug:
@@ -991,9 +1089,22 @@ class RoutedWebSocket(automat.Automat):
         return True
 
     def _do_push_encrypted(self, json_data):
+        if not self.active_router_url:
+            lg.warn('no active web socket router is currently connected')
+            return False
+        json_data['salt'] = cipher.generate_secret_text(10)
+        cmd = json_data.pop('cmd', None)
+        call_id = None
+        if 'payload' in json_data:
+            call_id = json_data['payload'].pop('call_id', None)
         raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
-        encrypted_raw_data = cipher.encrypt_json(raw_bytes, self.session_key, to_text=True)
+        encrypted_json_data = cipher.encrypt_json(raw_bytes, self.session_key, to_dict=True)
+        if call_id:
+            encrypted_json_data['call_id'] = call_id
+        if cmd:
+            encrypted_json_data['cmd'] = cmd
+        encrypted_raw_data = serialization.DictToBytes(encrypted_json_data, encoding='utf-8', to_text=True)
         ws_call(self.active_router_url, encrypted_raw_data)
         if _Debug:
-            lg.out(_DebugLevel, '***   API %s PUSH %d encrypted bytes: %r' % (self.device_name, len(encrypted_raw_data), json_data))
+            lg.out(_DebugLevel, '***   API %s PUSH %d encrypted bytes: %r' % (self.device_name, len(encrypted_raw_data), encrypted_json_data))
         return True

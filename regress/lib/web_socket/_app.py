@@ -19,6 +19,7 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Boston, MA  02110-1335  USA
 
 """
+
 """
 WebSocketApp provides higher level APIs.
 """
@@ -36,8 +37,11 @@ from ._core import WebSocket, getdefaulttimeout
 from ._exceptions import *
 from . import _logging
 
-__all__ = ['WebSocketApp']
 
+_Debug = True
+
+
+__all__ = ["WebSocketApp"]
 
 class Dispatcher:
     def __init__(self, app, ping_timeout):
@@ -46,12 +50,12 @@ class Dispatcher:
 
     def read(self, sock, read_callback, check_callback):
         while self.app.keep_running:
-            r, w, e = select.select((self.app.sock.sock, ), (), (), self.ping_timeout)
+            r, w, e = select.select(
+                    (self.app.sock.sock, ), (), (), self.ping_timeout)
             if r:
                 if not read_callback():
                     break
             check_callback()
-
 
 class SSLDispatcher:
     def __init__(self, app, ping_timeout):
@@ -69,9 +73,7 @@ class SSLDispatcher:
     def select(self):
         sock = self.app.sock.sock
         if sock.pending():
-            return [
-                sock,
-            ]
+            return [sock,]
 
         r, w, e = select.select((sock, ), (), (), self.ping_timeout)
         return r
@@ -82,7 +84,14 @@ class WebSocketApp(object):
     Higher level of APIs are provided.
     The interface is like JavaScript WebSocket object.
     """
-    def __init__(self, url, header=None, on_open=None, on_message=None, on_error=None, on_close=None, on_ping=None, on_pong=None, on_cont_message=None, keep_running=True, get_mask_key=None, cookie=None, subprotocols=None, on_data=None):
+
+    def __init__(self, url, header=None,
+                 on_open=None, on_message=None, on_error=None,
+                 on_close=None, on_ping=None, on_pong=None,
+                 on_cont_message=None,
+                 keep_running=True, get_mask_key=None, cookie=None,
+                 subprotocols=None,
+                 on_data=None):
         """
         url: websocket url.
         header: custom header for websocket handshake.
@@ -138,7 +147,7 @@ class WebSocketApp(object):
         self.subprotocols = subprotocols
 
     def __repr__(self):
-        return 'WebSocketApp[%s|%s]' % (self.url, self.sock.connected if self.sock else '-')
+        return 'WebSocketApp[%s|%s]' % (self.url, self.sock)
 
     def send(self, data, opcode=ABNF.OPCODE_TEXT):
         """
@@ -149,12 +158,15 @@ class WebSocketApp(object):
         """
 
         if not self.sock or self.sock.send(data, opcode) == 0:
-            raise WebSocketConnectionClosedException('Connection is already closed.')
+            raise WebSocketConnectionClosedException(
+                "Connection is already closed.: %r" % self.sock)
 
     def close(self, **kwargs):
         """
         close websocket connection.
         """
+        if _Debug:
+            print('closing', self)
         self.keep_running = False
         if self.sock:
             self.sock.close(**kwargs)
@@ -167,26 +179,16 @@ class WebSocketApp(object):
                 try:
                     self.sock.ping()
                 except Exception as ex:
-                    _logging.warning('send_ping routine terminated: {}'.format(ex))
+                    _logging.warning("send_ping routine terminated: {}".format(ex))
                     break
 
-    def run_forever(
-        self,
-        sockopt=None,
-        sslopt=None,
-        ping_interval=0,
-        ping_timeout=None,
-        http_proxy_host=None,
-        http_proxy_port=None,
-        http_no_proxy=None,
-        http_proxy_auth=None,
-        skip_utf8_validation=False,
-        host=None,
-        origin=None,
-        dispatcher=None,
-        suppress_origin=False,
-        proxy_type=None,
-    ):
+    def run_forever(self, sockopt=None, sslopt=None,
+                    ping_interval=0, ping_timeout=None,
+                    http_proxy_host=None, http_proxy_port=None,
+                    http_no_proxy=None, http_proxy_auth=None,
+                    skip_utf8_validation=False,
+                    host=None, origin=None, dispatcher=None,
+                    suppress_origin=False, proxy_type=None):
         """
         run event loop for WebSocket framework.
         This loop is infinite loop and is alive during websocket is available.
@@ -216,13 +218,13 @@ class WebSocketApp(object):
         if ping_timeout is not None and ping_timeout <= 0:
             ping_timeout = None
         if ping_timeout and ping_interval and ping_interval <= ping_timeout:
-            raise WebSocketException('Ensure ping_interval > ping_timeout')
+            raise WebSocketException("Ensure ping_interval > ping_timeout")
         if not sockopt:
             sockopt = []
         if not sslopt:
             sslopt = {}
         if self.sock:
-            raise WebSocketException('socket is already opened')
+            raise WebSocketException("socket is already opened")
         thread = None
         self.keep_running = True
         self.last_ping_tm = 0
@@ -234,7 +236,7 @@ class WebSocketApp(object):
             If close_frame is set, we will invoke the on_close handler with the
             statusCode and reason from there.
             """
-            if thread:
+            if thread and thread.isAlive():
                 isAlive = False
                 if hasattr(thread, 'isAlive'):
                     isAlive = thread.isAlive()
@@ -246,27 +248,25 @@ class WebSocketApp(object):
             self.keep_running = False
             if self.sock:
                 self.sock.close()
-            close_args = self._get_close_args(close_frame.data if close_frame else None)
+            close_args = self._get_close_args(
+                close_frame.data if close_frame else None)
             self._callback(self.on_close, *close_args)
             self.sock = None
 
         try:
-            self.sock = WebSocket(self.get_mask_key, sockopt=sockopt, sslopt=sslopt, fire_cont_frame=self.on_cont_message is not None, skip_utf8_validation=skip_utf8_validation, enable_multithread=True if ping_interval else False)
+            self.sock = WebSocket(
+                self.get_mask_key, sockopt=sockopt, sslopt=sslopt,
+                fire_cont_frame=self.on_cont_message is not None,
+                skip_utf8_validation=skip_utf8_validation,
+                enable_multithread=True if ping_interval else False)
             self.sock.settimeout(getdefaulttimeout())
             self.sock.connect(
-                self.url,
-                header=self.header,
-                cookie=self.cookie,
+                self.url, header=self.header, cookie=self.cookie,
                 http_proxy_host=http_proxy_host,
-                http_proxy_port=http_proxy_port,
-                http_no_proxy=http_no_proxy,
-                http_proxy_auth=http_proxy_auth,
-                subprotocols=self.subprotocols,
-                host=host,
-                origin=origin,
-                suppress_origin=suppress_origin,
-                proxy_type=proxy_type,
-            )
+                http_proxy_port=http_proxy_port, http_no_proxy=http_no_proxy,
+                http_proxy_auth=http_proxy_auth, subprotocols=self.subprotocols,
+                host=host, origin=origin, suppress_origin=suppress_origin,
+                proxy_type=proxy_type)
             if not dispatcher:
                 dispatcher = self.create_dispatcher(ping_timeout)
 
@@ -274,7 +274,8 @@ class WebSocketApp(object):
 
             if ping_interval:
                 event = threading.Event()
-                thread = threading.Thread(target=self._send_ping, args=(ping_interval, event))
+                thread = threading.Thread(
+                    target=self._send_ping, args=(ping_interval, event))
                 thread.setDaemon(True)
                 thread.start()
 
@@ -291,12 +292,14 @@ class WebSocketApp(object):
                     self.last_pong_tm = time.time()
                     self._callback(self.on_pong, frame.data)
                 elif op_code == ABNF.OPCODE_CONT and self.on_cont_message:
-                    self._callback(self.on_data, frame.data, frame.opcode, frame.fin)
-                    self._callback(self.on_cont_message, frame.data, frame.fin)
+                    self._callback(self.on_data, frame.data,
+                                   frame.opcode, frame.fin)
+                    self._callback(self.on_cont_message,
+                                   frame.data, frame.fin)
                 else:
                     data = frame.data
                     if six.PY3 and op_code == ABNF.OPCODE_TEXT:
-                        data = data.decode('utf-8')
+                        data = data.decode("utf-8")
                     self._callback(self.on_data, data, frame.opcode, True)
                     self._callback(self.on_message, data)
 
@@ -308,12 +311,16 @@ class WebSocketApp(object):
                     has_pong_not_arrived_after_last_ping = self.last_pong_tm - self.last_ping_tm < 0
                     has_pong_arrived_too_late = self.last_pong_tm - self.last_ping_tm > ping_timeout
 
-                    if (self.last_ping_tm and has_timeout_expired and (has_pong_not_arrived_after_last_ping or has_pong_arrived_too_late)):
-                        raise WebSocketTimeoutException('ping/pong timed out')
+                    if (self.last_ping_tm
+                            and has_timeout_expired
+                            and (has_pong_not_arrived_after_last_ping or has_pong_arrived_too_late)):
+                        raise WebSocketTimeoutException("ping/pong timed out")
                 return True
 
             dispatcher.read(self.sock.sock, read, check)
         except (Exception, KeyboardInterrupt, SystemExit) as e:
+            if _Debug:
+                print('Exception in run_forever', self, e)
             self._callback(self.on_error, e)
             if isinstance(e, SystemExit):
                 # propagate SystemExit further
@@ -340,7 +347,7 @@ class WebSocketApp(object):
                 return []
 
         if data and len(data) >= 2:
-            code = 256*six.byte2int(data[0:1]) + six.byte2int(data[1:2])
+            code = 256 * six.byte2int(data[0:1]) + six.byte2int(data[1:2])
             reason = data[2:].decode('utf-8')
             return [code, reason]
 
@@ -355,7 +362,7 @@ class WebSocketApp(object):
                     callback(self, *args)
 
             except Exception as e:
-                _logging.error('error from callback {}: {}'.format(callback, e))
+                _logging.error("error from callback {}: {}".format(callback, e))
                 if _logging.isEnabledForDebug():
                     _, _, tb = sys.exc_info()
                     traceback.print_tb(tb)

@@ -28,10 +28,13 @@
 
 """
 
-#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+#------------------------------------------------------------------------------
+
 import base64
+
+#------------------------------------------------------------------------------
 
 try:
     from Cryptodome.Cipher import AES
@@ -46,7 +49,7 @@ except:
 
 #------------------------------------------------------------------------------
 
-from bitdust.lib import serialization
+from lib import serialization
 
 #------------------------------------------------------------------------------
 
@@ -84,7 +87,7 @@ def encrypt_json(raw_data, secret_bytes_key, cipher_type='AES', to_text=False, t
     return encrypted_data
 
 
-def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES', from_dict=False):
+def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES', to_text=False, from_dict=False):
     if from_dict:
         dct = encrypted_data
     else:
@@ -119,6 +122,8 @@ def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES', from_dict=
             padded_data=padded_data,
             block_size=DES3.block_size,
         )
+    if to_text:
+        return raw_data.decode('utf-8')
     # TODO: remove salt from raw_data
     return raw_data
 

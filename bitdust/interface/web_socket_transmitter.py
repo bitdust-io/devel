@@ -46,12 +46,11 @@ from twisted.internet.protocol import Protocol, Factory
 from bitdust.logs import lg
 
 from bitdust.lib import txws
+from bitdust.lib import strng
 from bitdust.lib import serialization
-from bitdust.lib import jsn
 
 from bitdust.crypt import cipher
 
-from bitdust.main import settings
 from bitdust.main import config
 
 #------------------------------------------------------------------------------
@@ -120,6 +119,15 @@ def routes(route_id=None):
 
 #------------------------------------------------------------------------------
 
+def validate_route_id(route_id):
+    # SECURITY
+    # TODO: add more strict validation of the route_id
+    rid = strng.to_text(route_id)
+    if len(rid) != 8:
+        raise Exception('invalid route_id length')
+    return rid
+
+#------------------------------------------------------------------------------
 
 def add_route():
     global _Routes
@@ -141,14 +149,20 @@ def add_route():
     _Routes[route_id] = {
         'route_id': route_id,
         'route_url': route_url,
+        'external_transport': None,
         'internal_url': internal_url,
+        'internal_transport': None,
     }
+    if _Debug:
+        lg.args(_DebugLevel, route_id=route_id, routes=len(_Routes))
     return route_id
 
 
 def remove_route(route_id):
     global _Routes
     _Routes.pop(route_id, None)
+    if _Debug:
+        lg.args(_DebugLevel, route_id=route_id, routes=len(_Routes))
 
 
 #------------------------------------------------------------------------------
@@ -164,15 +178,18 @@ def load_routes():
 class WrappedWebSocketProtocol(txws.WebSocketProtocol):
 
     route_id = None
-    is_client = None
+    direction = None
 
     def validateHeaders(self):
         _, _, parameter = self.location.partition('?')
         if not parameter:
             return txws.WebSocketProtocol.validateHeaders(self)
         param_name, _, route_id = parameter.partition('=')
-        # SECURITY
-        # TODO: add strict validation of the route_id
+        try:
+            validate_route_id(route_id)
+        except:
+            lg.exc()
+            return False
         if param_name in ('r', 'route', 'i', 'internal'):
             if not routes(route_id):
                 lg.warn('rejected connection %r, route %r is unknown' % (self, route_id))
@@ -180,10 +197,18 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
         else:
             lg.warn('rejected connection %r, invalid input parameters' % self)
             return False
-        self.is_client = param_name in ('r', 'route')
-        self.route_id = route_id
+        if route_id:
+            self.direction = 'internal' if param_name in ('i', 'internal') else 'external'
+            self.route_id = route_id
+            if self.route_id in routes():
+                routes(self.route_id)[self.direction+'_transport'] = self
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'registered %s transport %s for route %s' % (self.direction, self, self.route_id))
+            else:
+                lg.warn('route %s was not registered' % self.route_id)
+                return False
         if _Debug:
-            lg.args(_DebugLevel, route_id=route_id, proto=self)
+            lg.args(_DebugLevel, route_id=self.route_id, direction=self.direction, transport=self)
         return txws.WebSocketProtocol.validateHeaders(self)
 
 
@@ -199,16 +224,19 @@ class WebSocketProtocol(Protocol):
 
     _key = None
 
-    def dataReceived(self, data):
+    def dataReceived(self, raw_data):
+        if _Debug:
+            lg.args(_DebugLevel, raw_data=raw_data)
         try:
-            json_data = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True, encoding='utf-8')
+            json_data = serialization.BytesToDict(raw_data, keys_to_text=True, values_to_text=True, encoding='utf-8')
         except:
             lg.exc()
             return
         if _Debug:
-            lg.dbg(_DebugLevel, 'received %d bytes from web socket at %r' % (len(data), self._key))
-        if not do_process_incoming_message(self.transport, json_data):
+            lg.dbg(_DebugLevel, 'received %d bytes from web socket at %r' % (len(raw_data), self._key))
+        if not do_process_incoming_message(self.transport, json_data, raw_data):
             lg.warn('failed processing incoming message from web socket: %r' % json_data)
+            self.transport.loseConnection()
 
     def connectionMade(self):
         global _WebSocketTransports
@@ -218,16 +246,31 @@ class WebSocketProtocol(Protocol):
         peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         _WebSocketTransports[self._key] = self.transport
         if _Debug:
-            lg.args(_DebugLevel, peer=peer_text, ws_connections=len(_WebSocketTransports))
+            lg.args(_DebugLevel, peer=peer_text, transport=self.transport, ws_connections=len(_WebSocketTransports))
 
     def connectionLost(self, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, args=args, kwargs=kwargs)
         global _WebSocketTransports
         Protocol.connectionLost(self, *args, **kwargs)
         _WebSocketTransports.pop(self._key)
         peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         self._key = None
+        route_id = None
+        direction = None
+        try:
+            route_id = self.transport.route_id
+            direction = self.transport.direction
+        except:
+            lg.exc()
+        cleaned = False
+        if route_id and direction:
+            if routes(route_id):
+                if routes(route_id).get(direction+'_transport'):
+                    routes(route_id)[direction+'_transport'] = None
+                    cleaned = True
         if _Debug:
-            lg.args(_DebugLevel, peer=peer_text, ws_connections=len(_WebSocketTransports))
+            lg.args(_DebugLevel, peer=peer_text, transport=self.transport, ws_connections=len(_WebSocketTransports), route_id=route_id, direction=direction, cleaned=cleaned)
 
 
 #------------------------------------------------------------------------------
@@ -244,72 +287,94 @@ class WebSocketFactory(Factory):
 
 #------------------------------------------------------------------------------
 
-def do_process_incoming_message(transport, json_data):
-    if _Debug:
-        lg.args(_DebugLevel, route_id=transport.route_id, is_client=transport.is_client, json_data=json_data)
-    if transport.route_id is None and transport.is_client is None:
-        cmd = json_data.get('cmd')
-        if cmd == 'connect-request':
-            return on_service_web_socket_router_request(transport, json_data)
-    return True
-
-#------------------------------------------------------------------------------
-
-def push(route_id, json_data):
-    global _WebSocketTransports
-    if not _WebSocketTransports:
-        lg.warn('there are currently no web socket transports open')
-        return False
-    raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
-    for _key, transp in _WebSocketTransports.items():
-        try:
-            transp.write(raw_bytes)
-        except:
-            lg.exc()
-            continue
-        if _Debug:
-            lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2])))
-    if _Debug:
-        lg.out(_DebugLevel, '***   API ROUTE PUSH  %d bytes' % len(raw_bytes))
-    return True
-
-
-#------------------------------------------------------------------------------
-
-def on_service_web_socket_router_request(transport, json_data):
+def do_process_incoming_message(transport, json_data, raw_data):
     global _MaxRoutesNumber
-    if len(routes()) >= _MaxRoutesNumber:
-        if _Debug:
-            lg.dbg(_DebugLevel, 'request for a new route from %r was rejected: too many routes are currently registered' % transport)
-        json_response = {
-            "result": "rejected",
-        }
-        raw_bytes = serialization.DictToBytes(json_response, encoding='utf-8')
-        try:
-            transport.write(raw_bytes)
-        except:
-            lg.exc()
-        return False
-    json_response = {
-        "result": "accepted",
-    }
-    route_id = add_route()
-    json_response.update(routes(route_id))
-    raw_bytes = serialization.DictToBytes(json_response, encoding='utf-8')
-    try:
-        transport.write(raw_bytes)
-    except:
-        lg.exc()
+    route_id = transport.route_id
+    direction = transport.direction
     if _Debug:
-        lg.args(_DebugLevel, transport=transport, json_response=json_response)
-    return True
-
-#------------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    from twisted.internet import reactor
-    settings.init()
-    lg.set_debug_level(24)
-    _Routes['abcd1234'] = {'key': 'abcd1234'}
-    init()
-    reactor.run()  # @UndefinedVariable
+        lg.args(_DebugLevel, route_id=route_id, direction=direction, json_data=json_data)
+    if route_id is None and direction is None:
+        if json_data.get('cmd') == 'connect-request':
+            if len(routes()) >= _MaxRoutesNumber:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'request for a new route from %r was rejected: too many routes are currently registered' % transport)
+                return False
+            route_id = add_route()
+            route_info = routes(route_id)
+            json_response = {
+                'result': 'accepted',
+                'route_id': route_id, 
+            }
+            response_raw_data = serialization.DictToBytes(json_response, encoding='utf-8')
+            try:
+                transport.write(response_raw_data)
+            except:
+                lg.exc()
+                return False
+            if _Debug:
+                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, direction, transport))
+            return True
+        return False
+    if not route_id:
+        lg.warn('unknown route ID: %r' % transport)
+        return False
+    if not direction:
+        lg.warn('route direction was not identified: %r' % transport)
+        return False
+    cmd = json_data.get('cmd')
+    if cmd == 'handshake':
+        if json_data.get('internal') and direction == 'internal':
+            route_info = routes(route_id)
+            route_url = route_info['route_url'] if route_info else None
+            if not route_url:
+                lg.warn('route info for %r was not found' % route_id)
+                return False
+            json_response = {
+                "cmd": "handshake-accepted",
+                "route_url": route_url,
+            }
+            response_raw_data = serialization.DictToBytes(json_response, encoding='utf-8')
+            try:
+                transport.write(response_raw_data)
+            except:
+                lg.exc()
+                return False
+            if _Debug:
+                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, direction, transport))
+            return True
+    call_id = json_data.get('call_id')
+    if call_id or (cmd in ('api', 'response', 'push', 'server-public-key', 'client-public-key', 'server-code', 'client-code', )):
+        route_info = routes(route_id)
+        if _Debug:
+            lg.args(_DebugLevel, direction=direction, route_info=route_info)
+        if not route_info:
+            lg.warn('route info for %r was not found' % route_id)
+            return False
+        if direction == 'external':
+            internal_transport = route_info.get('internal_transport')
+            if not internal_transport:
+                lg.warn('internal transport for route %r is not connected' % route_id)
+                return False
+            try:
+                internal_transport.write(raw_data)
+            except:
+                lg.exc()
+                return False
+            if _Debug:
+                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(raw_data), route_id, 'internal', internal_transport))
+            return True
+        if direction == 'internal':
+            external_transport = route_info.get('external_transport')
+            if not external_transport:
+                lg.warn('external transport for route %r is not connected' % route_id)
+                return False
+            try:
+                external_transport.write(raw_data)
+            except:
+                lg.exc()
+                return False
+            if _Debug:
+                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(raw_data), route_id, 'external', external_transport))
+            return True
+        lg.warn('unexpected direction: %r' % direction)
+    return False

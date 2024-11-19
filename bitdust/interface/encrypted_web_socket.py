@@ -367,14 +367,14 @@ class EncryptedWebSocket(automat.Automat):
         """
         Action method.
         """
-        confirmation_code = cipher.generate_secret_text(80)
+        confirmation_code = cipher.generate_secret_text(32)
         server_public_key = self.device_key_object.toPublicString()
         server_public_key_base = strng.to_bin(server_public_key + '-' + confirmation_code)
         hashed_server_public_key_base = hashes.sha1(server_public_key_base)
         if _Debug:
             lg.args(_DebugLevel, confirmation_code=confirmation_code)
         self._do_push({
-            'cmd': 'server_public_key',
+            'cmd': 'server-public-key',
             'server_public_key': server_public_key,
             'confirm': confirmation_code,
             'signature': strng.to_text(self.device_key_object.sign(hashed_server_public_key_base)),

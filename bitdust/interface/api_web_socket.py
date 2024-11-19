@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _APILogFileEnabled = False
@@ -99,6 +99,7 @@ def init(port=None):
             'RESULT',
             '_Debug',
             '_DebugLevel',
+            '_APILogFileEnabled',
             'strng',
             'sys',
             'time',
@@ -123,7 +124,8 @@ def init(port=None):
         ]
     )
     if _Debug:
-        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods' % (_WebSocketListener, len(_AllAPIMethods)))
+        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods:\n%r' % (
+            _WebSocketListener, len(_AllAPIMethods), _AllAPIMethods))
     read_api_secret()
     events.add_subscriber(on_event, event_id='*')
 
@@ -361,7 +363,7 @@ def on_model_changed(snapshot_object):
 def push(json_data):
     global _WebSocketTransports
     if not _WebSocketTransports:
-        lg.warn('there are currently no web socket transports open')
+        # lg.warn('there are currently no web socket transports open')
         return False
     raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
     for _key, transp in _WebSocketTransports.items():

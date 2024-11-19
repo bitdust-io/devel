@@ -2,3 +2,4 @@ aiohttp
 pytest
 requests
 six
+pycryptodomex

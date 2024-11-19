@@ -29,6 +29,7 @@ import json
 import pprint
 import aiohttp  # @UnresolvedImport
 import requests
+from setuptools._distutils import cmd
 
 #------------------------------------------------------------------------------
 
@@ -87,7 +88,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
         None,
         '',
         b'',
-        'localhost',
+        'localhost'
     ]:
         cmd_args = cmd
     else:
@@ -98,7 +99,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
             '-p',
             '22',
             'root@%s' % host,
-            cmd,
+            cmd
         ]
     create = asyncio.create_subprocess_exec(
         *cmd_args,
@@ -123,7 +124,7 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
         None,
         '',
         b'',
-        'localhost',
+        'localhost'
     ]:
         cmd_args = cmd
     else:
@@ -134,7 +135,7 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
             '-p',
             '22',
             f'root@{host}',
-            cmd,
+            cmd
         ]
     ssh_proc = subprocess.Popen(
         cmd_args,
@@ -290,7 +291,7 @@ async def open_tunnel_async(node, local_port, loop):
             local_port,
             8180,
         ),
-        'root@%s' % node,
+        'root@%s' % node
     ]
     # dbg('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
     tunnel = asyncio.create_subprocess_exec(
@@ -358,7 +359,7 @@ def open_ssh_port_forwarding(node, port1, port2):
             port1,
             port2,
         ),
-        'root@%s' % node,
+        'root@%s' % node
     ]
     dbg(
         '\n[%s] %s' % (
@@ -424,9 +425,14 @@ def start_daemon(node, skip_initialize=False, verbose=False):
         run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
         if os.environ.get('_DEBUG', '0') == '0':
             run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
-    bitdust_daemon = run_ssh_command_and_wait(
-        node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon'
-    )
+    cmd = '' \
+        'BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT=111222 ' \
+        'BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED=333444 ' \
+        'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 ' \
+        'BITDUST_LOG_USE_COLORS=0 ' \
+        'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config ' \
+        'bitdust daemon'
+    bitdust_daemon = run_ssh_command_and_wait(node, cmd)
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
     assert (
@@ -441,9 +447,14 @@ async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(
-        node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop
-    )
+    cmd = '' \
+        'BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT=111222 ' \
+        'BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED=333444 ' \
+        'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 ' \
+        'BITDUST_LOG_USE_COLORS=0 ' \
+        'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config ' \
+        'bitdust daemon'
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, cmd, loop)
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
     assert (
@@ -1264,7 +1275,7 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbo
             '/app/coverage/%s' % node
         ],
         event_loop,
-        verbose=verbose,
+        verbose=verbose
     )
     await run_ssh_command_and_wait_async(
         'localhost',
@@ -1275,7 +1286,7 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbo
             '-P',
             '22',
             'root@%s:/tmp/.coverage.*' % node,
-            '/app/coverage/%s/.' % node,
+            '/app/coverage/%s/.' % node
         ],
         event_loop,
         verbose=verbose,

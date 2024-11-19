@@ -51,14 +51,10 @@ except:
 
 #------------------------------------------------------------------------------
 
-from bitdust.logs import lg
-
-from bitdust.lib import strng
-
-from bitdust.system import local_fs
-
-from bitdust.crypt import hashes
-from bitdust.crypt import number
+from lib import strng
+from lib import system
+from lib import hashes
+from lib import number
 
 #------------------------------------------------------------------------------
 
@@ -67,7 +63,6 @@ class RSAKey(object):
 
     def __init__(self):
         self.keyObject = None
-        self.local_key_id = None
         self.label = ''
         self.signed = None
         self.active = True
@@ -81,7 +76,6 @@ class RSAKey(object):
 
     def forget(self):
         self.keyObject = None
-        self.local_key_id = None
         self.label = ''
         self.signed = None
         self.active = False
@@ -125,7 +119,6 @@ class RSAKey(object):
         if result:
             self.label = key_dict.get('label', '')
             self.active = key_dict.get('active', True)
-            self.local_key_id = key_dict.get('local_key_id', None)
             self.meta = key_dict.get('meta', {})
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
                 self.signed = (
@@ -143,9 +136,9 @@ class RSAKey(object):
             key_src = strng.to_bin(key_src)
         try:
             self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
-        except:
+        except Exception as exc:
             if _Debug:
-                lg.exc('key_src=%r' % key_src)
+                print(exc, 'key_src=%r' % key_src)
             raise ValueError('failed to read key body')
         del key_src
         # gc.collect()
@@ -154,13 +147,13 @@ class RSAKey(object):
     def fromFile(self, keyfilename):
         if self.keyObject:
             raise ValueError('key object already exist')
-        key_src = local_fs.ReadTextFile(keyfilename)
+        key_src = system.ReadTextFile(keyfilename)
         key_src = strng.to_bin(key_src)
         try:
             self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
-        except:
+        except Exception as exc:
             if _Debug:
-                lg.exc('key_src=%r' % key_src)
+                print(exc, 'key_src=%r' % key_src)
         del key_src
         # gc.collect()
         return True
@@ -188,10 +181,8 @@ class RSAKey(object):
             key_body = strng.to_text(self.keyObject.publickey().exportKey(format=output_format_public))
         key_dict = {
             'body': key_body,
-            'local_key_id': self.local_key_id,
             'label': self.label,
             'active': self.active,
-            'size': self.size(),
         }
         if self.isSigned():
             key_dict.update({
@@ -215,13 +206,13 @@ class RSAKey(object):
         if not as_digits:
             if _Debug:
                 if _CryptoLog:
-                    lg.args(_DebugLevel, signature_raw=signature_raw)
+                    print('sign signature_raw:', signature_raw)
             return signature_raw
         signature_long = number.bytes_to_long(signature_raw)
         signature_bytes = strng.to_bin(signature_long)
         if _Debug:
             if _CryptoLog:
-                lg.args(_DebugLevel, signature_bytes=signature_bytes)
+                print('sign signature_bytes:', signature_bytes)
         return signature_bytes
 
     def verify(self, signature, message, signature_as_digits=True):
@@ -243,12 +234,13 @@ class RSAKey(object):
         except (
             ValueError,
             TypeError,
-        ):
+        ) as exc:
             # do not raise any exception... just return False
-            lg.exc('signature=%r message=%r' % (signature, message))
+            if _Debug:
+                print(exc, 'signature=%r message=%r' % (signature, message))
         if _Debug:
             if _CryptoLog:
-                lg.args(_DebugLevel, result=result, signature=signature)
+                print('verify', result, signature)
         return result
 
     def encrypt(self, private_message):

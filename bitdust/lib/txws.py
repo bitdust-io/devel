@@ -55,7 +55,7 @@ from twisted.protocols.policies import ProtocolWrapper, WrappingFactory
 from twisted.python import log
 from twisted.web.http import datetimeToString
 
-_Debug = False
+_Debug = True
 
 array_tostring = lambda x: x.tostring()
 if sys.version_info[1] >= 2:
@@ -414,6 +414,9 @@ class WebSocketProtocol(ProtocolWrapper):
         ProtocolWrapper.__init__(self, *args, **kwargs)
         self.pending_frames = []
 
+    def __repr__(self)->str:
+        return 'WebSocket(%s %s)' % (self.transport, self.location)
+
     def setBinaryMode(self, mode):
         """
         If True, send str as binary and unicode as text.
@@ -502,6 +505,8 @@ class WebSocketProtocol(ProtocolWrapper):
         try:
             frames, self.buf = parser(self.buf)
         except WSException as wse:
+            if _Debug:
+                log.err('Error in parseFrames: %r' % wse)
             # Couldn't parse all the frames, something went wrong, let's bail.
             self.close(wse.args[0])
             return
@@ -518,10 +523,10 @@ class WebSocketProtocol(ProtocolWrapper):
                 # The other side wants us to close. I wonder why?
                 reason, text = data
                 if _Debug:
-                    log.msg('Closing connection: %r (%d)' % (text, reason))
+                    log.msg('Closing connection: %r (%s)' % (text, reason))
 
                 # Close the connection.
-                self.close()
+                self.close(reason)
 
     def sendFrames(self):
         """
@@ -724,6 +729,9 @@ class WebSocketProtocol(ProtocolWrapper):
         should, according to the spec, be a simple acknowledgement, it
         shouldn't be a problem.
         """
+
+        if _Debug:
+            log.msg('Closing connection %r : %s' % (self, reason))
 
         # Send a closing frame. It's only polite. (And might keep the browser
         # from hanging.)

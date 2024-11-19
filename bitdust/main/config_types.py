@@ -230,6 +230,7 @@ def defaults():
         'services/udp-transport/receiving-enabled': TYPE_BOOLEAN,
         'services/udp-transport/sending-enabled': TYPE_BOOLEAN,
         'services/udp-transport/priority': TYPE_POSITIVE_INTEGER,
+        'services/web-socket-communicator/enabled': TYPE_BOOLEAN,
         'services/web-socket-router/enabled': TYPE_BOOLEAN,
         'services/web-socket-router/host': TYPE_STRING,
         'services/web-socket-router/port': TYPE_PORT_NUMBER,

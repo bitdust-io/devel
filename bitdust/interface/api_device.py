@@ -82,6 +82,7 @@ def init():
     global _AllAPIMethods
     from bitdust.interface import api
     encrypted_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
+    routed_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
     _AllAPIMethods = set(dir(api))
     _AllAPIMethods.difference_update(
         [
@@ -206,17 +207,19 @@ def validate_device_name(device_name):
 
 #------------------------------------------------------------------------------
 
-def add_encrypted_device(device_name, port_number, key_size=4096):
+def add_encrypted_device(device_name, port_number=None, key_size=4096):
     global _Devices
     validate_device_name(device_name)
     if device_name in _Devices:
         raise Exception('device %r already exist' % device_name)
+    if not port_number:
+        port_number = settings.DefaultWebSocketEncryptedPort()
     if _Debug:
-        lg.args(_DebugLevel, device_name=device_name)
+        lg.args(_DebugLevel, device_name=device_name, port_number=port_number)
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
-    device_key_object.active = True
+    device_key_object.active = False
     device_key_object.meta['routed'] = False
     device_key_object.meta['port_number'] = port_number
     device_key_object.meta['auth_token'] = None
@@ -240,7 +243,7 @@ def add_routed_device(device_name, key_size=4096):
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
-    device_key_object.active = True
+    device_key_object.active = False
     device_key_object.meta['routed'] = True
     device_key_object.meta['port_number'] = None
     device_key_object.meta['auth_token'] = None
@@ -314,8 +317,8 @@ def start_device(device_name):
     if not device_key_object.active:
         raise Exception('device %r is not active' % device_name)
     if device_key_object.meta['routed']:
-        if not driver.is_on('service_nodes_lookup'):
-            raise Exception('required service_nodes_lookup() is not currently ON')
+        if not driver.is_on('service_web_socket_communicator'):
+            raise Exception('required service_web_socket_communicator() is not currently ON')
         inst = routed_web_socket.RoutedWebSocket()
     else:
         inst = encrypted_web_socket.EncryptedWebSocket(port_number=device_key_object.meta['port_number'])
@@ -384,6 +387,7 @@ def do_process_incoming_message(device_object, json_data):
         if not method:
             lg.warn('api method name was not provided')
             return device_object.on_outgoing_message({
+                'cmd': 'response',
                 'type': 'api_call',
                 'payload': {
                     'call_id': call_id,
@@ -394,6 +398,7 @@ def do_process_incoming_message(device_object, json_data):
         if method not in _AllAPIMethods:
             lg.warn('invalid api method name: %r' % method)
             return device_object.on_outgoing_message({
+                'cmd': 'response',
                 'type': 'api_call',
                 'payload': {
                     'call_id': call_id,
@@ -413,6 +418,7 @@ def do_process_incoming_message(device_object, json_data):
         except Exception as err:
             lg.err(f'{method}({kwargs}) : {err}')
             return device_object.on_outgoing_message({
+                'cmd': 'response',
                 'type': 'api_call',
                 'payload': {
                     'call_id': call_id,
@@ -424,6 +430,7 @@ def do_process_incoming_message(device_object, json_data):
 
             def _cb(r):
                 return device_object.on_outgoing_message({
+                    'cmd': 'response',
                     'type': 'api_call',
                     'payload': {
                         'call_id': call_id,
@@ -434,6 +441,7 @@ def do_process_incoming_message(device_object, json_data):
             def _eb(err):
                 err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
                 return device_object.on_outgoing_message({
+                    'cmd': 'response',
                     'type': 'api_call',
                     'payload': {
                         'call_id': call_id,
@@ -446,6 +454,7 @@ def do_process_incoming_message(device_object, json_data):
             return True
 
         return device_object.on_outgoing_message({
+            'cmd': 'response',
             'type': 'api_call',
             'payload': {
                 'call_id': call_id,
@@ -462,6 +471,7 @@ def do_process_incoming_message(device_object, json_data):
 def on_event(evt):
     for inst in instances().values():
         inst.on_outgoing_message({
+            'cmd': 'push',
             'type': 'event',
             'payload': {
                 'event_id': evt.event_id,
@@ -473,6 +483,7 @@ def on_event(evt):
 def on_stream_message(message_json):
     for inst in instances().values():
         inst.on_outgoing_message({
+            'cmd': 'push',
             'type': 'stream_message',
             'payload': message_json,
         })
@@ -481,6 +492,7 @@ def on_stream_message(message_json):
 def on_online_status_changed(status_info):
     for inst in instances().values():
         inst.on_outgoing_message({
+            'cmd': 'push',
             'type': 'online_status',
             'payload': status_info,
         })
@@ -489,6 +501,7 @@ def on_online_status_changed(status_info):
 def on_model_changed(snapshot_object):
     for inst in instances().values():
         inst.on_outgoing_message({
+            'cmd': 'push',
             'type': 'model',
             'payload': snapshot_object.to_json(),
         })
