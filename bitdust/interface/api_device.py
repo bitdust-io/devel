@@ -34,7 +34,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -125,11 +125,11 @@ def init():
             lg.out(_DebugLevel, 'api_device.init will create folder: ' + settings.DevicesDir())
         os.makedirs(settings.DevicesDir())
     load_devices()
-    start_devices()
+    start_direct_devices()
 
 
 def shutdown():
-    pass
+    stop_devices()
 
 
 #------------------------------------------------------------------------------
@@ -205,7 +205,9 @@ def validate_device_name(device_name):
         raise Exception('device name must begin with a letter')
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def add_encrypted_device(device_name, port_number=None, key_size=4096):
     global _Devices
@@ -267,6 +269,9 @@ def remove_device(device_name):
         lg.warn('device info file %s does not exist' % device_file_path)
         return True
     os.remove(device_file_path)
+    devices().pop(device_name, None)
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name, device_file_path=device_file_path)
     return True
 
 
@@ -306,7 +311,7 @@ def disable_device(device_name):
 #------------------------------------------------------------------------------
 
 
-def start_device(device_name):
+def start_device(device_name, listening_callback=None):
     global _Instances
     validate_device_name(device_name)
     if device_name in _Instances:
@@ -325,7 +330,7 @@ def start_device(device_name):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, instance=inst)
     _Instances[device_name] = inst
-    inst.automat('start', device_object=device_key_object)
+    inst.automat('start', device_object=device_key_object, listening_callback=listening_callback)
     return inst
 
 
@@ -337,6 +342,9 @@ def stop_device(device_name):
     inst = _Instances[device_name]
     inst.automat('shutdown')
     _Instances.pop(device_name)
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name, instance=inst)
+    del inst
     return True
 
 
@@ -356,12 +364,22 @@ def load_devices():
         lg.args(_DebugLevel, devices=len(_Devices))
 
 
-def start_devices():
+def start_direct_devices():
     for device_name in devices():
         device_key_object = devices(device_name)
         if not device_key_object.active:
             continue
-        start_device(device_name)
+        if not device_key_object.meta['routed']:
+            start_device(device_name)
+
+
+def start_routed_devices():
+    for device_name in devices():
+        device_key_object = devices(device_name)
+        if not device_key_object.active:
+            continue
+        if device_key_object.meta['routed']:
+            start_device(device_name)
 
 
 def stop_devices():

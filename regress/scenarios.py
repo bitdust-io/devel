@@ -619,14 +619,21 @@ def scenario8():
         'routers': connected_routers,
     }))
     def _test_client():
+        counter = 0
         test_ws_app = web_socket_client.TestApp()
-        test_ws_app.run()
-        time.sleep(60)
+        test_ws_app.begin()
+        while not test_ws_app.completed:
+            time.sleep(1)
+            counter += 1
+            dbg('    ... %d' % counter)
+        open('scenario8.txt', 'wt').write('completed')
 
     test_client_thread = threading.Thread(target=_test_client)
     test_client_thread.daemon = True
     test_client_thread.start()
-    test_client_thread.join(timeout=60)
+    test_client_thread.join(timeout=120)
+    assert 'completed' == open('scenario8.txt', 'rt').read()
+
     msg('\n[SCENARIO 8] : PASS\n\n')
 
 
@@ -1592,29 +1599,38 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
     possible_suppliers.difference_update(set(customer_1_supplier_idurls_before))
     new_supplier_idurl = list(possible_suppliers)[0]
 
-    response = request_put(
-        'customer-1',
-        'supplier/switch/v1',
-        json={
-            'position': '1',
-            'new_idurl': new_supplier_idurl,
-        },
-    )
-    assert response.status_code == 200
-
-    # make sure supplier was really switched
-    count = 0
+    attempts = 0
+    success = False
     while True:
-        if count > 20:
-            assert False, 'supplier was not switched after many attempts'
+        attempts += 1
+        response = request_put(
+            'customer-1',
+            'supplier/switch/v1',
+            json={
+                'position': '1',
+                'new_idurl': new_supplier_idurl,
+            },
+        )
+        assert response.status_code == 200
+    
+        # make sure supplier was really switched
+        count = 0
+        while True:
+            if count > 20:
+                if attempts > 2:
+                    assert False, 'supplier was not switched after %d attempts' % attempts
+                break
+            customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+            assert len(customer_1_supplier_idurls_after) == 2
+            assert customer_1_supplier_idurls_after[0] == customer_1_supplier_idurls_after[0]
+            if customer_1_supplier_idurls_before[1] != customer_1_supplier_idurls_after[1]:
+                success = True
+                break
+            count += 1
+            time.sleep(1)
+
+        if success:
             break
-        customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
-        assert len(customer_1_supplier_idurls_after) == 2
-        assert customer_1_supplier_idurls_after[0] == customer_1_supplier_idurls_after[0]
-        if customer_1_supplier_idurls_before[1] != customer_1_supplier_idurls_after[1]:
-            break
-        count += 1
-        time.sleep(3)
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 

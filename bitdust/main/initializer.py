@@ -163,8 +163,8 @@ def init_local():
     eccmap.init()
     my_keys.init()
     # if sys.argv.count('--twisted'):
-    #     from twisted.python import log as twisted_log
-    #     twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
+    # from twisted.python import log as twisted_log
+    # twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
     # import twisted.python.failure as twisted_failure
     # twisted_failure.startDebugMode()
     # twisted_log.defaultObserver.stop()

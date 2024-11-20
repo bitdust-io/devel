@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _APILogFileEnabled = False
@@ -124,8 +124,7 @@ def init(port=None):
         ]
     )
     if _Debug:
-        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods:\n%r' % (
-            _WebSocketListener, len(_AllAPIMethods), _AllAPIMethods))
+        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods:\n%r' % (_WebSocketListener, len(_AllAPIMethods), _AllAPIMethods))
     read_api_secret()
     events.add_subscriber(on_event, event_id='*')
 

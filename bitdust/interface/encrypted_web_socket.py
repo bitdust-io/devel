@@ -45,7 +45,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -56,6 +56,7 @@ import base64
 
 from twisted.application.strports import listen
 from twisted.internet.protocol import Protocol, Factory
+from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
 
@@ -315,11 +316,9 @@ class EncryptedWebSocket(automat.Automat):
         """
         Condition method.
         """
-        if not self.device_key_object:
-            return False
-        if not self.device_key_object.meta.get('auth_token'):
-            return False
-        return True
+        if kwargs['device_object'].meta.get('auth_token'):
+            return True
+        return False
 
     def doInit(self, *args, **kwargs):
         """
@@ -330,6 +329,7 @@ class EncryptedWebSocket(automat.Automat):
         self.auth_token = None
         self.session_key = None
         self.client_key_object = None
+        self.listening_callback = kwargs.get('listening_callback')
 
     def doLoadAuthInfo(self, *args, **kwargs):
         """
@@ -465,6 +465,8 @@ class EncryptedWebSocket(automat.Automat):
             return None, None
         if _Debug:
             lg.args(_DebugLevel, listener=_Listeners[self.device_name], device=ws)
+        if self.listening_callback:
+            reactor.callLater(0, self.listening_callback, True)  # @UndefinedVariable
         return _Listeners[self.device_name], ws
 
     def doStopListener(self, *args, **kwargs):

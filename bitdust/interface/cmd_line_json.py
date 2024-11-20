@@ -43,6 +43,7 @@ _Debug = False
 
 import os
 import sys
+import time
 
 #------------------------------------------------------------------------------
 
@@ -218,6 +219,7 @@ def call_websocket_method(method, **kwargs):
     from bitdust.lib import websock
     from bitdust.system import deploy
     ret = Deferred()
+    _executed = time.time()
     timeout = kwargs.pop('websocket_timeout', None)
     if timeout:
         ret.addTimeout(timeout=(timeout + 1), clock=reactor)
@@ -234,7 +236,7 @@ def call_websocket_method(method, **kwargs):
             'process_stop',
         ]:
             if not ret.called:
-                ret.callback({'status': 'OK'})
+                ret.callback({'status': 'OK', 'execution': '%3.6f' % (time.time() - _executed)})
             return None
         if not isinstance(resp, dict):
             if not ret.called:
@@ -257,6 +259,7 @@ def call_websocket_method(method, **kwargs):
         except Exception as exc:
             ret.errback(exc)
             return None
+        payload_response['execution'] = '%3.6f' % (time.time() - _executed)
         ret.callback(payload_response)
         return resp
 
@@ -481,15 +484,19 @@ def cmd_device(opts, args, overDict, running, executablePath):
         key_sz = 2048
         if len(args) > 4:
             key_sz = int(args[4])
-        tpl = jsontemplate.Template(templ.TPL_DEVICE_CREATE)
-        return call_websocket_method_template_and_stop('device_add', tpl, name=device_name, routed=routed, key_size=key_sz)
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        ret = call_websocket_method_template_and_stop('device_add', tpl, name=device_name, routed=routed, key_size=key_sz, wait_listening=True)
+        if not routed:
+            return ret
+        print_text('scan QR code and then be ready to enter 6-digits number on your device')
+        return ret
 
     if len(args) >= 2 and args[1] in ['info', 'print', 'get', 'show']:
-        tpl = jsontemplate.Template(templ.TPL_DEVICE_INFO)
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_info', tpl, name=args[2])
 
     if len(args) >= 2 and args[1] in ['delete', 'erase', 'remove', 'del', 'rm']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_remove', tpl, name=args[2])
 
     return 2

@@ -147,7 +147,6 @@ class WebSocketApp(object):
               data must be utf-8 string or unicode.
         opcode: operation code of data. default is OPCODE_TEXT.
         """
-
         if not self.sock or self.sock.send(data, opcode) == 0:
             raise WebSocketConnectionClosedException('Connection is already closed.')
 

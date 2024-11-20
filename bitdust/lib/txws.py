@@ -55,7 +55,7 @@ from twisted.protocols.policies import ProtocolWrapper, WrappingFactory
 from twisted.python import log
 from twisted.web.http import datetimeToString
 
-_Debug = True
+_Debug = False
 
 array_tostring = lambda x: x.tostring()
 if sys.version_info[1] >= 2:
@@ -63,6 +63,7 @@ if sys.version_info[1] >= 2:
 
 
 class WSException(Exception):
+
     """
     Something stupid happened here.
 
@@ -396,6 +397,7 @@ def parse_hybi07_frames(buf):
 
 
 class WebSocketProtocol(ProtocolWrapper):
+
     """
     Protocol which wraps another protocol to provide a WebSockets transport
     layer.
@@ -414,7 +416,7 @@ class WebSocketProtocol(ProtocolWrapper):
         ProtocolWrapper.__init__(self, *args, **kwargs)
         self.pending_frames = []
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         return 'WebSocket(%s %s)' % (self.transport, self.location)
 
     def setBinaryMode(self, mode):
@@ -521,7 +523,7 @@ class WebSocketProtocol(ProtocolWrapper):
                 ProtocolWrapper.dataReceived(self, data)
             elif opcode == CLOSE:
                 # The other side wants us to close. I wonder why?
-                reason, text = data
+                text, reason = data
                 if _Debug:
                     log.msg('Closing connection: %r (%s)' % (text, reason))
 
@@ -743,6 +745,7 @@ class WebSocketProtocol(ProtocolWrapper):
 
 
 class WebSocketFactory(WrappingFactory):
+
     """
     Factory which wraps another factory to provide WebSockets transports for
     all of its protocols.

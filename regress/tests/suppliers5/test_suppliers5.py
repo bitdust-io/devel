@@ -57,8 +57,6 @@ def test_suppliers5():
     #--- SCENARIO 7: customer-1 upload/download with master key
     customer_1_file_info = scenarios.scenario7()
 
-    return
-
     #--- SCENARIO 4: customer-1 share files to customer-2
     customer_1_shared_file_info, _ = scenarios.scenario4()
 

@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _APILogFileEnabled = None
@@ -580,6 +580,7 @@ def process_debug():
 
 #------------------------------------------------------------------------------
 
+
 def devices_list(sort=False):
     """
     List all registered configurations of your configured API devices.
@@ -602,6 +603,7 @@ def devices_list(sort=False):
         result = device_object.toDict()
         result['name'] = result.pop('label')
         result['instance'] = None
+        result.pop('body', None)
         result.pop('local_key_id', None)
         device_instance = api_device.instances(device_name)
         if device_instance:
@@ -630,14 +632,15 @@ def device_info(name):
     result = device_object.toDict()
     result['name'] = result.pop('label')
     result['instance'] = None
+    result.pop('body', None)
     result.pop('local_key_id', None)
     if not device_instance:
         return OK(result)
     result.update({'instance': device_instance.to_json()})
     return OK(result)
-    
 
-def device_add(name, routed=False, activate=True, web_socket_port=None, key_size=None):
+
+def device_add(name, routed=False, activate=True, wait_listening=False, web_socket_port=None, key_size=None):
     """
     Register a new API device configuration to be able to access this BitDust node remotely.
 
@@ -673,6 +676,8 @@ def device_add(name, routed=False, activate=True, web_socket_port=None, key_size
         lg.args(_DebugLevel, name=name, routed=routed, activate=activate, web_socket_port=web_socket_port, key_size=key_size)
     try:
         if routed:
+            if not driver.is_on('service_web_socket_communicator'):
+                return ERROR('required service_web_socket_communicator() is not currently ON')
             ret = api_device.add_routed_device(device_name=name, key_size=key_size)
         else:
             ret = api_device.add_encrypted_device(device_name=name, port_number=web_socket_port, key_size=key_size)
@@ -680,12 +685,12 @@ def device_add(name, routed=False, activate=True, web_socket_port=None, key_size
         return ERROR(exc)
     if not ret:
         return ERROR('failed to created device')
-    if activate:
-        return device_start(name)
-    return device_info(name)
+    if not activate:
+        return device_info(name)
+    return device_start(name, wait_listening=wait_listening)
 
 
-def device_start(name):
+def device_start(name, wait_listening=False):
     """
     Activates given API device and start accepting incoming connections.
 
@@ -702,11 +707,25 @@ def device_start(name):
         api_device.enable_device(device_name=name)
     except Exception as exc:
         return ERROR(exc)
+    if not wait_listening:
+        try:
+            api_device.start_device(device_name=name)
+        except Exception as exc:
+            return ERROR(exc)
+        return device_info(name)
+    ret = Deferred()
+
+    def _on_listening_started(success):
+        if not success:
+            ret.callback(ERROR('device configuration failed', api_method='device_start'))
+            return
+        ret.callback(device_info(name))
+
     try:
-        api_device.start_device(device_name=name)
+        api_device.start_device(device_name=name, listening_callback=_on_listening_started)
     except Exception as exc:
         return ERROR(exc)
-    return device_info(name)
+    return ret
 
 
 def device_stop(name):
@@ -757,7 +776,9 @@ def device_remove(name):
         return ERROR(exc)
     return OK()
 
+
 #------------------------------------------------------------------------------
+
 
 def network_create(url):
     """

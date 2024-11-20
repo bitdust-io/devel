@@ -33,7 +33,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -119,6 +119,7 @@ def routes(route_id=None):
 
 #------------------------------------------------------------------------------
 
+
 def validate_route_id(route_id):
     # SECURITY
     # TODO: add more strict validation of the route_id
@@ -127,7 +128,9 @@ def validate_route_id(route_id):
         raise Exception('invalid route_id length')
     return rid
 
+
 #------------------------------------------------------------------------------
+
 
 def add_route():
     global _Routes
@@ -201,7 +204,7 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
             self.direction = 'internal' if param_name in ('i', 'internal') else 'external'
             self.route_id = route_id
             if self.route_id in routes():
-                routes(self.route_id)[self.direction+'_transport'] = self
+                routes(self.route_id)[self.direction + '_transport'] = self
                 if _Debug:
                     lg.dbg(_DebugLevel, 'registered %s transport %s for route %s' % (self.direction, self, self.route_id))
             else:
@@ -266,8 +269,8 @@ class WebSocketProtocol(Protocol):
         cleaned = False
         if route_id and direction:
             if routes(route_id):
-                if routes(route_id).get(direction+'_transport'):
-                    routes(route_id)[direction+'_transport'] = None
+                if routes(route_id).get(direction + '_transport'):
+                    routes(route_id)[direction + '_transport'] = None
                     cleaned = True
         if _Debug:
             lg.args(_DebugLevel, peer=peer_text, transport=self.transport, ws_connections=len(_WebSocketTransports), route_id=route_id, direction=direction, cleaned=cleaned)
@@ -287,6 +290,7 @@ class WebSocketFactory(Factory):
 
 #------------------------------------------------------------------------------
 
+
 def do_process_incoming_message(transport, json_data, raw_data):
     global _MaxRoutesNumber
     route_id = transport.route_id
@@ -303,7 +307,7 @@ def do_process_incoming_message(transport, json_data, raw_data):
             route_info = routes(route_id)
             json_response = {
                 'result': 'accepted',
-                'route_id': route_id, 
+                'route_id': route_id,
             }
             response_raw_data = serialization.DictToBytes(json_response, encoding='utf-8')
             try:
@@ -330,8 +334,8 @@ def do_process_incoming_message(transport, json_data, raw_data):
                 lg.warn('route info for %r was not found' % route_id)
                 return False
             json_response = {
-                "cmd": "handshake-accepted",
-                "route_url": route_url,
+                'cmd': 'handshake-accepted',
+                'route_url': route_url,
             }
             response_raw_data = serialization.DictToBytes(json_response, encoding='utf-8')
             try:
@@ -343,7 +347,15 @@ def do_process_incoming_message(transport, json_data, raw_data):
                 lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, direction, transport))
             return True
     call_id = json_data.get('call_id')
-    if call_id or (cmd in ('api', 'response', 'push', 'server-public-key', 'client-public-key', 'server-code', 'client-code', )):
+    if call_id or (cmd in (
+        'api',
+        'response',
+        'push',
+        'server-public-key',
+        'client-public-key',
+        'server-code',
+        'client-code',
+    )):
         route_info = routes(route_id)
         if _Debug:
             lg.args(_DebugLevel, direction=direction, route_info=route_info)

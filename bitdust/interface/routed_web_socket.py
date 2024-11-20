@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -109,9 +109,9 @@ _LastCallID = {}
 _PendingCalls = {}
 _CallbacksQueue = {}
 _RegisteredCallbacks = {}
-# _ResponseTimeoutTasks = {}
 
 #------------------------------------------------------------------------------
+
 
 def SetIncomingAPIMessageCallback(cb):
     global _IncomingAPIMessageCallback
@@ -122,7 +122,9 @@ def ExecuteIncomingAPIMessageCallback(instance, json_message):
     global _IncomingAPIMessageCallback
     return _IncomingAPIMessageCallback(instance, json_message)
 
+
 #------------------------------------------------------------------------------
+
 
 def start_client(url, callbacks={}):
     global _WebSocketStarted
@@ -140,7 +142,7 @@ def start_client(url, callbacks={}):
     _PendingCalls[url] = {}
     _WebSocketQueue[url] = Queue(maxsize=100)
     reactor.callInThread(websocket_thread, url)  # @UndefinedVariable
-    reactor.callInThread(requests_thread, url, _WebSocketQueue[url])  # @UndefinedVariable
+    reactor.callInThread(sending_thread, url, _WebSocketQueue[url])  # @UndefinedVariable
 
 
 def stop_client(url):
@@ -162,11 +164,12 @@ def stop_client(url):
                 lg.dbg(_DebugLevel, 'in %s cleaned unfinished call: %r' % (url, raw_data))
         except Empty:
             break
-    _WebSocketQueue[url].put_nowait((None, None, None, None))
+    _WebSocketQueue[url].put_nowait((None, None))
     if ws(url):
         if _Debug:
             lg.dbg(_DebugLevel, 'websocket %s already closed' % url)
         ws(url).close()
+
 
 #------------------------------------------------------------------------------
 
@@ -223,8 +226,8 @@ def on_open(ws_inst):
     cb = registered_callbacks(url).get('on_open')
     if cb:
         reactor.callFromThread(cb, ws_inst)  # @UndefinedVariable
-    for raw_data, cb, tm, timeout in _PendingCalls[url]:
-        ws_queue(url).put_nowait((raw_data, cb, tm, timeout))
+    for raw_data, tm in _PendingCalls[url]:
+        ws_queue(url).put_nowait((raw_data, tm))
     _PendingCalls[url].clear()
 
 
@@ -243,25 +246,7 @@ def on_close(ws_inst):
         reactor.callFromThread(cb, ws_inst)  # @UndefinedVariable
 
 
-# def on_event(json_data):
-#     if _Debug:
-#         print('    WS EVENT:', json_data['payload']['event_id'])
-#     cb = registered_callbacks(ws_inst.url).get('on_event')
-#     if cb:
-#         reactor.callFromThread(cb, json_data)  # @UndefinedVariable
-#     return True
-
-
-# def on_stream_message(json_data):
-#     if _Debug:
-#         print('    WS STREAM MSG:', json_data['payload']['payload']['message_id'])
-#     cb = registered_callbacks().get('on_stream_message')
-#     if cb:
-#         reactor.callFromThread(cb, json_data)  # @UndefinedVariable
-#     return True
-
-
-def on_message(ws_inst, message):
+def on_incoming_message(ws_inst, message):
     global _IncomingRoutedMessageCallback
     url = ws_inst.url
     try:
@@ -293,73 +278,28 @@ def on_fail(err, result_callback=None):
         reactor.callFromThread(result_callback, err)  # @UndefinedVariable
 
 
-# def on_request_timeout(url, call_id):
-#     global _CallbacksQueue
-#     global _ResponseTimeoutTasks
-#     if _Debug:
-#         lg.args(_DebugLevel, url=url, call_id=call_id)
-#     _ResponseTimeoutTasks[url].pop(call_id, None)
-#     res_cb = _CallbacksQueue[url].pop(call_id, None)
-#     # if _DebugAPIResponses:
-#     #     print('WS API Request TIMEOUT {}'.format(call_id))
-#     if res_cb:
-#         reactor.callFromThread(res_cb, Exception('request timeout'))  # @UndefinedVariable
-
-
 #------------------------------------------------------------------------------
 
 
-def requests_thread(url, active_queue):
-    # global _LastCallID
-    # global _CallbacksQueue
-    # global _ResponseTimeoutTasks
+def sending_thread(url, active_queue):
     if _Debug:
         lg.args(_DebugLevel, url=url)
-    # _ResponseTimeoutTasks[url] = {}
-    # _LastCallID[url] = 0
-    # _CallbacksQueue[url] = {}
     while True:
         if not is_started(url):
             if _Debug:
                 lg.dbg(_DebugLevel, '\nrequests thread %s is finishing because websocket is not started' % url)
             break
-        raw_data, result_callback, tm, timeout = active_queue.get()
+        raw_data, tm = active_queue.get()
         if raw_data is None:
             if _Debug:
                 lg.dbg(_DebugLevel, '\nrequests thread %s received empty request, about to stop the thread now' % url)
             break
-        # if 'call_id' not in json_data:
-        #     _LastCallID[url] += 1
-        #     json_data['call_id'] = _LastCallID[url]
-        # else:
-        #     _LastCallID[url] = json_data['call_id']
-        # call_id = json_data['call_id']
-        # if call_id in _CallbacksQueue[url]:
-        #     on_fail(Exception('call_id was not unique'), result_callback)
-        #     continue
         if not ws(url):
-            on_fail(Exception('websocket is closed'), result_callback)
+            on_fail(Exception('websocket is closed'))
             continue
-        # _CallbacksQueue[url][call_id] = result_callback
-        # data = jsn.dumps(json_data)
         if _Debug:
             lg.args(_DebugLevel, url=url, size=len(raw_data), raw_data=raw_data)
         ws(url).send(raw_data)
-        # if timeout is not None:
-        #     now = time.time()
-        #     dt = now - tm + timeout
-        #     if dt < 0:
-        #         res_cb = _CallbacksQueue[url].pop(call_id, None)
-        #         # if _DebugAPIResponses:
-        #         #     print('\n    WS API Request already TIMED OUT {} : now={} tm={} timeout={}'.format(
-        #         #         call_id,
-        #         #         now,
-        #         #         tm,
-        #         #         timeout,
-        #         #     ))
-        #         on_fail(Exception('request timeout'), res_cb)
-        #     else:
-        #         _ResponseTimeoutTasks[url][call_id] = reactor.callLater(dt, on_request_timeout, url, call_id)  # @UndefinedVariable
     if _Debug:
         lg.dbg(_DebugLevel, '\nrequests thread %s finished' % url)
 
@@ -374,7 +314,7 @@ def websocket_thread(url):
             lg.dbg(_DebugLevel, 'websocket thread url=%r' % url)
         _WebSocketApp[url] = websocket.WebSocketApp(
             url=url,
-            on_message=on_message,
+            on_message=on_incoming_message,
             on_error=on_error,
             on_close=on_close,
             on_open=on_open,
@@ -420,32 +360,34 @@ def verify_state(url):
 #------------------------------------------------------------------------------
 
 
-def ws_call(url, raw_data, cb=None, timeout=None):
+def ws_send(url, raw_data):
     global _PendingCalls
     st = verify_state(url)
     if _Debug:
         lg.args(_DebugLevel, url=url, st=st)
     if st == 'ready':
-        ws_queue(url).put_nowait((raw_data, cb, time.time(), timeout))
+        ws_queue(url).put_nowait((raw_data, time.time()))
         return True
     if st == 'closed':
-        if cb:
-            cb(Exception('websocket is closed'))
+        lg.warn('websocket is already closed')
         return False
     if st == 'connecting':
         if _Debug:
             lg.dbg(_DebugLevel, 'websocket %s still connecting, remember pending request' % url)
-        _PendingCalls[url].append((raw_data, cb, time.time(), timeout))
+        _PendingCalls[url].append((
+            raw_data,
+            time.time(),
+        ))
         return True
     if st == 'not-started':
         if _Debug:
             lg.dbg(_DebugLevel, 'websocket %s was not started' % url)
-        if cb:
-            cb(Exception('websocket was not started'))
         return False
     raise Exception('unexpected state %r' % st)
 
+
 #------------------------------------------------------------------------------
+
 
 class RoutedWebSocket(automat.Automat):
 
@@ -611,11 +553,11 @@ class RoutedWebSocket(automat.Automat):
             if event == 'routers-connected' and not self.isAuthenticated(*args, **kwargs):
                 self.state = 'CLIENT_PUB?'
                 self.doSaveRouters(*args, **kwargs)
-                self.doPrepareWebSocketURL(*args, **kwargs)
+                self.doNotifyListening(*args, **kwargs)
             elif event == 'routers-connected' and self.isAuthenticated(*args, **kwargs):
                 self.state = 'READY'
-                self.doInit(*args, **kwargs)
                 self.doLoadAuthInfo(*args, **kwargs)
+                self.doNotifyListening(*args, **kwargs)
             elif event == 'routers-failed':
                 self.state = 'ROUTERS?'
                 self.doLookupRequestRouters(*args, **kwargs)
@@ -696,7 +638,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Condition method.
         """
-        return len(self.selected_routers) >= 3
+        return len(kwargs['device_object'].meta.get('connected_routers', {})) >= 3
 
     def doInit(self, *args, **kwargs):
         """
@@ -706,9 +648,11 @@ class RoutedWebSocket(automat.Automat):
         _IncomingRoutedMessageCallback = self.on_incoming_message
         self.device_key_object = kwargs['device_object']
         self.device_name = self.device_key_object.label
+        self.connected_routers = self.device_key_object.meta.get('connected_routers', {})
         self.auth_token = None
         self.session_key = None
         self.client_key_object = None
+        self.listening_callback = kwargs.get('listening_callback')
 
     def doLookupRequestRouters(self, *args, **kwargs):
         """
@@ -716,6 +660,9 @@ class RoutedWebSocket(automat.Automat):
         """
         self.router_lookups = 0
         self.selected_routers = []
+        for url, route_id in self.connected_routers.items():
+            if route_id:
+                self.selected_routers.append(url)
         self._do_lookup_next_router()
 
     def doConnectRouters(self, *args, **kwargs):
@@ -750,11 +697,16 @@ class RoutedWebSocket(automat.Automat):
         if event == 'auth-error':
             # TODO: erase stored authorization
             pass
+        if event == 'lookup-failed':
+            if self.listening_callback:
+                reactor.callLater(0, self.listening_callback, False)  # @UndefinedVariable
 
     def doSaveRouters(self, *args, **kwargs):
         """
         Action method.
         """
+        self.device_key_object.meta['connected_routers'] = self.connected_routers
+        self.device_key_object.save()
 
     def doLoadAuthInfo(self, *args, **kwargs):
         """
@@ -815,12 +767,7 @@ class RoutedWebSocket(automat.Automat):
         """
         client_code = kwargs['client_code']
         session_key_text = strng.to_text(base64.b64encode(self.session_key))
-        salted_payload = '{}#{}#{}#{}'.format(
-            client_code,
-            self.auth_token,
-            session_key_text,
-            cipher.generate_secret_text(32)
-        )
+        salted_payload = '{}#{}#{}#{}'.format(client_code, self.auth_token, session_key_text, cipher.generate_secret_text(32))
         # salted_payload = jsn.dumps({
         #     'client_code': client_code,
         #     'auth_token': self.auth_token,
@@ -895,10 +842,12 @@ class RoutedWebSocket(automat.Automat):
         if not ExecuteIncomingAPIMessageCallback(self, api_message_payload):
             lg.warn('incoming api message was not processed')
 
-    def doPrepareWebSocketURL(self, *args, **kwargs):
+    def doNotifyListening(self, *args, **kwargs):
         """
         Action method.
         """
+        if self.listening_callback:
+            reactor.callLater(0, self.listening_callback, True)  # @UndefinedVariable
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -913,7 +862,7 @@ class RoutedWebSocket(automat.Automat):
     def _on_web_socket_router_connection_opened(self, ws_inst):
         if _Debug:
             lg.args(_DebugLevel, ws_inst=ws_inst)
-        ws_call(
+        ws_send(
             url=ws_inst.url,
             raw_data=jsn.dumps({
                 'cmd': 'handshake',
@@ -1009,7 +958,7 @@ class RoutedWebSocket(automat.Automat):
     def _on_web_socket_router_first_connection_opened(self, ws_inst):
         if _Debug:
             lg.args(_DebugLevel, ws_inst=ws_inst)
-        ws_call(
+        ws_send(
             url=ws_inst.url,
             raw_data=jsn.dumps({
                 'cmd': 'connect-request',
@@ -1083,7 +1032,7 @@ class RoutedWebSocket(automat.Automat):
             lg.warn('no active web socket router is currently connected')
             return False
         raw_data = jsn.dumps(json_data)
-        ws_call(self.active_router_url, raw_data)
+        ws_send(self.active_router_url, raw_data)
         if _Debug:
             lg.out(_DebugLevel, '***   API %s PUSH %d bytes: %r' % (self.device_name, len(raw_data), json_data))
         return True
@@ -1104,7 +1053,7 @@ class RoutedWebSocket(automat.Automat):
         if cmd:
             encrypted_json_data['cmd'] = cmd
         encrypted_raw_data = serialization.DictToBytes(encrypted_json_data, encoding='utf-8', to_text=True)
-        ws_call(self.active_router_url, encrypted_raw_data)
+        ws_send(self.active_router_url, encrypted_raw_data)
         if _Debug:
             lg.out(_DebugLevel, '***   API %s PUSH %d encrypted bytes: %r' % (self.device_name, len(encrypted_raw_data), encrypted_json_data))
         return True

@@ -26,6 +26,10 @@ methods, which allow Template constructor options to be embedded in the template
 string itself.
 
 Other functions are exposed for tools which may want to process templates.
+
+More info:
+https://developers.squarespace.com/json-t-directives
+http://jsont.squarespace.com/
 """
 
 from __future__ import absolute_import

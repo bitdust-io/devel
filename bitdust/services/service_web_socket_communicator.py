@@ -53,7 +53,7 @@ class WebSocketCommunicatorService(LocalService):
         from bitdust.services import driver
         from bitdust.main import events
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        # self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             self._do_join_web_socket_routers_dht_layer()
@@ -83,9 +83,15 @@ class WebSocketCommunicatorService(LocalService):
 
     def _on_web_socket_routers_dht_layer_connected(self, ok):
         from bitdust.logs import lg
+        from bitdust.interface import api_device
         lg.info('connected to DHT layer for web socket routers: %r' % ok)
-        self.starting_deferred.callback(True)
+        if ok:
+            self.starting_deferred.callback(True)
+        else:
+            self.starting_deferred.errback(Exception('was not able to connect to web socket routers DHT layer'))
         self.starting_deferred = None
+        if ok:
+            api_device.start_routed_devices()
         return ok
 
     def _on_web_socket_routers_dht_layer_connect_failed(self, err):
@@ -93,6 +99,7 @@ class WebSocketCommunicatorService(LocalService):
         lg.err('failed to connect to DHT layer for web socket routers: %r' % err)
         self.starting_deferred.errback(err)
         self.starting_deferred = None
+        return None
 
     def _on_dht_layer_connected(self, evt):
         if evt.data['layer_id'] == 0:

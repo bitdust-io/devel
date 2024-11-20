@@ -597,9 +597,14 @@ def ws_call(json_data, cb=None):
 
 class TestApp(object):
 
+    def __init__(self):
+        self.completed = False
+
     def _on_identity_get_response(self, resp):
         if _Debug:
             print('TestApp._on_identity_get_response', resp)
+        stop()
+        self.completed = True
 
     def _on_websocket_open(self, ws_inst):
         if _Debug:
@@ -637,7 +642,7 @@ class TestApp(object):
         if _Debug:
             print('TestApp._on_websocket_model_update', json_data)
 
-    def run(self):
+    def begin(self):
         start(
             callbacks={
                 'on_open': self._on_websocket_open,
