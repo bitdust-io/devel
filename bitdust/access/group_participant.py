@@ -236,16 +236,16 @@ def start_group_participants():
 
     def _start():
         started = 0
-        for group_key_id, group_info in groups.active_groups().items():
+        for group_key_id, _ in groups.active_groups().items():
             if not group_key_id:
-                continue
-            if not my_keys.is_key_registered(group_key_id):
-                lg.err('can not start GroupParticipant because key %r is not registered' % group_key_id)
                 continue
             if group_key_id.startswith('person'):
                 # TODO: temporarily disabled
                 continue
-            if not group_info['active']:
+            if not groups.is_group_active(group_key_id):
+                continue
+            if not my_keys.is_key_registered(group_key_id):
+                lg.err('can not start GroupParticipant because key %r is not registered' % group_key_id)
                 continue
             if not id_url.is_cached(global_id.glob2idurl(group_key_id, as_field=False)):
                 continue
@@ -269,10 +269,12 @@ def start_group_participants():
     for group_key_id, _ in groups.active_groups().items():
         if not group_key_id:
             continue
-        if not my_keys.is_key_registered(group_key_id):
-            continue
         if group_key_id.startswith('person'):
             # TODO: temporarily disabled
+            continue
+        if not groups.is_group_active(group_key_id):
+            continue
+        if not my_keys.is_key_registered(group_key_id):
             continue
         creator_idurl = global_id.glob2idurl(group_key_id)
         if id_url.is_the_same(creator_idurl, my_id.getIDURL()):
@@ -342,6 +344,9 @@ class GroupParticipant(automat.Automat):
             ), state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs
         )
 
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        groups.run_group_state_callbacks(oldstate, newstate, self.to_json())
+
     def update_group_key_id(self, new_group_key_id):
         if _Debug:
             lg.args(_DebugLevel, old=self.group_key_id, new=new_group_key_id)
@@ -359,7 +364,7 @@ class GroupParticipant(automat.Automat):
                 'active': groups.is_group_active(self.group_key_id),
                 'participant_id': self.participant_id,
                 'group_key_id': self.group_key_id,
-                'alias': self.group_glob_id['key_alias'],
+                'alias': self.group_glob_id['key_alias'] if self.group_glob_id else '',
                 'label': my_keys.get_label(self.group_key_id) or '',
                 'creator': self.group_creator_id,
                 'active_supplier_pos': self.active_supplier_pos,
@@ -1184,7 +1189,6 @@ class GroupParticipant(automat.Automat):
             },
             recipient_global_id=remote_id,
             packet_id=packet_id,
-            # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
             # skip_handshake=True,
             fire_callbacks=False,
         )
@@ -1212,7 +1216,6 @@ class GroupParticipant(automat.Automat):
             },
             recipient_global_id=remote_id,
             packet_id=packet_id,
-            # message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
             # skip_handshake=True,
             fire_callbacks=False,
         )

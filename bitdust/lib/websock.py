@@ -31,6 +31,11 @@ module:: websock
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+_DebugAPIResponses = _Debug
+
+#------------------------------------------------------------------------------
+
 import os
 import time
 import json
@@ -47,12 +52,9 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 from bitdust_forks import websocket
 
-from bitdust.system import local_fs
-
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugAPIResponses = _Debug
+from bitdust.system import local_fs
 
 #------------------------------------------------------------------------------
 
@@ -116,7 +118,7 @@ def stop():
         None,
         None,
         None,
-        None,
+        None
     ))
     if ws():
         if _Debug:
@@ -183,7 +185,7 @@ def on_open(ws_inst):
             json_data,
             cb,
             tm,
-            timeout,
+            timeout
         ))
     _PendingCalls.clear()
 
@@ -253,7 +255,7 @@ def on_message(ws_inst, message):
         if _DebugAPIResponses:
             print('WS API Response {} : {}'.format(
                 call_id,
-                json_data['payload']['response'],
+                json_data['payload']['response']
             ))
         if result_callback:
             reactor.callFromThread(result_callback, json_data)  # @UndefinedVariable
@@ -264,7 +266,6 @@ def on_message(ws_inst, message):
 
 
 def on_error(ws_inst, error):
-    global _PendingCalls
     if _Debug:
         print('on_error', error)
     cb = registered_callbacks().get('on_error')
@@ -342,7 +343,7 @@ def requests_thread(active_queue):
                         call_id,
                         now,
                         tm,
-                        timeout,
+                        timeout
                     ))
                 on_fail(Exception('request timeout'), res_cb)
             else:
@@ -394,7 +395,6 @@ def websocket_thread():
 
 def verify_state():
     global _WebSocketReady
-    global _WebSocketConnecting
     if is_closed():
         _WebSocketReady = False
         if _Debug:
@@ -426,7 +426,7 @@ def ws_call(json_data, cb=None, timeout=None):
             json_data,
             cb,
             time.time(),
-            timeout,
+            timeout
         ))
         return True
     if st == 'closed':
@@ -440,7 +440,7 @@ def ws_call(json_data, cb=None, timeout=None):
             json_data,
             cb,
             time.time(),
-            timeout,
+            timeout
         ))
         return True
     if st == 'not-started':

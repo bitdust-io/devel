@@ -101,12 +101,6 @@ def start_all_nodes(event_loop, verbose=False):
         info(f'ALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(
-        asyncio.gather(*[tsup.start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])])
-    )
-    if verbose:
-        info(f'ALL MESSAGE BROKERS STARTED\n')
-
-    event_loop.run_until_complete(
         asyncio.gather(
             *[tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i * 3) for i, customer in enumerate(ALL_ROLES.get('customer', []))]
         )
@@ -131,16 +125,6 @@ def stop_all_nodes(event_loop, verbose=False):
     )
     if verbose:
         info(f'ALL CUSTOMERS STOPPED\n')
-
-    if verbose:
-        info('message-brokers: %r' % ALL_ROLES.get('message-broker', []))
-    event_loop.run_until_complete(
-        asyncio.gather(
-            *[tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])]
-        )
-    )
-    if verbose:
-        info(f'ALL MESSAGE BROKERS STOPPED\n')
 
     if verbose:
         info('suppliers: %r' % ALL_ROLES.get('supplier', []))
@@ -233,7 +217,7 @@ def collect_coverage_all_nodes(event_loop, verbose=False):
 #------------------------------------------------------------------------------
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session')  # @UndefinedVariable
 def event_loop():
     loop = asyncio.get_event_loop()
     yield loop
@@ -243,7 +227,7 @@ def event_loop():
 #------------------------------------------------------------------------------
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session', autouse=True)  # @UndefinedVariable
 def global_wrapper(event_loop):
     verbose = VERBOSE
     if verbose:

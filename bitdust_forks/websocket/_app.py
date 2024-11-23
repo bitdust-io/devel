@@ -137,6 +137,9 @@ class WebSocketApp(object):
         self.last_pong_tm = 0
         self.subprotocols = subprotocols
 
+    def __repr__(self):
+        return 'WebSocketApp[%s|%s]' % (self.url, self.sock.connected if self.sock else '-')
+
     def send(self, data, opcode=ABNF.OPCODE_TEXT):
         """
         send message.
@@ -144,7 +147,6 @@ class WebSocketApp(object):
               data must be utf-8 string or unicode.
         opcode: operation code of data. default is OPCODE_TEXT.
         """
-
         if not self.sock or self.sock.send(data, opcode) == 0:
             raise WebSocketConnectionClosedException('Connection is already closed.')
 

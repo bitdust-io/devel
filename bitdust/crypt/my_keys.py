@@ -53,8 +53,6 @@ if __name__ == '__main__':
 
 from bitdust.logs import lg
 
-from bitdust.system import bpio
-
 from bitdust.lib import misc
 from bitdust.lib import strng
 from bitdust.lib import jsn
@@ -304,7 +302,7 @@ def scan_local_keys(keys_folder=None):
             continue
         key_id = key_filename.replace('.private', '').replace('.public', '')
         if not is_valid_key_id(key_id):
-            lg.warn('key_id is not valid: %r' % key_id)
+            lg.err('key_id is not valid: %r' % key_id)
             continue
         key_dict = read_key_file(key_id, keys_folder=keys_folder)
         local_key_id = key_dict.get('local_key_id')
@@ -324,7 +322,7 @@ def scan_local_keys(keys_folder=None):
             continue
         _LatestLocalKeyID += 1
         new_local_key_id = _LatestLocalKeyID
-        lg.warn('about to register key %r with local_key_id=%r' % (key_id, new_local_key_id))
+        lg.info('about to register key %r with local_key_id=%r' % (key_id, new_local_key_id))
         known_keys()[key_id].local_key_id = new_local_key_id
         save_key(key_id, keys_folder=keys_folder)
         registered_count += 1
@@ -344,7 +342,7 @@ def read_key_file(key_id, keys_folder=None):
         is_private = False
     key_raw = local_fs.ReadTextFile(key_filepath)
     if not key_raw:
-        lg.warn('failed reading key from %r' % key_filepath)
+        lg.err('failed reading key from %r' % key_filepath)
         return None
     key_raw_strip = key_raw.strip()
     try:
@@ -368,7 +366,7 @@ def read_key_file(key_id, keys_folder=None):
 def load_key(key_id, keys_folder=None):
     global _LatestLocalKeyID
     if not is_valid_key_id(key_id):
-        lg.warn('key is not valid: %r' % key_id)
+        lg.err('key is not valid: %r' % key_id)
         return False
     key_dict = read_key_file(key_id, keys_folder=keys_folder)
     try:
@@ -379,7 +377,7 @@ def load_key(key_id, keys_folder=None):
         return False
     if not key_object.isPublic():
         if not validate_key(key_object):
-            lg.warn('validation failed for: %r' % key_id)
+            lg.err('validation failed for: %r' % key_id)
             return False
     known_keys()[key_id] = key_object
     if key_dict.get('need_to_convert'):
@@ -432,8 +430,8 @@ def save_key(key_id, keys_folder=None):
         key_filepath = os.path.join(keys_folder, key_id + '.private')
         key_dict = key_object.toDict(include_private=True)
         key_string = jsn.dumps(key_dict, indent=1, separators=(',', ':'))
-    if not bpio.WriteTextFile(key_filepath, key_string):
-        lg.warn('failed saving key %r to %r' % (key_id, key_filepath))
+    if not local_fs.WriteTextFile(key_filepath, key_string):
+        lg.err('failed saving key %r to %r' % (key_id, key_filepath))
         return False
     local_keys()[key_object.local_key_id] = key_id
     local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
@@ -461,8 +459,8 @@ def save_latest_local_key_id(keys_folder=None):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     latest_local_key_id_filepath = os.path.join(keys_folder, 'latest_local_key_id')
-    if not bpio.WriteTextFile(latest_local_key_id_filepath, '{}'.format(_LatestLocalKeyID)):
-        lg.warn('failed saving latest_local_key_id to %r' % latest_local_key_id_filepath)
+    if not local_fs.WriteTextFile(latest_local_key_id_filepath, '{}'.format(_LatestLocalKeyID)):
+        lg.err('failed saving latest_local_key_id to %r' % latest_local_key_id_filepath)
         return False
     return True
 
@@ -528,7 +526,7 @@ def register_key(key_id, key_object_or_string, label='', active=True, keys_folde
             lg.out(_DebugLevel, 'my_keys.register_key %r from %d bytes openssh_input_string' % (key_id, len(key_object_or_string)))
         key_object = unserialize_key_to_object(key_object_or_string)
         if not key_object:
-            lg.warn('invalid openssh string, unserialize_key_to_object() failed')
+            lg.err('invalid openssh string, unserialize_key_to_object() failed')
             return None
     else:
         if _Debug:
@@ -1137,7 +1135,6 @@ def populate_keys():
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    bpio.init()
     lg.set_debug_level(18)
     settings.init()
     init()

@@ -76,6 +76,10 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/accountant/enabled', 'false')
 
+    conf_obj.setDefaultValue('services/api-router/enabled', 'false')
+    conf_obj.setDefaultValue('services/api-router/host', '127.0.0.1')
+    conf_obj.setDefaultValue('services/api-router/port', settings.DefaultWebSocketRouterPort())
+
     conf_obj.setDefaultValue('services/backup-db/enabled', 'true')
 
     conf_obj.setDefaultValue('services/backups/enabled', 'true')
@@ -181,12 +185,6 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/list-files/enabled', 'true')
 
-    conf_obj.setDefaultValue('services/message-broker/enabled', 'false')
-    conf_obj.setDefaultValue('services/message-broker/archive-chunk-size', 100)
-    conf_obj.setDefaultValue('services/message-broker/message-ack-timeout', 30)
-    conf_obj.setDefaultValue('services/message-broker/broker-negotiate-ack-timeout', 30)
-    conf_obj.setDefaultValue('services/message-broker/preferred-brokers', '')
-
     conf_obj.setDefaultValue('services/message-history/enabled', 'true')
 
     conf_obj.setDefaultValue('services/miner/enabled', 'false')
@@ -268,3 +266,9 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     conf_obj.setDefaultValue('services/udp-transport/sending-enabled', 'true')
     conf_obj.setDefaultValue('services/udp-transport/priority', 20)
+
+    conf_obj.setDefaultValue('services/web-socket-communicator/enabled', 'true')
+
+    conf_obj.setDefaultValue('services/web-socket-router/enabled', 'false')
+    conf_obj.setDefaultValue('services/web-socket-router/host', '')
+    conf_obj.setDefaultValue('services/web-socket-router/port', settings.DefaultWebSocketRouterPort())

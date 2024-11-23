@@ -110,6 +110,8 @@ REQUIRED_BROKERS_COUNT = 3
 
 _ActiveGroups = {}
 
+_GroupStateCallbacks = []
+
 #------------------------------------------------------------------------------
 
 
@@ -353,7 +355,7 @@ def is_group_active(group_key_id):
     group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         return False
-    return active_groups()[group_key_id]['active']
+    return active_groups()[group_key_id].get('active', False)
 
 
 def set_group_active(group_key_id, value):
@@ -366,6 +368,29 @@ def set_group_active(group_key_id, value):
     if old_value != value:
         lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value))
     return True
+
+
+#------------------------------------------------------------------------------
+
+
+def add_group_state_callback(cb):
+    global _GroupStateCallbacks
+    _GroupStateCallbacks.append(cb)
+
+
+def remove_group_state_callback(cb):
+    """
+    Set callback to fire when any contact were changed.
+    """
+    global _GroupStateCallbacks
+    if cb in _GroupStateCallbacks:
+        _GroupStateCallbacks.remove(cb)
+
+
+def run_group_state_callbacks(oldstate, newstate, group_json_info):
+    global _GroupStateCallbacks
+    for cb in _GroupStateCallbacks:
+        cb(oldstate, newstate, group_json_info)
 
 
 #------------------------------------------------------------------------------

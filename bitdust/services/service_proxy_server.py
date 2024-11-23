@@ -126,7 +126,7 @@ class ProxyServerService(LocalService):
         lg.info('connected to DHT layer for proxy routers: %r' % ok)
         if my_id.getIDURL():
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_PROXY_ROUTERS)
-        return
+        return ok
 
     def _on_dht_layer_connected(self, evt):
         from bitdust.dht import dht_records

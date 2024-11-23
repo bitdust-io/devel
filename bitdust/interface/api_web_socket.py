@@ -82,7 +82,7 @@ def init(port=None):
     if not port:
         port = settings.DefaultWebSocketPort()
     try:
-        ws = BitDistWrappedWebSocketFactory(BitDustWebSocketFactory())
+        ws = WrappedWebSocketFactory(WebSocketFactory())
         _WebSocketListener = listen('tcp:%d' % port, ws)
     except:
         lg.exc()
@@ -99,6 +99,7 @@ def init(port=None):
             'RESULT',
             '_Debug',
             '_DebugLevel',
+            '_APILogFileEnabled',
             'strng',
             'sys',
             'time',
@@ -123,7 +124,7 @@ def init(port=None):
         ]
     )
     if _Debug:
-        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods' % (_WebSocketListener, len(_AllAPIMethods)))
+        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods:\n%r' % (_WebSocketListener, len(_AllAPIMethods), _AllAPIMethods))
     read_api_secret()
     events.add_subscriber(on_event, event_id='*')
 
@@ -154,7 +155,7 @@ def read_api_secret():
 #------------------------------------------------------------------------------
 
 
-class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
+class WrappedWebSocketProtocol(txws.WebSocketProtocol):
 
     def validateHeaders(self):
         global _APISecret
@@ -167,20 +168,20 @@ class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
                     access_granted = True
             if not access_granted:
                 events.send('web-socket-access-denied', data=dict())
-                self.loseConnection()
-                return
+                # self.loseConnection()
+                return False
         return txws.WebSocketProtocol.validateHeaders(self)
 
 
-class BitDistWrappedWebSocketFactory(txws.WebSocketFactory):
+class WrappedWebSocketFactory(txws.WebSocketFactory):
 
-    protocol = BitDustWrappedWebSocketProtocol
+    protocol = WrappedWebSocketProtocol
 
 
 #------------------------------------------------------------------------------
 
 
-class BitDustWebSocketProtocol(Protocol):
+class WebSocketProtocol(Protocol):
 
     _key = None
 
@@ -199,16 +200,12 @@ class BitDustWebSocketProtocol(Protocol):
         global _WebSocketTransports
         Protocol.connectionMade(self)
         peer = self.transport.getPeer()
-        self._key = (
-            peer.type,
-            peer.host,
-            peer.port,
-        )
-        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
+        self._key = (peer.type, peer.host, peer.port)
+        peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         _WebSocketTransports[self._key] = self.transport
         if _Debug:
             lg.args(_DebugLevel, key=self._key, ws_connections=len(_WebSocketTransports))
-        events.send('web-socket-connected', data=dict(peer=peer))
+        events.send('web-socket-connected', data=dict(peer=peer_text))
 
     def connectionLost(self, *args, **kwargs):
         global _WebSocketTransports
@@ -216,17 +213,17 @@ class BitDustWebSocketProtocol(Protocol):
             lg.args(_DebugLevel, key=self._key, ws_connections=len(_WebSocketTransports))
         Protocol.connectionLost(self, *args, **kwargs)
         _WebSocketTransports.pop(self._key)
-        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
+        peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         self._key = None
-        events.send('web-socket-disconnected', data=dict(peer=peer))
+        events.send('web-socket-disconnected', data=dict(peer=peer_text))
 
 
 #------------------------------------------------------------------------------
 
 
-class BitDustWebSocketFactory(Factory):
+class WebSocketFactory(Factory):
 
-    protocol = BitDustWebSocketProtocol
+    protocol = WebSocketProtocol
 
     def buildProtocol(self, addr):
         """
@@ -365,6 +362,7 @@ def on_model_changed(snapshot_object):
 def push(json_data):
     global _WebSocketTransports
     if not _WebSocketTransports:
+        # lg.warn('there are currently no web socket transports open')
         return False
     raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
     for _key, transp in _WebSocketTransports.items():

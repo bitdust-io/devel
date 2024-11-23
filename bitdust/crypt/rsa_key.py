@@ -64,12 +64,17 @@ from bitdust.crypt import number
 
 
 class RSAKey(object):
+
     def __init__(self):
         self.keyObject = None
         self.local_key_id = None
         self.label = ''
         self.signed = None
         self.active = True
+        self.meta = {}
+
+    def __str__(self) -> str:
+        return 'RSAKey(%s|%s)' % (self.label, 'active' if self.active else 'inactive')
 
     def isReady(self):
         return self.keyObject is not None
@@ -80,6 +85,7 @@ class RSAKey(object):
         self.label = ''
         self.signed = None
         self.active = False
+        self.meta = {}
         # gc.collect()
         return True
 
@@ -120,6 +126,7 @@ class RSAKey(object):
             self.label = key_dict.get('label', '')
             self.active = key_dict.get('active', True)
             self.local_key_id = key_dict.get('local_key_id', None)
+            self.meta = key_dict.get('meta', {})
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
                 self.signed = (
                     key_dict['signature'],
@@ -132,7 +139,8 @@ class RSAKey(object):
     def fromString(self, key_src):
         if self.keyObject:
             raise ValueError('key object already exist')
-        key_src = strng.to_bin(key_src)
+        if strng.is_text(key_src):
+            key_src = strng.to_bin(key_src)
         try:
             self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
         except:
@@ -183,12 +191,15 @@ class RSAKey(object):
             'local_key_id': self.local_key_id,
             'label': self.label,
             'active': self.active,
+            'size': self.size(),
         }
         if self.isSigned():
             key_dict.update({
                 'signature': self.signed[0],
                 'signature_pubkey': self.signed[1],
             })
+        if self.meta:
+            key_dict['meta'] = self.meta
         return key_dict
 
     def sign(self, message, as_digits=True):

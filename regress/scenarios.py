@@ -34,6 +34,8 @@ SCENARIO 6: users are able to use DHT network to store data
 
 SCENARIO 7: customer-1 upload and download file encrypted with his master key
 
+SCENARIO 8: customer-1 added routed API device and able to accept remote web-socket connections
+
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
 SCENARIO 10: customer-rotated IDURL was rotated but he can still download his files
@@ -72,15 +74,18 @@ SCENARIO 24: customer-2 able to upload files into shared location created by cus
 """
 
 import os
+import json
 import shutil
 import time
 import base64
 import threading
+import pprint
 
 from testsupport import (health_check, start_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario)
 from testsupport import dbg, msg
 
 import keywords as kw
+from lib import web_socket_client
 
 #------------------------------------------------------------------------------
 
@@ -560,6 +565,78 @@ def scenario7():
     }
 
 
+def scenario8():
+    set_active_scenario('SCENARIO 8')
+    msg('\n\n============\n[SCENARIO 8] customer-1 added routed API device and able to accept remote web-socket connections')
+
+    response = request_post(
+        'customer-1',
+        'device/add/v1',
+        json={
+            'name': 'device_ABC',
+            'routed': True,
+        },
+    )
+    assert response.status_code == 200
+    dbg('device/add/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    response = request_get('customer-1', 'device/info/v1?name=device_ABC')
+    assert response.status_code == 200
+    dbg('device/info/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    response = request_post(
+        'customer-1',
+        'device/start/v1',
+        json={
+            'name': 'device_ABC',
+        },
+    )
+    assert response.status_code == 200
+    dbg('device/start/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    target_web_socket_router_url = None
+    connected_routers = None
+    counter = 0
+    while target_web_socket_router_url is None and counter < 30:
+        time.sleep(5)
+        counter += 1
+        response = request_get('customer-1', 'device/info/v1?name=device_ABC')
+        assert response.status_code == 200
+        dbg('device/info/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+        assert response.json()['status'] == 'OK', response.json()
+        target_web_socket_router_url = response.json()['result'].get('instance', {}).get('active_router')
+        connected_routers = response.json()['result'].get('instance', {}).get('connected_routers')
+
+    if counter >= 20:
+        assert False, 'active web socket router was not found'
+
+    connected_routers.insert(0, 'ws://failing-router:8282/?r=ABCDEFGH')
+
+    open('client.json', 'w').write(json.dumps({
+        'routers': connected_routers,
+    }))
+    def _test_client():
+        counter = 0
+        test_ws_app = web_socket_client.TestApp()
+        test_ws_app.begin()
+        while not test_ws_app.completed:
+            time.sleep(1)
+            counter += 1
+            dbg('    ... %d' % counter)
+        open('scenario8.txt', 'wt').write('completed')
+
+    test_client_thread = threading.Thread(target=_test_client)
+    test_client_thread.daemon = True
+    test_client_thread.start()
+    test_client_thread.join(timeout=120)
+    assert 'completed' == open('scenario8.txt', 'rt').read()
+
+    msg('\n[SCENARIO 8] : PASS\n\n')
+
+
 def scenario9(target_nodes):
     set_active_scenario('SCENARIO 9')
     msg('\n\n============\n[SCENARIO 9] ID server id-dead is dead and few nodes has rotated identities')
@@ -761,8 +838,8 @@ def scenario9(target_nodes):
         }
     else:
         new_supplier_info = {}
-    return old_proxy_info, old_customer_info, old_supplier_info, old_customer_keys, new_proxy_info, new_customer_info, new_supplier_info
     msg('\n[SCENARIO 9] : PASS\n\n')
+    return old_proxy_info, old_customer_info, old_supplier_info, old_customer_keys, new_proxy_info, new_customer_info, new_supplier_info
 
 
 def scenario10_begin():
@@ -1522,29 +1599,38 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
     possible_suppliers.difference_update(set(customer_1_supplier_idurls_before))
     new_supplier_idurl = list(possible_suppliers)[0]
 
-    response = request_put(
-        'customer-1',
-        'supplier/switch/v1',
-        json={
-            'position': '1',
-            'new_idurl': new_supplier_idurl,
-        },
-    )
-    assert response.status_code == 200
-
-    # make sure supplier was really switched
-    count = 0
+    attempts = 0
+    success = False
     while True:
-        if count > 20:
-            assert False, 'supplier was not switched after many attempts'
+        attempts += 1
+        response = request_put(
+            'customer-1',
+            'supplier/switch/v1',
+            json={
+                'position': '1',
+                'new_idurl': new_supplier_idurl,
+            },
+        )
+        assert response.status_code == 200
+    
+        # make sure supplier was really switched
+        count = 0
+        while True:
+            if count > 20:
+                if attempts > 2:
+                    assert False, 'supplier was not switched after %d attempts' % attempts
+                break
+            customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+            assert len(customer_1_supplier_idurls_after) == 2
+            assert customer_1_supplier_idurls_after[0] == customer_1_supplier_idurls_after[0]
+            if customer_1_supplier_idurls_before[1] != customer_1_supplier_idurls_after[1]:
+                success = True
+                break
+            count += 1
+            time.sleep(1)
+
+        if success:
             break
-        customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
-        assert len(customer_1_supplier_idurls_after) == 2
-        assert customer_1_supplier_idurls_after[0] == customer_1_supplier_idurls_after[0]
-        if customer_1_supplier_idurls_before[1] != customer_1_supplier_idurls_after[1]:
-            break
-        count += 1
-        time.sleep(3)
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 

@@ -272,8 +272,7 @@ def HashMD5(inp, hexdigest=False):
     Use MD5 method to calculate the hash of ``inp`` string.
 
     However it seems it is not so safe anymore:
-    http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-
-    with-same-md5.html
+    http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-with-same-md5.html
     """
     return hashes.md5(inp, hexdigest=hexdigest)
 

@@ -665,6 +665,10 @@ def ConfigDir():
     return os.path.join(BaseDir(), 'config')
 
 
+def DevicesDir():
+    return os.path.join(BaseDir(), 'devices')
+
+
 def TempDir():
     """
     A place for temporary BitDust files, we really need some extra disk space
@@ -1125,6 +1129,20 @@ def DefaultWebSocketPort():
     Only Local! Never expose to outside of localhost.
     """
     return 8280
+
+
+def DefaultWebSocketEncryptedPort():
+    """
+    Only Local! Never expose to outside of localhost.
+    """
+    return 8281
+
+
+def DefaultWebSocketRouterPort():
+    """
+    Secure remote routed connection to access BitDust nodes from mobile devices.
+    """
+    return 8282
 
 
 def DefaultFTPPort():

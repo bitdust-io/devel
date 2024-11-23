@@ -29,6 +29,7 @@ import json
 import pprint
 import aiohttp  # @UnresolvedImport
 import requests
+from setuptools._distutils import cmd
 
 #------------------------------------------------------------------------------
 
@@ -87,7 +88,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
         None,
         '',
         b'',
-        'localhost',
+        'localhost'
     ]:
         cmd_args = cmd
     else:
@@ -98,7 +99,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
             '-p',
             '22',
             'root@%s' % host,
-            cmd,
+            cmd
         ]
     create = asyncio.create_subprocess_exec(
         *cmd_args,
@@ -123,7 +124,7 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
         None,
         '',
         b'',
-        'localhost',
+        'localhost'
     ]:
         cmd_args = cmd
     else:
@@ -134,7 +135,7 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
             '-p',
             '22',
             f'root@{host}',
-            cmd,
+            cmd
         ]
     ssh_proc = subprocess.Popen(
         cmd_args,
@@ -290,7 +291,7 @@ async def open_tunnel_async(node, local_port, loop):
             local_port,
             8180,
         ),
-        'root@%s' % node,
+        'root@%s' % node
     ]
     # dbg('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
     tunnel = asyncio.create_subprocess_exec(
@@ -358,7 +359,7 @@ def open_ssh_port_forwarding(node, port1, port2):
             port1,
             port2,
         ),
-        'root@%s' % node,
+        'root@%s' % node
     ]
     dbg(
         '\n[%s] %s' % (
@@ -424,9 +425,14 @@ def start_daemon(node, skip_initialize=False, verbose=False):
         run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
         if os.environ.get('_DEBUG', '0') == '0':
             run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
-    bitdust_daemon = run_ssh_command_and_wait(
-        node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon'
-    )
+    cmd = '' \
+        'BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT=111222 ' \
+        'BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED=333444 ' \
+        'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 ' \
+        'BITDUST_LOG_USE_COLORS=0 ' \
+        'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config ' \
+        'bitdust daemon'
+    bitdust_daemon = run_ssh_command_and_wait(node, cmd)
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
     assert (
@@ -441,9 +447,14 @@ async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(
-        node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop
-    )
+    cmd = '' \
+        'BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT=111222 ' \
+        'BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED=333444 ' \
+        'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 ' \
+        'BITDUST_LOG_USE_COLORS=0 ' \
+        'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config ' \
+        'bitdust daemon'
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, cmd, loop)
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
     assert (
@@ -760,7 +771,6 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
     cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/message-broker/enabled false;'
     cmd += 'bitdust set services/proxy-transport/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'
     cmd += 'bitdust set services/private-messages/enabled false;'
@@ -797,7 +807,6 @@ async def start_identity_server_async(node, loop, verbose=True):
     cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/message-broker/enabled false;'
     cmd += 'bitdust set services/proxy-transport/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'
     cmd += 'bitdust set services/private-messages/enabled false;'
@@ -830,7 +839,6 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/message-broker/enabled false;'
     cmd += 'bitdust set services/proxy-transport/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'
     cmd += 'bitdust set services/private-messages/enabled false;'
@@ -887,7 +895,6 @@ async def start_proxy_server_async(
     # enable ProxyServer service
     cmd += 'bitdust set services/proxy-server/enabled true;'
     # disable message broker service
-    cmd += 'bitdust set services/message-broker/enabled false;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for proxy server
     await start_daemon_async(node, loop)
@@ -909,7 +916,8 @@ async def start_supplier_async(
     known_servers='',
     preferred_servers='',
     health_check_interval_seconds=None,
-    preferred_routers=''
+    preferred_routers='',
+    web_socket_router='',
 ):
     info(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
@@ -946,10 +954,15 @@ async def start_supplier_async(
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
     else:
         cmd += 'bitdust set services/proxy-transport/enabled false;'
+    # enabled web socket router if required
+    if web_socket_router:
+        ws_host, _, ws_port = web_socket_router.partition(':')
+        cmd += 'bitdust set services/web-socket-router/enabled true;'
+        cmd += f'bitdust set services/web-socket-router/host "{ws_host}";'
+        cmd += f'bitdust set services/web-socket-router/port "{ws_port}";'
     # enable supplier service
     cmd += 'bitdust set services/supplier/enabled true;'
     # disable message broker service
-    cmd += 'bitdust set services/message-broker/enabled false;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
@@ -961,77 +974,6 @@ async def start_supplier_async(
         await service_started_async(node, 'service_supplier', loop)
         await packet_list_async(node, loop)
     info(f'STARTED SUPPLIER [{node}]')
-
-
-async def start_message_broker_async(
-    node,
-    identity_name,
-    loop,
-    join_network=True,
-    min_servers=1,
-    max_servers=1,
-    known_servers='',
-    dht_seeds='',
-    preferred_servers='',
-    health_check_interval_seconds=None,
-    preferred_routers='',
-    preferred_brokers=''
-):
-    info(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
-    cmd = ''
-    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
-    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
-    cmd += 'bitdust set logs/api-enabled true;'
-    cmd += 'bitdust set logs/automat-events-enabled true;'
-    cmd += 'bitdust set logs/automat-transitions-enabled true;'
-    cmd += 'bitdust set logs/packet-enabled true;'
-    cmd += 'bitdust set services/gateway/p2p-timeout 30;'
-    # use short key to run tests faster
-    cmd += 'bitdust set personal/private-key-size 1024;'
-    # disable unrelated services
-    cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
-    cmd += 'bitdust set services/customer/enabled false;'
-    cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/proxy-server/enabled false;'
-    # configure ID servers
-    if min_servers is not None:
-        cmd += f'bitdust set services/identity-propagate/min-servers "{min_servers}";'
-    if max_servers is not None:
-        cmd += f'bitdust set services/identity-propagate/max-servers "{max_servers}";'
-    if known_servers:
-        cmd += f'bitdust set services/identity-propagate/known-servers "{known_servers}";'
-    if preferred_servers:
-        cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}";'
-    if health_check_interval_seconds:
-        cmd += f'bitdust set services/identity-propagate/health-check-interval-seconds "{health_check_interval_seconds}";'
-    # configure DHT udp port and node ID
-    cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
-    if dht_seeds:
-        cmd += f'bitdust set services/entangled-dht/known-nodes "{dht_seeds}";'
-    # set desired Proxy router
-    if preferred_routers:
-        cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
-    else:
-        cmd += 'bitdust set services/proxy-transport/enabled false;'
-    # enable message broker service
-    cmd += 'bitdust set services/message-broker/enabled true;'
-    cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
-    cmd += 'bitdust set services/message-broker/message-ack-timeout 30;'
-    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 20;'
-    # set desired message brokers
-    if preferred_brokers:
-        cmd += f'bitdust set services/message-broker/preferred-brokers "{preferred_brokers}";'
-    await run_ssh_command_and_wait_async(node, cmd, loop)
-    # start BitDust daemon and create new identity for supplier
-    await start_daemon_async(node, loop)
-    # await get_client_certificate_async(node, loop)
-    await health_check_async(node, loop)
-    if join_network:
-        await create_identity_async(node, identity_name, loop)
-        await connect_network_async(node, loop)
-        await service_started_async(node, 'service_message_broker', loop)
-        await packet_list_async(node, loop)
-    info(f'STARTED MESSAGE BROKER [{node}]')
 
 
 async def start_customer_async(
@@ -1074,7 +1016,6 @@ async def start_customer_async(
     # disable unrelated services
     cmd += 'bitdust set services/bismuth-blockchain/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/message-broker/enabled false;'
     cmd += 'bitdust set services/proxy-server/enabled false;'
     # configure ID servers
     if min_servers is not None:
@@ -1184,6 +1125,7 @@ async def start_one_supplier_async(supplier, loop):
         health_check_interval_seconds=supplier.get('health_check_interval_seconds', None),
         dht_seeds=supplier.get('known_dht_seeds', ''),
         preferred_routers=supplier.get('preferred_routers', ''),
+        web_socket_router=supplier.get('web_socket_router', ''),
         loop=loop,
     )
 
@@ -1207,24 +1149,6 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
         sleep_before_start=sleep_before_start,
         loop=loop,
     )
-
-
-async def start_one_message_broker_async(broker, loop):
-    await start_message_broker_async(
-        node=broker['name'],
-        identity_name=broker['name'],
-        join_network=broker.get('join_network', True),
-        dht_seeds=broker.get('known_dht_seeds', ''),
-        min_servers=broker.get('min_servers', 1),
-        max_servers=broker.get('max_servers', 1),
-        known_servers=broker.get('known_id_servers', ''),
-        preferred_servers=broker.get('preferred_servers', ''),
-        health_check_interval_seconds=broker.get('health_check_interval_seconds', None),
-        preferred_routers=broker.get('preferred_routers', ''),
-        preferred_brokers=broker.get('preferred_brokers', ''),
-        loop=loop,
-    )
-
 
 #------------------------------------------------------------------------------
 
@@ -1351,7 +1275,7 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbo
             '/app/coverage/%s' % node
         ],
         event_loop,
-        verbose=verbose,
+        verbose=verbose
     )
     await run_ssh_command_and_wait_async(
         'localhost',
@@ -1362,7 +1286,7 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbo
             '-P',
             '22',
             'root@%s:/tmp/.coverage.*' % node,
-            '/app/coverage/%s/.' % node,
+            '/app/coverage/%s/.' % node
         ],
         event_loop,
         verbose=verbose,

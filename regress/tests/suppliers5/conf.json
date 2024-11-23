@@ -15,7 +15,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-1",
-                "attached_layers": "2,3,7",
+                "attached_layers": "2,3,9",
                 "known_dht_seeds": "genesis"
             }
         },
@@ -27,7 +27,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-2",
-                "attached_layers": "2,3,7",
+                "attached_layers": "2,3,9",
                 "known_dht_seeds": "dht-1:14441"
             }
         },
@@ -40,7 +40,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-3",
-                "attached_layers": "2,3,7",
+                "attached_layers": "2,3,9",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441"
             }
         },
@@ -86,7 +86,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "web_socket_router": "supplier-1:8282"
             }
         },
         "supplier-2": {
@@ -103,7 +104,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "web_socket_router": "supplier-2:8282"
             }
         },
         "supplier-3": {
@@ -120,7 +122,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "web_socket_router": "supplier-3:8282"
             }
         },
         "supplier-4": {
@@ -137,7 +140,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "web_socket_router": "supplier-4:8282"
             }
         },
         "supplier-5": {
@@ -154,7 +158,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "web_socket_router": "supplier-5:8282"
             }
         },
         "customer-1": {

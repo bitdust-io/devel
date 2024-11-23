@@ -63,6 +63,7 @@ if sys.version_info[1] >= 2:
 
 
 class WSException(Exception):
+
     """
     Something stupid happened here.
 
@@ -396,6 +397,7 @@ def parse_hybi07_frames(buf):
 
 
 class WebSocketProtocol(ProtocolWrapper):
+
     """
     Protocol which wraps another protocol to provide a WebSockets transport
     layer.
@@ -413,6 +415,9 @@ class WebSocketProtocol(ProtocolWrapper):
     def __init__(self, *args, **kwargs):
         ProtocolWrapper.__init__(self, *args, **kwargs)
         self.pending_frames = []
+
+    def __repr__(self) -> str:
+        return 'WebSocket(%s %s)' % (self.transport, self.location)
 
     def setBinaryMode(self, mode):
         """
@@ -502,6 +507,8 @@ class WebSocketProtocol(ProtocolWrapper):
         try:
             frames, self.buf = parser(self.buf)
         except WSException as wse:
+            if _Debug:
+                log.err('Error in parseFrames: %r' % wse)
             # Couldn't parse all the frames, something went wrong, let's bail.
             self.close(wse.args[0])
             return
@@ -516,12 +523,12 @@ class WebSocketProtocol(ProtocolWrapper):
                 ProtocolWrapper.dataReceived(self, data)
             elif opcode == CLOSE:
                 # The other side wants us to close. I wonder why?
-                reason, text = data
+                text, reason = data
                 if _Debug:
-                    log.msg('Closing connection: %r (%d)' % (text, reason))
+                    log.msg('Closing connection: %r (%s)' % (text, reason))
 
                 # Close the connection.
-                self.close()
+                self.close(reason)
 
     def sendFrames(self):
         """
@@ -725,6 +732,9 @@ class WebSocketProtocol(ProtocolWrapper):
         shouldn't be a problem.
         """
 
+        if _Debug:
+            log.msg('Closing connection %r : %s' % (self, reason))
+
         # Send a closing frame. It's only polite. (And might keep the browser
         # from hanging.)
         if self.flavor in (HYBI07, HYBI10, RFC6455):
@@ -735,6 +745,7 @@ class WebSocketProtocol(ProtocolWrapper):
 
 
 class WebSocketFactory(WrappingFactory):
+
     """
     Factory which wraps another factory to provide WebSockets transports for
     all of its protocols.

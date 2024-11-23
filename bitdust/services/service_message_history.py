@@ -50,6 +50,7 @@ class MessageHistoryService(LocalService):
     def start(self):
         from bitdust.chat import message_database
         from bitdust.chat import message_keeper
+        from bitdust.access import groups
         from bitdust.main import events
         from bitdust.main import listeners
         message_database.init()
@@ -62,12 +63,15 @@ class MessageHistoryService(LocalService):
             message_database.populate_conversations()
         if listeners.is_populate_required('message'):
             message_database.populate_messages()
+        groups.add_group_state_callback(message_database.notify_group_conversation)
         return True
 
     def stop(self):
         from bitdust.chat import message_database
         from bitdust.chat import message_keeper
+        from bitdust.access import groups
         from bitdust.main import events
+        groups.remove_group_state_callback(message_database.notify_group_conversation)
         events.remove_subscriber(self.on_key_erased, 'key-erased')
         events.remove_subscriber(self.on_key_generated, 'key-generated')
         events.remove_subscriber(self.on_key_renamed, 'key-renamed')

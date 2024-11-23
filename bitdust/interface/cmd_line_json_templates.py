@@ -23,8 +23,8 @@
 #------------------------------------------------------------------------------
 
 
-def ls(tpl, tag='result'):
-    return '{.section %s}{.repeated section @}%s{.end}{.end}' % (tag, tpl)
+def ls(tpl, tag='result', or_text=''):
+    return '{.section %s}{.repeated section @}%s{.end}{.or}%s{.end}' % (tag, tpl, or_text)
 
 
 #------------------------------------------------------------------------------
@@ -48,6 +48,12 @@ TPL_JSON = '{@}'
 #------------------------------------------------------------------------------
 
 TPL_RAW = tpl_5_items.format(tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
+
+#------------------------------------------------------------------------------
+
+TPL_DEVICES_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{name} active:{active}, {size} bits, routed:{meta.routed}, auth:{meta.auth_token}', or_text='there are currently no configured devices'), tpl_errors)
+
+TPL_DEVICES_INFO = tpl_4_items.format(tpl_status, tpl_execution, '{.section result}{@}{.end}', tpl_errors)
 
 #------------------------------------------------------------------------------
 

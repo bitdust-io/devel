@@ -32,7 +32,7 @@ from bitdust.lib import strng
 #------------------------------------------------------------------------------
 
 
-def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False, indent=None):
+def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False, indent=None, to_text=False):
     """
     Calls `json.dupms()` method for input dict to build bytes output.
     Uses encoding to decode every byte string to text and ensure ascii output.
@@ -42,18 +42,20 @@ def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, val
     Respective feature `unpack_types` of `BytesToDict()` method can be used to "extract" exactly same dict from bytes.
     Can be used to serialize dictionaries of mixed types - with binary and text values.
     """
-
+    raw_text = jsn.dumps(
+        jsn.pack_dict(dct, encoding=encoding, errors=errors) if pack_types else dct,
+        indent=indent,
+        separators=(',', ':'),
+        sort_keys=True,
+        ensure_ascii=True,
+        encoding=encoding,
+        keys_to_text=keys_to_text,
+        values_to_text=values_to_text,
+    )
+    if to_text:
+        return raw_text
     result = strng.to_bin(
-        jsn.dumps(
-            jsn.pack_dict(dct, encoding=encoding, errors=errors) if pack_types else dct,
-            indent=indent,
-            separators=(',', ':'),
-            sort_keys=True,
-            ensure_ascii=True,
-            encoding=encoding,
-            keys_to_text=keys_to_text,
-            values_to_text=values_to_text,
-        ),
+        raw_text,
         encoding=encoding,
         errors=errors,
     )

@@ -43,6 +43,7 @@ _Debug = False
 
 import os
 import sys
+import time
 
 #------------------------------------------------------------------------------
 
@@ -218,6 +219,7 @@ def call_websocket_method(method, **kwargs):
     from bitdust.lib import websock
     from bitdust.system import deploy
     ret = Deferred()
+    _executed = time.time()
     timeout = kwargs.pop('websocket_timeout', None)
     if timeout:
         ret.addTimeout(timeout=(timeout + 1), clock=reactor)
@@ -234,7 +236,7 @@ def call_websocket_method(method, **kwargs):
             'process_stop',
         ]:
             if not ret.called:
-                ret.callback({'status': 'OK'})
+                ret.callback({'status': 'OK', 'execution': '%3.6f' % (time.time() - _executed)})
             return None
         if not isinstance(resp, dict):
             if not ret.called:
@@ -257,6 +259,7 @@ def call_websocket_method(method, **kwargs):
         except Exception as exc:
             ret.errback(exc)
             return None
+        payload_response['execution'] = '%3.6f' % (time.time() - _executed)
         ret.callback(payload_response)
         return resp
 
@@ -463,6 +466,44 @@ def cmd_network(opts, args, overDict, running):
 #------------------------------------------------------------------------------
 
 
+def cmd_device(opts, args, overDict, running, executablePath):
+    if not running:
+        print_text('BitDust is not running at the moment\n')
+        return 0
+
+    if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls']):
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_LIST)
+        return call_websocket_method_template_and_stop('devices_list', tpl)
+
+    if len(args) > 3 and args[1] in ['create', 'new', 'add']:
+        if args[2] not in ['routed', 'route', 'direct']:
+            print_text('must specify type of the new device: "direct" or "routed"')
+            return 1
+        routed = args[2] in ['routed', 'route', ]
+        device_name = args[3]
+        key_sz = 2048
+        if len(args) > 4:
+            key_sz = int(args[4])
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        ret = call_websocket_method_template_and_stop('device_add', tpl, name=device_name, routed=routed, key_size=key_sz, wait_listening=True)
+        if not routed:
+            return ret
+        print_text('scan QR code and then be ready to enter 6-digits number on your device')
+        return ret
+
+    if len(args) >= 2 and args[1] in ['info', 'print', 'get', 'show']:
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        return call_websocket_method_template_and_stop('device_info', tpl, name=args[2])
+
+    if len(args) >= 2 and args[1] in ['delete', 'erase', 'remove', 'del', 'rm']:
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        return call_websocket_method_template_and_stop('device_remove', tpl, name=args[2])
+
+    return 2
+
+#------------------------------------------------------------------------------
+
+
 def cmd_identity(opts, args, overDict, running, executablePath):
     from bitdust.main import initializer
     from bitdust.main import shutdowner
@@ -546,8 +587,6 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if not misc.ValidUserName(args[2]):
                 print_text('invalid user name')
                 return 0
-            # automat.LifeBegins(lg.when_life_begins())
-            # automat.OpenLogFile(settings.AutomatsLog())
             initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
             reactor.run()  # @UndefinedVariable
             shutdowner.shutdown_automats()
@@ -582,17 +621,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if not idurl:
                 print_text('BitDust need to know your IDURL to recover your account\n')
                 return 2
-            # from bitdust.automats import automat
-            # from bitdust.main import initializer
-            # from bitdust.main import config
-            # from bitdust.logs import lg
             initializer.init_automats()
-            #             automat.LifeBegins(lg.when_life_begins())
-            #             automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
-            #             automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
-            #             automat.SetExceptionsHandler(lg.exc)
-            #             automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
-            #             # automat.OpenLogFile(settings.AutomatsLog())
             initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
             reactor.run()  # @UndefinedVariable
             shutdowner.shutdown_automats()
@@ -823,10 +852,6 @@ def cmd_file(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
         return call_websocket_method_template_and_stop('files_list', tpl, remote_path=remote_path)
 
-#     if len(args) == 2 and args[1] in ['idlist', 'ids']:
-#         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
-#         return call_websocket_method_template_and_stop('backups_id_list', tpl)
-
     if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('files_sync', tpl)
@@ -876,41 +901,7 @@ def cmd_file(opts, args, overDict, executablePath):
             return 2
         return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[2])
 
-#     if len(args) == 2:
-#         tpl = jsontemplate.Template(templ.TPL_RAW)
-#         if packetid.Valid(args[1]):
-#             return call_websocket_method_template_and_stop('backup_start_id', tpl, args[1])
-#         if not os.path.exists(os.path.abspath(args[1])):
-#             print_text('path %s not exist\n' % args[1])
-#             return 1
-#         return call_websocket_method_template_and_stop('backup_start_path', tpl, args[1])
-
     return 2
-
-
-# def cmd_restore(opts, args, overDict, executablePath):
-#     if len(args) < 2 or args[1] in ['list', 'ls']:
-#         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
-#         return call_websocket_method_template_and_stop('backups_id_list', tpl)
-#
-#     if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
-#         tpl = jsontemplate.Template(templ.TPL_RESTORES_RUNNING_LIST)
-#         return call_websocket_method_template_and_stop('restores_running', tpl)
-#
-#     tpl = jsontemplate.Template(templ.TPL_RAW)
-#     if len(args) > 2 and args[1] in ['cancel', 'abort']:
-#         return call_websocket_method_template_and_stop('restore_abort', tpl, args[2])
-#
-#     if len(args) > 3 and args[1] in ['start', 'go', 'run', ]:
-#         return call_websocket_method_template_and_stop('restore_single', tpl, args[2], args[3])
-#
-#     if len(args) == 2:
-#         return call_websocket_method_template_and_stop('restore_single', tpl, args[1])
-#
-#     if len(args) == 3:
-#         return call_websocket_method_template_and_stop('restore_single', tpl, args[1], args[2])
-#
-#     return 2
 
 #------------------------------------------------------------------------------
 
@@ -1449,7 +1440,11 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     overDict = override_options(opts, args)
 
     #---identity---
-    if cmd in ['identity', 'id', 'idurl', 'globalid', 'globid', 'glid', 'gid']:
+    if cmd in ['device', 'devices', 'dev']:
+        return cmd_device(opts, args, overDict, running, executablePath)
+
+    #---identity---
+    elif cmd in ['identity', 'id', 'idurl', 'globalid', 'globid', 'glid', 'gid']:
         return cmd_identity(opts, args, overDict, running, executablePath)
 
     #---key---
@@ -1457,7 +1452,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_key(opts, args, overDict, running, executablePath)
 
     #---ping---
-    if cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
+    elif cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
         if len(args) < 1:
             return 2
         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -1474,7 +1469,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_set_request(opts, args, overDict)
 
     #---reconnect---
-    if cmd in ['reconnect', 'rejoin', 'connect']:
+    elif cmd in ['reconnect', 'rejoin', 'connect']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0

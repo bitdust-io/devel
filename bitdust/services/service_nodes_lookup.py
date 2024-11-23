@@ -46,7 +46,7 @@ class NodesLookupService(LocalService):
         # TODO:
         # in the future we can use other methods to discover nodes
         # it can be hard-coded list of nodes, a blockchain, some broadcasting solution, etc...
-        # then we redefine that logic in lookup_method and observe_method
+        # then we re-define that logic in lookup_method and observe_method
         return [
             'service_entangled_dht',
             'service_p2p_hookups',

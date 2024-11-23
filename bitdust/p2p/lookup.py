@@ -178,10 +178,26 @@ def random_customer(**kwargs):
     return start(**kwargs)
 
 
+def random_web_socket_router(**kwargs):
+    from bitdust.dht import dht_records
+    kwargs['layer_id'] = dht_records.LAYER_WEB_SOCKET_ROUTERS
+    return start(**kwargs)
+
+
 #------------------------------------------------------------------------------
 
 
-def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None, force_discovery=False, ignore_idurls=[], layer_id=0):
+def start(
+    count=1,
+    consume=True,
+    lookup_method=None,
+    observe_method=None,
+    process_method=None,
+    force_discovery=False,
+    ignore_idurls=[],
+    is_idurl=True,
+    layer_id=0,
+):
     """
     NOTE: no parallel threads, DHT lookup can be started only one at time.
     """
@@ -193,9 +209,10 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
         observe_method=observe_method,
         process_method=process_method,
         ignore_idurls=ignore_idurls,
+        is_idurl=is_idurl,
         layer_id=layer_id,
     )
-    if not force_discovery and len(discovered_idurls(layer_id=layer_id)) > count:
+    if is_idurl and not force_discovery and len(discovered_idurls(layer_id=layer_id)) > count:
         if _Debug:
             lg.out(_DebugLevel - 4, 'lookup.start  knows %d discovered nodes, SKIP and return %d nodes' % (len(discovered_idurls(layer_id=layer_id)), count))
         if consume:
@@ -332,6 +349,7 @@ def process_idurl(idurl, node):
 
 
 class DiscoveryTask(object):
+
     def __init__(
         self,
         count,
@@ -340,6 +358,7 @@ class DiscoveryTask(object):
         observe_method=None,
         process_method=None,
         ignore_idurls=[],
+        is_idurl=True,
         layer_id=0,
     ):
         global _LookupMethod
@@ -353,6 +372,7 @@ class DiscoveryTask(object):
         self.process_method = process_method or _ProcessMethod
         self.ignore_idurls = ignore_idurls
         self.started = time.time()
+        self.is_idurl = is_idurl
         self.layer_id = layer_id
         self.count = count
         self.consume = consume
@@ -480,11 +500,13 @@ class DiscoveryTask(object):
             lg.exc()
         return None
 
-    def _on_node_observed(self, idurl, node):
+    def _on_node_observed(self, value, node):
         if self.stopped:
             lg.warn('DiscoveryTask[%r] : node observed, but discovery process already stopped' % self.id)
             return None
-        idurl = id_url.to_bin(idurl)
+        if not self.is_idurl:
+            return value
+        idurl = id_url.to_bin(value)
         if _Debug:
             lg.out(_DebugLevel + 4, 'lookup.DiscoveryTask[%r]._on_node_observed %r : %r' % (self.id, node, idurl))
         cached_time = known_idurls().get(idurl)
@@ -531,9 +553,15 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_all_nodes_observed results: %r, discovered nodes: %d' % (self.id, observe_results, len(discovered_idurls(layer_id=self.layer_id))))
         self.observe_finished = True
         found_any_nodes = False
+        results = []
         for one_result in observe_results:
             if one_result[0] and one_result[1]:
                 found_any_nodes = True
+                results.append(one_result[1])
+        if not self.is_idurl:
+            self._report_result(results=results)
+            self._close()
+            return
         if not found_any_nodes:
             lg.warn('DiscoveryTask[%r] : did not observed any nodes' % self.id)
             self._report_result()

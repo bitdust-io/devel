@@ -3,6 +3,12 @@ Change Log
 
 2024-10-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* add uniqueness to Request()/Data() packets for index files
+
+
+
+2024-10-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * Bump cryptography from 42.0.8 to 43.0.1
 * prepare to add uniqueness to Request()/Data() packets for index files
 * mulitple improvements related to files management (#207)

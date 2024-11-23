@@ -292,15 +292,10 @@ def make_valid_filename(customerIDURL, glob_path):
         lg.warn('customer id is empty: %r' % glob_path)
         return ''
     if filePath != settings.BackupIndexFileName() and not packetid.IsIndexFileName(filePath):
-        if not packetid.Valid(filePath):  # SECURITY
+        # SECURITY
+        if not packetid.Valid(filePath):
             lg.warn('invalid file path')
             return ''
-    # if not contactsdb.is_customer(customerIDURL):  # SECURITY
-    #     lg.warn("%s is not my customer" % (customerIDURL))
-    # if customerGlobID:
-    #     if glob_path['idurl'] != customerIDURL:
-    #         lg.warn('making filename for another customer: %s != %s' % (
-    #             glob_path['idurl'], customerIDURL))
     filename = make_filename(customerGlobID, filePath, keyAlias)
     return filename
 
@@ -356,14 +351,8 @@ def on_data(newpacket):
     if id_url.is_the_same(newpacket.OwnerID, my_id.getIDURL()):
         # this Data belong to us, SKIP
         return False
-
-
-#     if not contactsdb.is_customer(newpacket.OwnerID):
-#         # SECURITY
-#         # TODO: process files from another customer : glob_path['idurl']
-#         lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
-#         # p2p_service.SendFail(newpacket, 'not a customer')
-#         return False
+    # SECURITY
+    # processing files from another customer
     glob_path = global_id.ParseGlobalID(newpacket.PacketID)
     if not glob_path['path']:
         # backward compatible check
@@ -861,6 +850,7 @@ def on_identity_url_changed(evt):
 
 
 def on_service_supplier_request(json_payload, newpacket, info):
+    # SECURITY
     customer_idurl = newpacket.OwnerID
     customer_id = global_id.UrlToGlobalID(customer_idurl)
     bytes_for_customer = 0
@@ -1067,6 +1057,7 @@ def on_service_supplier_cancel(json_payload, newpacket, info):
     contactsdb.save_customers()
     if customer_public_key_id:
         my_keys.erase_key(customer_public_key_id)
+    # SECURITY
     # TODO: erase customer's groups keys also
     reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
     lg.info('EXISTING CUSTOMER TERMINATED %r' % customer_idurl)

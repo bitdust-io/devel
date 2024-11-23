@@ -353,6 +353,7 @@ def proxy_is_on():
 
 
 class custom_ReadBodyProtocol(_ReadBodyProtocol):
+
     def connectionLost(self, reason):
         if self.deferred.called:
             return
@@ -360,6 +361,7 @@ class custom_ReadBodyProtocol(_ReadBodyProtocol):
 
 
 def readBody(response):
+
     def cancel(deferred):
         abort = getAbort()
         if abort is not None:
@@ -635,6 +637,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 
     http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
     """
+
     class StringReceiver(protocol.Protocol):
         buffer = ''
 
@@ -847,6 +850,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 
 @implementer(iweb.IBodyProducer)
 class BytesProducer(object):
+
     def __init__(self, body):
         self.body = body
         self.length = len(body)
@@ -976,3 +980,36 @@ def getNetworkInterfaces():
             return [_f for _f in [
                 en0 or eth0,
             ] if _f]
+
+
+#------------------------------------------------------------------------------
+
+
+def generate_self_signed_certificate():
+    import datetime
+    from cryptography import x509
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
+    from cryptography.x509.oid import NameOID
+    one_day = datetime.timedelta(1, 0, 0)
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+    public_key = private_key.public_key()
+    builder = x509.CertificateBuilder()
+    # builder = builder.subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, socket.gethostname())]))
+    # builder = builder.issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, socket.gethostname())]))
+    builder = builder.subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'localhost')]))
+    builder = builder.issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'localhost')]))
+    builder = builder.not_valid_before(datetime.datetime.today() - one_day)
+    builder = builder.not_valid_after(datetime.datetime.today() + (one_day*365*5))
+    builder = builder.serial_number(x509.random_serial_number())
+    builder = builder.public_key(public_key)
+    builder = builder.add_extension(x509.SubjectAlternativeName([
+        x509.DNSName('localhost'),
+    ]), critical=False)
+    builder = builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+    certificate = builder.sign(private_key=private_key, algorithm=hashes.SHA256(), backend=default_backend())
+    cert_bytes = certificate.public_bytes(Encoding.PEM)
+    key_bytes = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    return cert_bytes, key_bytes
