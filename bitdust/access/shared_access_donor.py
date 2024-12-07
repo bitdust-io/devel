@@ -47,7 +47,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -89,6 +89,7 @@ from bitdust.storage import backup_fs
 
 
 class SharedAccessDonor(automat.Automat):
+
     """
     This class implements all the functionality of the ``shared_access_donor()`` state machine.
     """
@@ -235,6 +236,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+
         def _on_ack(response):
             self.ping_response = time.time()
             self.automat('ack', response)

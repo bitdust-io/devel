@@ -60,7 +60,7 @@ from bitdust.automats import automat
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -228,6 +228,7 @@ def stop_process_sessions():
 
 
 class UDPSession(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_session()`` state
     machine.

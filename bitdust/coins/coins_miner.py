@@ -48,7 +48,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -111,6 +111,7 @@ def A(event=None, *args, **kwargs):
 
 
 class CoinsMiner(automat.Automat):
+
     """
     This class implements all the functionality of the ``coins_miner()`` state
     machine.

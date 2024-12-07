@@ -59,7 +59,7 @@ from bitdust.lib import nameurl
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -101,6 +101,7 @@ def id_to_idurl(user_id):
 
 
 class GateInterface():
+
     def init(self, xml_rpc_url_or_object):
         """
         """

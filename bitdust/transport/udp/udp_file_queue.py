@@ -51,7 +51,7 @@ from bitdust.contacts import contactsdb
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -66,6 +66,7 @@ _StreamCounter = 0
 
 
 class FileQueue:
+
     def __init__(self, session):
         self.session = session
         self.streams = {}
@@ -437,6 +438,7 @@ class FileQueue:
 
 
 class InboxFile():
+
     def __init__(self, queue, stream_id, size):
         """
         """
@@ -497,6 +499,7 @@ class InboxFile():
 
 
 class OutboxFile():
+
     def __init__(self, queue, stream_id, filename, size, description='', result_defer=None, keep_alive=True):
         """
         """

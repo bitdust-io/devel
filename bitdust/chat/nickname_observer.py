@@ -47,7 +47,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -110,10 +110,12 @@ def stop_all():
 
 
 class NicknameObserver(automat.Automat):
+
     """
     This class implements all the functionality of the ``nickname_observer()``
     state machine.
     """
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the

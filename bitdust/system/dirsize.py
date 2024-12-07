@@ -34,7 +34,7 @@ way to get the folder size, you can ask to scan same folder again.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -151,6 +151,7 @@ def main():
     """
     Run the test - use command line to pass a location.
     """
+
     def _done(path, sz, *args, **kwargs):
         print(path, sz)
         reactor.stop()  # @UndefinedVariable

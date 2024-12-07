@@ -54,7 +54,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -77,6 +77,7 @@ from bitdust.services import driver
 
 
 class LocalService(automat.Automat):
+
     """
     This class implements all the functionality of the ``local_service()``
     state machine.
@@ -471,6 +472,7 @@ class LocalService(automat.Automat):
 
 
 class SlowStartingLocalService(LocalService):
+
     def _do_start(self, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, service_name=self.service_name)

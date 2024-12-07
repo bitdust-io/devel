@@ -61,7 +61,7 @@ import traceback
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -399,9 +399,11 @@ def ReadTextFile(filename):
 
 
 class eccmap:
+
     """
     A class to do many operations with ecc map.
     """
+
     def __init__(self, filename='', suppliers_number=None):
         if filename != '':
             self.name = filename  # sometimes we will just want the name

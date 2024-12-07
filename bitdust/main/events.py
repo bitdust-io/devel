@@ -38,7 +38,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 _EventLogFileEnabled = True
@@ -103,6 +103,7 @@ def shutdown():
 
 
 class Event(object):
+
     def __init__(self, event_id, data=None, created=None):
         self.event_id = event_id
         self.data = data

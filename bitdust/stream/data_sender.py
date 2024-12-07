@@ -57,7 +57,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -119,6 +119,7 @@ def A(event=None, *args, **kwargs):
 
 
 class DataSender(automat.Automat):
+
     """
     A class to manage process of sending data packets to remote suppliers.
     """

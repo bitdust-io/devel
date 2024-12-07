@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -129,6 +129,7 @@ def recheck_contract(customer_idurl):
 
 
 class SupplierContractExecutor(automat.Automat):
+
     """
     This class implements all the functionality of the ``supplier_contract_executor()`` state machine.
     """

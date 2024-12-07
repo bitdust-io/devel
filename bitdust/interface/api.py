@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _APILogFileEnabled = None
@@ -603,11 +603,13 @@ def devices_list(sort=False):
         result = device_object.toDict()
         result['name'] = result.pop('label')
         result['instance'] = None
+        result['url'] = None
         result.pop('body', None)
         result.pop('local_key_id', None)
         device_instance = api_device.instances(device_name)
         if device_instance:
-            result.update({'instance': device_instance.to_json()})
+            result['instance'] = device_instance.to_json()
+            result['url'] = result['instance'].pop('url', None)
         results.append(result)
     if sort:
         results = sorted(results, key=lambda i: i['label'])
@@ -631,12 +633,14 @@ def device_info(name):
     device_instance = api_device.instances(name)
     result = device_object.toDict()
     result['name'] = result.pop('label')
+    result['url'] = None
     result['instance'] = None
     result.pop('body', None)
     result.pop('local_key_id', None)
     if not device_instance:
         return OK(result)
-    result.update({'instance': device_instance.to_json()})
+    result['instance'] = device_instance.to_json()
+    result['url'] = result['instance'].pop('url', None)
     return OK(result)
 
 
@@ -726,6 +730,34 @@ def device_start(name, wait_listening=False):
     except Exception as exc:
         return ERROR(exc)
     return ret
+
+
+def device_authorization_reset(name, start=True, wait_listening=False):
+    """
+    """
+    from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
+    try:
+        api_device.reset_authorization(device_name=name)
+    except Exception as exc:
+        return ERROR(exc)
+    if not start:
+        return OK()
+    return device_start(name, wait_listening=wait_listening)
+
+
+def device_client_code_input(name, client_code):
+    """
+    """
+    from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name, client_code=client_code)
+    try:
+        api_device.on_device_client_code_input_received(device_name=name, client_code=client_code)
+    except Exception as exc:
+        return ERROR(exc)
+    return OK()
 
 
 def device_stop(name):

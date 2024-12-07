@@ -55,7 +55,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -95,9 +95,11 @@ from bitdust.stream import io_throttle
 
 
 class FileDown(automat.Automat):
+
     """
     This class implements all the functionality of ``file_down()`` state machine.
     """
+
     def __init__(self, parent, callOnReceived, creatorID, packetID, ownerID, remoteID, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `file_down()` state machine.

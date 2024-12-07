@@ -54,7 +54,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -208,6 +208,7 @@ def A(event=None, *args, **kwargs):
 
 
 class Shutdowner(automat.Automat):
+
     """
     This is a state machine to manage a process of correctly finishing the
     BitDust software.

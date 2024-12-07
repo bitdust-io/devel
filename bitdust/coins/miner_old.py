@@ -77,7 +77,7 @@ And remote node should declare that as well to confirm this, this is sort of "po
 
 from __future__ import absolute_import
 
-_Debug = False
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -169,6 +169,7 @@ def finish_contract(typ, partner, **kwargs):
 
 
 class Contract(object):
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -178,6 +179,7 @@ class Contract(object):
 
 
 class CoinsMinerNode(object):
+
     def inbox_packet(self, newpacket, info):
         return False
 

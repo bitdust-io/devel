@@ -72,7 +72,7 @@ from bitdust.transport.udp import udp_session
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 18
 
 #------------------------------------------------------------------------------
@@ -108,6 +108,7 @@ def Destroy():
 
 
 class UDPNode(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_node()`` state
     machine.

@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -103,6 +103,7 @@ def Destroy():
 
 
 class StunServer(automat.Automat):
+
     """
     This class implements all the functionality of the ``stun_server()`` state
     machine.

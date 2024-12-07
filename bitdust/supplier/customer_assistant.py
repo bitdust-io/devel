@@ -48,7 +48,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -98,6 +98,7 @@ def by_idurl(customer_idurl):
 
 
 class CustomerAssistant(automat.Automat):
+
     """
     This class implements all the functionality of the ``customer_assistant()`` state machine.
     """

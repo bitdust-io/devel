@@ -44,7 +44,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -88,10 +88,12 @@ def A(event=None, *args, **kwargs):
 
 
 class BroadcastListener(automat.Automat):
+
     """
     This class implements all the functionality of the ``broadcast_listener()``
     state machine.
     """
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase

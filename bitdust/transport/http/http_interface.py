@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -78,6 +78,7 @@ def proxy():
 
 
 class GateInterface():
+
     def init(self, xml_rpc_url_or_object):
         """
         """

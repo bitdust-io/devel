@@ -600,14 +600,14 @@ def scenario8():
     target_web_socket_router_url = None
     connected_routers = None
     counter = 0
-    while target_web_socket_router_url is None and counter < 30:
+    while not target_web_socket_router_url and counter < 30:
         time.sleep(5)
         counter += 1
         response = request_get('customer-1', 'device/info/v1?name=device_ABC')
         assert response.status_code == 200
         dbg('device/info/v1 [customer-1] name=device_ABC : %s\n' % pprint.pformat(response.json()))
         assert response.json()['status'] == 'OK', response.json()
-        target_web_socket_router_url = response.json()['result'].get('instance', {}).get('active_router')
+        target_web_socket_router_url = response.json()['result'].get('url')
         connected_routers = response.json()['result'].get('instance', {}).get('connected_routers')
 
     if counter >= 20:

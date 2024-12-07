@@ -98,7 +98,7 @@ from bitdust.automats import automat
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -279,6 +279,7 @@ class BufferOverflow(Exception):
 
 
 class UDPStream(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_stream()`` state
     machine.

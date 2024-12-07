@@ -36,7 +36,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -482,11 +482,13 @@ _LastCallableID = 0
 
 
 class _callable():
+
     """
     This class shows my experiments with performance monitoring.
 
     I tried to decrease the number of delayed calls.
     """
+
     def __init__(self, delay, callabl, *args, **kw):
         self.callabl = callabl
         self.to_call = lambda: self.run(*args, **kw)
@@ -539,6 +541,7 @@ def monitorDelayedCalls(r):
 
 
 class TwistedUnhandledErrorsObserver:
+
     def __init__(self, level):
         self.level = level
 

@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -105,6 +105,7 @@ def send_to_miner(coins):
 
 
 class Query(object):
+
     def __init__(self, query_dict):
         """
         """

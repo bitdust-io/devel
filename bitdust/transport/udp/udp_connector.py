@@ -53,7 +53,7 @@ from bitdust.dht import dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -90,6 +90,7 @@ def get(peer_id):
 
 
 class DHTUDPConnector(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_connector()``
     state machine.

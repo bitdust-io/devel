@@ -44,6 +44,7 @@ Commands:
   alias
   device list
   device add <direct | routed> <name>
+  device authorize <name>
   device remove <name>
   id
   idurl

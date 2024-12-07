@@ -44,7 +44,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -113,6 +113,7 @@ def A(event=None, *args, **kwargs):
 
 
 class SupplierFinder(automat.Automat):
+
     """
     This class implements all the functionality of the ``supplier_finder()``
     state machine.

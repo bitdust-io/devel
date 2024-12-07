@@ -33,8 +33,8 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 10
+_Debug = True
+_DebugLevel = 24
 
 #------------------------------------------------------------------------------
 
@@ -1244,6 +1244,7 @@ def get_cached_json_value(key, layer_id=0, cache_ttl=DEFAULT_CACHE_TTL):
 
 
 class DHTNode(MultiLayerNode):
+
     def __init__(self, udpPort=4000, dataStores=None, routingTables=None, networkProtocol=None, nodeID=None):
         super(DHTNode, self).__init__(
             udpPort=udpPort,
@@ -1392,6 +1393,7 @@ class DHTNode(MultiLayerNode):
 
 
 class DHTProtocol(KademliaMultiLayerProtocol):
+
     def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.MultiLayerFormat()):
         KademliaMultiLayerProtocol.__init__(self, node, msgEncoder=msgEncoder, msgTranslator=msgTranslator)
         self._counter = count

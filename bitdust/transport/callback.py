@@ -31,8 +31,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 24
 
 #------------------------------------------------------------------------------
 
@@ -62,6 +62,7 @@ _FileSendingFilterCallbacksList = []
 
 
 class InterestedParty:
+
     def __init__(self, CallBackFunctionOrDefer, CreatorID, PacketID):
         self.CallBackFunction = CallBackFunctionOrDefer  # function(or Deferred) to call when we see this packet
         self.ComboID = combine_IDs(CreatorID, PacketID)

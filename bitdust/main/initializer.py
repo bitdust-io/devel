@@ -65,7 +65,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -261,6 +261,7 @@ def Destroy():
 
 
 class Initializer(automat.Automat):
+
     """
     A class to execute start up operations to launch BitDust software.
     """

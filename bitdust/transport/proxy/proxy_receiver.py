@@ -62,8 +62,8 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 16
+_Debug = True
+_DebugLevel = 24
 
 _PacketLogFileEnabled = False
 

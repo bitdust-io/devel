@@ -43,7 +43,7 @@ import platform
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -75,6 +75,7 @@ from bitdust.logs import lg
 
 
 class Popen(subprocess.Popen):
+
     """
     This is inherited from ``subprocess.Popen`` class.
 

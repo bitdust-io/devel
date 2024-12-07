@@ -79,7 +79,7 @@ from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -342,6 +342,7 @@ def SetGlobalLogTransitions(value=False):
 
 
 class Automat(object):
+
     """
     Base class of the State Machine Object.
 
@@ -393,6 +394,7 @@ class Automat(object):
     You also must set that flag in the MS Visio document and rebuild the code:
     put ``[post]`` string into the last line of the LABEL shape.
     """
+
     def __init__(self, name, state, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, publish_event_state_not_changed=False, publish_fast=True, **kwargs):
         self.id, self.index = create_index(name)
         self.name = name

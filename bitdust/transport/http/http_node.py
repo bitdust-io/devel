@@ -36,7 +36,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -212,6 +212,7 @@ class TransportHTTPClientFactory(HTTPClientFactory):
 
 
 class TransportHTTPProxyClientFactory(HTTPClientFactory):
+
     def setURL(self, url):
         HTTPClientFactory.setURL(self, url)
         self.path = url
@@ -221,6 +222,7 @@ class TransportHTTPProxyClientFactory(HTTPClientFactory):
 
 
 class Receiver(object):
+
     def loop(self):
         global _ReceivingLoop
         global _Contacts

@@ -36,7 +36,7 @@ from six import PY2
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 _APILogFileEnabled = False
@@ -79,6 +79,7 @@ _APISecret = None
 YES = ('1', 'true', 'True', 'yes', 'Yes', 'YES', 'ok', 1, True)
 
 #------------------------------------------------------------------------------
+
 
 def init(port=None):
     global _APIListener

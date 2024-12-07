@@ -37,7 +37,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -479,27 +479,71 @@ def cmd_device(opts, args, overDict, running, executablePath):
         if args[2] not in ['routed', 'route', 'direct']:
             print_text('must specify type of the new device: "direct" or "routed"')
             return 1
-        routed = args[2] in ['routed', 'route', ]
+        routed = args[2] in [
+            'routed',
+            'route',
+        ]
         device_name = args[3]
         key_sz = 2048
         if len(args) > 4:
             key_sz = int(args[4])
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
-        ret = call_websocket_method_template_and_stop('device_add', tpl, name=device_name, routed=routed, key_size=key_sz, wait_listening=True)
-        if not routed:
-            return ret
-        print_text('scan QR code and then be ready to enter 6-digits number on your device')
-        return ret
+        from twisted.internet import reactor  # @UnresolvedImport
 
-    if len(args) >= 2 and args[1] in ['info', 'print', 'get', 'show']:
+        def _client_code_confirmed(ret):
+            print('_client_code_confirmed', ret)
+            reactor.stop()  # @UndefinedVariable
+
+        def _check_server_code(ret):
+            server_code = ret.get('instance', {}).get('server_code')
+            if not server_code:
+                reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
+                return
+            print_text('server code is: %r' % server_code)
+            client_code = input('please enter the client code displayed at your device: ')
+            d = call_websocket_method('device_client_code_input', name=device_name, client_code=client_code)
+            d.addCallback(_client_code_confirmed)
+            d.addErrback(fail_and_stop)
+
+        def _wait_server_code():
+            d = call_websocket_method('device_info', name=device_name)
+            d.addCallback(_cb)
+            d.addErrback(fail_and_stop)
+
+        def _cb(ret):
+            if _Debug:
+                print('cmd_device._cb', ret)
+            connected_routers = ret.get('instance', {}).get('connected_routers', [])
+            if not connected_routers:
+                print_text('device configuration failed due to connection error')
+                reactor.stop()  # @UndefinedVariable
+                return
+            route_url = connected_routers[0]
+            print_text('enter following details on your device and then be ready to enter 6-digits server code:\n%s' % route_url)
+            reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
+
+        def _add():
+            d = call_websocket_method('device_add', name=device_name, routed=routed, key_size=key_sz, wait_listening=True)
+            d.addCallback(_cb)
+            d.addErrback(fail_and_stop)
+
+        reactor.callWhenRunning(_add)  # @UndefinedVariable
+        reactor.run()  # @UndefinedVariable
+        return 0
+
+    if len(args) >= 3 and args[1] in ['reset', 'drop', 'revoke', 'pair', 'auth', 'authorize']:
+        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        return call_websocket_method_template_and_stop('device_authorization_reset', tpl, name=args[2])
+
+    if len(args) >= 3 and args[1] in ['info', 'print', 'get', 'show']:
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_info', tpl, name=args[2])
 
-    if len(args) >= 2 and args[1] in ['delete', 'erase', 'remove', 'del', 'rm']:
+    if len(args) >= 3 and args[1] in ['delete', 'erase', 'remove', 'del', 'rm']:
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_remove', tpl, name=args[2])
 
     return 2
+
 
 #------------------------------------------------------------------------------
 
@@ -539,7 +583,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
 
         if args[1] in ['server', 'srv'] and args[0]:
 
-            def _run_stand_alone_id_server():
+            def _run_standalone_id_server():
                 from bitdust.logs import lg
                 from bitdust.userid import id_server
                 lg.open_log_file(os.path.join(settings.LogsDir(), 'idserver.log'))
@@ -555,7 +599,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
 
             if len(args) <= 2:
                 if not running:
-                    _run_stand_alone_id_server()
+                    _run_standalone_id_server()
                     return 0
                 tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
                 return call_websocket_method_template_and_stop('service_info', tpl, service_name='service_identity_server')
@@ -567,7 +611,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 return call_websocket_method_template_and_stop('service_stop', tpl, service_name='service_identity_server')
             if args[2] == 'start':
                 if not running:
-                    _run_stand_alone_id_server()
+                    _run_standalone_id_server()
                     return 0
                 tpl = jsontemplate.Template(templ.TPL_RAW)
                 return call_websocket_method_template_and_stop('service_start', tpl, service_name='service_identity_server')
@@ -902,6 +946,7 @@ def cmd_file(opts, args, overDict, executablePath):
         return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[2])
 
     return 2
+
 
 #------------------------------------------------------------------------------
 

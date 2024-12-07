@@ -36,7 +36,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -95,6 +95,7 @@ def conf():
 
 
 class BaseConfig(object):
+
     def __init__(self, configDir):
         self.configDir = configDir
 
@@ -364,6 +365,7 @@ class DefaultsConfig(BaseConfig):
 
 
 class NotifiableConfig(DefaultsConfig):
+
     def __init__(self, configDir):
         super(NotifiableConfig, self).__init__(configDir)
         self.callbacks = {}
