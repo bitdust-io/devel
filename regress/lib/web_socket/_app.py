@@ -236,7 +236,7 @@ class WebSocketApp(object):
             If close_frame is set, we will invoke the on_close handler with the
             statusCode and reason from there.
             """
-            if thread and thread.isAlive():
+            if thread:
                 isAlive = False
                 if hasattr(thread, 'isAlive'):
                     isAlive = thread.isAlive()

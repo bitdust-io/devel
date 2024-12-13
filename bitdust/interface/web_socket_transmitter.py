@@ -38,6 +38,10 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
+
+#------------------------------------------------------------------------------
+
 from twisted.application.strports import listen
 from twisted.internet.protocol import Protocol, Factory
 
@@ -48,10 +52,20 @@ from bitdust.logs import lg
 from bitdust.lib import txws
 from bitdust.lib import strng
 from bitdust.lib import serialization
+from bitdust.lib import jsn
+from bitdust.lib import utime
+
+from bitdust.system import local_fs
 
 from bitdust.crypt import cipher
 
 from bitdust.main import config
+from bitdust.main import settings
+
+#------------------------------------------------------------------------------
+
+MAX_KNOWN_ROUTES = 1000
+MAX_ACTIVE_ROUTES = 100
 
 #------------------------------------------------------------------------------
 
@@ -59,7 +73,6 @@ _WebSocketListener = None
 _WebSocketTransports = {}
 _WebSocketRouterLocation = None
 _Routes = {}
-_MaxRoutesNumber = 100
 
 #------------------------------------------------------------------------------
 
@@ -73,6 +86,11 @@ def init():
     host = config.conf().getString('services/web-socket-router/host').strip()
     port = config.conf().getInt('services/web-socket-router/port')
     _WebSocketRouterLocation = 'ws://{}:{}'.format(host, port)
+    service_dir = settings.ServiceDir('service_web_socket_router')
+    if not os.path.exists(service_dir):
+        if _Debug:
+            lg.out(_DebugLevel, 'web_socket_transmitter.init will create folder: ' + service_dir)
+        os.makedirs(service_dir)
     load_routes()
     try:
         ws = WrappedWebSocketFactory(WebSocketFactory())
@@ -155,6 +173,7 @@ def add_route():
         'external_transport': None,
         'internal_url': internal_url,
         'internal_transport': None,
+        'created': utime.get_sec1970(),
     }
     if _Debug:
         lg.args(_DebugLevel, route_id=route_id, routes=len(_Routes))
@@ -172,7 +191,29 @@ def remove_route(route_id):
 
 
 def load_routes():
-    pass
+    global _Routes
+    service_dir = settings.ServiceDir('service_web_socket_router')
+    routes_file_path = os.path.join(service_dir, 'routes')
+    _Routes = jsn.loads_text(local_fs.ReadTextFile(routes_file_path)) or {}
+    if _Debug:
+        lg.args(_DebugLevel, count=len(_Routes))
+
+
+def save_routes():
+    global _Routes
+    service_dir = settings.ServiceDir('service_web_socket_router')
+    routes_file_path = os.path.join(service_dir, 'routes')
+    ret = {}
+    for route_id, route_info in _Routes.items():
+        ret[route_id] = {
+            'route_id': route_info['route_id'],
+            'route_url': route_info['route_url'],
+            'internal_url': route_info['internal_url'],
+            'created': route_info['created'],
+        }
+    if _Debug:
+        lg.args(_DebugLevel, count=len(ret))
+    return local_fs.WriteTextFile(routes_file_path, jsn.dumps(ret, indent=2, separators=(',', ':')))
 
 
 #------------------------------------------------------------------------------
@@ -182,6 +223,15 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
 
     route_id = None
     direction = None
+
+    def connectionMade(self):
+        global MAX_ACTIVE_ROUTES
+        global _WebSocketTransports
+        if len(_WebSocketTransports) >= MAX_ACTIVE_ROUTES:
+            lg.warn('maximum number of active routes reached')
+            self.loseConnection()
+            return
+        return txws.WebSocketProtocol.connectionMade(self)
 
     def validateHeaders(self):
         _, _, parameter = self.location.partition('?')
@@ -243,13 +293,14 @@ class WebSocketProtocol(Protocol):
 
     def connectionMade(self):
         global _WebSocketTransports
-        Protocol.connectionMade(self)
+        ret = Protocol.connectionMade(self)
         peer = self.transport.getPeer()
         self._key = (peer.type, peer.host, peer.port)
         peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         _WebSocketTransports[self._key] = self.transport
         if _Debug:
             lg.args(_DebugLevel, peer=peer_text, transport=self.transport, ws_connections=len(_WebSocketTransports))
+        return ret
 
     def connectionLost(self, *args, **kwargs):
         if _Debug:
@@ -292,18 +343,19 @@ class WebSocketFactory(Factory):
 
 
 def do_process_incoming_message(transport, json_data, raw_data):
-    global _MaxRoutesNumber
+    global MAX_KNOWN_ROUTES
     route_id = transport.route_id
     direction = transport.direction
     if _Debug:
         lg.args(_DebugLevel, route_id=route_id, direction=direction, json_data=json_data)
     if route_id is None and direction is None:
         if json_data.get('cmd') == 'connect-request':
-            if len(routes()) >= _MaxRoutesNumber:
+            if len(routes()) >= MAX_KNOWN_ROUTES:
                 if _Debug:
                     lg.dbg(_DebugLevel, 'request for a new route from %r was rejected: too many routes are currently registered' % transport)
                 return False
             route_id = add_route()
+            save_routes()
             route_info = routes(route_id)
             json_response = {
                 'result': 'accepted',

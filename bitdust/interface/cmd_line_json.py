@@ -37,7 +37,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -479,40 +479,41 @@ def cmd_device(opts, args, overDict, running, executablePath):
         if args[2] not in ['routed', 'route', 'direct']:
             print_text('must specify type of the new device: "direct" or "routed"')
             return 1
-        routed = args[2] in [
-            'routed',
-            'route',
-        ]
+        routed = args[2] in ['routed', 'route']
         device_name = args[3]
         key_sz = 2048
         if len(args) > 4:
             key_sz = int(args[4])
         from twisted.internet import reactor  # @UnresolvedImport
 
-        def _client_code_confirmed(ret):
-            print('_client_code_confirmed', ret)
+        def _on_client_code_confirmed(ret):
+            if _Debug:
+                print('_on_client_code_confirmed', ret)
+            print_text('SUCCESS!')
             reactor.stop()  # @UndefinedVariable
 
-        def _check_server_code(ret):
-            server_code = ret.get('instance', {}).get('server_code')
+        def _device_info_cb(ret):
+            if _Debug:
+                print('cmd_device._device_info_cb', ret)
+            server_code = ret.get('result', {}).get('instance', {}).get('server_code')
             if not server_code:
                 reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
                 return
             print_text('server code is: %r' % server_code)
             client_code = input('please enter the client code displayed at your device: ')
             d = call_websocket_method('device_client_code_input', name=device_name, client_code=client_code)
-            d.addCallback(_client_code_confirmed)
+            d.addCallback(_on_client_code_confirmed)
             d.addErrback(fail_and_stop)
 
         def _wait_server_code():
             d = call_websocket_method('device_info', name=device_name)
-            d.addCallback(_cb)
+            d.addCallback(_device_info_cb)
             d.addErrback(fail_and_stop)
 
-        def _cb(ret):
+        def _device_add_cb(ret):
             if _Debug:
-                print('cmd_device._cb', ret)
-            connected_routers = ret.get('instance', {}).get('connected_routers', [])
+                print('cmd_device._device_add_cb', ret)
+            connected_routers = ret.get('result', {}).get('instance', {}).get('connected_routers', [])
             if not connected_routers:
                 print_text('device configuration failed due to connection error')
                 reactor.stop()  # @UndefinedVariable
@@ -523,7 +524,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
 
         def _add():
             d = call_websocket_method('device_add', name=device_name, routed=routed, key_size=key_sz, wait_listening=True)
-            d.addCallback(_cb)
+            d.addCallback(_device_add_cb)
             d.addErrback(fail_and_stop)
 
         reactor.callWhenRunning(_add)  # @UndefinedVariable

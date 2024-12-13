@@ -711,7 +711,8 @@ class RoutedWebSocket(automat.Automat):
             if not route_id:
                 continue
             route_url = '{}/?i={}'.format(url, route_id)
-            stop_client(url=route_url)
+            if is_started(route_url):
+                stop_client(route_url)
         self.handshaked_routers = []
         self.active_router_url = None
         if event == 'lookup-failed':
@@ -889,13 +890,14 @@ class RoutedWebSocket(automat.Automat):
 
     def _on_web_socket_router_connection_error(self, ws_inst, err):
         url = ws_inst.url
-        try:
-            stop_client(url)
-        except:
-            lg.exc()
-        if not ws_inst.url:
+        if not url:
             lg.warn('missed connecting web router: %r' % url)
         else:
+            if is_started(url):
+                try:
+                    stop_client(url)
+                except:
+                    lg.exc()
             if url in self.connecting_routers:
                 self.connecting_routers.remove(url)
         handshaked_count = len(self.handshaked_routers)
@@ -956,10 +958,11 @@ class RoutedWebSocket(automat.Automat):
     def _on_web_socket_router_first_response(self, url, resp):
         if _Debug:
             lg.args(_DebugLevel, url=url, resp=resp)
-        try:
-            stop_client(url)
-        except:
-            lg.exc()
+        if is_started(url):
+            try:
+                stop_client(url)
+            except:
+                lg.exc()
         if self.connected_routers.get(url):
             lg.warn('web socket router at %s was already connected' % url)
             if len(self.connected_routers) >= 3:
@@ -992,10 +995,11 @@ class RoutedWebSocket(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, ws_inst=ws_inst, err=err)
         url = ws_inst.url
-        try:
-            stop_client(url)
-        except:
-            lg.exc()
+        if is_started(url):
+            try:
+                stop_client(url)
+            except:
+                lg.exc()
         self.connected_routers[url] = None
         if len(self.connected_routers) >= 3:
             self.automat('routers-selected')
