@@ -609,6 +609,7 @@ def devices_list(sort=False):
         device_instance = api_device.instances(device_name)
         if device_instance:
             result['instance'] = device_instance.to_json()
+            result['instance'].pop('device_name')
             result['url'] = result['instance'].pop('url', None)
         results.append(result)
     if sort:
@@ -640,6 +641,7 @@ def device_info(name):
     if not device_instance:
         return OK(result)
     result['instance'] = device_instance.to_json()
+    result['instance'].pop('device_name')
     result['url'] = result['instance'].pop('url', None)
     return OK(result)
 

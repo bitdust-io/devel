@@ -89,6 +89,8 @@ from bitdust.crypt import hashes
 
 from bitdust.dht import dht_records
 
+from bitdust.main import events
+
 from bitdust.p2p import lookup
 
 from bitdust.services import driver
@@ -420,6 +422,7 @@ class RoutedWebSocket(automat.Automat):
         self.active_router_url = None
         self.handshaked_routers = []
         self.server_code = None
+        self.device_name = None
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -438,6 +441,7 @@ class RoutedWebSocket(automat.Automat):
             'url': self.active_router_url,
             'connected_routers': self.handshaked_routers,
             'server_code': self.server_code,
+            'device_name': self.device_name,
         })
         return ret
 
@@ -759,6 +763,7 @@ class RoutedWebSocket(automat.Automat):
             self.server_code = BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED.strip()
         else:
             self.server_code = cipher.generate_digits(6, as_text=True)
+        events.send('web-socket-handshake-started', data=self.to_json())
         if _Debug:
             lg.args(_DebugLevel, server_code=self.server_code)
 
@@ -807,6 +812,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        events.send('web-socket-handshake-proceeding', data=self.to_json())
         BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT = os.environ.get('BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT', None)
         if BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT:
             self.on_client_code_input_received(BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT.strip())
