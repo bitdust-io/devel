@@ -37,6 +37,8 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 10
 
+_APILogFileEnabled = False
+
 #------------------------------------------------------------------------------
 
 import os
@@ -81,6 +83,8 @@ _LegalDeviceNameFirstCharacter = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP
 
 def init():
     global _AllAPIMethods
+    global _APILogFileEnabled
+    _APILogFileEnabled = settings.config.conf().getBool('logs/api-enabled')
     from bitdust.interface import api
     encrypted_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
     routed_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
@@ -96,6 +100,7 @@ def init():
             'RESULT',
             '_Debug',
             '_DebugLevel',
+            '_APILogFileEnabled',
             'strng',
             'sys',
             'time',
@@ -428,6 +433,7 @@ def reset_authorization(device_name):
 
 def do_process_incoming_message(device_object, json_data):
     global _AllAPIMethods
+    global _APILogFileEnabled
     from bitdust.interface import api
     command = json_data.get('command')
     if command == 'api_call':
@@ -460,8 +466,8 @@ def do_process_incoming_message(device_object, json_data):
         if _Debug:
             lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (call_id, method, kwargs))
 
-        # if _APILogFileEnabled:
-        #     lg.out(0, '*** %s  WS IN  %s(%r)' % (call_id, method, kwargs), log_name='api', showtime=True)
+        if _APILogFileEnabled:
+            lg.out(0, '*** %s  WS IN %s %s(%r)' % (device_object.device_name, call_id, method, kwargs), log_name='api', showtime=True)
 
         func = getattr(api, method)
         try:
@@ -520,42 +526,38 @@ def do_process_incoming_message(device_object, json_data):
 
 
 def on_event(evt):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'event',
-            'payload': {
-                'event_id': evt.event_id,
-                'data': evt.data,
-            },
-        })
+    push({
+        'cmd': 'push',
+        'type': 'event',
+        'payload': {
+            'event_id': evt.event_id,
+            'data': evt.data,
+        },
+    })
 
 
 def on_stream_message(message_json):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'stream_message',
-            'payload': message_json,
-        })
+    push({
+        'cmd': 'push',
+        'type': 'stream_message',
+        'payload': message_json,
+    })
 
 
 def on_online_status_changed(status_info):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'online_status',
-            'payload': status_info,
-        })
+    push({
+        'cmd': 'push',
+        'type': 'online_status',
+        'payload': status_info,
+    })
 
 
 def on_model_changed(snapshot_object):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'model',
-            'payload': snapshot_object.to_json(),
-        })
+    push({
+        'cmd': 'push',
+        'type': 'model',
+        'payload': snapshot_object.to_json(),
+    })
 
 
 def on_device_client_code_input_received(device_name, client_code):
@@ -564,6 +566,17 @@ def on_device_client_code_input_received(device_name, client_code):
     if not inst:
         raise Exception('device %r was not started' % device_name)
     inst.on_client_code_input_received(client_code)
+
+
+#------------------------------------------------------------------------------
+
+
+def push(json_data):
+    global _APILogFileEnabled
+    for inst in instances().values():
+        inst.on_outgoing_message(json_data)
+        if _APILogFileEnabled:
+            lg.out(0, '*** WS PUSH  %s : %r' % (inst.device_name, json_data), log_name='api', showtime=True)
 
 
 #------------------------------------------------------------------------------

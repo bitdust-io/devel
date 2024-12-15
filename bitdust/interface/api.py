@@ -240,7 +240,9 @@ def enable_model_listener(model_name, request_all=False):
         lg.args(_DebugLevel, m=model_name, request_all=request_all)
     from bitdust.main import listeners
     from bitdust.interface import api_web_socket
+    from bitdust.interface import api_device
     listeners.add_listener(api_web_socket.on_model_changed, model_name)
+    listeners.add_listener(api_device.on_model_changed, model_name)
     if request_all:
         return request_model_data(model_name)
     return OK()
@@ -257,6 +259,7 @@ def disable_model_listener(model_name):
         lg.args(_DebugLevel, m=model_name)
     from bitdust.main import listeners
     from bitdust.interface import api_web_socket
+    from bitdust.interface import api_device
     if model_name == 'key':
         listeners.populate_later('key', stop=True)
     elif model_name == 'conversation':
@@ -276,6 +279,7 @@ def disable_model_listener(model_name):
     elif model_name == 'shared_location':
         listeners.populate_later('shared_location', stop=True)
     listeners.remove_listener(api_web_socket.on_model_changed, model_name)
+    listeners.remove_listener(api_device.on_model_changed, model_name)
     return OK()
 
 

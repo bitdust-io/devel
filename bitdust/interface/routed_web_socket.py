@@ -812,6 +812,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        self.server_code = None
         events.send('web-socket-handshake-proceeding', data=self.to_json())
         BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT = os.environ.get('BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT', None)
         if BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT:
