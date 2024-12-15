@@ -34,7 +34,7 @@ way to get the folder size, you can ask to scan same folder again.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------

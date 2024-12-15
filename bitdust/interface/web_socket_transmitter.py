@@ -33,7 +33,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -345,10 +345,10 @@ class WebSocketFactory(Factory):
 def do_process_incoming_message(transport, json_data, raw_data):
     global MAX_KNOWN_ROUTES
     route_id = transport.route_id
-    direction = transport.direction
+    transport_direction = transport.direction
     if _Debug:
-        lg.args(_DebugLevel, route_id=route_id, direction=direction, json_data=json_data)
-    if route_id is None and direction is None:
+        lg.args(_DebugLevel, route_id=route_id, direction=transport_direction, json_data=json_data)
+    if route_id is None and transport_direction is None:
         if json_data.get('cmd') == 'connect-request':
             if len(routes()) >= MAX_KNOWN_ROUTES:
                 if _Debug:
@@ -368,18 +368,18 @@ def do_process_incoming_message(transport, json_data, raw_data):
                 lg.exc()
                 return False
             if _Debug:
-                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, direction, transport))
+                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, transport_direction, transport))
             return True
         return False
     if not route_id:
         lg.warn('unknown route ID: %r' % transport)
         return False
-    if not direction:
+    if not transport_direction:
         lg.warn('route direction was not identified: %r' % transport)
         return False
     cmd = json_data.get('cmd')
     if cmd == 'handshake':
-        if json_data.get('internal') and direction == 'internal':
+        if json_data.get('internal') and transport_direction == 'internal':
             route_info = routes(route_id)
             route_url = route_info['route_url'] if route_info else None
             if not route_url:
@@ -396,7 +396,7 @@ def do_process_incoming_message(transport, json_data, raw_data):
                 lg.exc()
                 return False
             if _Debug:
-                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, direction, transport))
+                lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(response_raw_data), route_id, transport_direction, transport))
             return True
     call_id = json_data.get('call_id')
     if call_id or (cmd in (
@@ -410,15 +410,28 @@ def do_process_incoming_message(transport, json_data, raw_data):
     )):
         route_info = routes(route_id)
         if _Debug:
-            lg.args(_DebugLevel, direction=direction, route_info=route_info)
+            lg.args(_DebugLevel, direction=transport_direction, route_info=route_info)
         if not route_info:
             lg.warn('route info for %r was not found' % route_id)
             return False
-        if direction == 'external':
-            internal_transport = route_info.get('internal_transport')
+        external_transport = route_info.get('external_transport')
+        internal_transport = route_info.get('internal_transport')
+        if transport_direction == 'external':
             if not internal_transport:
+                if not external_transport:
+                    lg.warn('internal and external transport for route %r are both disconnected' % route_id)
+                    return False
                 lg.warn('internal transport for route %r is not connected' % route_id)
-                return False
+                json_response = {
+                    'cmd': 'server-disconnected',
+                }
+                response_raw_data = serialization.DictToBytes(json_response, encoding='utf-8')
+                try:
+                    transport.write(response_raw_data)
+                except:
+                    lg.exc()
+                    return False
+                return True
             try:
                 internal_transport.write(raw_data)
             except:
@@ -427,11 +440,22 @@ def do_process_incoming_message(transport, json_data, raw_data):
             if _Debug:
                 lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(raw_data), route_id, 'internal', internal_transport))
             return True
-        if direction == 'internal':
-            external_transport = route_info.get('external_transport')
+        if transport_direction == 'internal':
             if not external_transport:
+                if not internal_transport:
+                    lg.warn('external and internal transport for route %r are both disconnected' % route_id)
+                    return False
                 lg.warn('external transport for route %r is not connected' % route_id)
-                return False
+                json_response = {
+                    'cmd': 'client-disconnected',
+                }
+                response_raw_data = serialization.DictToBytes(json_response, encoding='utf-8')
+                try:
+                    transport.write(response_raw_data)
+                except:
+                    lg.exc()
+                    return False
+                return True
             try:
                 external_transport.write(raw_data)
             except:
@@ -440,5 +464,5 @@ def do_process_incoming_message(transport, json_data, raw_data):
             if _Debug:
                 lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(raw_data), route_id, 'external', external_transport))
             return True
-        lg.warn('unexpected direction: %r' % direction)
+        lg.warn('unexpected direction: %r' % transport_direction)
     return False

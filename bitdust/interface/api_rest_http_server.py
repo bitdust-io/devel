@@ -36,7 +36,7 @@ from six import PY2
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 _APILogFileEnabled = False

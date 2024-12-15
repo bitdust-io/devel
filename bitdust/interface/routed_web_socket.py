@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -167,10 +167,12 @@ def stop_client(url):
         except Empty:
             break
     _WebSocketQueue[url].put_nowait((None, None))
-    if ws(url):
+    _ws = ws(url)
+    if _ws:
+        _ws.close()
+    else:
         if _Debug:
             lg.dbg(_DebugLevel, 'websocket %s already closed' % url)
-        ws(url).close()
 
 
 def shutdown_clients():
@@ -423,6 +425,7 @@ class RoutedWebSocket(automat.Automat):
         self.handshaked_routers = []
         self.server_code = None
         self.device_name = None
+        self.client_connected = False
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -442,6 +445,7 @@ class RoutedWebSocket(automat.Automat):
             'connected_routers': self.handshaked_routers,
             'server_code': self.server_code,
             'device_name': self.device_name,
+            'client_connected': self.client_connected,
         })
         return ret
 
@@ -456,6 +460,7 @@ class RoutedWebSocket(automat.Automat):
         cmd = json_data.get('cmd')
         if cmd == 'api':
             self.active_router_url = url
+            self.client_connected = True
             self.event('api-message', url=url, json_data=json_data)
             return True
         if cmd == 'handshake-accepted':
@@ -485,11 +490,17 @@ class RoutedWebSocket(automat.Automat):
                 return False
             self.on_server_code_received(signature=signature, encrypted_server_code=encrypted_server_code)
             return True
+        if cmd == 'client-disconnected':
+            self.client_connected = False
+            return True
         return False
 
     def on_outgoing_message(self, json_data):
         if _Debug:
-            lg.args(_DebugLevel, json_data)
+            lg.args(_DebugLevel, client_connected=self.client_connected, d=json_data)
+        if json_data.get('cmd') == 'push':
+            if not self.client_connected:
+                return False
         if self.state != 'READY':
             lg.warn('skip sending api message to client, %r state is %r' % (self, self.state))
             return False
