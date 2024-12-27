@@ -113,6 +113,7 @@ def A(event=None, *args, **kwargs):
 
 
 class SupplierFinder(automat.Automat):
+
     """
     This class implements all the functionality of the ``supplier_finder()``
     state machine.

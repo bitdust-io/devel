@@ -198,6 +198,7 @@ def A(event=None, *args, **kwargs):
 
 
 class RaidWorker(automat.Automat):
+
     """
     This class implements all the functionality of the ``raid_worker()`` state
     machine.
@@ -447,6 +448,7 @@ class RaidWorker(automat.Automat):
 
 
 class RaidTask(object):
+
     def __init__(self, task_id, worker_method, worker_args=None, on_success=None, on_fail=None):
         self.task_id = task_id
         self.result = None
@@ -490,6 +492,7 @@ class RaidTask(object):
 
 
 class RaidTaskInfo(object):
+
     def __init__(self, task_id):
         self.tid = task_id
 
@@ -498,6 +501,7 @@ class RaidTaskInfo(object):
 
 
 class ThreadedRaidProcessor(object):
+
     def __init__(self):
         self.latest_task_id = 0
         self.tasks = {}

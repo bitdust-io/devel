@@ -78,6 +78,7 @@ def proxy():
 
 
 class GateInterface():
+
     def init(self, xml_rpc_url_or_object):
         """
         """

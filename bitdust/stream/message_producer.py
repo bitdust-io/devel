@@ -234,9 +234,11 @@ def push_message(group_key_id, data):
 
 
 class MessageProducer(automat.Automat):
+
     """
     This class implements all the functionality of ``message_producer()`` state machine.
     """
+
     def __init__(self, group_key_id, debug_level=_Debug, log_events=_Debug, log_transitions=_DebugLevel, **kwargs):
         """
         Builds `message_producer()` state machine.

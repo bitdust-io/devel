@@ -114,12 +114,7 @@ def stop():
                 print('cleaned unfinished call', json_data)
         except Empty:
             break
-    _WebSocketQueue.put_nowait((
-        None,
-        None,
-        None,
-        None
-    ))
+    _WebSocketQueue.put_nowait((None, None, None, None))
     if ws():
         if _Debug:
             print('websocket already closed')
@@ -181,12 +176,7 @@ def on_open(ws_inst):
     if cb:
         reactor.callFromThread(cb, ws_inst)  # @UndefinedVariable
     for json_data, cb, tm, timeout in _PendingCalls:
-        ws_queue().put_nowait((
-            json_data,
-            cb,
-            tm,
-            timeout
-        ))
+        ws_queue().put_nowait((json_data, cb, tm, timeout))
     _PendingCalls.clear()
 
 
@@ -253,10 +243,7 @@ def on_message(ws_inst, message):
             return
         result_callback = _CallbacksQueue.pop(call_id, None)
         if _DebugAPIResponses:
-            print('WS API Response {} : {}'.format(
-                call_id,
-                json_data['payload']['response']
-            ))
+            print('WS API Response {} : {}'.format(call_id, json_data['payload']['response']))
         if result_callback:
             reactor.callFromThread(result_callback, json_data)  # @UndefinedVariable
         return True
@@ -339,12 +326,7 @@ def requests_thread(active_queue):
             if dt < 0:
                 res_cb = _CallbacksQueue.pop(call_id, None)
                 if _DebugAPIResponses:
-                    print('\n    WS API Request already TIMED OUT {} : now={} tm={} timeout={}'.format(
-                        call_id,
-                        now,
-                        tm,
-                        timeout
-                    ))
+                    print('\n    WS API Request already TIMED OUT {} : now={} tm={} timeout={}'.format(call_id, now, tm, timeout))
                 on_fail(Exception('request timeout'), res_cb)
             else:
                 _ResponseTimeoutTasks[call_id] = reactor.callLater(dt, on_request_timeout, call_id)  # @UndefinedVariable
@@ -422,12 +404,7 @@ def ws_call(json_data, cb=None, timeout=None):
     if _Debug:
         print('ws_call', st)
     if st == 'ready':
-        ws_queue().put_nowait((
-            json_data,
-            cb,
-            time.time(),
-            timeout
-        ))
+        ws_queue().put_nowait((json_data, cb, time.time(), timeout))
         return True
     if st == 'closed':
         if cb:
@@ -436,12 +413,7 @@ def ws_call(json_data, cb=None, timeout=None):
     if st == 'connecting':
         if _Debug:
             print('web socket still connecting, remember pending request')
-        _PendingCalls.append((
-            json_data,
-            cb,
-            time.time(),
-            timeout
-        ))
+        _PendingCalls.append((json_data, cb, time.time(), timeout))
         return True
     if st == 'not-started':
         if _Debug:

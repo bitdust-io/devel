@@ -292,6 +292,7 @@ def execute_in_shell(cmdargs, base_dir=None):
 
 
 class GitProcessProtocol(protocol.ProcessProtocol):
+
     def __init__(self, callbacks=[]):
         self.callbacks = callbacks
         self.out = b''

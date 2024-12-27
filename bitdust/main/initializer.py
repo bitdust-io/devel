@@ -261,6 +261,7 @@ def Destroy():
 
 
 class Initializer(automat.Automat):
+
     """
     A class to execute start up operations to launch BitDust software.
     """

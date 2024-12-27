@@ -265,7 +265,7 @@ class WebSocket(object):
         data = frame.format()
         length = len(data)
         if (isEnabledForTrace()):
-            trace('send: ' + repr(data))
+            trace('websocket send_frame: ' + repr(data))
 
         with self.lock:
             while data:

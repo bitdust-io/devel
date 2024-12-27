@@ -150,6 +150,7 @@ def work_from_known_hash(coin_json, prev_hash, simplification=2, starter_length=
 
 
 class MininigCounter(object):
+
     def __init__(self, max_counts, max_seconds):
         self.max_counts = max_counts
         self.max_seconds = max_seconds

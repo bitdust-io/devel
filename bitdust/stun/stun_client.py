@@ -110,6 +110,7 @@ def A(event=None, *args, **kwargs):
 
 
 class StunClient(automat.Automat):
+
     """
     This class implements all the functionality of the ``stun_client()`` state
     machine.

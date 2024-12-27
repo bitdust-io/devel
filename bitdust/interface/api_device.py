@@ -37,12 +37,15 @@ from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 10
 
+_APILogFileEnabled = False
+
 #------------------------------------------------------------------------------
 
 import os
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.python.failure import Failure
 
@@ -80,6 +83,8 @@ _LegalDeviceNameFirstCharacter = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP
 
 def init():
     global _AllAPIMethods
+    global _APILogFileEnabled
+    _APILogFileEnabled = settings.config.conf().getBool('logs/api-enabled')
     from bitdust.interface import api
     encrypted_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
     routed_web_socket.SetIncomingAPIMessageCallback(do_process_incoming_message)
@@ -95,6 +100,7 @@ def init():
             'RESULT',
             '_Debug',
             '_DebugLevel',
+            '_APILogFileEnabled',
             'strng',
             'sys',
             'time',
@@ -126,9 +132,12 @@ def init():
         os.makedirs(settings.DevicesDir())
     load_devices()
     start_direct_devices()
+    reactor.addSystemEventTrigger('before', 'shutdown', routed_web_socket.shutdown_clients)  # @UndefinedVariable
 
 
 def shutdown():
+    if _Debug:
+        lg.out(_DebugLevel, 'api_device.shutdown')
     stop_devices()
 
 
@@ -311,16 +320,21 @@ def disable_device(device_name):
 #------------------------------------------------------------------------------
 
 
-def start_device(device_name, listening_callback=None):
+def start_device(device_name, listening_callback=None, client_code_input_callback=None):
     global _Instances
     validate_device_name(device_name)
-    if device_name in _Instances:
-        raise Exception('device %r was already started' % device_name)
     device_key_object = devices(device_name)
     if not device_key_object:
         raise Exception('device %r does not exist' % device_name)
     if not device_key_object.active:
         raise Exception('device %r is not active' % device_name)
+    inst = instances(device_name)
+    if inst:
+        if inst.state == 'CLOSED':
+            _Instances.pop(device_name)
+            del inst
+        else:
+            raise Exception('device %r was already started' % device_name)
     if device_key_object.meta['routed']:
         if not driver.is_on('service_web_socket_communicator'):
             raise Exception('required service_web_socket_communicator() is not currently ON')
@@ -330,7 +344,12 @@ def start_device(device_name, listening_callback=None):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, instance=inst)
     _Instances[device_name] = inst
-    inst.automat('start', device_object=device_key_object, listening_callback=listening_callback)
+    inst.automat(
+        'start',
+        device_object=device_key_object,
+        listening_callback=listening_callback,
+        client_code_input_callback=client_code_input_callback,
+    )
     return inst
 
 
@@ -340,10 +359,10 @@ def stop_device(device_name):
     if device_name not in _Instances:
         raise Exception('device %r was not started' % device_name)
     inst = _Instances[device_name]
-    inst.automat('shutdown')
-    _Instances.pop(device_name)
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, instance=inst)
+    inst.automat('stop')
+    _Instances.pop(device_name)
     del inst
     return True
 
@@ -393,8 +412,28 @@ def stop_devices():
 #------------------------------------------------------------------------------
 
 
+def reset_authorization(device_name):
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name)
+    validate_device_name(device_name)
+    device_key_object = devices(device_name)
+    if not device_key_object:
+        raise Exception('device %r does not exist' % device_name)
+    if instances(device_name):
+        stop_device(device_name)
+    device_key_object.meta['auth_token'] = None
+    device_key_object.meta['session_key'] = None
+    if not device_key_object.save():
+        return False
+    return True
+
+
+#------------------------------------------------------------------------------
+
+
 def do_process_incoming_message(device_object, json_data):
     global _AllAPIMethods
+    global _APILogFileEnabled
     from bitdust.interface import api
     command = json_data.get('command')
     if command == 'api_call':
@@ -427,8 +466,8 @@ def do_process_incoming_message(device_object, json_data):
         if _Debug:
             lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (call_id, method, kwargs))
 
-        # if _APILogFileEnabled:
-        #     lg.out(0, '*** %s  WS IN  %s(%r)' % (call_id, method, kwargs), log_name='api', showtime=True)
+        if _APILogFileEnabled:
+            lg.out(0, '*** %s  WS IN %s %s(%r)' % (device_object.device_name, call_id, method, kwargs), log_name='api', showtime=True)
 
         func = getattr(api, method)
         try:
@@ -487,42 +526,57 @@ def do_process_incoming_message(device_object, json_data):
 
 
 def on_event(evt):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'event',
-            'payload': {
-                'event_id': evt.event_id,
-                'data': evt.data,
-            },
-        })
+    push({
+        'cmd': 'push',
+        'type': 'event',
+        'payload': {
+            'event_id': evt.event_id,
+            'data': evt.data,
+        },
+    })
 
 
 def on_stream_message(message_json):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'stream_message',
-            'payload': message_json,
-        })
+    push({
+        'cmd': 'push',
+        'type': 'stream_message',
+        'payload': message_json,
+    })
 
 
 def on_online_status_changed(status_info):
-    for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'online_status',
-            'payload': status_info,
-        })
+    push({
+        'cmd': 'push',
+        'type': 'online_status',
+        'payload': status_info,
+    })
 
 
 def on_model_changed(snapshot_object):
+    push({
+        'cmd': 'push',
+        'type': 'model',
+        'payload': snapshot_object.to_json(),
+    })
+
+
+def on_device_client_code_input_received(device_name, client_code):
+    validate_device_name(device_name)
+    inst = instances(device_name)
+    if not inst:
+        raise Exception('device %r was not started' % device_name)
+    inst.on_client_code_input_received(client_code)
+
+
+#------------------------------------------------------------------------------
+
+
+def push(json_data):
+    global _APILogFileEnabled
     for inst in instances().values():
-        inst.on_outgoing_message({
-            'cmd': 'push',
-            'type': 'model',
-            'payload': snapshot_object.to_json(),
-        })
+        inst.on_outgoing_message(json_data)
+        if _APILogFileEnabled:
+            lg.out(0, '*** WS PUSH  %s : %r' % (inst.device_name, json_data), log_name='api', showtime=True)
 
 
 #------------------------------------------------------------------------------

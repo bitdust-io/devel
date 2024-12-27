@@ -90,6 +90,7 @@ def get(peer_id):
 
 
 class DHTUDPConnector(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_connector()``
     state machine.

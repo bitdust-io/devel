@@ -159,6 +159,7 @@ def A(event=None, *args, **kwargs):
 
 
 class IdRegistrator(automat.Automat):
+
     """
     This class implements all the functionality of the ``id_registrator()``
     state machine.

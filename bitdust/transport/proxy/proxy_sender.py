@@ -54,7 +54,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 16
+_DebugLevel = 24
 
 _PacketLogFileEnabled = False
 
@@ -128,10 +128,12 @@ def A(event=None, *args, **kwargs):
 
 
 class ProxySender(automat.Automat):
+
     """
     This class implements all the functionality of the ``proxy_sender()`` state
     machine.
     """
+
     def init(self, **kwargs):
         global _PacketLogFileEnabled
         _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
@@ -273,6 +275,7 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
+
         def _do_send():
             while len(self.pending_packets):
                 outpacket, callbacks, wide, response_timeout, keep_alive, pending_result = self.pending_packets.pop(0)

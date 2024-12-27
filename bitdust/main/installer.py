@@ -137,6 +137,7 @@ def A(event=None, *args, **kwargs):
 
 
 class Installer(automat.Automat):
+
     """
     A class to control the whole process of program installation.
     """

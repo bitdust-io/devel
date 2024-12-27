@@ -98,6 +98,7 @@ def by_idurl(customer_idurl):
 
 
 class CustomerAssistant(automat.Automat):
+
     """
     This class implements all the functionality of the ``customer_assistant()`` state machine.
     """

@@ -151,6 +151,7 @@ def main():
     """
     Run the test - use command line to pass a location.
     """
+
     def _done(path, sz, *args, **kwargs):
         print(path, sz)
         reactor.stop()  # @UndefinedVariable

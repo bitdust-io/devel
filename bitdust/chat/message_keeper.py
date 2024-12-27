@@ -42,6 +42,7 @@ _DebugLevel = 10
 from bitdust.logs import lg
 
 from bitdust.interface import api_web_socket
+from bitdust.interface import api_device
 
 from bitdust.crypt import my_keys
 
@@ -155,6 +156,7 @@ def store_message(data, message_id, sender_id, recipient_id, message_type=None, 
         lg.warn('message %r was not stored' % message_id)
         return message_json
     api_web_socket.on_stream_message(message_json)
+    api_device.on_stream_message(message_json)
     if _Debug:
         lg.out(_DebugLevel, 'message_keeper.store_message [%s]:%s from %r to %r' % (message_type, message_id, sender_id, recipient_id))
     return message_json

@@ -49,11 +49,9 @@ class WebSocketCommunicatorService(LocalService):
 
     def start(self):
         from twisted.internet.defer import Deferred
-        from bitdust.logs import lg
         from bitdust.services import driver
         from bitdust.main import events
         self.starting_deferred = Deferred()
-        # self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             self._do_join_web_socket_routers_dht_layer()
@@ -82,22 +80,25 @@ class WebSocketCommunicatorService(LocalService):
         d.addErrback(self._on_web_socket_routers_dht_layer_connect_failed)
 
     def _on_web_socket_routers_dht_layer_connected(self, ok):
+        from twisted.internet import reactor
         from bitdust.logs import lg
         from bitdust.interface import api_device
         lg.info('connected to DHT layer for web socket routers: %r' % ok)
-        if ok:
-            self.starting_deferred.callback(True)
-        else:
-            self.starting_deferred.errback(Exception('was not able to connect to web socket routers DHT layer'))
+        if self.starting_deferred:
+            if ok:
+                self.starting_deferred.callback(True)
+            else:
+                self.starting_deferred.errback(Exception('was not able to connect to web socket routers DHT layer'))
         self.starting_deferred = None
         if ok:
-            api_device.start_routed_devices()
+            reactor.callLater(0, api_device.start_routed_devices)  # @UndefinedVariable
         return ok
 
     def _on_web_socket_routers_dht_layer_connect_failed(self, err):
         from bitdust.logs import lg
         lg.err('failed to connect to DHT layer for web socket routers: %r' % err)
-        self.starting_deferred.errback(err)
+        if self.starting_deferred:
+            self.starting_deferred.errback(err)
         self.starting_deferred = None
         return None
 

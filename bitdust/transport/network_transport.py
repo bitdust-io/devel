@@ -76,6 +76,7 @@ from bitdust.transport import gateway
 
 
 class NetworkTransport(automat.Automat):
+
     """
     This class implements all the functionality of the ``network_transport()``
     state machine.

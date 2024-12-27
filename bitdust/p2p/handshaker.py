@@ -45,7 +45,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 16
+_DebugLevel = 20
 
 #------------------------------------------------------------------------------
 
@@ -202,9 +202,11 @@ def on_identity_packet_outbox_status(pkt_out, status, error):
 
 
 class Handshaker(automat.Automat):
+
     """
     This class implements all the functionality of ``handshaker()`` state machine.
     """
+
     def __init__(
         self, remote_idurl, ack_timeout, cache_timeout, cache_retries, ping_retries, skip_outbox, keep_alive, fake_identity, channel, channel_counter, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs
     ):

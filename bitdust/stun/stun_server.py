@@ -103,6 +103,7 @@ def Destroy():
 
 
 class StunServer(automat.Automat):
+
     """
     This class implements all the functionality of the ``stun_server()`` state
     machine.

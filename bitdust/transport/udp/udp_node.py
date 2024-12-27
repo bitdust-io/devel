@@ -108,6 +108,7 @@ def Destroy():
 
 
 class UDPNode(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_node()`` state
     machine.

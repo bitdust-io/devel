@@ -69,7 +69,7 @@ from io import open
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 24
 
 _PacketLogFileEnabled = False
 
@@ -1092,9 +1092,11 @@ def transport_log():
 
 
 class TransportGateLocalProxy():
+
     """
     A class to handle calls from transport plug-ins in the main thread.
     """
+
     def __init__(self):
         self.methods = {
             'transport_initialized': on_transport_initialized,
@@ -1134,9 +1136,11 @@ class TransportGateLocalProxy():
 
 
 class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
+
     """
     XML-RPC server to receive calls from transport plug-ins.
     """
+
     def __init__(self):
         xmlrpc.XMLRPC.__init__(self, allowNone=True)
         self.methods = {

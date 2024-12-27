@@ -103,6 +103,7 @@ def A(event=None, *args, **kwargs):
 
 
 class AccountantNode(automat.Automat):
+
     """
     This class implements all the functionality of the ``accountant_node()``
     state machine.

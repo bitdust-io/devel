@@ -48,7 +48,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 24
 
 #------------------------------------------------------------------------------
 
@@ -893,7 +893,7 @@ class ID_URL_FIELD(object):
                 exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             if _Debug:
-                lg.out(_DebugLevel, traceback.format_list(traceback.format_stack()))
+                lg.out(_DebugLevel, '\n'.join(traceback.format_stack()))
             raise exc
 
         # now compare based on public key
@@ -1072,7 +1072,7 @@ class ID_URL_FIELD(object):
             exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             if _Debug:
-                lg.out(_DebugLevel, traceback.format_list(traceback.format_stack()))
+                lg.out(_DebugLevel, '\n'.join(traceback.format_stack()))
             raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key

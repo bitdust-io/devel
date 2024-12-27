@@ -129,6 +129,7 @@ def recheck_contract(customer_idurl):
 
 
 class SupplierContractExecutor(automat.Automat):
+
     """
     This class implements all the functionality of the ``supplier_contract_executor()`` state machine.
     """

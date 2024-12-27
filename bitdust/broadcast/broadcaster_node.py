@@ -94,6 +94,7 @@ def A(event=None, *args, **kwargs):
 
 
 class BroadcasterNode(automat.Automat):
+
     """
     This class implements all the functionality of the ``broadcaster_node()``
     state machine.

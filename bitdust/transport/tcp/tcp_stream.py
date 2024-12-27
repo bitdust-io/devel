@@ -32,7 +32,7 @@ from io import BytesIO
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 24
 
 #------------------------------------------------------------------------------
 
@@ -187,6 +187,7 @@ def make_file_id():
 
 
 class TCPFileStream():
+
     def __init__(self, connection):
         self.stream_id = make_stream_id()  # not used at the moment, use file_id instead
         self.connection = connection
@@ -398,6 +399,7 @@ class TCPFileStream():
 
 
 class InboxFile():
+
     def __init__(self, stream, file_id, file_size):
         self.typ = 'tcp-in'
         self.transfer_id = None
@@ -441,6 +443,7 @@ class InboxFile():
 
 
 class OutboxFile():
+
     def __init__(self, stream, filename, file_id, filesize, description='', result_defer=None, keep_alive=True):
         self.typ = 'tcp-out'
         self.transfer_id = None

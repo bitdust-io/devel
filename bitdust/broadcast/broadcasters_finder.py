@@ -92,6 +92,7 @@ def A(event=None, *args, **kwargs):
 
 
 class BroadcastersFinder(automat.Automat):
+
     """
     This class implements all the functionality of the
     ``broadcasters_finder()`` state machine.

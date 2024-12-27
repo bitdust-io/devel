@@ -67,7 +67,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 20
 
 #------------------------------------------------------------------------------
 
@@ -591,6 +591,7 @@ def A(idurl, event=None, *args, **kwargs):
 
 
 class OnlineStatus(automat.Automat):
+
     """
     This class implements all the functionality of ``online_status()`` state machine.
     """

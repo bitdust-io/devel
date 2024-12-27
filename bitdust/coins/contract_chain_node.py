@@ -105,6 +105,7 @@ def send_to_miner(coins):
 
 
 class Query(object):
+
     def __init__(self, query_dict):
         """
         """

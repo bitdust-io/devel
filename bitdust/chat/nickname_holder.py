@@ -113,6 +113,7 @@ def Destroy():
 
 
 class NicknameHolder(automat.Automat):
+
     """
     This class implements all the functionality of the ``nickname_holder()``
     state machine.

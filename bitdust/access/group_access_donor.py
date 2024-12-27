@@ -67,6 +67,7 @@ from bitdust.access import key_ring
 
 
 class GroupAccessDonor(automat.Automat):
+
     """
     This class implements all the functionality of ``group_access_donor()`` state machine.
     """

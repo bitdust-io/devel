@@ -87,6 +87,7 @@ def A(event=None, *args, **kwargs):
 
 
 class ContractChainConsumer(automat.Automat):
+
     """
     This class implements all the functionality of the ``contract_chain_consumer()`` state machine.
     """

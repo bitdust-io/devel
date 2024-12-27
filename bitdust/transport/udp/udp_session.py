@@ -228,6 +228,7 @@ def stop_process_sessions():
 
 
 class UDPSession(automat.Automat):
+
     """
     This class implements all the functionality of the ``udp_session()`` state
     machine.

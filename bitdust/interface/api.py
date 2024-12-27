@@ -240,7 +240,9 @@ def enable_model_listener(model_name, request_all=False):
         lg.args(_DebugLevel, m=model_name, request_all=request_all)
     from bitdust.main import listeners
     from bitdust.interface import api_web_socket
+    from bitdust.interface import api_device
     listeners.add_listener(api_web_socket.on_model_changed, model_name)
+    listeners.add_listener(api_device.on_model_changed, model_name)
     if request_all:
         return request_model_data(model_name)
     return OK()
@@ -257,6 +259,7 @@ def disable_model_listener(model_name):
         lg.args(_DebugLevel, m=model_name)
     from bitdust.main import listeners
     from bitdust.interface import api_web_socket
+    from bitdust.interface import api_device
     if model_name == 'key':
         listeners.populate_later('key', stop=True)
     elif model_name == 'conversation':
@@ -276,6 +279,7 @@ def disable_model_listener(model_name):
     elif model_name == 'shared_location':
         listeners.populate_later('shared_location', stop=True)
     listeners.remove_listener(api_web_socket.on_model_changed, model_name)
+    listeners.remove_listener(api_device.on_model_changed, model_name)
     return OK()
 
 
@@ -603,11 +607,14 @@ def devices_list(sort=False):
         result = device_object.toDict()
         result['name'] = result.pop('label')
         result['instance'] = None
+        result['url'] = None
         result.pop('body', None)
         result.pop('local_key_id', None)
         device_instance = api_device.instances(device_name)
         if device_instance:
-            result.update({'instance': device_instance.to_json()})
+            result['instance'] = device_instance.to_json()
+            result['instance'].pop('device_name')
+            result['url'] = result['instance'].pop('url', None)
         results.append(result)
     if sort:
         results = sorted(results, key=lambda i: i['label'])
@@ -631,12 +638,15 @@ def device_info(name):
     device_instance = api_device.instances(name)
     result = device_object.toDict()
     result['name'] = result.pop('label')
+    result['url'] = None
     result['instance'] = None
     result.pop('body', None)
     result.pop('local_key_id', None)
     if not device_instance:
         return OK(result)
-    result.update({'instance': device_instance.to_json()})
+    result['instance'] = device_instance.to_json()
+    result['instance'].pop('device_name')
+    result['url'] = result['instance'].pop('url', None)
     return OK(result)
 
 
@@ -726,6 +736,34 @@ def device_start(name, wait_listening=False):
     except Exception as exc:
         return ERROR(exc)
     return ret
+
+
+def device_authorization_reset(name, start=True, wait_listening=False):
+    """
+    """
+    from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
+    try:
+        api_device.reset_authorization(device_name=name)
+    except Exception as exc:
+        return ERROR(exc)
+    if not start:
+        return OK()
+    return device_start(name, wait_listening=wait_listening)
+
+
+def device_client_code_input(name, client_code):
+    """
+    """
+    from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name, client_code=client_code)
+    try:
+        api_device.on_device_client_code_input_received(device_name=name, client_code=client_code)
+    except Exception as exc:
+        return ERROR(exc)
+    return OK()
 
 
 def device_stop(name):
