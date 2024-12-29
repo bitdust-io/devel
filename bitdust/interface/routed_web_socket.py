@@ -459,6 +459,8 @@ class RoutedWebSocket(automat.Automat):
             return True
         cmd = json_data.get('cmd')
         if cmd == 'api':
+            if self.active_router_url and self.active_router_url != url:
+                lg.warn('active web socket router %r switched to %r' % (self.active_router_url, url))
             self.active_router_url = url
             self.client_connected = True
             self.event('api-message', url=url, json_data=json_data)
@@ -477,6 +479,8 @@ class RoutedWebSocket(automat.Automat):
                 lg.exc()
                 self.automat('auth-error')
                 return False
+            if self.active_router_url and self.active_router_url != url:
+                lg.warn('active web socket router %r switched to %r' % (self.active_router_url, url))
             self.active_router_url = url
             self.automat('client-pub-key-received', client_key_object=client_key_object)
             return True
@@ -934,7 +938,8 @@ class RoutedWebSocket(automat.Automat):
             if url in self.connecting_routers:
                 self.connecting_routers.remove(url)
         if not self.active_router_url:
-            self.active_router_url = route_url
+            self.active_router_url = url
+            lg.info('connected active web socket router %r' % self.active_router_url)
         self.handshaked_routers.append(route_url)
         handshaked_count = len(self.handshaked_routers)
         if _Debug:
