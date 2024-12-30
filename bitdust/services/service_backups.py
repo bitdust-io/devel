@@ -54,15 +54,12 @@ class BackupsService(LocalService):
         from bitdust.storage import backup_matrix
         from bitdust.storage import backup_monitor
         from bitdust.main.config import conf
-        # from bitdust.main import control
         from bitdust.main import events
         from bitdust.main import listeners
         from bitdust.transport import callback
         from bitdust.p2p import p2p_connector
         backup_control.init()
         backup_matrix.init()
-        # backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
-        # backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
         backup_monitor.A('init')
         backup_monitor.A('restart')
         conf().addConfigNotifier('services/backups/keep-local-copies-enabled', self._on_keep_local_copies_modified)

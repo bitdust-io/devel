@@ -106,7 +106,6 @@ from bitdust.system import bpio
 from bitdust.system import tmpfile
 
 from bitdust.main import settings
-# from bitdust.main import control
 from bitdust.main import config
 from bitdust.main import events
 

@@ -2852,10 +2852,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     WARNING! Your existing local data in `destination_path` will be overwritten!
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/download/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mp4", "local_path": "/tmp/films/"}'
+        curl -X POST 'localhost:8180/file/download/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mp4", "destination_path": "/tmp/films/"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "file_download_start", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mp4", "local_path": "/tmp/films/"} }');
+        websocket.send('{"command": "api_call", "method": "file_download_start", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mp4", "destination_path": "/tmp/films/"} }');
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
@@ -2864,7 +2864,6 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     from bitdust.storage import backup_fs
     from bitdust.storage import backup_control
     from bitdust.storage import restore_monitor
-    # from bitdust.main import control
     from bitdust.system import bpio
     from bitdust.lib import packetid
     from bitdust.main import settings

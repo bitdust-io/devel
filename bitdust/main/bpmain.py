@@ -68,8 +68,7 @@ def show():
     """
     Just calls ``p2p.web.control.show()`` to open the GUI.
     """
-    # from bitdust.main import control
-    # TODO: raise up electron window?
+    # TODO: to be implemented
     return 0
 
 
