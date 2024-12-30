@@ -394,6 +394,44 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key_size=int(data['key_size']) if 'key_size' in data else None,
         )
 
+    @POST('^/dev/o$')
+    @POST('^/v1/device/start$')
+    @POST('^/device/start/v1$')
+    def device_start_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name'])
+        return api.device_start(
+            name=data['name'],
+            wait_listening=bool(data.get('wait_listening', '0') in YES),
+        )
+
+    @POST('^/dev/a/r$')
+    @POST('^/v1/device/authorization/reset$')
+    @POST('^/device/authorization/reset/v1$')
+    def device_authorization_reset_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name'])
+        return api.device_authorization_reset(
+            name=data['name'],
+            start=bool(data.get('start', '1') in YES),
+            wait_listening=bool(data.get('wait_listening', '0') in YES),
+        )
+
+    @POST('^/dev/a/cc$')
+    @POST('^/v1/device/authorization/client_code$')
+    @POST('^/device/authorization/client_code/v1$')
+    def device_authorization_client_code_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name', 'client_code'])
+        return api.device_authorization_client_code(
+            name=data['name'],
+            client_code=data['client_code'],
+        )
+
+    @POST('^/dev/c$')
+    @POST('^/v1/device/stop$')
+    @POST('^/device/stop/v1$')
+    def device_stop_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name'])
+        return api.device_stop(name=data['name'])
+
     @DELETE('^/dev/d$')
     @DELETE('^/v1/device/remove$')
     @DELETE('^/device/remove/v1$')
@@ -401,30 +439,16 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['name'])
         return api.device_remove(name=data['name'])
 
-    @POST('^/dev/o/$')
-    @POST('^/v1/device/start$')
-    @POST('^/device/start/v1$')
-    def device_start_v1(self, request):
-        data = _request_data(request, mandatory_keys=['name'])
-        return api.device_start(name=data['name'])
-
-    @POST('^/dev/c/$')
-    @POST('^/v1/device/stop$')
-    @POST('^/device/stop/v1$')
-    def device_stop_v1(self, request):
-        data = _request_data(request, mandatory_keys=['name'])
-        return api.device_stop(name=data['name'])
-
     #------------------------------------------------------------------------------
 
-    @POST('^/nw/cr')
+    @POST('^/nw/cr$')
     @POST('^/network/create')
     @POST('^/network/create/v1$')
     def network_create_v1(self, request):
         data = _request_data(request, mandatory_keys=['url'])
         return api.network_create(url=data['url'])
 
-    @POST('^/nw/sel')
+    @POST('^/nw/sel$')
     @POST('^/network/select')
     @POST('^/network/select/v1$')
     def network_select_v1(self, request):
@@ -578,7 +602,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['username'])
         return api.identity_create(username=data['username'], join_network=bool(data.get('join_network', '0') in YES))
 
-    @POST('^/i/b')
+    @POST('^/i/b$')
     @POST('^/identity/backup$')
     @POST('^/identity/backup/v1$')
     def identity_backup_v1(self, request):

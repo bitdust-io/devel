@@ -501,7 +501,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 return
             print_text('server code is: %r' % server_code)
             client_code = input('please enter the client code displayed at your device: ')
-            d = call_websocket_method('device_client_code_input', name=device_name, client_code=client_code)
+            d = call_websocket_method('device_authorization_client_code', name=device_name, client_code=client_code)
             d.addCallback(_on_client_code_confirmed)
             d.addErrback(fail_and_stop)
 

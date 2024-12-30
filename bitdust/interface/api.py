@@ -740,6 +740,13 @@ def device_start(name, wait_listening=False):
 
 def device_authorization_reset(name, start=True, wait_listening=False):
     """
+    To be called when given device needs to be authorized again.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/authorization/reset/v1' -d '{"name": "my_iPhone_12"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_authorization_reset", "kwargs": {"name": "my_iPhone_12"} }');
     """
     from bitdust.interface import api_device
     if _Debug:
@@ -753,8 +760,15 @@ def device_authorization_reset(name, start=True, wait_listening=False):
     return device_start(name, wait_listening=wait_listening)
 
 
-def device_client_code_input(name, client_code):
+def device_authorization_client_code(name, client_code):
     """
+    Must be called during authorization preocedure to provide client code entered by the user manually.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/authorization/client_code/v1' -d '{"name": "my_iPhone_12", "client_code": "123456"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_authorization_client_code", "kwargs": {"name": "my_iPhone_12", "client_code": "123456"} }');
     """
     from bitdust.interface import api_device
     if _Debug:
