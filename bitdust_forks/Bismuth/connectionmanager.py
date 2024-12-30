@@ -71,4 +71,4 @@ class ConnectionManager(threading.Thread):
                     if not self.node.IS_STOPPING:
                         time.sleep(1)
             except Exception as e:
-                self.node.logger.app_log.warning(f'Error in connection manger ({e})')
+                self.node.logger.app_log.warning(f'Error in connection manager ({e})')

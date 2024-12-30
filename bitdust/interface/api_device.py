@@ -269,16 +269,15 @@ def add_routed_device(device_name, key_size=4096):
 def remove_device(device_name):
     validate_device_name(device_name)
     device_key_object = devices(device_name)
-    if not device_key_object:
-        raise Exception('device %r does not exist' % device_name)
     if instances(device_name):
         stop_device(device_name)
     device_file_path = os.path.join(settings.DevicesDir(), device_name)
-    if not os.path.isfile(device_file_path):
+    if os.path.isfile(device_file_path):
+        os.remove(device_file_path)
+    else:
         lg.warn('device info file %s does not exist' % device_file_path)
-        return True
-    os.remove(device_file_path)
-    devices().pop(device_name, None)
+    if device_key_object:
+        devices().pop(device_name, None)
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, device_file_path=device_file_path)
     return True

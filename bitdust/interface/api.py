@@ -803,11 +803,6 @@ def device_remove(name):
         websocket.send('{"command": "api_call", "method": "device_remove", "kwargs": {"name": "my_iPhone_12"} }');
     """
     from bitdust.interface import api_device
-    if api_device.instances(name):
-        try:
-            api_device.stop_device(name)
-        except Exception as exc:
-            return ERROR(exc)
     try:
         api_device.remove_device(name)
     except Exception as exc:
