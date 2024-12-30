@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+2024-12-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* new approach to run BitDust on mobile devices
+* built api.device_* methods for secure remote web socket connections
+* added command line interface to manipulate paired devices
+* save&load connected routers
+* handling situations when web socket server or client are disconnected
+* bug fix in group_participant()
+
+
+
 2024-10-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * add uniqueness to Request()/Data() packets for index files
