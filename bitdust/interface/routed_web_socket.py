@@ -431,6 +431,9 @@ class RoutedWebSocket(automat.Automat):
         """
         Method to catch the moment when `api_routed_device()` state were changed.
         """
+        if event == 'auth-error':
+            if oldstate in ('CLIENT_PUB?', 'SERVER_CODE?', 'CLIENT_CODE?'):
+                events.send('web-socket-handshake-failed', data=self.to_json())
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
