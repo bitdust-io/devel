@@ -581,7 +581,6 @@ def push(json_data):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    from twisted.internet import reactor
     settings.init()
     lg.set_debug_level(24)
     automat.init()
