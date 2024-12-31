@@ -431,7 +431,8 @@ class Handshaker(automat.Automat):
         Action method.
         """
         global _RunningHandshakers
-        lg.warn('remote node %r did not respond after %d ping attempts' % (self.remote_global_id, self.ping_attempts))
+        if _Debug:
+            lg.dbg(_DebugLevel, 'remote node %r did not respond after %d ping attempts' % (self.remote_global_id, self.ping_attempts))
         if self.remote_idurl in _RunningHandshakers:
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 if not result_defer.called:

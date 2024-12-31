@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -506,7 +506,8 @@ class RoutedWebSocket(automat.Automat):
             if not self.client_connected:
                 return False
         if self.state != 'READY':
-            lg.warn('skip sending api message to client, %r state is %r' % (self, self.state))
+            if _Debug:
+                lg.dbg(_DebugLevel, 'skip sending api message to the client, %r state is %r' % (self, self.state))
             return False
         return self._do_push_encrypted(json_data)
 
