@@ -3,7 +3,7 @@
 alive=0
 total=0
 
-for srv in `python3 -c "import bitdust.userid.known_servers; s=bitdust.userid.known_servers.by_host(); print(' '.join(['{}:{}'.format(i.decode(), s[i][0]) for i in s]))"`; do
+for srv in `~/.bitdust/venv/bin/python3 -c "import bitdust.userid.known_servers; s=bitdust.userid.known_servers.by_host(); print(' '.join(['{}:{}'.format(i.decode(), s[i][0]) for i in s]))"`; do
     total=$((total+1))
     curl -I --connect-timeout 10 $srv 1>/dev/null 2>/dev/null
     ret=$?

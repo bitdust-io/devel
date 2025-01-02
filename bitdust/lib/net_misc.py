@@ -71,6 +71,13 @@ from zope.interface import implementer
 
 from bitdust.lib import strng
 
+from bitdust.logs import lg
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 14
+
 #------------------------------------------------------------------------------
 
 _ConnectionDoneCallbackFunc = None
@@ -355,15 +362,21 @@ def proxy_is_on():
 class custom_ReadBodyProtocol(_ReadBodyProtocol):
 
     def connectionLost(self, reason):
+        if _Debug:
+            lg.args(_DebugLevel, reason=reason)
         if self.deferred.called:
             return
         super(custom_ReadBodyProtocol, self).connectionLost(reason)
 
 
 def readBody(response):
+    if _Debug:
+        lg.args(_DebugLevel, response=response)
 
     def cancel(deferred):
         abort = getAbort()
+        if _Debug:
+            lg.out(_DebugLevel, 'net_misc.readBody.cancel deferred=%r abort=%r' % (deferred, abort))
         if abort is not None:
             abort()
 
@@ -379,6 +392,8 @@ def readBody(response):
 
 
 def readBodyFailed(result):
+    if _Debug:
+        lg.args(_DebugLevel, result=result)
     if result.type == CancelledError:
         return None
     return result
@@ -390,6 +405,8 @@ def readResponse(response, timeout):
     #     print('Response phrase:', response.phrase)
     #     print('Response headers:')
     #     print(list(response.headers.getAllRawHeaders()))
+    if _Debug:
+        lg.args(_DebugLevel, response=response, timeout=timeout)
     if response.code != 200:
         return fail(Exception('Bad response from the server: [%d] %s' % (
             response.code,
@@ -414,7 +431,8 @@ def getPageTwisted(url, timeout=15, method=b'GET'):
     #             _t.cancel()
     #         return x
     global _UserAgentString
-
+    if _Debug:
+        lg.args(_DebugLevel, url=url, method=method, timeout=timeout, user_agent=_UserAgentString)
     url = strng.to_bin(url)
 
     #     if proxy_is_on():
