@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -58,6 +58,11 @@ _DebugLevel = 10
 import os
 import time
 import base64
+
+try:
+    import thread
+except ImportError:
+    import _thread as thread
 
 try:
     from queue import Queue, Empty
@@ -142,9 +147,14 @@ def start_client(url, callbacks={}):
     _WebSocketConnecting[url] = True
     _WebSocketStarted[url] = True
     _PendingCalls[url] = {}
-    _WebSocketQueue[url] = Queue(maxsize=100)
-    reactor.callInThread(websocket_thread, url)  # @UndefinedVariable
-    reactor.callInThread(sending_thread, url, _WebSocketQueue[url])  # @UndefinedVariable
+    _WebSocketQueue[url] = Queue(maxsize=1000)
+    websocket_thread_id = thread.start_new_thread(websocket_thread, (url, ))
+    requests_thread_id = thread.start_new_thread(sending_thread, (
+        url,
+        _WebSocketQueue[url],
+    ))
+    if _Debug:
+        lg.args(_DebugLevel, websocket_thread_id=websocket_thread_id, requests_thread_id=requests_thread_id)
 
 
 def stop_client(url):
@@ -161,12 +171,15 @@ def stop_client(url):
     _WebSocketConnecting[url] = False
     while True:
         try:
-            raw_data, _, _, _ = ws_queue(url).get_nowait()
+            raw_data, _ = ws_queue(url).get_nowait()
             if _Debug:
                 lg.dbg(_DebugLevel, 'in %s cleaned unfinished call: %r' % (url, raw_data))
         except Empty:
             break
-    _WebSocketQueue[url].put_nowait((None, None))
+    _WebSocketQueue[url].put_nowait((
+        None,
+        None,
+    ))
     _ws = ws(url)
     if _ws:
         _ws.close()
@@ -238,7 +251,10 @@ def on_open(ws_inst):
     if cb:
         reactor.callFromThread(cb, ws_inst)  # @UndefinedVariable
     for raw_data, tm in _PendingCalls[url]:
-        ws_queue(url).put_nowait((raw_data, tm))
+        ws_queue(url).put_nowait((
+            raw_data,
+            tm,
+        ))
     _PendingCalls[url].clear()
 
 
@@ -378,7 +394,10 @@ def ws_send(url, raw_data):
     if _Debug:
         lg.args(_DebugLevel, url=url, st=st)
     if st == 'ready':
-        ws_queue(url).put_nowait((raw_data, time.time()))
+        ws_queue(url).put_nowait((
+            raw_data,
+            time.time(),
+        ))
         return True
     if st == 'closed':
         lg.warn('websocket is already closed')
