@@ -842,7 +842,8 @@ class Node(object):
             activeProbes.pop()
             if len(activeProbes) <= int(constants.alpha/2.0) and len(pendingIterationCalls):
                 # Force the iteration
-                pendingIterationCalls[0].cancel()
+                if not pendingIterationCalls[0].called:
+                    pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
                 if _Debug:
                     print('[DHT NODE] SINGLE forcing iteration =================')
@@ -1713,7 +1714,8 @@ class MultiLayerNode(Node):
             activeProbes.pop()
             if len(activeProbes) <= int((parallel_calls or constants.alpha)/2.0) and len(pendingIterationCalls):
                 # Force the iteration
-                pendingIterationCalls[0].cancel()
+                if not pendingIterationCalls[0].called:
+                    pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
                 if _Debug:
                     print('[DHT NODE]    forcing iteration =================')

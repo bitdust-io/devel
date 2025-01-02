@@ -400,12 +400,20 @@ def start_routed_devices():
             start_device(device_name)
 
 
-def stop_devices():
+def stop_routed_devices():
     for device_name in devices():
         device_key_object = devices(device_name)
-        if not device_key_object.active:
+        if not device_key_object:
             continue
-        stop_device(device_name)
+        if device_key_object.meta['routed']:
+            if instances(device_name):
+                stop_device(device_name)
+
+
+def stop_devices():
+    for device_name in devices():
+        if instances(device_name):
+            stop_device(device_name)
 
 
 #------------------------------------------------------------------------------

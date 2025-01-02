@@ -60,6 +60,8 @@ class WebSocketCommunicatorService(LocalService):
     def stop(self):
         from twisted.internet.defer import succeed
         from bitdust.main import events
+        from bitdust.interface import api_device
+        api_device.stop_routed_devices()
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         return succeed(True)
 
