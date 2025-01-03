@@ -363,6 +363,8 @@ def chunk_read(path, offset, max_size=1024*32):
     """
     Requests chunk of data from a local file. Used to download a file via WebSocket stream.
 
+    Binary data is encoded to a text string using "latin1" encoding.
+
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "chunk_read", "kwargs": {"path": "/tmp/cat.png", "offset": 1000, "max_size": 8192} }');
     """
@@ -374,6 +376,30 @@ def chunk_read(path, offset, max_size=1024*32):
     if not raw_data:
         return OK({'chunk': '', 'completed': True})
     return OK({'chunk': raw_data})
+
+
+def chunk_write(data, path=None):
+    """
+    Writes chunk of data to a local file. Used to upload a file via WebSocket stream.
+
+    Text data is decoded to a binary string using "latin1" encoding.
+
+    When "path" argument is empty a new file will be opened in a temporarily location,
+    response will include full local path to the file.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "chunk_write", "kwargs": {"path": "/tmp/cat.png", "data": "ABCD1234"} }');
+    """
+    from bitdust.stream import chunk
+    try:
+        file_path_result = chunk.data_write(data=data, file_path=path)
+    except Exception as exc:
+        return ERROR(exc)
+    if not path:
+        if not file_path_result:
+            return ERROR('destination file was not created')
+        OK({'path': file_path_result})
+    return OK()
 
 
 #------------------------------------------------------------------------------
@@ -2135,7 +2161,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                 'pending': [],
             },
             'downloads': [],
-            'local_path': os.path.join(local_dir, i['name']),
+            'local_path': os.path.join(local_dir, bpio.remotePath(i['path'])),
         }
         if include_uploads:
             backup_control.tasks()
@@ -2316,6 +2342,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         'customer': norm_path['customer'],
         'path_id': pathID,
         'path': remotePath,
+        'name': item.name(),
         'type': backup_fs.TYPES.get(item.type, '').lower(),
         'size': item_size,
         'latest': item_time,
@@ -2326,7 +2353,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
             'pending': [],
         },
         'downloads': [],
-        'local_path': os.path.join(settings.getRestoreDir(), item.name()),
+        'local_path': os.path.join(settings.getRestoreDir(), remotePath),
     }
     if include_uploads:
         backup_control.tasks()
@@ -2879,14 +2906,13 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s' % (remote_path, destination_path, wait_result))
     from bitdust.storage import backup_fs
     from bitdust.storage import backup_control
     from bitdust.storage import restore_monitor
     from bitdust.system import bpio
+    from bitdust.system import tmpfile
     from bitdust.lib import packetid
-    from bitdust.main import settings
+    # from bitdust.main import settings
     from bitdust.userid import my_id
     from bitdust.userid import global_id
     from bitdust.crypt import my_keys
@@ -2946,10 +2972,12 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     ))
     if not knownPath:
         return ERROR('location %s was not found in the catalog' % knownPath)
+    # if not destination_path:
+    #     destination_path = settings.getRestoreDir()
+    # if not destination_path:
+    #     destination_path = settings.DefaultRestoreDir()
     if not destination_path:
-        destination_path = settings.getRestoreDir()
-    if not destination_path:
-        destination_path = settings.DefaultRestoreDir()
+        destination_path = tmpfile.make_dir('download')
     key_id = my_keys.make_key_id(alias=keyAlias, creator_glob_id=customerGlobalID)
     ret = Deferred()
 
@@ -2961,7 +2989,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                         'downloaded': True,
                         'key_id': key_id,
                         'backup_id': backupID,
-                        'local_path': destination_path,
+                        'local_path': os.path.join(destination_path, glob_path['path']),
                         'path_id': pathID_target,
                         'remote_path': knownPath,
                     },
@@ -2977,7 +3005,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                         'downloaded': False,
                         'key_id': key_id,
                         'backup_id': backupID,
-                        'local_path': destination_path,
+                        'local_path': os.path.join(destination_path, glob_path['path']),
                         'path_id': pathID_target,
                         'remote_path': knownPath,
                     },
@@ -3003,7 +3031,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                     'downloaded': False,
                     'key_id': key_id,
                     'backup_id': backupID,
-                    'local_path': destination_path,
+                    'local_path': os.path.join(destination_path, glob_path['path']),
                     'path_id': pathID_target,
                     'remote_path': knownPath,
                 },
@@ -3026,7 +3054,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                     details={
                         'key_id': active_share.key_id,
                         'backup_id': backupID,
-                        'local_path': destination_path,
+                        'local_path': os.path.join(destination_path, glob_path['path']),
                         'path_id': pathID_target,
                         'remote_path': knownPath,
                     },

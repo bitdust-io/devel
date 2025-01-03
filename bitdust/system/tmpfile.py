@@ -60,6 +60,8 @@ _TempDirPath = None
 _FilesDict = {}
 _CollectorTask = None
 _SubDirs = {
+    'upload': 60*60*12,  # hold websocket uploads for 12 hours
+    'download': 60*60*12,  # same for websocket downloads
     'outbox': 60*10,  # hold onto outbox files 10 minutes
     'tcp-in': 60*10,  # 10 minutes for incoming tcp files
     'udp-in': 60*10,  # 10 minutes for incoming udp files
@@ -210,7 +212,7 @@ def make_dir(name, extension='', prefix=''):
     if name not in list(_FilesDict.keys()):
         name = 'all'
     try:
-        dirname = tempfile.mkdtemp(extension, prefix, subdir(name))
+        dirname = tempfile.mkdtemp(suffix=extension, prefix=prefix, dir=subdir(name))
         _FilesDict[name][dirname] = time.time()
     except:
         lg.out(1, 'tmpfile.make_dir ERROR creating folder in ' + name)
