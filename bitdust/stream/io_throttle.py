@@ -402,7 +402,8 @@ class SupplierQueue:
             else:
                 raise Exception('incorrect packet type received: %r' % newpacket)
         else:
-            lg.warn('supplier connector for %r not found' % newpacket.OwnerID)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'supplier connector for %r was not found' % newpacket.OwnerID)
         if _Debug:
             lg.out(_DebugLevel, 'io_throttle.OnFileSendAckReceived %s from %s, queue=%d' % (str(newpacket), self.remoteName, len(self.fileSendQueue)))
 

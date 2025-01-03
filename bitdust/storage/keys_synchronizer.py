@@ -274,12 +274,16 @@ class KeysSynchronizer(automat.Automat):
             lg.args(_DebugLevel, minimum_reliable_percent=minimum_reliable_percent, lookup=lookup)
         if isinstance(lookup, list):
             for i in lookup:
+                stored_key_id = None
                 if i['path'].endswith('.public'):
                     stored_key_id = i['path'].replace('.public', '').replace('.keys/', '')
                     is_private = False
-                else:
+                elif i['path'].endswith('.private'):
                     stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
                     is_private = True
+                if not stored_key_id:
+                    lg.warn('identified broken catalog item inside of the ".keys/" sub-folder, this is potentially a lost key: %r' % i)
+                    continue
                 if not my_keys.is_valid_key_id(stored_key_id):
                     lg.warn('not able to recognize stored key_id from item: %r' % i)
                     continue

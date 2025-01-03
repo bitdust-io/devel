@@ -359,6 +359,26 @@ def request_model_data(model_name, query_details=None):
 #------------------------------------------------------------------------------
 
 
+def chunk_read(path, offset, max_size=1024*32):
+    """
+    Requests chunk of data from a local file. Used to download a file via WebSocket stream.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "chunk_read", "kwargs": {"path": "/tmp/cat.png", "offset": 1000, "max_size": 8192} }');
+    """
+    from bitdust.stream import chunk
+    try:
+        raw_data = chunk.data_read(file_path=path, offset=offset, max_size=max_size, to_text=True)
+    except Exception as exc:
+        return ERROR(exc)
+    if not raw_data:
+        return OK({'chunk': '', 'completed': True})
+    return OK({'chunk': raw_data})
+
+
+#------------------------------------------------------------------------------
+
+
 def process_stop(instant=True):
     """
     Stop the main process immediately.
