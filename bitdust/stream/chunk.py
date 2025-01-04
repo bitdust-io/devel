@@ -56,6 +56,12 @@ def data_read(file_path, offset, max_size, to_text=True):
     return strng.to_text(bin_data, encoding='latin1')
 
 
-def data_write(data, file_path=None):
-
-    return
+def data_write(file_path, data, from_text=True):
+    if from_text:
+        data = strng.to_bin(data, encoding='latin1')
+    f = open(file_path, 'wb')
+    f.write(data)
+    f.close()
+    if _Debug:
+        lg.args(_DebugLevel, sz=len(data), file_path=file_path)
+    return True

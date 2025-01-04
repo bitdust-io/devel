@@ -365,10 +365,15 @@ def chunk_read(path, offset, max_size=1024*32):
 
     Binary data is encoded to a text string using "latin1" encoding.
 
+    The "path" must be pointing to a location inside of the "~/.bitdust/temp/" folder.
+
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "chunk_read", "kwargs": {"path": "/tmp/cat.png", "offset": 1000, "max_size": 8192} }');
     """
     from bitdust.stream import chunk
+    from bitdust.system import tmpfile
+    if not path.startswith(tmpfile.base_dir()):
+        return ERROR('wrong path location provided')
     try:
         raw_data = chunk.data_read(file_path=path, offset=offset, max_size=max_size, to_text=True)
     except Exception as exc:
@@ -387,18 +392,25 @@ def chunk_write(data, path=None):
     When "path" argument is empty a new file will be opened in a temporarily location,
     response will include full local path to the file.
 
+    When the "path" is present it must be pointing to a location inside of the "~/.bitdust/temp/" folder.
+
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "chunk_write", "kwargs": {"path": "/tmp/cat.png", "data": "ABCD1234"} }');
     """
     from bitdust.stream import chunk
+    from bitdust.system import tmpfile
+    file_path = path
+    if path:
+        if not path.startswith(tmpfile.base_dir()):
+            return ERROR('wrong path location provided')
+    else:
+        file_path = tmpfile.make('upload', close_fd=True)
     try:
-        file_path_result = chunk.data_write(data=data, file_path=path)
+        chunk.data_write(data=data, file_path=file_path)
     except Exception as exc:
         return ERROR(exc)
     if not path:
-        if not file_path_result:
-            return ERROR('destination file was not created')
-        OK({'path': file_path_result})
+        OK({'path': file_path})
     return OK()
 
 
@@ -2937,7 +2949,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
         if not version:
             version = item.get_latest_version()
         if not version:
-            return ERROR('did not found any remote versions for %s' % remote_path)
+            return ERROR('no remotely stored versions found')
         if item.key_id:
             key_alias = packetid.KeyAlias(item.key_id)
         customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
@@ -2954,7 +2966,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
         if not version:
             version = item.get_latest_version()
         if not version:
-            return ERROR('did not found any remote versions for %s' % remote_path)
+            return ERROR('no remotely stored versions found')
         if item.key_id:
             key_alias = packetid.KeyAlias(item.key_id)
         customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
@@ -3158,7 +3170,7 @@ def file_download_stop(remote_path):
         for version in versions:
             backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version, key_alias=key_alias))
     if not backupIDs:
-        return ERROR('did not found any remote versions for %s' % remote_path)
+        return ERROR('no remotely stored versions found')
     r = []
     for backupID in backupIDs:
         r.append({
