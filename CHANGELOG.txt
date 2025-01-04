@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+2025-01-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* built api.chunk_write() method to make possible device to node file transfer
+* built api.chunk_read() method to make possible node to device file transfer
+* handling situations when wrong server or client code was entered during web socket device handshake procedure
+* minor updates in api.file_* methods
+* solved threading issue in routed_web_socket()
+* bug fixes in DHT and service_web_socket_communicator()
+* minor fix in keys_synchronizer()
+
+
+
 2024-12-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * new approach to run BitDust on mobile devices
