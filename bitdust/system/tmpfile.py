@@ -60,6 +60,8 @@ _TempDirPath = None
 _FilesDict = {}
 _CollectorTask = None
 _SubDirs = {
+    'upload': 60*60*12,  # hold websocket uploads for 12 hours
+    'download': 60*60*12,  # same for websocket downloads
     'outbox': 60*10,  # hold onto outbox files 10 minutes
     'tcp-in': 60*10,  # 10 minutes for incoming tcp files
     'udp-in': 60*10,  # 10 minutes for incoming udp files
@@ -110,19 +112,20 @@ def init(temp_dir_path=''):
                     temp_dir = os_temp_dir
 
             if not os.access(temp_dir, os.W_OK):
-                lg.out(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
+                lg.err('no write permissions to %r' % temp_dir)
                 temp_dir = os_temp_dir
 
             _TempDirPath = temp_dir
-        lg.out(6, 'tmpfile.init  _TempDirPath=' + _TempDirPath)
+        if _Debug:
+            lg.out(_DebugLevel, 'tmpfile.init %s' % _TempDirPath)
 
     for name in _SubDirs.keys():
         if not os.path.exists(subdir(name)):
             try:
                 os.makedirs(subdir(name))
             except:
-                lg.out(2, 'tmpfile.init ERROR can not create ' + subdir(name))
                 lg.exc()
+                lg.err('can not create %r' % subdir(name))
 
     for name in _SubDirs.keys():
         if name not in _FilesDict:
@@ -146,6 +149,14 @@ def shutdown():
         _CollectorTask.stop()
         del _CollectorTask
         _CollectorTask = None
+
+
+#------------------------------------------------------------------------------
+
+
+def base_dir():
+    global _TempDirPath
+    return _TempDirPath
 
 
 def subdir(name):
@@ -179,6 +190,7 @@ def make(name, extension='', prefix='', close_fd=False):
     .. warning::    Remember you need to close the file descriptor by your own.
     The ``tmpfile`` module will remove it later - do not worry.
     This is a job for our collector.
+
     However if you will keep the file opened for awhile
     it should print a ```WARNING``` in logs because will fail to delete it.
     """
@@ -192,13 +204,13 @@ def make(name, extension='', prefix='', close_fd=False):
         fd, filename = tempfile.mkstemp(extension, prefix, subdir(name))
         _FilesDict[name][filename] = time.time()
     except:
-        lg.out(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
         lg.exc()
+        lg.err('failed creating file in sub folder %r' % name)
         return None, ''
     if close_fd:
         os.close(fd)
     if _Debug:
-        lg.out(_DebugLevel, 'tmpfile.make ' + filename)
+        lg.out(_DebugLevel, 'tmpfile.make %r' % filename)
     return fd, filename
 
 
@@ -210,14 +222,14 @@ def make_dir(name, extension='', prefix=''):
     if name not in list(_FilesDict.keys()):
         name = 'all'
     try:
-        dirname = tempfile.mkdtemp(extension, prefix, subdir(name))
+        dirname = tempfile.mkdtemp(suffix=extension, prefix=prefix, dir=subdir(name))
         _FilesDict[name][dirname] = time.time()
     except:
-        lg.out(1, 'tmpfile.make_dir ERROR creating folder in ' + name)
         lg.exc()
+        lg.err('failed creating folder in %r' % name)
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'tmpfile.make_dir ' + dirname)
+        lg.out(_DebugLevel, 'tmpfile.make_dir %r' % dirname)
     return dirname
 
 
@@ -251,7 +263,8 @@ def erase(name, filename, why='no reason'):
             if _Debug:
                 lg.out(_DebugLevel, 'tmpfile.erase [%s] : "%s"' % (filename, why))
         except:
-            lg.out(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
+            lg.exc()
+            lg.err('can not remove [%s], tried because %s' % (filename, why))
 
     elif os.path.isdir(filename):
         bpio.rmdir_recursive(filename, ignore_errors=True)
@@ -279,7 +292,7 @@ def collect():
     Removes old temporary files.
     """
     if _Debug:
-        lg.out(_DebugLevel - 4, 'tmpfile.collect')
+        lg.out(_DebugLevel, 'tmpfile.collect')
     global _FilesDict
     global _SubDirs
     erase_list = []
@@ -305,7 +318,7 @@ def collect():
         erase(name, filename, 'collected')
 
     if _Debug:
-        lg.out(_DebugLevel - 4, 'tmpfile.collect %d files erased' % len(erase_list))
+        lg.out(_DebugLevel, 'tmpfile.collect %d files erased' % len(erase_list))
 
     del erase_list
 
@@ -319,7 +332,7 @@ def startup_clean():
     global _TempDirPath
     global _SubDirs
     if _Debug:
-        lg.out(_DebugLevel - 4, 'tmpfile.startup_clean in %s' % _TempDirPath)
+        lg.out(_DebugLevel, 'tmpfile.startup_clean in %s' % _TempDirPath)
     if _TempDirPath is None:
         return
     counter = 0
