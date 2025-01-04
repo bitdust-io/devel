@@ -59,7 +59,7 @@ def data_read(file_path, offset, max_size, to_text=True):
 def data_write(file_path, data, from_text=True):
     if from_text:
         data = strng.to_bin(data, encoding='latin1')
-    f = open(file_path, 'wb')
+    f = open(file_path, 'ab')
     f.write(data)
     f.close()
     if _Debug:

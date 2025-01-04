@@ -1543,15 +1543,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None, backup
             # 0 1234 56 78 9  11 13 15
             # F 2013 11 20 05 38 03 PM
             b = version
-            version_label = '%s-%s-%s %s:%s:%s %s' % (
-                b[1:5],
-                b[5:7],
-                b[7:9],
-                b[9:11],
-                b[11:13],
-                b[13:15],
-                b[15:17],
-            )
+            version_label = '%s-%s-%s %s:%s:%s %s' % (b[1:5], b[5:7], b[7:9], b[9:11], b[11:13], b[13:15], b[15:17])
         else:
             version_label = backupID
         backup_info_dict = {
