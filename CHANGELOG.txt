@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2025-01-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated cmd line interface to make possible to pair remote web socket device
+* file upload & download from node to/from remote device (#212)
+
+
+
 2025-01-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * built api.chunk_write() method to make possible device to node file transfer
