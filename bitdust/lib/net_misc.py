@@ -208,6 +208,22 @@ def pack_address_text(host_port, proto=None, default_port=80):
 #------------------------------------------------------------------------------
 
 
+def pack_device_url(url):
+    _u = url.replace('ws://', '')
+    _head, _, _tail = _u.rpartition('/?r=')
+    return _head + ':' + _tail
+
+
+def unpack_device_url(inp):
+    _head, _, _tail = inp.rpartition(':')
+    if not _head.startswith('ws://'):
+        _head = 'ws://' + _head
+    return _head + '/?r=' + _tail
+
+
+#------------------------------------------------------------------------------
+
+
 def parse_url(url, defaultPort=None):
     """
     Split the given URL into the scheme, host, port, and path.

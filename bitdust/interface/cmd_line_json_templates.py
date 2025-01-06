@@ -51,7 +51,7 @@ TPL_RAW = tpl_5_items.format(tpl_status, tpl_execution, tpl_result, tpl_message,
 
 #------------------------------------------------------------------------------
 
-TPL_DEVICES_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{name} active:{active}, {size} bits, routed:{meta.routed}, auth:{meta.auth_token}', or_text='there are currently no configured devices'), tpl_errors)
+TPL_DEVICES_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{name} active:{active}, {size} bits, routed:{meta.routed}, auth:{meta.auth_token}\n', or_text='there are currently no configured devices'), tpl_errors)
 
 TPL_DEVICES_INFO = tpl_4_items.format(tpl_status, tpl_execution, '{.section result}{@}{.end}', tpl_errors)
 
