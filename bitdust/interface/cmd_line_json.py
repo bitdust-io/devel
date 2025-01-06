@@ -50,6 +50,7 @@ import time
 from bitdust.lib import jsontemplate
 from bitdust.lib import strng
 from bitdust.lib import jsn
+from bitdust.lib import net_misc
 
 from bitdust.interface import cmd_line_json_templates as templ
 
@@ -518,8 +519,8 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 print_text('device configuration failed due to connection error')
                 reactor.stop()  # @UndefinedVariable
                 return
-            route_url = connected_routers[0]
-            print_text('enter following details on your device and then be ready to enter 6-digits server code:\n%s' % route_url)
+            route_url = net_misc.pack_device_url(connected_routers[0])
+            print_text('enter the following connection info on your mobile device and then be ready to enter 6-digits server code:\n%s' % route_url)
             reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
 
         def _add():
