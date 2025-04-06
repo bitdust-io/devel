@@ -227,6 +227,8 @@ def add_encrypted_device(device_name, port_number=None, key_size=4096):
         port_number = settings.DefaultWebSocketEncryptedPort()
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, port_number=port_number)
+    if len(_Devices) >= 1:
+        raise Exception('currently it is only possible to connect one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
@@ -251,6 +253,8 @@ def add_routed_device(device_name, key_size=4096):
         raise Exception('required service_nodes_lookup() is not currently ON')
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name)
+    if len(_Devices) >= 1:
+        raise Exception('currently it is only possible to connect one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
