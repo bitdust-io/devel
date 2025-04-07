@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# api_routed_device.py
+# routed_web_socket.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (api_routed_device.py) is part of BitDust Software.
+# This file (routed_web_socket.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -24,10 +24,10 @@
 #
 #
 """
-.. module:: api_routed_device
+.. module:: routed_web_socket
 .. role:: red
 
-BitDust api_routed_device() Automat
+BitDust routed_web_socket() Automat
 
 EVENTS:
     * :red:`api-message`
@@ -423,19 +423,19 @@ def ws_send(url, raw_data):
 class RoutedWebSocket(automat.Automat):
 
     """
-    This class implements all the functionality of ``api_routed_device()`` state machine.
+    This class implements all the functionality of ``routed_web_socket()`` state machine.
     """
 
     def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
-        Builds `api_routed_device()` state machine.
+        Builds `routed_web_socket()` state machine.
         """
         super(RoutedWebSocket, self).__init__(name='routed_web_socket', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def init(self):
         """
         Method to initialize additional variables and flags
-        at creation phase of `api_routed_device()` machine.
+        at creation phase of `routed_web_socket()` machine.
         """
         # TODO: read known routers from local file
         self.selected_routers = []
@@ -448,7 +448,7 @@ class RoutedWebSocket(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        Method to catch the moment when `api_routed_device()` state were changed.
+        Method to catch the moment when `routed_web_socket()` state were changed.
         """
         if event == 'auth-error':
             if oldstate in ('CLIENT_PUB?', 'SERVER_CODE?', 'CLIENT_CODE?'):
@@ -456,7 +456,7 @@ class RoutedWebSocket(automat.Automat):
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when some event was fired in the `api_routed_device()`
+        This method intended to catch the moment when some event was fired in the `routed_web_socket()`
         but automat state was not changed.
         """
 
@@ -473,14 +473,18 @@ class RoutedWebSocket(automat.Automat):
 
     #------------------------------------------------------------------------------
 
-    def on_incoming_message(self, url, json_data):
+    def on_incoming_message_callback(self, url, json_data):
         if _Debug:
-            lg.args(_DebugLevel, url=url, inp=json_data)
+            lg.args(_DebugLevel, url=url, json_data=json_data)
         if json_data.get('route_id'):
             self._on_web_socket_router_first_response(url, json_data)
             return True
         cmd = json_data.get('cmd')
         if cmd == 'api':
+            if self.state != 'READY':
+                lg.warn('received api request, but web socket is not ready yet')
+                self.automat('auth-error')
+                return False
             if self.active_router_url and self.active_router_url != url:
                 lg.warn('active web socket router %r switched to %r' % (self.active_router_url, url))
             self.active_router_url = url
@@ -488,6 +492,9 @@ class RoutedWebSocket(automat.Automat):
             self.event('api-message', url=url, json_data=json_data)
             return True
         if cmd == 'handshake-accepted':
+            if self.state != 'WEB_SOCKET?':
+                lg.warn('received api handshake-accepted signal, but web socket is currently in state: %s' % self.state)
+                return False
             route_url = json_data.get('route_url')
             if not route_url:
                 return False
@@ -507,6 +514,9 @@ class RoutedWebSocket(automat.Automat):
             self.automat('client-pub-key-received', client_key_object=client_key_object)
             return True
         if cmd == 'server-code':
+            if self.state != 'SERVER_CODE?':
+                lg.warn('received server code, but web socket is currently in state: %s' % self.state)
+                return False
             try:
                 signature = json_data['signature']
                 encrypted_server_code = json_data['server_code']
@@ -514,8 +524,7 @@ class RoutedWebSocket(automat.Automat):
                 lg.exc()
                 self.automat('auth-error')
                 return False
-            self.on_server_code_received(signature=signature, encrypted_server_code=encrypted_server_code)
-            return True
+            return self.on_server_code_received(signature=signature, encrypted_server_code=encrypted_server_code)
         if cmd == 'client-disconnected':
             self.client_connected = False
             return True
@@ -541,21 +550,22 @@ class RoutedWebSocket(automat.Automat):
         except:
             lg.exc()
             self.automat('auth-error')
-            return
+            return False
         if _Debug:
             lg.args(_DebugLevel, received_server_code_salted=received_server_code_salted)
         hashed_server_code = hashes.sha1(strng.to_bin(received_server_code_salted))
         if not self.client_key_object.verify(signature, hashed_server_code):
             lg.err('signature verification error, received server code is not valid')
             self.automat('auth-error')
-            return
+            return False
         if received_server_code != self.server_code:
             lg.warn('received server code %r is not matching with generated code %r' % (received_server_code, self.server_code))
             self.automat('auth-error')
-            return
+            return False
         if _Debug:
             lg.args(_DebugLevel, received_server_code=received_server_code)
         self.automat('valid-server-code-received')
+        return True
 
     def on_client_code_input_received(self, client_code):
         if _Debug:
@@ -702,7 +712,7 @@ class RoutedWebSocket(automat.Automat):
         Action method.
         """
         global _IncomingRoutedMessageCallback
-        _IncomingRoutedMessageCallback = self.on_incoming_message
+        _IncomingRoutedMessageCallback = self.on_incoming_message_callback
         self.device_key_object = kwargs['device_object']
         self.device_name = self.device_key_object.label
         self.connected_routers = self.device_key_object.meta.get('connected_routers', {})
@@ -748,7 +758,9 @@ class RoutedWebSocket(automat.Automat):
         """
         # TODO: notify about failed result
         if _Debug:
-            lg.args(_DebugLevel, connected_routers=self.connected_routers)
+            lg.args(_DebugLevel, event=event, connected_routers=self.connected_routers)
+        if event == 'auth-error':
+            return
         for url, route_id in self.connected_routers.items():
             if not route_id:
                 continue
@@ -781,10 +793,12 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        self.server_code = None
         self.device_key_object.meta['auth_token'] = self.auth_token
         self.device_key_object.meta['session_key'] = strng.to_text(base64.b64encode(self.session_key))
         self.device_key_object.meta['client_public_key'] = self.client_key_object.toPublicString()
         self.device_key_object.save()
+        lg.info('device %s is now authenticated' % self.device_name)
 
     def doSaveClientPublicKey(self, *args, **kwargs):
         """
@@ -850,6 +864,8 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, args=args, kwargs=kwargs)
         self.server_code = None
         events.send('web-socket-handshake-proceeding', data=self.to_json())
         BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT = os.environ.get('BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT', None)
@@ -872,7 +888,10 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, event=event)
         if event == 'auth-error':
+            self.server_code = None
             self.device_key_object.meta['auth_token'] = None
             self.device_key_object.meta['session_key'] = None
             self.device_key_object.meta['client_public_key'] = None
@@ -960,10 +979,18 @@ class RoutedWebSocket(automat.Automat):
         else:
             if url in self.connecting_routers:
                 self.connecting_routers.remove(url)
-        if not self.active_router_url:
+        if not self.active_router_url and url:
             self.active_router_url = url
             lg.info('connected active web socket router %r' % self.active_router_url)
-        self.handshaked_routers.append(route_url)
+        route_base, _, _ = route_url.rpartition('/?r=')
+        route_already_handshaked = False
+        for known_route in self.handshaked_routers:
+            if known_route.startswith(route_base):
+                route_already_handshaked = True
+        if not route_already_handshaked:
+            self.handshaked_routers.append(route_url)
+        else:
+            lg.warn('route %s is not going to be connected, because given router %s was already handshaked' % (route_url, route_base))
         handshaked_count = len(self.handshaked_routers)
         if _Debug:
             lg.args(_DebugLevel, url=url, connecting=len(self.connecting_routers), handshaked=handshaked_count, active=self.active_router_url)
