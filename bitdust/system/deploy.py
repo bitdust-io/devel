@@ -143,6 +143,8 @@ def init_current_network(name=None, base_dir=None):
         cur_network = open(os.path.join(base_dir, 'current_network'), 'r').read().strip()
     except:
         cur_network = 'default'
+    if not cur_network:
+        cur_network = 'default'
     if not os.path.isdir(os.path.join(base_dir, cur_network)):
         cur_network = 'default'
     _CurrentNetwork = cur_network
