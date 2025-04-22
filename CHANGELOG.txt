@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+2025-04-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in api.files_list()
+* bug fix in bitdust.system.deploy.init_current_network()
+* few fixes in the routed web socket connection
+
+
+
 2025-01-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * updated cmd line interface to make possible to pair remote web socket device
