@@ -2084,8 +2084,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     if driver.is_on('service_restores'):
         from bitdust.storage import restore_monitor
         backup_info_callback = restore_monitor.GetBackupStatusInfo
+    lookup_results = []
     if all_customers:
-        lookup = []
         for customer_idurl in backup_fs.known_customers():
             if key_alias in backup_fs.known_keys_aliases(customer_idurl):
                 look = backup_fs.ListChildsByPath(
@@ -2096,24 +2096,24 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                     backup_info_callback=backup_info_callback,
                 )
                 if isinstance(look, list):
-                    lookup.extend(look)
+                    lookup_results.extend(look)
                 else:
                     lg.warn(look)
     else:
         if key_alias in backup_fs.known_keys_aliases(customer_idurl):
-            lookup = backup_fs.ListChildsByPath(
+            lookup_results = backup_fs.ListChildsByPath(
                 path=remotePath,
                 recursive=recursive,
                 iter=backup_fs.fs(customer_idurl, key_alias),
                 iterID=backup_fs.fsID(customer_idurl, key_alias),
                 backup_info_callback=backup_info_callback,
             )
-    if not isinstance(lookup, list):
-        return ERROR(lookup)
+    if not isinstance(lookup_results, list):
+        return ERROR(lookup_results)
     if _Debug:
-        lg.out(_DebugLevel, '    lookup with %d items' % len(lookup))
+        lg.out(_DebugLevel, '    lookup with %d items' % len(lookup_results))
     local_dir = settings.getRestoreDir()
-    for i in lookup:
+    for i in lookup_results:
         if i['path_id'] == 'index':
             continue
         if key_id is not None and key_id != i['item']['k']:
