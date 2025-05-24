@@ -273,6 +273,18 @@ def on_close(ws_inst):
         reactor.callFromThread(cb, ws_inst)  # @UndefinedVariable
 
 
+def on_ping(ws_inst, data):
+    url = ws_inst.url
+    if _Debug:
+        lg.dbg(_DebugLevel, 'websocket PING %s: %r' % (url, data))
+
+
+def on_pong(ws_inst, data):
+    url = ws_inst.url
+    if _Debug:
+        lg.dbg(_DebugLevel, 'websocket PONG %s: %r' % (url, data))
+
+
 def on_incoming_message(ws_inst, message):
     global _IncomingRoutedMessageCallback
     url = ws_inst.url
@@ -346,6 +358,8 @@ def websocket_thread(url):
             on_error=on_error,
             on_close=on_close,
             on_open=on_open,
+            on_ping=on_ping,
+            on_pong=on_pong,
         )
         try:
             ws(url).run_forever(ping_interval=60, ping_timeout=15)
@@ -450,6 +464,7 @@ class RoutedWebSocket(automat.Automat):
         self.server_code = None
         self.device_name = None
         self.client_connected = False
+        self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=3)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -466,12 +481,17 @@ class RoutedWebSocket(automat.Automat):
         """
 
     def to_json(self, short=True):
+        active_routers = dict()
+        for external_route_url in self.handshaked_routers:
+            url, _, route_id = external_route_url.rpartition('/?r=')
+            internal_route_url = '{}/?i={}'.format(url, route_id)
+            active_routers[url] = ws(internal_route_url)
         ret = super().to_json(short=short)
         ret.update(
             {
                 'url': self.active_router_url,
                 'connected_routers': self.handshaked_routers,
-                'active_routers': list(self.connected_routers.keys()),
+                'active_routers': active_routers,
                 'server_code': self.server_code,
                 'device_name': self.device_name,
                 'client_connected': self.client_connected,
@@ -722,7 +742,6 @@ class RoutedWebSocket(automat.Automat):
         """
         global _IncomingRoutedMessageCallback
         _IncomingRoutedMessageCallback = self.on_incoming_message_callback
-        self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=3)
         self.device_key_object = kwargs['device_object']
         self.device_name = self.device_key_object.label
         self.connected_routers = self.device_key_object.meta.get('connected_routers', {})
@@ -995,6 +1014,12 @@ class RoutedWebSocket(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, ws_inst=ws_inst, err=err, connecting=len(self.connecting_routers), handshaked=handshaked_count)
         if not self.connecting_routers:
+            # if url == self.active_router_url:
+            #     if self.state == 'WEB_SOCKET?':
+            #         self.automat('routers-failed')
+            #     else:
+            #         self.automat('router-disconnected')
+            # else:
             if handshaked_count > 0:
                 self.automat('routers-connected')
             else:

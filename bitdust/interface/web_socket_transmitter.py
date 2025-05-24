@@ -49,11 +49,11 @@ from twisted.internet.protocol import Protocol, Factory
 
 from bitdust.logs import lg
 
-from bitdust.lib import txws
 from bitdust.lib import strng
 from bitdust.lib import serialization
 from bitdust.lib import jsn
 from bitdust.lib import utime
+from bitdust.lib import txws
 
 from bitdust.system import local_fs
 

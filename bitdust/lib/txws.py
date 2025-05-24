@@ -52,10 +52,9 @@ from struct import pack, unpack
 
 from twisted.internet.interfaces import ISSLTransport
 from twisted.protocols.policies import ProtocolWrapper, WrappingFactory
-from twisted.python import log
 from twisted.web.http import datetimeToString
 
-_Debug = False
+_Debug = True
 
 array_tostring = lambda x: x.tostring()
 if sys.version_info[1] >= 2:
@@ -508,7 +507,7 @@ class WebSocketProtocol(ProtocolWrapper):
             frames, self.buf = parser(self.buf)
         except WSException as wse:
             if _Debug:
-                log.err('Error in parseFrames: %r' % wse)
+                print('Error in parseFrames: %r' % wse)
             # Couldn't parse all the frames, something went wrong, let's bail.
             self.close(wse.args[0])
             return
@@ -525,10 +524,23 @@ class WebSocketProtocol(ProtocolWrapper):
                 # The other side wants us to close. I wonder why?
                 text, reason = data
                 if _Debug:
-                    log.msg('Closing connection: %r (%s)' % (text, reason))
+                    print('Closing connection: %r (%s)' % (text, reason))
 
                 # Close the connection.
                 self.close(reason)
+            elif opcode == PING:
+                if _Debug:
+                    print('received PING', self.transport)
+                # Also reply on PING packets
+                if self.flavor in (HYBI07, HYBI10, RFC6455):
+                    if not self.do_binary_frames:
+                        maker = make_hybi07_frame
+                        if self.codec:
+                            data = encoders[self.codec](data)
+                        packet = maker(data, opcode=0xa)
+                        self.writeEncoded(packet)
+                        if _Debug:
+                            print('sent PONG', self.transport)
 
     def sendFrames(self):
         """
@@ -565,7 +577,7 @@ class WebSocketProtocol(ProtocolWrapper):
         # Obvious but necessary.
         if not is_websocket(self.headers):
             if _Debug:
-                log.msg('Not handling non-WS request')
+                print('Not handling non-WS request')
             return False
 
         # Stash host and origin for those browsers that care about it.
@@ -590,12 +602,12 @@ class WebSocketProtocol(ProtocolWrapper):
             for protocol in protocols:
                 if protocol in encoders or protocol in decoders:
                     if _Debug:
-                        log.msg('Using WS protocol %s!' % protocol)
+                        print('Using WS protocol %s!' % protocol)
                     self.codec = protocol
                     break
 
                 if _Debug:
-                    log.msg("Couldn't handle WS protocol %s!" % protocol)
+                    print("Couldn't handle WS protocol %s!" % protocol)
 
             if not self.codec:
                 return False
@@ -603,7 +615,7 @@ class WebSocketProtocol(ProtocolWrapper):
         # Start the next phase of the handshake for HyBi-00.
         if is_hybi00(self.headers):
             if _Debug:
-                log.msg('Starting HyBi-00/Hixie-76 handshake')
+                print('Starting HyBi-00/Hixie-76 handshake')
             self.flavor = HYBI00
             self.state = CHALLENGE
 
@@ -612,25 +624,25 @@ class WebSocketProtocol(ProtocolWrapper):
             version = self.headers['Sec-WebSocket-Version']
             if version == '7':
                 if _Debug:
-                    log.msg('Starting HyBi-07 conversation')
+                    print('Starting HyBi-07 conversation')
                 self.sendHyBi07Preamble()
                 self.flavor = HYBI07
                 self.state = FRAMES
             elif version == '8':
                 if _Debug:
-                    log.msg('Starting HyBi-10 conversation')
+                    print('Starting HyBi-10 conversation')
                 self.sendHyBi07Preamble()
                 self.flavor = HYBI10
                 self.state = FRAMES
             elif version == '13':
                 if _Debug:
-                    log.msg('Starting RFC 6455 conversation')
+                    print('Starting RFC 6455 conversation')
                 self.sendHyBi07Preamble()
                 self.flavor = RFC6455
                 self.state = FRAMES
             else:
                 if _Debug:
-                    log.msg("Can't support protocol version %s!" % version)
+                    print("Can't support protocol version %s!" % version)
                 return False
 
         return True
@@ -685,7 +697,7 @@ class WebSocketProtocol(ProtocolWrapper):
                     self.sendHyBi00Preamble()
                     self.writeEncoded(response)
                     if _Debug:
-                        log.msg('Completed HyBi-00/Hixie-76 handshake')
+                        print('Completed HyBi-00/Hixie-76 handshake')
                     # We're all finished here; start sending frames.
                     self.state = FRAMES
 
@@ -733,7 +745,7 @@ class WebSocketProtocol(ProtocolWrapper):
         """
 
         if _Debug:
-            log.msg('Closing connection %r : %s' % (self, reason))
+            print('Closing connection %r : %s' % (self, reason))
 
         # Send a closing frame. It's only polite. (And might keep the browser
         # from hanging.)
