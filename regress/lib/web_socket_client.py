@@ -502,7 +502,7 @@ def websocket_thread():
             on_open=on_open,
         )
         try:
-            ret = ws().run_forever(ping_interval=10)
+            ret = ws().run_forever(ping_interval=60, ping_timeout=15)
         except Exception as exc:
             ret = None
             _WebSocketApp = None

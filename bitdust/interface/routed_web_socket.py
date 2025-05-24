@@ -41,6 +41,8 @@ EVENTS:
     * :red:`routers-selected`
     * :red:`start`
     * :red:`stop`
+    * :red:`timer-1min`
+    * :red:`timer-5min`
     * :red:`valid-server-code-received`
 """
 
@@ -50,7 +52,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -95,6 +97,7 @@ from bitdust.crypt import hashes
 from bitdust.dht import dht_records
 
 from bitdust.main import events
+from bitdust.main import config
 
 from bitdust.p2p import lookup
 
@@ -176,10 +179,7 @@ def stop_client(url):
                 lg.dbg(_DebugLevel, 'in %s cleaned unfinished call: %r' % (url, raw_data))
         except Empty:
             break
-    _WebSocketQueue[url].put_nowait((
-        None,
-        None,
-    ))
+    _WebSocketQueue[url].put_nowait((None, None))
     _ws = ws(url)
     if _ws:
         _ws.close()
@@ -348,17 +348,17 @@ def websocket_thread(url):
             on_open=on_open,
         )
         try:
-            ws(url).run_forever(ping_interval=30)
+            ws(url).run_forever(ping_interval=60, ping_timeout=15)
         except Exception as exc:
             _WebSocketApp[url] = None
             if _Debug:
                 lg.dbg(_DebugLevel, '\n    WS Thread ERROR: %r' % exc)
-            time.sleep(1)
+            time.sleep(5)
         if _WebSocketApp.get(url):
             _WebSocketApp.pop(url, None)
         if not is_started(url):
             break
-        time.sleep(1)
+        time.sleep(5)
     _WebSocketApp.pop(url, None)
 
 
@@ -426,6 +426,11 @@ class RoutedWebSocket(automat.Automat):
     This class implements all the functionality of ``routed_web_socket()`` state machine.
     """
 
+    timers = {
+        'timer-1min': (60, ['READY']),
+        'timer-5min': (300, ['CLIENT_PUB?']),
+    }
+
     def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `routed_web_socket()` state machine.
@@ -462,13 +467,16 @@ class RoutedWebSocket(automat.Automat):
 
     def to_json(self, short=True):
         ret = super().to_json(short=short)
-        ret.update({
-            'url': self.active_router_url,
-            'connected_routers': self.handshaked_routers,
-            'server_code': self.server_code,
-            'device_name': self.device_name,
-            'client_connected': self.client_connected,
-        })
+        ret.update(
+            {
+                'url': self.active_router_url,
+                'connected_routers': self.handshaked_routers,
+                'active_routers': list(self.connected_routers.keys()),
+                'server_code': self.server_code,
+                'device_name': self.device_name,
+                'client_connected': self.client_connected,
+            }
+        )
         return ret
 
     #------------------------------------------------------------------------------
@@ -531,8 +539,8 @@ class RoutedWebSocket(automat.Automat):
         return False
 
     def on_outgoing_message(self, json_data):
-        if _Debug:
-            lg.args(_DebugLevel, client_connected=self.client_connected, d=json_data)
+        # if _Debug:
+        #     lg.args(_DebugLevel, client_connected=self.client_connected, d=json_data)
         if json_data.get('cmd') == 'push':
             if not self.client_connected:
                 return False
@@ -596,6 +604,8 @@ class RoutedWebSocket(automat.Automat):
             elif event == 'router-disconnected':
                 self.state = 'ROUTERS?'
                 self.doLookupRequestRouters(*args, **kwargs)
+            elif event == 'timer-1min':
+                self.doVerifyRouters(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'start' and not self.isKnownRouters(*args, **kwargs):
@@ -648,6 +658,8 @@ class RoutedWebSocket(automat.Automat):
             elif event == 'router-disconnected':
                 self.state = 'ROUTERS?'
                 self.doLookupRequestRouters(*args, **kwargs)
+            elif event == 'timer-5min':
+                self.doVerifyRouters(*args, **kwargs)
         #---SERVER_CODE?---
         elif self.state == 'SERVER_CODE?':
             if event == 'auth-error' or event == 'stop':
@@ -683,9 +695,6 @@ class RoutedWebSocket(automat.Automat):
                 self.doRemoveAuthToken(event, *args, **kwargs)
                 self.doDisconnectRouters(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'router-disconnected':
-                self.state = 'ROUTERS?'
-                self.doLookupRequestRouters(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -705,7 +714,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Condition method.
         """
-        return len(kwargs['device_object'].meta.get('connected_routers', {})) >= 3
+        return len(kwargs['device_object'].meta.get('connected_routers', {})) >= self.max_router_connections
 
     def doInit(self, *args, **kwargs):
         """
@@ -713,6 +722,7 @@ class RoutedWebSocket(automat.Automat):
         """
         global _IncomingRoutedMessageCallback
         _IncomingRoutedMessageCallback = self.on_incoming_message_callback
+        self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=3)
         self.device_key_object = kwargs['device_object']
         self.device_name = self.device_key_object.label
         self.connected_routers = self.device_key_object.meta.get('connected_routers', {})
@@ -726,9 +736,12 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        known_routers = kwargs.get('known_routers')
+        if not known_routers:
+            known_routers = self.connected_routers.copy()
         self.router_lookups = 0
         self.selected_routers = []
-        for url, route_id in self.connected_routers.items():
+        for url, route_id in known_routers.items():
             if route_id:
                 self.selected_routers.append(url)
         self._do_lookup_next_router()
@@ -746,11 +759,12 @@ class RoutedWebSocket(automat.Automat):
             if not route_id:
                 continue
             route_url = '{}/?i={}'.format(url, route_id)
-            self.connecting_routers.append(route_url)
-            start_client(url=route_url, callbacks={
-                'on_open': self._on_web_socket_router_connection_opened,
-                'on_error': self._on_web_socket_router_connection_error,
-            })
+            if not is_started(route_url):
+                self.connecting_routers.append(route_url)
+                start_client(url=route_url, callbacks={
+                    'on_open': self._on_web_socket_router_connection_opened,
+                    'on_error': self._on_web_socket_router_connection_error,
+                })
 
     def doDisconnectRouters(self, event, *args, **kwargs):
         """
@@ -779,6 +793,19 @@ class RoutedWebSocket(automat.Automat):
         """
         self.device_key_object.meta['connected_routers'] = self.connected_routers
         self.device_key_object.save()
+
+    def doVerifyRouters(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        known_routers = dict()
+        for external_route_url in self.handshaked_routers:
+            url, _, route_id = external_route_url.rpartition('/?r=')
+            internal_route_url = '{}/?i={}'.format(url, route_id)
+            if ws(internal_route_url):
+                known_routers[url] = route_id
+        if len(known_routers) < self.max_router_connections:
+            self.automat('router-disconnected', known_routers=known_routers)
 
     def doLoadAuthInfo(self, *args, **kwargs):
         """
@@ -1038,7 +1065,7 @@ class RoutedWebSocket(automat.Automat):
                 lg.exc()
         if self.connected_routers.get(url):
             lg.warn('web socket router at %s was already connected' % url)
-            if len(self.connected_routers) >= 3:
+            if len(self.connected_routers) >= self.max_router_connections:
                 self.automat('routers-selected')
             return None
         route_id = None
@@ -1050,7 +1077,7 @@ class RoutedWebSocket(automat.Automat):
             self.connected_routers[url] = route_id
         else:
             self.connected_routers[url] = None
-        if len(self.connected_routers) >= 3:
+        if len(self.connected_routers) >= self.max_router_connections:
             self.automat('routers-selected')
         return None
 
@@ -1074,7 +1101,7 @@ class RoutedWebSocket(automat.Automat):
             except:
                 lg.exc()
         self.connected_routers[url] = None
-        if len(self.connected_routers) >= 3:
+        if len(self.connected_routers) >= self.max_router_connections:
             self.automat('routers-selected')
         return None
 
@@ -1092,11 +1119,11 @@ class RoutedWebSocket(automat.Automat):
     def _do_lookup_next_router(self):
         if _Debug:
             lg.args(_DebugLevel, lookups=self.router_lookups, connected=len(self.connected_routers), selected=len(self.selected_routers))
-        if len(self.selected_routers) >= 3:  # TODO: read from settings.: max web socket routers
+        if len(self.selected_routers) >= self.max_router_connections:
             reactor.callLater(0, self._do_connect_routers)  # @UndefinedVariable
             return
-        if self.router_lookups >= 10:  # TODO: read from settings.
-            if len(self.selected_routers) >= 3:  # TODO: read from settings: min web socket routers
+        if self.router_lookups >= 10:  # TODO: read from settings
+            if len(self.selected_routers) >= self.max_router_connections:
                 reactor.callLater(0, self._do_connect_routers)  # @UndefinedVariable
                 return
             self.automat('lookup-failed')
