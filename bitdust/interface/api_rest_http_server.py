@@ -439,6 +439,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['name'])
         return api.device_remove(name=data['name'])
 
+    @GET('^/dev/r/i$')
+    @GET('^/v1/device/router/info$')
+    @GET('^/device/router/info/v1$')
+    def device_router_info_v1(self, request):
+        return api.device_router_info()
+
     #------------------------------------------------------------------------------
 
     @POST('^/nw/cr$')

@@ -187,6 +187,10 @@ class APIDevice(rsa_key.RSAKey):
         except:
             lg.exc()
             return False
+        # TODO: remove later
+        if self.meta.get('connected_routers'):
+            if not self.meta.get('authorized_routers'):
+                self.meta['authorized_routers'] = self.meta.pop('connected_routers')
         if _Debug:
             lg.args(_DebugLevel, device_name=self.label, key=self)
         return True

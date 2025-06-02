@@ -44,6 +44,7 @@ import os
 
 from twisted.application.strports import listen
 from twisted.internet.protocol import Protocol, Factory
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -72,6 +73,7 @@ MAX_ACTIVE_ROUTES = 100
 _WebSocketListener = None
 _WebSocketTransports = {}
 _WebSocketRouterLocation = None
+_CleanupRoutesTask = None
 _Routes = {}
 
 #------------------------------------------------------------------------------
@@ -80,6 +82,7 @@ _Routes = {}
 def init():
     global _WebSocketListener
     global _WebSocketRouterLocation
+    global _CleanupRoutesTask
     if _WebSocketListener is not None:
         lg.warn('_WebSocketListener already initialized')
         return True
@@ -98,6 +101,9 @@ def init():
     except:
         lg.exc()
         return False
+    if not _CleanupRoutesTask:
+        _CleanupRoutesTask = LoopingCall(cleanup_routes, save=True)
+        _CleanupRoutesTask.start(60*60, now=True)
     if _Debug:
         lg.out(_DebugLevel, 'web_socket_transmitter.init  _WebSocketListener=%r' % _WebSocketListener)
     return True
@@ -106,6 +112,11 @@ def init():
 def shutdown():
     global _WebSocketListener
     global _WebSocketRouterLocation
+    global _CleanupRoutesTask
+    if _CleanupRoutesTask:
+        if _CleanupRoutesTask.running:
+            _CleanupRoutesTask.stop()
+        _CleanupRoutesTask = None
     if _WebSocketListener:
         if _Debug:
             lg.out(_DebugLevel, 'web_socket_transmitter.shutdown calling _WebSocketListener.stopListening()')
@@ -168,12 +179,16 @@ def add_route():
         route_id,
     )
     _Routes[route_id] = {
+        'created': utime.get_sec1970(),
         'route_id': route_id,
-        'route_url': route_url,
-        'external_transport': None,
         'internal_url': internal_url,
         'internal_transport': None,
-        'created': utime.get_sec1970(),
+        'internal_bytes': 0,
+        'internal_updated': None,
+        'route_url': route_url,
+        'external_transport': None,
+        'external_bytes': 0,
+        'external_updated': None,
     }
     if _Debug:
         lg.args(_DebugLevel, route_id=route_id, routes=len(_Routes))
@@ -206,14 +221,46 @@ def save_routes():
     ret = {}
     for route_id, route_info in _Routes.items():
         ret[route_id] = {
-            'route_id': route_info['route_id'],
-            'route_url': route_info['route_url'],
-            'internal_url': route_info['internal_url'],
             'created': route_info['created'],
+            'route_id': route_info['route_id'],
+            'internal_url': route_info['internal_url'],
+            'internal_bytes': route_info.get('internal_bytes') or 0,
+            'internal_updated': route_info.get('internal_updated') or utime.get_sec1970(),
+            'route_url': route_info['route_url'],
+            'external_bytes': route_info.get('external_bytes') or 0,
+            'external_updated': route_info.get('external_updated') or utime.get_sec1970(),
         }
     if _Debug:
         lg.args(_DebugLevel, count=len(ret))
     return local_fs.WriteTextFile(routes_file_path, jsn.dumps(ret, indent=2, separators=(',', ':')))
+
+
+def cleanup_routes(save=False):
+    global _Routes
+    routes_to_be_removed = []
+    for route_id in _Routes.keys():
+        route_info = _Routes[route_id]
+        internal_updated = route_info.get('internal_updated') or 0
+        internal_expired = True if internal_updated and utime.get_sec1970() - internal_updated > 60*60*24*30 else False
+        external_updated = route_info.get('external_updated') or 0
+        external_expired = True if external_updated and utime.get_sec1970() - external_updated > 60*60*24*30 else False
+        if internal_expired and external_expired:
+            routes_to_be_removed.append(route_id)
+        else:
+            create_expired = False
+            if not internal_updated and not external_updated:
+                create_expired = utime.get_sec1970() - (route_info.get('created') or 0) > 60*60*24
+            if create_expired:
+                routes_to_be_removed.append(route_id)
+    cleaned_something = False
+    for route_id in routes_to_be_removed:
+        if route_id in _Routes:
+            lg.info('about to remove inactive route %r' % route_id)
+            _Routes.pop(route_id)
+            cleaned_something = True
+    if cleaned_something and save:
+        save_routes()
+    return cleaned_something
 
 
 #------------------------------------------------------------------------------
@@ -254,6 +301,8 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
             self.direction = 'internal' if param_name in ('i', 'internal') else 'external'
             self.route_id = route_id
             if self.route_id in routes():
+                if routes(self.route_id).get(self.direction + '_transport'):
+                    lg.warn('%s transport was already attached to the router %r' % (self.direction, self.route_id))
                 routes(self.route_id)[self.direction + '_transport'] = self
                 if _Debug:
                     lg.dbg(_DebugLevel, 'registered %s transport %s for route %s' % (self.direction, self, self.route_id))
@@ -350,12 +399,21 @@ def do_process_incoming_message(transport, json_data, raw_data):
         lg.args(_DebugLevel, route_id=route_id, direction=transport_direction, json_data=json_data)
     if route_id is None and transport_direction is None:
         if json_data.get('cmd') == 'connect-request':
-            if len(routes()) >= MAX_KNOWN_ROUTES:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'request for a new route from %r was rejected: too many routes are currently registered' % transport)
-                return False
-            route_id = add_route()
-            save_routes()
+            route_id = None
+            known_route_id = json_data.get('route_id')
+            if known_route_id:
+                if not routes(known_route_id):
+                    lg.err('incoming route id %r was not registered, rejecting the connect request' % known_route_id)
+                    return False
+                route_id = known_route_id
+            else:
+                if len(routes()) >= MAX_KNOWN_ROUTES:
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'request for a new route from %r was rejected: too many routes are currently registered' % transport)
+                    return False
+                route_id = add_route()
+                save_routes()
+                lg.info('added new web socket route %r' % route_id)
             route_info = routes(route_id)
             json_response = {
                 'result': 'accepted',
@@ -437,6 +495,9 @@ def do_process_incoming_message(transport, json_data, raw_data):
             except:
                 lg.exc()
                 return False
+            internal_total_bytes = routes(route_id).get('internal_bytes', 0)
+            routes(route_id)['internal_bytes'] = internal_total_bytes + len(raw_data)
+            routes(route_id)['internal_updated'] = utime.get_sec1970()
             if _Debug:
                 lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(raw_data), route_id, 'internal', internal_transport))
             return True
@@ -461,6 +522,9 @@ def do_process_incoming_message(transport, json_data, raw_data):
             except:
                 lg.exc()
                 return False
+            external_total_bytes = routes(route_id).get('external_bytes', 0)
+            routes(route_id)['external_bytes'] = external_total_bytes + len(raw_data)
+            routes(route_id)['external_updated'] = utime.get_sec1970()
             if _Debug:
                 lg.out(_DebugLevel, '    wrote %d bytes to %s/%s at %r' % (len(raw_data), route_id, 'external', external_transport))
             return True

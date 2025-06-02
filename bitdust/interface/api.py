@@ -882,6 +882,63 @@ def device_remove(name):
     return OK()
 
 
+def device_router_info():
+    """
+    Returns information about the web socket router service , running on that device.
+
+    The `web_socket_router` service help other BitDust users to connect thier mobile devices to BitDust full-node devices
+    via routed web socket connections.
+
+    This way you can enter into the BitDust network from a "lightweight" client device.
+
+    Your own BitDust node application must be already running on your home PC, laptop or another server.
+    Then your mobile device will be automatically connected to your home computer via this secure web socket connecton.
+
+    To support this way to enter to the BitDust network and make it available for the people,
+    sufficient number of web socket routers must be already running in the network.
+
+    Those active users will be transmitting encrypted web socket traffic over the Internet for you.
+    You can enable and disable the `web_socket_router` service in the config at any moment.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/device/router/info/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_router_info", "kwargs": {} }');
+    """
+    if not driver.is_on('service_web_socket_router'):
+        return ERROR('service_web_socket_router() is not started')
+    try:
+        from bitdust.interface import web_socket_transmitter
+        routes = []
+        total_internal_bytes = 0
+        total_external_bytes = 0
+        for route_id, route_info in web_socket_transmitter.routes().items():
+            r = {
+                'created': route_info.get('created') or None,
+                'route_id': route_id,
+                'node_url': route_info.get('internal_url') or None,
+                'node_connected': bool(route_info.get('internal_transport')),
+                'node_bytes': route_info.get('internal_bytes') or 0,
+                'node_updated': route_info.get('internal_updated') or None,
+                'route_url': route_info.get('route_url') or None,
+                'client_connected': bool(route_info.get('external_transport')),
+                'client_bytes': route_info.get('external_bytes') or 0,
+                'client_updated': route_info.get('external_updated') or None,
+            }
+            routes.append(r)
+            total_internal_bytes += r['node_bytes']
+            total_external_bytes += r['client_bytes']
+        return OK({
+            'routes': routes,
+            'nodes_bytes': total_internal_bytes,
+            'clients_bytes': total_external_bytes,
+        })
+    except Exception as exc:
+        lg.exc()
+        return ERROR(exc)
+
+
 #------------------------------------------------------------------------------
 
 
