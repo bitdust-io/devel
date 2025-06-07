@@ -823,10 +823,10 @@ def device_authorization_client_code(name, client_code):
     Must be called during authorization preocedure to provide client code entered by the user manually.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/device/authorization/client_code/v1' -d '{"name": "my_iPhone_12", "client_code": "123456"}'
+        curl -X POST 'localhost:8180/device/authorization/client_code/v1' -d '{"name": "my_iPhone_12", "client_code": "1234"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "device_authorization_client_code", "kwargs": {"name": "my_iPhone_12", "client_code": "123456"} }');
+        websocket.send('{"command": "api_call", "method": "device_authorization_client_code", "kwargs": {"name": "my_iPhone_12", "client_code": "1234"} }');
     """
     from bitdust.interface import api_device
     if _Debug:

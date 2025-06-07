@@ -232,6 +232,7 @@ def defaults():
         'services/udp-transport/priority': TYPE_POSITIVE_INTEGER,
         'services/web-socket-communicator/enabled': TYPE_BOOLEAN,
         'services/web-socket-communicator/max-connections': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/web-socket-communicator/min-connections': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/web-socket-router/enabled': TYPE_BOOLEAN,
         'services/web-socket-router/host': TYPE_STRING,
         'services/web-socket-router/port': TYPE_PORT_NUMBER,

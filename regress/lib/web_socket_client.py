@@ -413,8 +413,8 @@ def continue_handshake(server_code):
     hashed_server_code = hashes.sha1(strng.to_bin(salted_server_code))
     client_key_object = rsa_key.RSAKey()
     client_key_object.fromDict(client_info['key'])
-    # client_info['client_code'] = cipher.generate_digits(6, as_text=True)
-    client_info['client_code'] = '111222'
+    # client_info['client_code'] = cipher.generate_digits(4, as_text=True)
+    client_info['client_code'] = '1122'
     system.WriteTextFile(_ClientInfoFilePath, jsn.dumps(client_info, indent=2))
     # TODO: here must show the client_code digits in the app UI
     # user will have to enter the displayed client code on the server manually

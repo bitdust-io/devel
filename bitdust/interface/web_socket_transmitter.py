@@ -152,7 +152,7 @@ def routes(route_id=None):
 def validate_route_id(route_id):
     # SECURITY
     # TODO: add more strict validation of the route_id
-    rid = strng.to_text(route_id)
+    rid = strng.to_text(route_id).upper()
     if len(rid) != 8:
         raise Exception('invalid route_id length')
     return rid
@@ -286,7 +286,7 @@ class WrappedWebSocketProtocol(txws.WebSocketProtocol):
             return txws.WebSocketProtocol.validateHeaders(self)
         param_name, _, route_id = parameter.partition('=')
         try:
-            validate_route_id(route_id)
+            route_id = validate_route_id(route_id)
         except:
             lg.exc()
             return False

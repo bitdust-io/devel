@@ -268,7 +268,8 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/udp-transport/priority', 20)
 
     conf_obj.setDefaultValue('services/web-socket-communicator/enabled', 'true')
-    conf_obj.setDefaultValue('services/web-socket-communicator/max-connections', 3)
+    conf_obj.setDefaultValue('services/web-socket-communicator/max-connections', 5)
+    conf_obj.setDefaultValue('services/web-socket-communicator/min-connections', 3)
 
     conf_obj.setDefaultValue('services/web-socket-router/enabled', 'false')
     conf_obj.setDefaultValue('services/web-socket-router/host', '')
