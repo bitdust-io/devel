@@ -48,7 +48,7 @@ Please see http://tools.ietf.org/html/rfc6455 for protocol.
 """
 
 
-_Debug = True
+_Debug = False
 
 
 class WebSocket(object):
@@ -267,7 +267,7 @@ class WebSocket(object):
             frame.get_mask_key = self.get_mask_key
         data = frame.format()
         length = len(data)
-        if (isEnabledForTrace()):
+        if _Debug:
             trace('websocket send_frame: ' + repr(data))
 
         with self.lock:

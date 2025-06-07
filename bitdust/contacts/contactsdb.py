@@ -172,7 +172,7 @@ def set_suppliers(idlist, customer_idurl=None):
     try:
         _SuppliersList[customer_idurl] = id_url.fields_list(idlist)
     except:
-        pass
+        lg.exc()
     if _Debug:
         lg.args(_DebugLevel, suppliers=_SuppliersList[customer_idurl], customer_idurl=customer_idurl)
 
@@ -314,7 +314,7 @@ def set_customers(idlist):
     try:
         _CustomersList = id_url.fields_list(idlist)
     except:
-        pass
+        lg.exc()
 
 
 def update_customers(idslist):

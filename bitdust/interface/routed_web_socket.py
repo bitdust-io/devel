@@ -808,6 +808,7 @@ class RoutedWebSocket(automat.Automat):
                         break
         self.connecting_routers = []
         self.handshaked_routers = []
+        previous_active_router_url = self.active_router_url
         self.active_router_url = None
         if _Debug:
             lg.args(_DebugLevel, target_routers=target_routers)
@@ -832,6 +833,15 @@ class RoutedWebSocket(automat.Automat):
             if not something_already_connected:
                 self.automat('routers-failed', force_dht_lookup=True)
             else:
+                for internal_route_url in something_already_connected:
+                    router_host, _, route_id = internal_route_url.rpartition('/?i=')
+                    if self.authorized_routers.get(router_host):
+                        external_route_url = '{}/?r={}'.format(router_host, route_id)
+                        self.handshaked_routers.append(external_route_url)
+                        if previous_active_router_url == internal_route_url:
+                            self.active_router_url = internal_route_url
+                if not self.active_router_url:
+                    self.active_router_url = something_already_connected[0]
                 self.automat('routers-connected')
 
     def doDisconnectRouters(self, event, *args, **kwargs):

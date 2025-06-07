@@ -303,14 +303,12 @@ def read_headers(sock):
     status = None
     status_message = None
     headers = {}
-    trace("--- response header ---")
 
     while True:
         line = recv_line(sock)
         line = line.decode('utf-8').strip()
         if not line:
             break
-        trace(line)
         if not status:
 
             status_info = line.split(" ", 2)
@@ -324,7 +322,5 @@ def read_headers(sock):
                 headers[key.lower()] = value.strip()
             else:
                 raise WebSocketException("Invalid header")
-
-    trace("-----------------------")
 
     return status, headers, status_message

@@ -51,6 +51,9 @@ except:
     HAS_PYSOCKS = False
 
 
+_Debug = False
+
+
 class proxy_info(object):
     def __init__(self, **options):
         self.type = options.get('proxy_type') or 'http'
@@ -299,14 +302,16 @@ def read_headers(sock):
     status = None
     status_message = None
     headers = {}
-    trace('--- response header ---')
+    if _Debug:
+        trace('--- response header ---')
 
     while True:
         line = recv_line(sock)
         line = line.decode('utf-8').strip()
         if not line:
             break
-        trace(line)
+        if _Debug:
+            trace(line)
         if not status:
 
             status_info = line.split(' ', 2)
@@ -320,7 +325,7 @@ def read_headers(sock):
                 headers[key.lower()] = value.strip()
             else:
                 raise WebSocketException('Invalid header')
-
-    trace('-----------------------')
+    if _Debug:
+        trace('-----------------------')
 
     return status, headers, status_message
