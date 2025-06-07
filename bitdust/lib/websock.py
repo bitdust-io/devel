@@ -357,7 +357,7 @@ def websocket_thread():
             on_open=on_open,
         )
         try:
-            ws().run_forever(ping_interval=60, ping_timeout=15)
+            ws().run_forever(ping_interval=5*60, ping_timeout=15)
         except Exception as exc:
             _WebSocketApp = None
             if _Debug:

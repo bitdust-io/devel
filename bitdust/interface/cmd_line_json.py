@@ -520,7 +520,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 reactor.stop()  # @UndefinedVariable
                 return
             route_url = net_misc.pack_device_url(connected_routers[0])
-            print_text('enter the following connection info on your mobile device and then be ready to enter 6-digits server code:\n%s' % route_url)
+            print_text('enter the following connection info on your mobile device and then be ready to enter 4 digits server code:\n%s' % route_url)
             reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
 
         def _add():

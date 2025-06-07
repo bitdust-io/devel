@@ -732,8 +732,11 @@ def do_delete_key(key_id, is_private):
     else:
         remote_path_for_key = '.keys/%s.public' % key_id
     global_key_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
-    res = api.file_delete(global_key_path)
+    res = api.file_delete(remote_path=global_key_path)
     if res['status'] != 'OK':
+        errors = res.get('errors') or []
+        if errors and errors[0].count('remote path') and errors[0].count('was not found'):
+            return True
         lg.err('failed to delete key "%s": %r' % (global_key_path, res))
         return False
     if _Debug:

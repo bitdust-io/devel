@@ -165,7 +165,7 @@ def add_route():
     global _Routes
     route_id = None
     while not route_id or route_id in _Routes:
-        route_id = cipher.generate_secret_text(5)
+        route_id = cipher.generate_digits(6, as_text=True)
     # this is where Mobile device will be connecting
     route_url = 'ws://{}:{}/?r={}'.format(
         config.conf().getString('services/web-socket-router/host').strip(),

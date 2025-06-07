@@ -230,6 +230,11 @@ def registered_callbacks(url):
     return _RegisteredCallbacks.get(url) or {}
 
 
+def count_running_threads():
+    global _WebSocketApp
+    return len(_WebSocketApp)
+
+
 #------------------------------------------------------------------------------
 
 
@@ -275,8 +280,8 @@ def on_ping(ws_inst, data):
 
 def on_pong(ws_inst, data):
     url = ws_inst.url
-    if _Debug:
-        lg.dbg(_DebugLevel, 'websocket PONG %s: %r' % (url, data))
+    # if _Debug:
+    #     lg.dbg(_DebugLevel, 'websocket PONG %s: %r' % (url, data))
 
 
 def on_incoming_message(ws_inst, message):
@@ -338,16 +343,16 @@ def sending_thread(router_host, active_queue):
         lg.dbg(_DebugLevel, '\nrequests thread %s finished' % router_host)
 
 
-def websocket_thread(router_host):
+def websocket_thread(url):
     global _WebSocketApp
     global _WebSocketClosed
     websocket.enableTrace(_Debug)
-    while is_started(router_host):
-        _WebSocketClosed[router_host] = False
+    while is_started(url):
+        _WebSocketClosed[url] = False
         if _Debug:
-            lg.dbg(_DebugLevel, 'websocket thread router_host=%r' % router_host)
-        _WebSocketApp[router_host] = websocket.WebSocketApp(
-            url=router_host,
+            lg.dbg(_DebugLevel, 'websocket thread url=%r' % url)
+        _WebSocketApp[url] = websocket.WebSocketApp(
+            url=url,
             on_message=on_incoming_message,
             on_error=on_error,
             on_close=on_close,
@@ -356,18 +361,18 @@ def websocket_thread(router_host):
             on_pong=on_pong,
         )
         try:
-            ws(router_host).run_forever(ping_interval=60, ping_timeout=15)
+            ws(url).run_forever(ping_interval=5*60, ping_timeout=15)
         except Exception as exc:
-            _WebSocketApp[router_host] = None
+            _WebSocketApp[url] = None
             if _Debug:
                 lg.dbg(_DebugLevel, '\n    WS Thread ERROR: %r' % exc)
             time.sleep(5)
-        if _WebSocketApp.get(router_host):
-            _WebSocketApp.pop(router_host, None)
-        if not is_started(router_host):
+        if _WebSocketApp.get(url):
+            _WebSocketApp.pop(url, None)
+        if not is_started(url):
             break
         time.sleep(5)
-    _WebSocketApp.pop(router_host, None)
+    _WebSocketApp.pop(url, None)
 
 
 #------------------------------------------------------------------------------
@@ -458,7 +463,15 @@ class RoutedWebSocket(automat.Automat):
         """
         Will return something like: "network_connector(CONNECTED)".
         """
-        return '%s[%s|%s|%s](%s)' % (self.id, self.active_router_url or '?', len(self.handshaked_routers), len(self.authorized_routers), self.state)
+        return '%s[%s%s|%s|%d|%s](%s)' % (
+            self.id,
+            '*' if self.client_connected else '',
+            len(self.handshaked_routers),
+            len(self.authorized_routers),
+            count_running_threads(),
+            self.active_router_url or '?',
+            self.state,
+        )
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -870,7 +883,14 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        self.device_key_object.meta['authorized_routers'] = self.authorized_routers
+        _authorized_routers = {}
+        for external_route_url in self.handshaked_routers:
+            router_host, _, route_id = external_route_url.rpartition('/?r=')
+            _authorized_routers[router_host] = route_id
+        for router_host, route_id in self.authorized_routers.items():
+            if len(_authorized_routers) >= 5:
+                break
+        self.device_key_object.meta['authorized_routers'] = _authorized_routers
         self.device_key_object.save()
 
     def doVerifyRouters(self, *args, **kwargs):
@@ -884,7 +904,7 @@ class RoutedWebSocket(automat.Automat):
             if ws(internal_route_url):
                 alive_routers.append(router_host)
         if len(alive_routers) < self.max_router_connections:
-            self.automat('router-disconnected', alive_routers=alive_routers)
+            self.automat('router-disconnected', alive_routers=alive_routers, force_dht_lookup=True)
 
     def doLoadAuthInfo(self, *args, **kwargs):
         """
@@ -920,7 +940,7 @@ class RoutedWebSocket(automat.Automat):
         if BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED:
             self.server_code = BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED.strip()
         else:
-            self.server_code = cipher.generate_digits(6, as_text=True)
+            self.server_code = cipher.generate_digits(4, as_text=True)
         events.send('web-socket-handshake-started', data=self.to_json())
         if _Debug:
             lg.args(_DebugLevel, server_code=self.server_code)
@@ -1053,9 +1073,9 @@ class RoutedWebSocket(automat.Automat):
         url = ws_inst.url
         if not url:
             lg.warn('missed connecting web router: %r' % url)
-        else:
-            if url in self.connecting_routers:
-                self.connecting_routers.remove(url)
+            return
+        if url in self.connecting_routers:
+            self.connecting_routers.remove(url)
         router_send(
             router_host=ws_inst.url,
             raw_data=jsn.dumps({
@@ -1068,22 +1088,40 @@ class RoutedWebSocket(automat.Automat):
         url = ws_inst.url
         if not url:
             lg.warn('missed connecting web router: %r' % url)
-        else:
-            if is_started(url):
-                try:
-                    stop_client(url)
-                except:
-                    lg.exc()
-            if url in self.connecting_routers:
-                self.connecting_routers.remove(url)
+            return
+        if is_started(url):
+            try:
+                stop_client(url)
+            except:
+                lg.exc()
+        internal_route_url = url
+        if internal_route_url in self.connecting_routers:
+            self.connecting_routers.remove(internal_route_url)
+        router_host, _, route_id = internal_route_url.rpartition('/?i=')
+        external_route_url = '{}/?r={}'.format(router_host, route_id)
+        if external_route_url in self.handshaked_routers:
+            self.handshaked_routers.remove(external_route_url)
+        if self.active_router_url == internal_route_url:
+            self.active_router_url = None
+        if router_host in self.selected_routers:
+            self.selected_routers.remove(router_host)
         handshaked_count = len(self.handshaked_routers)
         if _Debug:
             lg.args(_DebugLevel, ws_inst=ws_inst, err=err, connecting=len(self.connecting_routers), handshaked=handshaked_count)
         if not self.connecting_routers:
-            if handshaked_count > 0:
+            if handshaked_count > 0 and self.active_router_url:
                 self.automat('routers-connected')
             else:
-                self.automat('routers-failed')
+                if self.state == 'WEB_SOCKET?':
+                    self.automat('routers-failed')
+                else:
+                    alive_routers = []
+                    for external_route_url in self.handshaked_routers:
+                        router_host, _, route_id = external_route_url.rpartition('/?r=')
+                        internal_route_url = '{}/?i={}'.format(router_host, route_id)
+                        if ws(internal_route_url):
+                            alive_routers.append(router_host)
+                    self.automat('router-disconnected', alive_routers=alive_routers)
 
     def _on_web_socket_handshake_accepted(self, internal_route_url, external_route_url):
         if _Debug:

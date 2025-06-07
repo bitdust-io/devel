@@ -140,6 +140,7 @@ def shutdown():
 
 
 class BitDustFileReader(_FileReader):
+
     def __init__(self, fObj, filepath):
         super(BitDustFileReader, self).__init__(fObj)
         self.filepath = filepath
@@ -154,6 +155,7 @@ class BitDustFileReader(_FileReader):
 
 
 class BitDustFTP(FTP):
+
     def _accessGrantedResponse(self, result, segments):
         self.workingDirectory = segments
         return (REQ_FILE_ACTN_COMPLETED_OK, )
@@ -482,7 +484,7 @@ class BitDustFTP(FTP):
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
         full_path = '/'.join(newsegs)
-        ret = api.file_delete(full_path)
+        ret = api.file_delete(remote_path=full_path)
         if ret['status'] != 'OK':
             return defer.fail(FileNotFoundError(str(ret['errors'])))
         return succeed((REQ_FILE_ACTN_COMPLETED_OK, ))
@@ -493,7 +495,7 @@ class BitDustFTP(FTP):
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
         full_path = '/'.join(newsegs)
-        ret = api.file_delete(full_path)
+        ret = api.file_delete(remote_path=full_path)
         if ret['status'] != 'OK':
             return defer.fail(FileNotFoundError(str(ret['errors'])))
         return succeed((REQ_FILE_ACTN_COMPLETED_OK, ))

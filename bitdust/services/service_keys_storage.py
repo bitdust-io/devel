@@ -163,7 +163,7 @@ class KeysStorageService(LocalService):
             customer=my_id.getGlobalID(),
             path=remote_path_for_key,
         )
-        api.file_delete(global_key_path)
+        api.file_delete(remote_path=global_key_path)
         self._do_synchronize_keys()
 
     def _on_my_backup_index_synchronized(self, evt):
@@ -246,6 +246,10 @@ class KeysStorageService(LocalService):
             return
         global_keys_folder_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path='.keys')
         lg.info('about to erase ".keys" folder in the catalog: %r' % global_keys_folder_path)
-        res = api.file_delete(global_keys_folder_path)
+        res = api.file_delete(remote_path=global_keys_folder_path)
         if res['status'] == 'OK':
             api.network_reconnect()
+        else:
+            errors = res.get('errors') or []
+            if errors and errors[0].count('remote path') and errors[0].count('was not found'):
+                api.network_reconnect()

@@ -110,7 +110,7 @@ class BackupsService(LocalService):
         )
         if ret.get('status') == 'OK':
             for one_file in ret['result']:
-                api.file_delete(one_file['remote_path'])
+                api.file_delete(remote_path=one_file['remote_path'])
 
     def _on_keep_local_copies_modified(self, path, value, oldvalue, result):
         from bitdust.storage import backup_monitor

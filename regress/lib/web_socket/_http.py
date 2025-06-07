@@ -283,7 +283,6 @@ def _tunnel(sock, host, port, auth):
         encoded_str = base64encode(auth_str.encode()).strip().decode().replace('\n', '')
         connect_header += "Proxy-Authorization: Basic %s\r\n" % encoded_str
     connect_header += "\r\n"
-    dump("request header", connect_header)
 
     send(sock, connect_header)
 

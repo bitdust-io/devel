@@ -359,7 +359,7 @@ class EncryptedWebSocket(automat.Automat):
         """
         Action method.
         """
-        self.server_code = cipher.generate_digits(6, as_text=True)
+        self.server_code = cipher.generate_digits(4, as_text=True)
         if _Debug:
             lg.args(_DebugLevel, server_code=self.server_code)
 
