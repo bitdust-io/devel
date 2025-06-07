@@ -613,8 +613,8 @@ class OnlineStatus(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'online_status.ContactStatus %s %s %s' % (name, state, idurl))
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         glob_id = global_id.ParseIDURL(self.idurl)
         j.update({
             'idurl': self.idurl.to_text(),

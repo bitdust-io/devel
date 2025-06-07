@@ -6310,7 +6310,7 @@ def automats_list():
         websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
     """
     from bitdust.automats import automat
-    result = [a.to_json() for a in automat.objects().values()]
+    result = [a.to_json(short=False) for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return OK(result)

@@ -443,14 +443,6 @@ class RoutedWebSocket(automat.Automat):
         """
         Builds `routed_web_socket()` state machine.
         """
-        super(RoutedWebSocket, self).__init__(name='routed_web_socket', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
-
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `routed_web_socket()` machine.
-        """
-        # TODO: read known routers from local file
         self.authorized_routers = {}
         self.selected_routers = []
         self.routers_first_connect_results = {}
@@ -460,6 +452,13 @@ class RoutedWebSocket(automat.Automat):
         self.device_name = None
         self.client_connected = False
         self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=3)
+        super(RoutedWebSocket, self).__init__(name='routed_web_socket', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+
+    def __repr__(self):
+        """
+        Will return something like: "network_connector(CONNECTED)".
+        """
+        return '%s[%s|%s|%s](%s)' % (self.id, self.active_router_url or '?', len(self.handshaked_routers), len(self.authorized_routers), self.state)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -498,7 +497,7 @@ class RoutedWebSocket(automat.Automat):
     def on_incoming_message_callback(self, url, json_data):
         if _Debug:
             lg.args(_DebugLevel, url=url, json_data=json_data)
-        if json_data.get('route_id'):
+        if json_data.get('route_id') and json_data.get('result'):
             self._on_web_socket_router_first_response(url, json_data)
             return True
         cmd = json_data.get('cmd')
@@ -514,7 +513,10 @@ class RoutedWebSocket(automat.Automat):
             self.event('api-message', url=url, json_data=json_data)
             return True
         if cmd == 'handshake-accepted':
-            if self.state != 'WEB_SOCKET?':
+            if self.state not in [
+                'WEB_SOCKET?',
+                'READY',
+            ]:
                 lg.warn('received api handshake-accepted signal, but web socket is currently in state: %s' % self.state)
                 return False
             route_url = json_data.get('route_url')
@@ -770,6 +772,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        # TODO: introduce a delay to slow down reconnections
         force_dht_lookup = kwargs.get('force_dht_lookup')
         known_routers = kwargs.get('known_routers')
         alive_routers = kwargs.get('alive_routers') or []
@@ -785,11 +788,11 @@ class RoutedWebSocket(automat.Automat):
         self.router_lookups = 0
         self.selected_routers = list(alive_routers)
         for router_host, route_id in known_routers.items():
+            if len(self.selected_routers) >= self.max_router_connections:
+                break
             if route_id:
                 if router_host not in self.selected_routers:
                     self.selected_routers.append(router_host)
-                    if len(self.selected_routers) >= self.max_router_connections:
-                        break
         self._do_lookup_next_router()
 
     def doConnectRouters(self, *args, **kwargs):
@@ -799,28 +802,37 @@ class RoutedWebSocket(automat.Automat):
         target_routers = kwargs.get('target_routers') or {}
         if not target_routers:
             for router_host, router_id in self.authorized_routers.items():
-                target_routers[router_host] = router_id
-                if len(target_routers) >= self.max_router_connections:
-                    break
+                if router_id:
+                    target_routers[router_host] = router_id
+                    if len(target_routers) >= self.max_router_connections:
+                        break
         self.connecting_routers = []
         self.handshaked_routers = []
         self.active_router_url = None
         if _Debug:
             lg.args(_DebugLevel, target_routers=target_routers)
         anything_connecting = False
+        something_already_connected = []
         for router_host, route_id in target_routers.items():
             if not route_id:
                 continue
             internal_route_url = '{}/?i={}'.format(router_host, route_id)
-            if not is_started(internal_route_url):
-                self.connecting_routers.append(internal_route_url)
+            if is_started(internal_route_url):
+                something_already_connected.append(internal_route_url)
+            else:
                 start_client(url=internal_route_url, callbacks={
                     'on_open': self._on_web_socket_router_connection_opened,
                     'on_error': self._on_web_socket_router_connection_error,
                 })
                 anything_connecting = True
+                self.connecting_routers.append(internal_route_url)
+        if _Debug:
+            lg.args(_DebugLevel, connecting=self.connecting_routers, already_connected=something_already_connected)
         if not anything_connecting:
-            self.automat('routers-failed', force_dht_lookup=True)
+            if not something_already_connected:
+                self.automat('routers-failed', force_dht_lookup=True)
+            else:
+                self.automat('routers-connected')
 
     def doDisconnectRouters(self, event, *args, **kwargs):
         """
@@ -1108,6 +1120,9 @@ class RoutedWebSocket(automat.Automat):
             lg.warn('internal state was changed during router lookup, SKIP next lookup')
             return None
         for url in results:
+            if len(self.selected_routers) >= self.max_router_connections:
+                reactor.callLater(0, self._do_lookup_next_router)  # @UndefinedVariable
+                return None
             if url not in self.selected_routers:
                 self.selected_routers.append(url)
         reactor.callLater(0, self._do_lookup_next_router)  # @UndefinedVariable
@@ -1124,40 +1139,46 @@ class RoutedWebSocket(automat.Automat):
         return response
 
     def _on_web_socket_router_first_response(self, url, resp):
-        if _Debug:
-            lg.args(_DebugLevel, url=url, resp=resp)
         if is_started(url):
             try:
                 stop_client(url)
             except:
                 lg.exc()
-        if self.routers_first_connect_results.get(url):
-            lg.warn('web socket router at %s was already connected' % url)
-            if len(self.routers_first_connect_results) >= self.max_router_connections:
-                self.automat('routers-selected', target_routers=self.routers_first_connect_results)
-            return None
+        # if self.routers_first_connect_results.get(url):
+        #     lg.warn('web socket router at %s was already connected' % url)
+        #     if len(self.routers_first_connect_results) >= self.max_router_connections:
+        #         self.automat('routers-selected', target_routers=self.routers_first_connect_results)
+        #     return None
         route_id = None
+        result = None
         try:
             route_id = resp['route_id']
+            result = resp['result']
         except:
             lg.exc()
         router_host = url
-        if resp['result'] == 'accepted':
+        if _Debug:
+            lg.args(_DebugLevel, router_host=router_host, result=result)
+        if result == 'accepted':
             self.routers_first_connect_results[router_host] = route_id
         else:
             self.routers_first_connect_results[router_host] = None
+            if router_host in self.authorized_routers:
+                self.authorized_routers.pop(router_host)
+                lg.warn('router first connection was rejected, marked router %r as non-authorized' % router_host)
         if len(self.routers_first_connect_results) >= self.max_router_connections:
             self.automat('routers-selected', target_routers=self.routers_first_connect_results)
         return None
 
     def _on_web_socket_router_first_connection_opened(self, ws_inst):
+        authorized_route_id = self.authorized_routers.get(ws_inst.url) or None
         if _Debug:
-            lg.args(_DebugLevel, ws_inst=ws_inst)
+            lg.args(_DebugLevel, ws_inst=ws_inst, authorized_route_id=authorized_route_id)
         router_send(
             router_host=ws_inst.url,
             raw_data=jsn.dumps({
                 'cmd': 'connect-request',
-                'route_id': self.authorized_routers.get(ws_inst.url) or None,
+                'route_id': authorized_route_id,
             }),
         )
 
@@ -1170,7 +1191,12 @@ class RoutedWebSocket(automat.Automat):
                 stop_client(url)
             except:
                 lg.exc()
-        self.routers_first_connect_results[url] = None
+        router_host = url
+        if str(err).count('Connection is already closed') or isinstance(err, websocket.WebSocketConnectionClosedException):
+            if router_host in self.authorized_routers:
+                self.authorized_routers.pop(router_host)
+                lg.warn('router first connection error, marked router %r as non-authorized' % router_host)
+        self.routers_first_connect_results[router_host] = None
         if len(self.routers_first_connect_results) >= self.max_router_connections:
             self.automat('routers-selected', target_routers=self.routers_first_connect_results)
         return None
@@ -1181,7 +1207,11 @@ class RoutedWebSocket(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, selected_routers=self.selected_routers)
         something_sent = False
+        self.routers_first_connect_results = {}
+        counter = 0
         for router_host in self.selected_routers:
+            if counter >= self.max_router_connections:
+                break
             if not is_started(router_host):
                 start_client(url=router_host, callbacks={
                     'on_open': self._on_web_socket_router_first_connection_opened,
@@ -1190,13 +1220,16 @@ class RoutedWebSocket(automat.Automat):
                 something_sent = True
             else:
                 self.routers_first_connect_results[router_host] = self.authorized_routers.get(router_host)
+            counter += 1
         if not something_sent:
             if len(self.routers_first_connect_results) >= self.max_router_connections:
                 self.automat('routers-selected', target_routers=self.routers_first_connect_results)
+            else:
+                self.automat('lookup-failed')
 
     def _do_lookup_next_router(self):
         if _Debug:
-            lg.args(_DebugLevel, lookups=self.router_lookups, first_connected=len(self.routers_first_connect_results), selected=len(self.selected_routers))
+            lg.args(_DebugLevel, lookups=self.router_lookups, first_connected=len(self.routers_first_connect_results), selected=self.selected_routers)
         if len(self.selected_routers) >= self.max_router_connections:
             reactor.callLater(0, self._do_routers_send_first_connect_request)  # @UndefinedVariable
             return

@@ -139,8 +139,8 @@ class ProxySender(automat.Automat):
         _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         self._sending_enabled = settings.enablePROXYsending()
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update(
             {
                 'proto': proxy_receiver.GetRouterProtoHost()[0] if proxy_receiver.GetRouterProtoHost() else '',

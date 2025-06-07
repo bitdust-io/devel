@@ -507,8 +507,8 @@ class SharedAccessCoordinator(automat.Automat):
             **kwargs,
         )
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update(
             {
                 'active': my_keys.is_active(self.key_id),

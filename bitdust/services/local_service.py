@@ -111,8 +111,8 @@ class LocalService(automat.Automat):
             log_transitions=_Debug,
         )
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update({
             'name': self.service_name,
             'enabled': self.enabled(),

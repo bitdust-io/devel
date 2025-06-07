@@ -236,8 +236,8 @@ class ProxyReceiver(automat.Automat):
     def __repr__(self):
         return '%s_%s_%s(%s)' % (self.id, self.router_id, (self.router_connection_info or {}).get('repr', '?'), self.state)
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update(
             {
                 'proto': self.router_proto_host[0] if self.router_proto_host else '',

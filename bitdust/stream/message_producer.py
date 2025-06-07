@@ -251,8 +251,8 @@ class MessageProducer(automat.Automat):
         self.active_broker_id = None
         super(MessageProducer, self).__init__(name='message_producer_%s' % self.group_creator_id, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=False, **kwargs)
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update({
             'group_key_id': self.group_key_id,
             'label': my_keys.get_label(self.group_key_id) or '',
