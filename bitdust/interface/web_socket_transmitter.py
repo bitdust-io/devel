@@ -153,7 +153,7 @@ def validate_route_id(route_id):
     # SECURITY
     # TODO: add more strict validation of the route_id
     rid = strng.to_text(route_id).upper()
-    if len(rid) != 8:
+    if len(rid) != 8 and len(rid) != 6:
         raise Exception('invalid route_id length')
     return rid
 
@@ -465,6 +465,7 @@ def do_process_incoming_message(transport, json_data, raw_data):
         'client-public-key',
         'server-code',
         'client-code',
+        'publish-routers',
     )):
         route_info = routes(route_id)
         if _Debug:

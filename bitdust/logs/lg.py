@@ -206,17 +206,19 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
 
 
 def dbg(_DebugLevel, message, *args, **kwargs):
+    log_name = kwargs.pop('log_name', 'stdout')
     level = _DebugLevel
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     funcname = '%s.%s' % (modul, caller)
     o = '%s %s' % (funcname, message)
-    out(level, o, showtime=True)
+    out(level, o, showtime=True, log_name=log_name)
     return o
 
 
 def args(_DebugLevel, *args, **kwargs):
+    log_name = kwargs.pop('log_name', 'stdout')
     level = _DebugLevel
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
@@ -234,11 +236,11 @@ def args(_DebugLevel, *args, **kwargs):
     )
     if message:
         o += ' ' + message
-    out(level, o, showtime=True)
+    out(level, o, showtime=True, log_name=log_name)
     return o
 
 
-def info(message, level=2):
+def info(message, level=2, log_name='stdout'):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
@@ -256,12 +258,12 @@ def info(message, level=2):
             modul,
             caller,
         )
-    out(level, output_string, showtime=True)
+    out(level, output_string, showtime=True, log_name=log_name)
     # out(level, output_string, log_name='info', showtime=True)
     return message
 
 
-def warn(message, level=2):
+def warn(message, level=2, log_name='stdout'):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
@@ -279,12 +281,12 @@ def warn(message, level=2):
             modul,
             caller,
         )
-    out(level, output_string, showtime=True)
+    out(level, output_string, showtime=True, log_name=log_name)
     # out(level, output_string, log_name='warn', showtime=True)
     return message
 
 
-def err(message, level=0):
+def err(message, level=0, log_name='stdout'):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
@@ -303,30 +305,32 @@ def err(message, level=0):
     message = '%s%s   ' % ((' '*(level + 11)), message)
     if _UseColors:
         message = '\033[1;37;41m%s\033[0m' % message
-    out(level, message, showtime=True)
+    out(level, message, showtime=True, log_name=log_name)
     # out(level, message, log_name='err', showtime=True)
     return message
 
 
 def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs):
     global _UseColors
+    log_name = kwargs.pop('log_name', 'stdout')
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
     if exc_value:
-        return exception(level, maxTBlevel, exc_info=('', exc_value, []), message=msg)
-    return exception(level, maxTBlevel, exc_info, message=msg)
+        return exception(level, maxTBlevel, exc_info=('', exc_value, []), message=msg, log_name=log_name)
+    return exception(level, maxTBlevel, exc_info, message=msg, log_name=log_name)
 
 
 def cb(result, *args, **kwargs):
     _debug = kwargs.pop('debug', 0)
     _debug_level = kwargs.pop('debug_level', 0)
     _method = kwargs.pop('method', 'unknown')
+    _log_name = kwargs.pop('log_name', 'stdout')
     if _debug and is_debug(_debug_level):
         dbg(_debug_level, 'Deferred.callback() from "%s" method : args=%r  kwargs=%r' % (
             _method,
             args,
             kwargs,
-        ))
+        ), log_name=_log_name)
     return result
 
 
@@ -335,19 +339,20 @@ def errback(err, *args, **kwargs):
     _debug_level = kwargs.pop('debug_level', 0)
     _method = kwargs.pop('method', 'unknown')
     _ignore = kwargs.pop('ignore', False)
+    _log_name = kwargs.pop('log_name', 'stdout')
     if _debug and is_debug(_debug_level):
         dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (
             _method,
             repr(err).replace('\n', ''),
             args,
             kwargs,
-        ))
+        ), log_name=_log_name)
     if _ignore:
         return None
     return err
 
 
-def exception(level, maxTBlevel, exc_info, message=None):
+def exception(level, maxTBlevel, exc_info, message=None, log_name='stdout'):
     """
     Prints detailed info about last/given exception to STDOUT and also stores exception in a separate file.
     """
@@ -360,7 +365,7 @@ def exception(level, maxTBlevel, exc_info, message=None):
         m = message
         if _UseColors:
             m = '\033[1;31m%s\033[0m' % m
-        out(level, m, showtime=True)
+        out(level, m, showtime=True, log_name=log_name)
     if exc_info is None:
         exc_type, value, trbk = sys.exc_info()
     else:
@@ -378,30 +383,30 @@ def exception(level, maxTBlevel, exc_info, message=None):
     exc_name = exception_name(value, exc_type, excTb)
     s = 'Exception: <' + exc_name + '>'
     if _UseColors:
-        out(level, '\033[1;31m%s\033[0m' % (s.strip()), showtime=True)
+        out(level, '\033[1;31m%s\033[0m' % (s.strip()), showtime=True, log_name=log_name)
     else:
-        out(level, s.strip(), showtime=True)
+        out(level, s.strip(), showtime=True, log_name=log_name)
     if excArgs:
         s += '  args:' + excArgs + '\n'
         if _UseColors:
-            out(level, '\033[1;31m  args: %s\033[0m' % excArgs)
+            out(level, '\033[1;31m  args: %s\033[0m' % excArgs, log_name=log_name)
         else:
-            out(level, '  args: %s' % excArgs)
+            out(level, '  args: %s' % excArgs, log_name=log_name)
     s += '\n'
     # excTb.reverse()
     for l in excTb:
         s += l + '\n'
         if _UseColors:
-            out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')))
+            out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')), log_name=log_name)
         else:
-            out(level, l.replace('\n', ''))
+            out(level, l.replace('\n', ''), log_name=log_name)
     if trbk:
         try:
             f_locals = str(repr(trbk.tb_next.tb_next.tb_frame.f_locals))
         except:
             f_locals = ''
         if f_locals:
-            out(level, 'locals: %s' % f_locals[:1000])
+            out(level, 'locals: %s' % f_locals[:1000], log_name=log_name)
             s += '\nlocals: %s\n' % f_locals
     if _StoreExceptionsEnabled and _LogFileName:
         if message:
@@ -423,7 +428,7 @@ def exception(level, maxTBlevel, exc_info, message=None):
         s += b'\n==========================================================\n'
         fout.write(s)
         fout.close()
-        out(level, 'saved to: %s' % exc_filename)
+        out(level, 'saved to: %s' % exc_filename, log_name=log_name)
     return s
 
 
@@ -843,6 +848,7 @@ def set_weblog_func(webstreamfunc):
 
 
 class STDOUT_redirected(object):
+
     """
     Emulate system STDOUT, useful to log any program output.
     """
@@ -862,6 +868,7 @@ class STDOUT_redirected(object):
 
 
 class STDERR_redirected(object):
+
     """
     Emulate system STDERR, useful to log any program error.
     """
@@ -881,6 +888,7 @@ class STDERR_redirected(object):
 
 
 class STDOUT_black_hole(object):
+
     """
     Useful to disable any output to STDOUT.
     """
@@ -900,6 +908,7 @@ class STDOUT_black_hole(object):
 
 
 class STDERR_black_hole(object):
+
     """
     Useful to disable any errors output to STDERR.
     """
@@ -919,6 +928,7 @@ class STDERR_black_hole(object):
 
 
 class STDOUT_unbuffered(object):
+
     def __init__(self, stream):
         self.stream = stream
 
@@ -941,6 +951,7 @@ class STDOUT_unbuffered(object):
 
 
 class STDERR_unbuffered(object):
+
     def __init__(self, stream):
         self.stream = stream
 
