@@ -39,6 +39,7 @@ EVENTS:
     * :red:`routers-connected`
     * :red:`routers-failed`
     * :red:`routers-selected`
+    * :red:`server-code-failed`
     * :red:`start`
     * :red:`stop`
     * :red:`timer-1min`
@@ -524,12 +525,13 @@ class RoutedWebSocket(automat.Automat):
                 lg.warn('active web socket router %r switched to %r' % (self.active_router_url, url))
             self.active_router_url = url
             if not self.client_connected:
-                reactor.callLater(
+                reactor.callLater(  # @UndefinedVariable
                     0,
-                    self._do_push_encrypted(json_data={  # @UndefinedVariable
+                    self._do_push_encrypted,
+                    json_data={
                         'cmd': 'publish-routers',
                         'routers': self.handshaked_routers,
-                    })
+                    },
                 )
             self.client_connected = True
             self.event('api-message', url=url, json_data=json_data)
@@ -568,7 +570,7 @@ class RoutedWebSocket(automat.Automat):
                 encrypted_server_code = json_data['server_code']
             except:
                 lg.exc()
-                self.automat('auth-error')
+                self.automat('server-code-failed')
                 return False
             return self.on_server_code_received(signature=signature, encrypted_server_code=encrypted_server_code)
         if cmd == 'client-disconnected':
@@ -595,18 +597,18 @@ class RoutedWebSocket(automat.Automat):
             received_server_code = received_server_code_salted.split('-')[0]
         except:
             lg.exc()
-            self.automat('auth-error')
+            self.automat('server-code-failed')
             return False
         if _Debug:
             lg.args(_DebugLevel, received_server_code_salted=received_server_code_salted)
         hashed_server_code = hashes.sha1(strng.to_bin(received_server_code_salted))
         if not self.client_key_object.verify(signature, hashed_server_code):
             lg.err('signature verification error, received server code is not valid')
-            self.automat('auth-error')
+            self.automat('server-code-failed')
             return False
         if received_server_code != self.server_code:
             lg.warn('received server code %r is not matching with generated code %r' % (received_server_code, self.server_code))
-            self.automat('auth-error')
+            self.automat('server-code-failed')
             return False
         if _Debug:
             lg.args(_DebugLevel, received_server_code=received_server_code)
@@ -717,6 +719,9 @@ class RoutedWebSocket(automat.Automat):
             elif event == 'router-disconnected':
                 self.state = 'ROUTERS?'
                 self.doLookupRequestRouters(*args, **kwargs)
+            elif event == 'server-code-failed':
+                self.state = 'CLIENT_PUB?'
+                self.doEraseServerCode(*args, **kwargs)
         #---CLIENT_CODE?---
         elif self.state == 'CLIENT_CODE?':
             if event == 'client-code-input-received':
@@ -734,6 +739,9 @@ class RoutedWebSocket(automat.Automat):
                 self.doRemoveAuthToken(event, *args, **kwargs)
                 self.doDisconnectRouters(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'router-disconnected':
+                self.state = 'ROUTERS?'
+                self.doLookupRequestRouters(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -964,6 +972,12 @@ class RoutedWebSocket(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, server_code=self.server_code)
 
+    def doEraseServerCode(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.server_code = None
+
     def doSendServerPubKey(self, *args, **kwargs):
         """
         Action method.
@@ -1076,12 +1090,13 @@ class RoutedWebSocket(automat.Automat):
         if self.listening_callback:
             reactor.callLater(0, self.listening_callback, True)  # @UndefinedVariable
         if self.client_connected:
-            reactor.callLater(
+            reactor.callLater(  # @UndefinedVariable
                 0,
-                self._do_push_encrypted(json_data={  # @UndefinedVariable
+                self._do_push_encrypted,
+                json_data={  # @UndefinedVariable
                     'cmd': 'publish-routers',
                     'routers': self.handshaked_routers,
-                })
+                },
             )
 
     def doDestroyMe(self, *args, **kwargs):
