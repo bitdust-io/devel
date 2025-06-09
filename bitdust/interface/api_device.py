@@ -596,7 +596,7 @@ def push(json_data):
                 lg.out(0, '*** WS PUSH  %s : %r' % (inst.device_name, json_data), log_name='api', showtime=True)
     if not pushed:
         if _APILogFileEnabled:
-            lg.warn('*** WS PUSH FAILED  %s : %r' % (inst.device_name, json_data), log_name='api')
+            lg.warn('*** WS PUSH FAILED : %r' % json_data, log_name='api')
 
 
 #------------------------------------------------------------------------------

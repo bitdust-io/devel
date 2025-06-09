@@ -619,7 +619,7 @@ class TestApp(object):
     def _on_websocket_handshake_started(self):
         if _Debug:
             print('TestApp._on_websocket_handshake_started')
-        entered_server_code = '333444'
+        entered_server_code = '3344'
         continue_handshake(entered_server_code)
 
     def _on_websocket_handshake_failed(self, ws_inst, err):

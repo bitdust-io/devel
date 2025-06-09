@@ -53,7 +53,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ def start_client(url, callbacks={}):
     if is_started(url):
         raise Exception('already started')
     if _Debug:
-        lg.args(_DebugLevel, url=url)
+        lg.args(_DebugLevel + 4, url=url)
     _RegisteredCallbacks[url] = callbacks or {}
     _WebSocketConnecting[url] = True
     _WebSocketStarted[url] = True
@@ -155,7 +155,7 @@ def start_client(url, callbacks={}):
     websocket_thread_id = thread.start_new_thread(websocket_thread, (url, ))
     requests_thread_id = thread.start_new_thread(sending_thread, (url, _WebSocketQueue[url]))
     if _Debug:
-        lg.args(_DebugLevel, websocket_thread_id=websocket_thread_id, requests_thread_id=requests_thread_id)
+        lg.args(_DebugLevel + 4, websocket_thread_id=websocket_thread_id, requests_thread_id=requests_thread_id)
 
 
 def stop_client(url):
@@ -166,7 +166,7 @@ def stop_client(url):
     if not is_started(url):
         raise Exception('has not been started')
     if _Debug:
-        lg.args(_DebugLevel, url=url)
+        lg.args(_DebugLevel + 4, url=url)
     _RegisteredCallbacks.pop(url, None)
     _WebSocketStarted[url] = False
     _WebSocketConnecting[url] = False
@@ -174,7 +174,7 @@ def stop_client(url):
         try:
             raw_data, _ = ws_queue(url).get_nowait()
             if _Debug:
-                lg.dbg(_DebugLevel, 'in %s cleaned unfinished call: %r' % (url, raw_data))
+                lg.dbg(_DebugLevel + 4, 'in %s cleaned unfinished call: %r' % (url, raw_data))
         except Empty:
             break
     _WebSocketQueue[url].put_nowait((None, None))
@@ -183,7 +183,7 @@ def stop_client(url):
         _ws.close()
     else:
         if _Debug:
-            lg.dbg(_DebugLevel, 'websocket %s already closed' % url)
+            lg.dbg(_DebugLevel + 4, 'websocket %s already closed' % url)
 
 
 def shutdown_clients():
@@ -323,16 +323,16 @@ def on_fail(err, result_callback=None):
 
 def sending_thread(router_host, active_queue):
     if _Debug:
-        lg.args(_DebugLevel, router_host=router_host)
+        lg.args(_DebugLevel + 4, router_host=router_host)
     while True:
         if not is_started(router_host):
             if _Debug:
-                lg.dbg(_DebugLevel, '\nrequests thread %s is finishing because websocket is not started' % router_host)
+                lg.dbg(_DebugLevel + 4, '\nrequests thread %s is finishing because websocket is not started' % router_host)
             break
         raw_data, tm = active_queue.get()
         if raw_data is None:
             if _Debug:
-                lg.dbg(_DebugLevel, '\nrequests thread %s received empty request, about to stop the thread now' % router_host)
+                lg.dbg(_DebugLevel + 4, '\nrequests thread %s received empty request, about to stop the thread now' % router_host)
             break
         if not ws(router_host):
             on_fail(Exception('websocket is closed'))
@@ -341,7 +341,7 @@ def sending_thread(router_host, active_queue):
             lg.args(_DebugLevel + 4, router_host=router_host, size=len(raw_data), raw_data=raw_data)
         ws(router_host).send(raw_data)
     if _Debug:
-        lg.dbg(_DebugLevel, '\nrequests thread %s finished' % router_host)
+        lg.dbg(_DebugLevel + 4, '\nrequests thread %s finished' % router_host)
 
 
 def websocket_thread(url):
@@ -351,7 +351,7 @@ def websocket_thread(url):
     while is_started(url):
         _WebSocketClosed[url] = False
         if _Debug:
-            lg.dbg(_DebugLevel, 'websocket thread url=%r' % url)
+            lg.dbg(_DebugLevel + 4, 'websocket thread url=%r' % url)
         _WebSocketApp[url] = websocket.WebSocketApp(
             url=url,
             on_message=on_incoming_message,
@@ -366,7 +366,7 @@ def websocket_thread(url):
         except Exception as exc:
             _WebSocketApp[url] = None
             if _Debug:
-                lg.dbg(_DebugLevel, '\n    WS Thread ERROR: %r' % exc)
+                lg.dbg(_DebugLevel + 4, '\n    WS Thread ERROR: %r' % exc)
             time.sleep(5)
         if _WebSocketApp.get(url):
             _WebSocketApp.pop(url, None)
@@ -406,12 +406,9 @@ def router_send(router_host, raw_data):
     global _PendingCalls
     st = verify_state(router_host)
     if _Debug:
-        lg.args(_DebugLevel, router_host=router_host, st=st)
+        lg.args(_DebugLevel, router_host=router_host, st=st, sz=len(raw_data))
     if st == 'ready':
-        ws_queue(router_host).put_nowait((
-            raw_data,
-            time.time(),
-        ))
+        ws_queue(router_host).put_nowait((raw_data, time.time()))
         return True
     if st == 'closed':
         lg.warn('websocket is already closed')
@@ -419,10 +416,7 @@ def router_send(router_host, raw_data):
     if st == 'connecting':
         if _Debug:
             lg.dbg(_DebugLevel, 'websocket %s still connecting, remember pending request' % router_host)
-        _PendingCalls[router_host].append((
-            raw_data,
-            time.time(),
-        ))
+        _PendingCalls[router_host].append((raw_data, time.time()))
         return True
     if st == 'not-started':
         if _Debug:
@@ -525,20 +519,13 @@ class RoutedWebSocket(automat.Automat):
                 lg.warn('active web socket router %r switched to %r' % (self.active_router_url, url))
             self.active_router_url = url
             if not self.client_connected:
-                reactor.callLater(  # @UndefinedVariable
-                    0,
-                    self._do_push_encrypted,
-                    json_data={
-                        'cmd': 'publish-routers',
-                        'routers': self.handshaked_routers,
-                    },
-                )
+                reactor.callLater(0, self._do_publish_routers)  # @UndefinedVariable
             self.client_connected = True
             self.event('api-message', url=url, json_data=json_data)
             return True
         if cmd == 'handshake-accepted':
-            if self.state not in ['WEB_SOCKET?', 'READY']:
-                lg.warn('received api handshake-accepted signal, but web socket is currently in state: %s' % self.state)
+            if self.state not in ['WEB_SOCKET?', 'CLIENT_PUB?', 'READY']:
+                lg.warn('received handshake-accepted signal from %r, but web socket is currently in state: %s' % (url, self.state))
                 return False
             route_url = json_data.get('route_url')
             if not route_url:
@@ -848,16 +835,19 @@ class RoutedWebSocket(automat.Automat):
             external_route_url = '{}/?r={}'.format(router_host, route_id)
             if is_started(internal_route_url):
                 something_already_connected.append(internal_route_url)
-                self.handshaked_routers.append(external_route_url)
+                if external_route_url not in self.handshaked_routers:
+                    self.handshaked_routers.append(external_route_url)
+                else:
+                    lg.warn('router %r was already handshaked' % router_host)
             else:
+                self.connecting_routers.append(internal_route_url)
                 start_client(url=internal_route_url, callbacks={
                     'on_open': self._on_web_socket_router_connection_opened,
                     'on_error': self._on_web_socket_router_connection_error,
                 })
                 anything_connecting = True
-                self.connecting_routers.append(internal_route_url)
         if _Debug:
-            lg.args(_DebugLevel, connecting=self.connecting_routers, already_connected=something_already_connected)
+            lg.args(_DebugLevel, connecting=self.connecting_routers, already_connected=something_already_connected, handshaked=len(self.handshaked_routers))
         if not anything_connecting:
             if not something_already_connected:
                 self.automat('routers-failed', force_dht_lookup=True)
@@ -900,15 +890,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        _authorized_routers = {}
-        for external_route_url in self.handshaked_routers:
-            router_host, _, route_id = external_route_url.rpartition('/?r=')
-            _authorized_routers[router_host] = route_id
-        for router_host, route_id in self.authorized_routers.items():
-            if len(_authorized_routers) >= 5:
-                break
-        self.device_key_object.meta['authorized_routers'] = _authorized_routers
-        self.device_key_object.save()
+        self._do_save_routers()
 
     def doVerifyRouters(self, *args, **kwargs):
         """
@@ -1090,14 +1072,7 @@ class RoutedWebSocket(automat.Automat):
         if self.listening_callback:
             reactor.callLater(0, self.listening_callback, True)  # @UndefinedVariable
         if self.client_connected:
-            reactor.callLater(  # @UndefinedVariable
-                0,
-                self._do_push_encrypted,
-                json_data={  # @UndefinedVariable
-                    'cmd': 'publish-routers',
-                    'routers': self.handshaked_routers,
-                },
-            )
+            reactor.callLater(0, self._do_publish_routers)  # @UndefinedVariable
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1183,21 +1158,24 @@ class RoutedWebSocket(automat.Automat):
         if not route_already_handshaked:
             self.handshaked_routers.append(external_route_url)
         else:
-            lg.warn('route %s is already connected, router %s was already handshaked' % (external_route_url, router_host))
+            lg.warn('router %s was already handshaked' % router_host)
         handshaked_count = len(self.handshaked_routers)
         if router_host in self.authorized_routers:
             if route_id == self.authorized_routers[router_host]:
-                lg.info('web socket router %r handshake authorization code was accepted' % router_host)
+                lg.info('web socket router %r handshake accepted' % router_host)
             else:
-                lg.warn('router %r previously known authorization code was not matching' % router_host)
+                lg.warn('web socket router %r previously known route ID is not matching' % router_host)
         else:
-            lg.info('new router %r accepted, authorization code recorded' % router_host)
+            lg.info('new web socket router %r handshake accepted' % router_host)
         self.authorized_routers[router_host] = route_id
         if _Debug:
             lg.args(_DebugLevel, connecting=len(self.connecting_routers), handshaked=handshaked_count, active=self.active_router_url, router_host=router_host)
         if not self.connecting_routers:
             if handshaked_count > 0:
-                self.automat('routers-connected')
+                if self.state in ['CLIENT_PUB?', 'READY']:
+                    self._do_save_routers()
+                else:
+                    self.automat('routers-connected')
             else:
                 self.automat('routers-failed')
 
@@ -1298,6 +1276,31 @@ class RoutedWebSocket(automat.Automat):
         return None
 
     #------------------------------------------------------------------------------
+
+    def _do_save_routers(self):
+        _authorized_routers = {}
+        for external_route_url in self.handshaked_routers:
+            router_host, _, route_id = external_route_url.rpartition('/?r=')
+            _authorized_routers[router_host] = route_id
+        for router_host, route_id in self.authorized_routers.items():
+            if len(_authorized_routers) >= self.max_router_connections:
+                break
+            if route_id and router_host not in _authorized_routers:
+                _authorized_routers[router_host] = route_id
+        if _Debug:
+            lg.args(_DebugLevel, old=self.authorized_routers, new=_authorized_routers)
+        self.authorized_routers = _authorized_routers
+        self.device_key_object.meta['authorized_routers'] = self.authorized_routers
+        self.device_key_object.save()
+
+    def _do_publish_routers(self):
+        if _Debug:
+            lg.args(_DebugLevel, handshaked_routers=self.handshaked_routers)
+        self._do_push_encrypted(json_data={
+            'cmd': 'publish-routers',
+            'routers': self.handshaked_routers,
+            'authorized_routers': self.authorized_routers,
+        })
 
     def _do_routers_send_first_connect_request(self):
         if _Debug:

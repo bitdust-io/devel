@@ -185,8 +185,8 @@ def find_transaction(address=None, recipient=None, operation=None, openfield=Non
             offset=offset,
             block_height_from=block_height_from,
         )
-    except:
-        lg.exc()
+    except Exception as exc:
+        lg.warn('transaction search failed: %r' % str(exc))
         return []
     if _Debug:
         lg.args(_DebugLevel, a=address, r=recipient, o=operation, d=str(openfield)[:20], lim=limit, ofs=offset, ret=str(ret)[:20])
