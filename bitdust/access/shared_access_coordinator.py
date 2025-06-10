@@ -104,6 +104,8 @@ from bitdust.storage import backup_control
 from bitdust.storage import backup_matrix
 from bitdust.storage import backup_fs
 
+from bitdust.raid import eccmap
+
 from bitdust.customer import supplier_connector
 
 from bitdust.userid import global_id
@@ -507,8 +509,8 @@ class SharedAccessCoordinator(automat.Automat):
             **kwargs,
         )
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update(
             {
                 'active': my_keys.is_active(self.key_id),
@@ -1001,8 +1003,15 @@ class SharedAccessCoordinator(automat.Automat):
             self.dht_lookup_use_cache = True
             self.automat('dht-lookup-ok', dht_value)
         else:
-            self.dht_lookup_use_cache = False
-            self.automat('fail', Exception('customer suppliers not found in DHT'))
+            if id_url.is_the_same(self.customer_idurl, my_id.getIDURL()):
+                self.dht_lookup_use_cache = False
+                self.automat('dht-lookup-ok', dict(
+                    suppliers=contactsdb.suppliers(),
+                    ecc_map=eccmap.CurrentName(),
+                ))
+            else:
+                self.dht_lookup_use_cache = False
+                self.automat('fail', Exception('customer suppliers not found in DHT'))
 
     def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
         if _Debug:

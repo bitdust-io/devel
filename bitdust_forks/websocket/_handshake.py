@@ -53,6 +53,7 @@ else:
     def compare_digest(s1, s2):
         return s1 == s2
 
+_Debug = False
 
 # websocket supported version.
 VERSION = 13
@@ -80,7 +81,8 @@ def handshake(sock, hostname, port, resource, **options):
 
     header_str = '\r\n'.join(headers)
     send(sock, header_str)
-    dump('request header', header_str)
+    if _Debug:
+        dump('request header', header_str)
 
     status, resp = _get_resp_headers(sock)
     if status in SUPPORTED_REDIRECT_STATUSES:

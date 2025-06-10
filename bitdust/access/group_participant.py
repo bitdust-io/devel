@@ -357,8 +357,8 @@ class GroupParticipant(automat.Automat):
         self.group_creator_idurl = self.group_glob_id['idurl']
         self.participant_sender_id = global_id.MakeGlobalID(idurl=self.participant_idurl, key_alias=self.group_queue_alias)
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self, short=True):
+        j = super().to_json(short=short)
         j.update(
             {
                 'active': groups.is_group_active(self.group_key_id),

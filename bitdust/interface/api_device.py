@@ -187,6 +187,10 @@ class APIDevice(rsa_key.RSAKey):
         except:
             lg.exc()
             return False
+        # TODO: remove later
+        if self.meta.get('connected_routers'):
+            if not self.meta.get('authorized_routers'):
+                self.meta['authorized_routers'] = self.meta.pop('connected_routers')
         if _Debug:
             lg.args(_DebugLevel, device_name=self.label, key=self)
         return True
@@ -584,10 +588,15 @@ def on_device_client_code_input_received(device_name, client_code):
 
 def push(json_data):
     global _APILogFileEnabled
+    pushed = False
     for inst in instances().values():
-        inst.on_outgoing_message(json_data)
+        if inst.on_outgoing_message(json_data):
+            pushed = True
+            if _APILogFileEnabled:
+                lg.out(0, '*** WS PUSH  %s : %r' % (inst.device_name, json_data), log_name='api', showtime=True)
+    if not pushed:
         if _APILogFileEnabled:
-            lg.out(0, '*** WS PUSH  %s : %r' % (inst.device_name, json_data), log_name='api', showtime=True)
+            lg.warn('*** WS PUSH FAILED : %r' % json_data, log_name='api')
 
 
 #------------------------------------------------------------------------------

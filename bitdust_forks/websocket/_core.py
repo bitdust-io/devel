@@ -48,6 +48,9 @@ Please see http://tools.ietf.org/html/rfc6455 for protocol.
 """
 
 
+_Debug = False
+
+
 class WebSocket(object):
     """
     Low level WebSocket interface.
@@ -264,7 +267,7 @@ class WebSocket(object):
             frame.get_mask_key = self.get_mask_key
         data = frame.format()
         length = len(data)
-        if (isEnabledForTrace()):
+        if _Debug:
             trace('websocket send_frame: ' + repr(data))
 
         with self.lock:
@@ -286,6 +289,8 @@ class WebSocket(object):
         if isinstance(payload, six.text_type):
             payload = payload.encode('utf-8')
         self.send(payload, ABNF.OPCODE_PING)
+        if _Debug:
+            print('websocket._core sent PING : %r' % payload)
 
     def pong(self, payload):
         """
@@ -295,6 +300,8 @@ class WebSocket(object):
         """
         if isinstance(payload, six.text_type):
             payload = payload.encode('utf-8')
+        if _Debug:
+            print('websocket._core sending PONG : %r in %r' % (payload, self.sock))
         self.send(payload, ABNF.OPCODE_PONG)
 
     def recv(self):
@@ -350,6 +357,8 @@ class WebSocket(object):
                 self.send_close()
                 return frame.opcode, frame
             elif frame.opcode == ABNF.OPCODE_PING:
+                if _Debug:
+                    print('websocket._core received PING : %r at %r' % (frame.data, self.sock))
                 if len(frame.data) < 126:
                     self.pong(frame.data)
                 else:
@@ -357,6 +366,8 @@ class WebSocket(object):
                 if control_frame:
                     return frame.opcode, frame
             elif frame.opcode == ABNF.OPCODE_PONG:
+                if _Debug:
+                    print('websocket._core received PONG : %r at %r' % (frame.data, self.sock))
                 if control_frame:
                     return frame.opcode, frame
 

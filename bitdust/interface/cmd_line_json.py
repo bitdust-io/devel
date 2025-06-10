@@ -520,7 +520,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 reactor.stop()  # @UndefinedVariable
                 return
             route_url = net_misc.pack_device_url(connected_routers[0])
-            print_text('enter the following connection info on your mobile device and then be ready to enter 6-digits server code:\n%s' % route_url)
+            print_text('enter the following connection info on your mobile device and then be ready to enter 4 digits server code:\n%s' % route_url)
             reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
 
         def _add():
@@ -1145,7 +1145,15 @@ def cmd_storage(opts, args, overDict):
 def cmd_automats(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(templ.TPL_AUTOMATS)
-        return call_websocket_method_template_and_stop('automats_list', tpl)
+
+        def _automats_list_update(result):
+            for i in range(len(result['result'])):
+                r = result['result'][i]
+                r['_past'] = '->'.join(r['past'])
+                result['result'][i] = r
+            return result
+
+        return call_websocket_method_transform_template_and_stop('automats_list', tpl, _automats_list_update)
     return 2
 
 

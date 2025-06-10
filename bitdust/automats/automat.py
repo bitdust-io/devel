@@ -405,6 +405,7 @@ class Automat(object):
         self._timers = {}
         self._state_callbacks = {}
         self._callbacks_before_die = {}
+        self._past_states = []
         try:
             self.init(**kwargs)
         except Exception as exc:
@@ -425,6 +426,10 @@ class Automat(object):
         global _StateChangedCallback
         global _GlobalLogTransitions
         global _LogFile
+        self._timers.clear()
+        self._past_states.clear()
+        self._state_callbacks.clear()
+        self._callbacks_before_die.clear()
         if self is None:
             self.log(self.debug_level, 'Some crazy stuff happens?')
             return
@@ -561,6 +566,13 @@ class Automat(object):
                     event,
                 ))
         old_state = self.state
+        if self._past_states:
+            if self._past_states[-1] != old_state:
+                if old_state in self._past_states:
+                    self._past_states.remove(old_state)
+                self._past_states.append(old_state)
+        else:
+            self._past_states.append(old_state)
         if self.post:
             try:
                 new_state = self.A(event, *args, **kwargs)
@@ -666,6 +678,7 @@ class Automat(object):
             'repr': repr(self),
             'timers': (','.join(list(self.getTimers().keys()))),
             'events': self.publish_events,
+            'past': self._past_states,
         }
 
     def exc(self, msg='', to_logfile=False, exc_type=None, exc_value=None, exc_traceback=None):

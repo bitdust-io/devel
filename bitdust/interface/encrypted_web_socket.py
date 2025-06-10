@@ -359,7 +359,7 @@ class EncryptedWebSocket(automat.Automat):
         """
         Action method.
         """
-        self.server_code = cipher.generate_digits(6, as_text=True)
+        self.server_code = cipher.generate_digits(4, as_text=True)
         if _Debug:
             lg.args(_DebugLevel, server_code=self.server_code)
 
@@ -406,8 +406,6 @@ class EncryptedWebSocket(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.dbg(_DebugLevel, 'ready!!!')
         # TODO: call a callback here to request user input
         client_code = input().strip()
         self.automat('client-code-input-received', client_code=client_code)
