@@ -48,7 +48,6 @@ from io import open
 
 import os
 import sys
-import imp
 import platform
 import glob
 import re
@@ -885,8 +884,7 @@ def main_is_frozen():
     http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
     return (hasattr(sys, 'frozen') or  # new py2exe
-            hasattr(sys, 'importers') or  # old py2exe
-            imp.is_frozen('__main__'))  # tools/freeze
+            hasattr(sys, 'importers'))  # old py2exe
 
 
 def isGUIpossible():
