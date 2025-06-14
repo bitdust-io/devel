@@ -34,7 +34,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _APILogFileEnabled = False
@@ -223,7 +223,7 @@ def validate_device_name(device_name):
 #------------------------------------------------------------------------------
 
 
-def add_encrypted_device(device_name, port_number=None, key_size=4096):
+def add_encrypted_device(device_name, host='localhost', port_number=None, key_size=4096):
     global _Devices
     validate_device_name(device_name)
     if device_name in _Devices:
@@ -231,7 +231,7 @@ def add_encrypted_device(device_name, port_number=None, key_size=4096):
     if not port_number:
         port_number = settings.DefaultWebSocketEncryptedPort()
     if _Debug:
-        lg.args(_DebugLevel, device_name=device_name, port_number=port_number)
+        lg.args(_DebugLevel, device_name=device_name, host=host, port_number=port_number)
     if len(_Devices) >= 1:
         raise Exception('currently it is only possible to connect more than one remote device')
     device_key_object = APIDevice()
@@ -239,6 +239,7 @@ def add_encrypted_device(device_name, port_number=None, key_size=4096):
     device_key_object.label = device_name
     device_key_object.active = False
     device_key_object.meta['routed'] = False
+    device_key_object.meta['host'] = host
     device_key_object.meta['port_number'] = port_number
     device_key_object.meta['auth_token'] = None
     device_key_object.meta['session_key'] = None
@@ -348,7 +349,10 @@ def start_device(device_name, listening_callback=None, client_code_input_callbac
             raise Exception('required service_web_socket_communicator() is not currently ON')
         inst = routed_web_socket.RoutedWebSocket()
     else:
-        inst = encrypted_web_socket.EncryptedWebSocket(port_number=device_key_object.meta['port_number'])
+        inst = encrypted_web_socket.EncryptedWebSocket(
+            host=device_key_object.meta.get('host') or 'localhost',
+            port_number=device_key_object.meta['port_number'],
+        )
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, instance=inst)
     _Instances[device_name] = inst

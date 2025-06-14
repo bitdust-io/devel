@@ -390,6 +390,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             name=data['name'],
             routed=bool(data.get('routed', '0') in YES),
             activate=bool(data.get('activate', '0') in YES),
+            web_socket_host=data['web_socket_host'] if 'web_socket_host' in data else None,
             web_socket_port=int(data['web_socket_port']) if 'web_socket_port' in data else None,
             key_size=int(data['key_size']) if 'key_size' in data else None,
         )

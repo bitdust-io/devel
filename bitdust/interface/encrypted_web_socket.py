@@ -34,6 +34,7 @@ EVENTS:
     * :red:`auth-error`
     * :red:`client-code-input-received`
     * :red:`client-pub-key-received`
+    * :red:`server-code-failed`
     * :red:`start`
     * :red:`stop`
     * :red:`valid-server-code-received`
@@ -45,8 +46,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 10
+_Debug = False
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -66,7 +67,6 @@ from bitdust.logs import lg
 from bitdust.automats import automat
 
 from bitdust.lib import txws
-from bitdust.lib import jsn
 from bitdust.lib import strng
 from bitdust.lib import serialization
 
@@ -172,7 +172,9 @@ class EncryptedWebSocket(automat.Automat):
         """
         Builds `encrypted_web_socket()` state machine.
         """
-        self.port_number = kwargs['port_number']
+        self.host = kwargs.pop('host')
+        self.port_number = int(kwargs.pop('port_number'))
+        self.url = f'ws://{self.host.strip().strip("/")}:{self.port_number}'
         self.server_code = None
         self.device_name = None
         self.client_connected = False
@@ -190,15 +192,25 @@ class EncryptedWebSocket(automat.Automat):
         """
         Will return something like: "network_connector(CONNECTED)".
         """
-        return '%s[%s](%s)' % (
+        return '%s[%s%s](%s)' % (
             self.id,
             '*' if self.client_connected else '',
+            self.url or '?',
             self.state,
         )
+
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        """
+        Method to catch the moment when `routed_web_socket()` state were changed.
+        """
+        if event == 'auth-error':
+            if oldstate in ('CLIENT_PUB?', 'SERVER_CODE?', 'CLIENT_CODE?'):
+                events.send('web-socket-handshake-failed', data=self.to_json())
 
     def to_json(self, short=True):
         ret = super().to_json(short=short)
         ret.update({
+            'url': self.url,
             'port_number': self.port_number,
             'server_code': self.server_code,
             'device_name': self.device_name,
@@ -276,6 +288,13 @@ class EncryptedWebSocket(automat.Automat):
             lg.args(_DebugLevel, received_server_code=received_server_code)
         self.automat('valid-server-code-received')
 
+    def on_client_code_input_received(self, client_code):
+        if _Debug:
+            lg.args(_DebugLevel, client_code=client_code)
+        self.automat('client-code-input-received', client_code=client_code)
+
+    #------------------------------------------------------------------------------
+
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://github.com/vesellov/visio2python>`_ tool.
@@ -301,7 +320,6 @@ class EncryptedWebSocket(automat.Automat):
                 self.state = 'CLIENT_PUB?'
                 self.doInit(*args, **kwargs)
                 self.doStartListener(*args, **kwargs)
-                self.doPrepareWebSocketURL(*args, **kwargs)
             elif event == 'start' and self.isAuthenticated(*args, **kwargs):
                 self.state = 'READY'
                 self.doInit(*args, **kwargs)
@@ -335,6 +353,9 @@ class EncryptedWebSocket(automat.Automat):
             elif event == 'valid-server-code-received':
                 self.state = 'CLIENT_CODE?'
                 self.doWaitClientCodeInput(*args, **kwargs)
+            elif event == 'server-code-failed':
+                self.state = 'CLIENT_PUB?'
+                self.doEraseServerCode(*args, **kwargs)
         #---CLIENT_CODE?---
         elif self.state == 'CLIENT_CODE?':
             if event == 'client-code-input-received':
@@ -375,6 +396,7 @@ class EncryptedWebSocket(automat.Automat):
         self.session_key = None
         self.client_key_object = None
         self.listening_callback = kwargs.get('listening_callback')
+        self.client_code_input_callback = kwargs.get('client_code_input_callback')
 
     def doLoadAuthInfo(self, *args, **kwargs):
         """
@@ -444,12 +466,7 @@ class EncryptedWebSocket(automat.Automat):
         """
         client_code = kwargs['client_code']
         session_key_text = strng.to_text(base64.b64encode(self.session_key))
-        salted_payload = jsn.dumps({
-            'client_code': client_code,
-            'auth_token': self.auth_token,
-            'session_key': session_key_text,
-            'salt': cipher.generate_secret_text(32),
-        })
+        salted_payload = '{}#{}#{}#{}'.format(client_code, self.auth_token, session_key_text, cipher.generate_secret_text(32))
         encrypted_payload = base64.b64encode(self.client_key_object.encrypt(strng.to_bin(salted_payload)))
         hashed_payload = hashes.sha1(strng.to_bin(salted_payload))
         if _Debug:
@@ -508,7 +525,7 @@ class EncryptedWebSocket(automat.Automat):
             self.automat('auth-error')
             return
         try:
-            raw_data = cipher.decrypt_json(json_data['inp'], self.session_key)
+            raw_data = cipher.decrypt_json(json_data['payload'], self.session_key, from_dict=True)
         except:
             lg.exc()
             self.automat('auth-error')
@@ -519,6 +536,9 @@ class EncryptedWebSocket(automat.Automat):
             lg.exc()
             self.automat('auth-error')
             return
+        api_message_payload['call_id'] = json_data.get('call_id')
+        if _Debug:
+            lg.args(_DebugLevel, payload=api_message_payload)
         if not ExecuteIncomingAPIMessageCallback(self, api_message_payload):
             lg.warn('incoming api message was not processed')
 
@@ -529,7 +549,7 @@ class EncryptedWebSocket(automat.Automat):
         global _Listeners
         try:
             ws = WrappedEncryptedWebSocketFactory(EncryptedWebSocketFactory(instance=self))
-            _Listeners[self.device_name] = listen('tcp:%d' % self.port_number, ws)
+            _Listeners[self.device_name] = listen(f'tcp:{self.port_number}:interface={self.host}', ws)
         except:
             lg.exc()
             return None, None
@@ -552,16 +572,13 @@ class EncryptedWebSocket(automat.Automat):
         else:
             lg.warn('listener was not started')
 
-    def doPrepareWebSocketURL(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
         self.destroy()
+
+    #------------------------------------------------------------------------------
 
     def _do_push(self, json_data):
         global _Transports
@@ -586,16 +603,26 @@ class EncryptedWebSocket(automat.Automat):
         if not _Transports or self.device_name not in _Transports:
             lg.warn('there are currently no web socket transports open')
             return False
+        json_data['salt'] = cipher.generate_secret_text(10)
+        cmd = json_data.pop('cmd', None)
+        call_id = None
+        if 'payload' in json_data:
+            call_id = json_data['payload'].pop('call_id', None)
         raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
-        encrypted_bytes = cipher.encrypt_json(raw_bytes, self.session_key)
+        encrypted_json_data = cipher.encrypt_json(raw_bytes, self.session_key, to_dict=True)
+        if call_id:
+            encrypted_json_data['call_id'] = call_id
+        if cmd:
+            encrypted_json_data['cmd'] = cmd
+        encrypted_raw_data = serialization.DictToBytes(encrypted_json_data, encoding='utf-8', to_text=True)
         for _key, transp in _Transports[self.device_name].items():
             try:
-                transp.write(encrypted_bytes)
+                transp.write(encrypted_raw_data)
             except:
                 lg.exc()
                 continue
             if _Debug:
-                lg.dbg(_DebugLevel, 'sent %d encrypted bytes to web socket %s' % (len(encrypted_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2])))
+                lg.dbg(_DebugLevel, 'sent %d encrypted bytes to web socket %s' % (len(encrypted_raw_data), '%s://%s:%s' % (_key[0], _key[1], _key[2])))
         if _Debug:
-            lg.out(_DebugLevel, '***   API %s PUSH %d encrypted bytes: %r' % (self.device_name, len(encrypted_bytes), json_data))
+            lg.out(_DebugLevel, '***   API %s PUSH %d encrypted bytes: %r' % (self.device_name, len(encrypted_raw_data), json_data))
         return True

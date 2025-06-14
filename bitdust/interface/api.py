@@ -708,7 +708,7 @@ def device_info(name: str):
     return OK(result)
 
 
-def device_add(name: str, routed: bool = False, activate: bool = True, wait_listening: bool = False, web_socket_port: int = None, key_size: int = None):
+def device_add(name: str, routed: bool = False, activate: bool = True, wait_listening: bool = False, web_socket_host: str = 'localhost', web_socket_port: int = None, key_size: int = None):
     """
     Register a new API device configuration to be able to access this BitDust node remotely.
 
@@ -748,7 +748,7 @@ def device_add(name: str, routed: bool = False, activate: bool = True, wait_list
                 return ERROR('required service_web_socket_communicator() is not currently ON')
             ret = api_device.add_routed_device(device_name=name, key_size=key_size)
         else:
-            ret = api_device.add_encrypted_device(device_name=name, port_number=web_socket_port, key_size=key_size)
+            ret = api_device.add_encrypted_device(device_name=name, host=web_socket_host, port_number=web_socket_port, key_size=key_size)
     except Exception as exc:
         return ERROR(exc)
     if not ret:
