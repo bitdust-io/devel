@@ -343,7 +343,10 @@ def start_device(device_name, listening_callback=None, client_code_input_callbac
             _Instances.pop(device_name)
             del inst
         else:
-            raise Exception('device %r was already started' % device_name)
+            lg.warn('device %r was already started' % device_name)
+            if listening_callback:
+                reactor.callLater(0, listening_callback, True)  # @UndefinedVariable
+            return inst
     if device_key_object.meta['routed']:
         if not driver.is_on('service_web_socket_communicator'):
             raise Exception('required service_web_socket_communicator() is not currently ON')

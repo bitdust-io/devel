@@ -87,7 +87,7 @@ from testsupport import (health_check, start_daemon, run_ssh_command_and_wait, r
 from testsupport import dbg, msg
 
 import keywords as kw
-from lib import web_socket_client
+from lib import ws_client
 
 #------------------------------------------------------------------------------
 
@@ -577,6 +577,9 @@ def scenario8():
         json={
             'name': 'device_ABC',
             'routed': True,
+            'activate': True,
+            'wait_listening': False,
+            'key_size': 1024,
         },
     )
     assert response.status_code == 200
@@ -622,7 +625,7 @@ def scenario8():
     }))
     def _test_client():
         counter = 0
-        test_ws_app = web_socket_client.TestApp()
+        test_ws_app = ws_client.TestApp()
         test_ws_app.begin()
         while not test_ws_app.completed:
             time.sleep(1)
@@ -2214,6 +2217,9 @@ def scenario19():
             'routed': False,
             'web_socket_host': 'customer-2',
             'web_socket_port': 8281,
+            'activate': True,
+            'wait_listening': False,
+            'key_size': 1024,
         },
     )
     assert response.status_code == 200
@@ -2233,7 +2239,7 @@ def scenario19():
         },
     )
     assert response.status_code == 200
-    dbg('device/start/v1 [customer-2] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+    dbg('device/start/v1 [customer-2] name=device_DEF : %s\n' % pprint.pformat(response.json()))
     assert response.json()['status'] == 'OK', response.json()
 
     ws_url = None
@@ -2243,7 +2249,7 @@ def scenario19():
         counter += 1
         response = request_get('customer-2', 'device/info/v1?name=device_DEF')
         assert response.status_code == 200
-        dbg('device/info/v1 [customer-2] name=device_ABC : %s\n' % pprint.pformat(response.json()))
+        dbg('device/info/v1 [customer-2] name=device_DEF : %s\n' % pprint.pformat(response.json()))
         assert response.json()['status'] == 'OK', response.json()
         ws_url = response.json()['result'].get('url')
         if (response.json()['result'].get('instance') or {}).get('state') in ['CLIENT_PUB?', 'READY']:
@@ -2260,7 +2266,7 @@ def scenario19():
     }))
     def _test_client():
         counter = 0
-        test_ws_app = web_socket_client.TestApp()
+        test_ws_app = ws_client.TestApp()
         test_ws_app.begin()
         while not test_ws_app.completed:
             time.sleep(1)

@@ -123,7 +123,6 @@ class EncryptedWebSocketProtocol(Protocol):
         _Transports[self.factory.instance.device_name][self._key] = self.transport
         if _Debug:
             lg.args(_DebugLevel, device_name=self.factory.instance.device_name, peer=peer_text, ws_connections=len(_Transports))
-        # events.send('web-socket-connected', data=dict(peer=peer))
 
     def connectionLost(self, *args, **kwargs):
         global _Transports
@@ -131,12 +130,13 @@ class EncryptedWebSocketProtocol(Protocol):
         peer_text = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         if self.factory.instance.device_name in _Transports:
             _Transports[self.factory.instance.device_name].pop(self._key)
+            if not _Transports:
+                self.factory.instance.client_connected = False
         else:
             lg.err('device %r was already stopped, connection closed: %r' % (self.factory.instance.device_name, peer_text))
         self._key = None
         if _Debug:
             lg.args(_DebugLevel, device_name=self.factory.instance.device_name, peer=peer_text, ws_connections=len(_Transports))
-        # events.send('web-socket-disconnected', data=dict(peer=peer))
 
 
 class EncryptedWebSocketFactory(Factory):
@@ -453,6 +453,7 @@ class EncryptedWebSocket(automat.Automat):
         hashed_server_public_key_base = hashes.sha1(server_public_key_base)
         if _Debug:
             lg.args(_DebugLevel, confirmation_code=confirmation_code)
+        # TODO: consider encrypting server public key and confirmation code with client public key
         self._do_push({
             'cmd': 'server-public-key',
             'server_public_key': server_public_key,

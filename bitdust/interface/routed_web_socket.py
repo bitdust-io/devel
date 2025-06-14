@@ -978,6 +978,7 @@ class RoutedWebSocket(automat.Automat):
         hashed_server_public_key_base = hashes.sha1(server_public_key_base)
         if _Debug:
             lg.args(_DebugLevel, confirmation_code=confirmation_code)
+        # TODO: consider encrypting server public key and confirmation code with client public key
         self._do_push({
             'cmd': 'server-public-key',
             'server_public_key': server_public_key,
