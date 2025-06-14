@@ -34,7 +34,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _APILogFileEnabled = False
@@ -92,6 +92,7 @@ def init():
     _AllAPIMethods.difference_update(
         [
             # TODO: keep that list up to date when changing the api
+            'reactor',
             'on_api_result_prepared',
             'Deferred',
             'ERROR',
@@ -232,7 +233,7 @@ def add_encrypted_device(device_name, port_number=None, key_size=4096):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, port_number=port_number)
     if len(_Devices) >= 1:
-        raise Exception('currently it is only possible to connect one remote device')
+        raise Exception('currently it is only possible to connect more than one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
@@ -258,7 +259,7 @@ def add_routed_device(device_name, key_size=4096):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name)
     if len(_Devices) >= 1:
-        raise Exception('currently it is only possible to connect one remote device')
+        raise Exception('currently it is only possible to connect more than one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name

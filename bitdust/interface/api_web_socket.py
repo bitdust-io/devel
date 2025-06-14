@@ -91,6 +91,7 @@ def init(port=None):
     _AllAPIMethods.difference_update(
         [
             # TODO: keep that list up to date when changing the api
+            'reactor',
             'on_api_result_prepared',
             'Deferred',
             'ERROR',

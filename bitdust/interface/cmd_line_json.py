@@ -37,7 +37,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -814,17 +814,19 @@ def cmd_key(opts, args, overDict, running, executablePath):
 
 
 def cmd_api(opts, args, overDict, executablePath):
+    try:
+        import inspect
+        from bitdust.interface import api
+    except:
+        print_text('failed to import "interface.api" module')
+        return 1
+
     if len(args) < 2:
-        try:
-            import inspect
-            from bitdust.interface import api
-        except:
-            print_text('failed to import "interface.api" module')
-            return 1
-        for item in dir(api):
-            if item.startswith('_'):
+        for method_name in dir(api):
+            if method_name.startswith('_'):
                 continue
-            if item in [
+            if method_name in [
+                'reactor',
                 'ERROR',
                 'OK',
                 'RESULT',
@@ -846,28 +848,53 @@ def cmd_api(opts, args, overDict, executablePath):
                 'config',
             ]:
                 continue
-            method = getattr(api, item, None)
+            method = getattr(api, method_name, None)
             if not method:
                 continue
             try:
-                params = inspect.getargspec(method)
+                spec = inspect.getfullargspec(method)
             except:
-                print_text('    %s()' % item)
+                print_text('    %s()' % method_name)
                 continue
             doc_line = method.__doc__
             if not doc_line:
                 doc_line = ''
             else:
                 doc_line = doc_line.strip().split('\n')[0]
-            print_text('\n    %s(%s)' % (
-                item,
-                ', '.join(params.args),
-            ))
+            args_specs = []
+            arg_pos = 0
+            no_defaults = len(spec.args) - len(spec.defaults or [])
+            for arg_pos in range(len(spec.args)):
+                arg_name = spec.args[arg_pos]
+                arg_type = spec.annotations[arg_name].__name__
+                arg_default_pos = arg_pos - no_defaults
+                if arg_default_pos >= 0 and spec.defaults:
+                    arg_default = spec.defaults[arg_default_pos]
+                    if isinstance(arg_default, str):
+                        args_specs.append(f'{arg_name}:{arg_type}="{arg_default}"')
+                    else:
+                        args_specs.append(f'{arg_name}:{arg_type}={arg_default}')
+                else:
+                    args_specs.append(f'{arg_name}:{arg_type}')
+            print_text('\n    %s(%s)' % (method_name, ', '.join(args_specs)))
             print_text('        %s' % doc_line)
+        print_text('')
         return 0
+
+    method = getattr(api, args[1], None)
+    if not method:
+        print_text('invalid api method name')
+        return 1
+    try:
+        spec = inspect.getfullargspec(method)
+    except:
+        print_text('failed reading api method specs')
+        return 1
 
     def _clean_value(v):
         if isinstance(v, str) and v in ['true', 'True']:
+            return True
+        if isinstance(v, str) and v in ['false', 'False']:
             return True
         return v
 

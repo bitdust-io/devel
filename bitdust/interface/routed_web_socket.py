@@ -453,7 +453,15 @@ class RoutedWebSocket(automat.Automat):
         self.client_connected = False
         self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=5)
         self.min_router_connections = config.conf().getInt('services/web-socket-communicator/min-connections', default=3)
-        super(RoutedWebSocket, self).__init__(name='routed_web_socket', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+        super(RoutedWebSocket, self).__init__(
+            name='routed_web_socket',
+            state='AT_STARTUP',
+            debug_level=debug_level,
+            log_events=log_events,
+            log_transitions=log_transitions,
+            publish_events=publish_events,
+            **kwargs,
+        )
 
     def __repr__(self):
         """

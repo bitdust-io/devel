@@ -1124,8 +1124,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/message/conversation/v1$')
     def message_conversation_v1(self, request):
         return api.message_conversations_list(
-            message_types=list(filter(None,
-                                      _request_arg(request, 'message_types', '').split(','))),
+            message_types=_request_arg(request, 'message_types', ''),
             offset=int(_request_arg(request, 'offset', '0')),
             limit=int(_request_arg(request, 'limit', '100')),
         )
