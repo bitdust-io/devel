@@ -214,13 +214,6 @@ def pack_device_url(url):
     return _head + ':' + _tail
 
 
-def unpack_device_url(inp):
-    _head, _, _tail = inp.rpartition(':')
-    if not _head.startswith('ws://'):
-        _head = 'ws://' + _head
-    return _head + '/?r=' + _tail
-
-
 #------------------------------------------------------------------------------
 
 

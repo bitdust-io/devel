@@ -990,17 +990,18 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        client_code = kwargs['client_code']
-        session_key_text = strng.to_text(base64.b64encode(self.session_key))
-        salted_payload = '{}#{}#{}#{}'.format(client_code, self.auth_token, session_key_text, cipher.generate_secret_text(32))
-        encrypted_payload = base64.b64encode(self.client_key_object.encrypt(strng.to_bin(salted_payload)))
-        hashed_payload = hashes.sha1(strng.to_bin(salted_payload))
-        if _Debug:
-            lg.args(_DebugLevel, client_code=client_code)
+        from bitdust.interface import api_device
+        auth_info, signature = api_device.encrypt_auth_info(
+            client_code=kwargs['client_code'],
+            auth_token=self.auth_token,
+            session_key=self.session_key,
+            client_public_key_object=self.client_key_object,
+            device_key_object=self.device_key_object,
+        )
         self._do_push({
             'cmd': 'client-code',
-            'auth': strng.to_text(encrypted_payload),
-            'signature': strng.to_text(self.device_key_object.sign(hashed_payload)),
+            'auth': auth_info,
+            'signature': signature,
             'routers': self.handshaked_routers,
         })
 

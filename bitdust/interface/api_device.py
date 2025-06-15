@@ -42,6 +42,7 @@ _APILogFileEnabled = False
 #------------------------------------------------------------------------------
 
 import os
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -56,12 +57,15 @@ from bitdust.logs import lg
 from bitdust.automats import automat
 
 from bitdust.lib import jsn
+from bitdust.lib import strng
 
 from bitdust.main import settings
 
 from bitdust.system import local_fs
 
 from bitdust.crypt import rsa_key
+from bitdust.crypt import cipher
+from bitdust.crypt import hashes
 
 from bitdust.services import driver
 
@@ -233,7 +237,7 @@ def add_encrypted_device(device_name, host='localhost', port_number=None, key_si
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, host=host, port_number=port_number)
     if len(_Devices) >= 1:
-        raise Exception('currently it is only possible to connect more than one remote device')
+        raise Exception('currently it is not possible to connect more than one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
@@ -260,7 +264,7 @@ def add_routed_device(device_name, key_size=4096):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name)
     if len(_Devices) >= 1:
-        raise Exception('currently it is only possible to connect more than one remote device')
+        raise Exception('currently it is not possible to connect more than one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
@@ -449,6 +453,54 @@ def reset_authorization(device_name):
     if not device_key_object.save():
         return False
     return True
+
+
+def request_authorization(device_name, client_public_key_text, client_code):
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name)
+    if not client_public_key_text.startswith('ssh-rsa '):
+        client_public_key_text = 'ssh-rsa ' + client_public_key_text
+    try:
+        client_key_object = rsa_key.RSAKey()
+        client_key_object.fromString(client_public_key_text)
+    except Exception as exc:
+        raise Exception('failed reading public key: %s' % str(exc))
+    validate_device_name(device_name)
+    device_key_object = devices(device_name)
+    if not device_key_object:
+        raise Exception('device %r does not exist' % device_name)
+    if instances(device_name):
+        stop_device(device_name)
+    device_key_object.meta['auth_token'] = cipher.generate_secret_text(10)
+    device_key_object.meta['session_key'] = strng.to_text(base64.b64encode(cipher.make_key()))
+    device_key_object.meta['client_public_key'] = client_key_object.toPublicString()
+    if not device_key_object.save():
+        return None
+    auth_info, signature = encrypt_auth_info(
+        device_key_object=device_key_object,
+        auth_token=device_key_object.meta['auth_token'],
+        session_key=base64.b64decode(strng.to_bin(device_key_object.meta['session_key'])),
+        client_public_key_object=client_key_object,
+        client_code=client_code,
+    )
+    return {
+        'auth_info': auth_info,
+        'signature': signature,
+        'server_public_key': device_key_object.toPublicString(),
+    }
+
+
+#------------------------------------------------------------------------------
+
+
+def encrypt_auth_info(device_key_object, auth_token, session_key, client_public_key_object, client_code):
+    session_key_text = strng.to_text(base64.b64encode(session_key))
+    salted_payload = '{}#{}#{}#{}'.format(client_code, auth_token, session_key_text, cipher.generate_secret_text(32))
+    encrypted_payload = base64.b64encode(client_public_key_object.encrypt(strng.to_bin(salted_payload)))
+    hashed_payload = hashes.sha1(strng.to_bin(salted_payload))
+    auth_info = strng.to_text(encrypted_payload)
+    signature = strng.to_text(device_key_object.sign(hashed_payload))
+    return auth_info, signature
 
 
 #------------------------------------------------------------------------------

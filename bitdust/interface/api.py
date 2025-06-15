@@ -796,6 +796,35 @@ def device_start(name: str, wait_listening: bool = False):
     return ret
 
 
+def device_authorization_request(name: str, client_public_key: str, client_code: str):
+    """
+    This is another way to authorize a remote device configuration.
+
+    The `client_public_key` and `client_code` are generated on the remote device.
+    Result data from that call needs to be decrypted and processed on the remote device to complete authorisation procedure.
+
+    This makes possible to authorize a remote device without entering the client and server 4 digits codes.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/authorization/request/v1' -d '{"name": "my_iPhone_12", "client_public_key": "AAAAB3Nza...", "client_code": "1234"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_authorization_request", "kwargs": {"name": "my_iPhone_12", "client_public_key": "AAAAB3Nza...", "client_code": "1234"} }');
+    """
+    from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
+    try:
+        result = api_device.request_authorization(
+            device_name=name,
+            client_public_key_text=client_public_key,
+            client_code=client_code,
+        )
+    except Exception as exc:
+        return ERROR(exc)
+    return OK(result)
+
+
 def device_authorization_reset(name: str, start: bool = True, wait_listening: bool = False):
     """
     To be called when given device needs to be authorized again.
@@ -820,7 +849,7 @@ def device_authorization_reset(name: str, start: bool = True, wait_listening: bo
 
 def device_authorization_client_code(name: str, client_code: str):
     """
-    Must be called during authorization preocedure to provide client code entered by the user manually.
+    Must be called during authorization procedure to provide client code entered by the user manually.
 
     ###### HTTP
         curl -X POST 'localhost:8180/device/authorization/client_code/v1' -d '{"name": "my_iPhone_12", "client_code": "1234"}'

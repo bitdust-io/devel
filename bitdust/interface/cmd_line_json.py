@@ -480,22 +480,26 @@ def cmd_device(opts, args, overDict, running, executablePath):
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_info', tpl, name=args[2])
 
-    if len(args) > 3 and args[1] in ['start', 'enable', 'on', 'open']:
+    if len(args) >= 3 and args[1] in ['start', 'enable', 'on', 'open']:
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_start', tpl, name=args[2], wait_listening=True)
 
-    if len(args) > 3 and args[1] in ['stop', 'disable', 'off', 'close']:
+    if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', 'close']:
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_stop', tpl, name=args[2])
 
     if len(args) >= 3 and args[1] in ['pair', 'auth', 'authorize']:
         device_name = args[2]
+        if len(args) > 4:
+            tpl = jsontemplate.Template(templ.TPL_DEVICES_AUTH_REQUEST)
+            return call_websocket_method_template_and_stop('device_authorization_request', tpl, name=args[2], client_code=args[3], client_public_key=args[4])
+
         from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_client_code_confirmed(ret):
             if _Debug:
                 print('_on_client_code_confirmed', ret)
-            print_text('SUCCESS!')
+            print_text('\nSUCCESS! Your remote device is now authorized and connected.')
             reactor.stop()  # @UndefinedVariable
 
         def _device_info_cb(ret):
@@ -505,8 +509,8 @@ def cmd_device(opts, args, overDict, running, executablePath):
             if not server_code:
                 reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
                 return
-            print_text('server authorization code is: %r' % server_code)
-            client_code = input('please enter the client code displayed at your device: ')
+            print_text('Now enter following authorization code on your device:\n\n    %s\n' % server_code)
+            client_code = input('To complete authorization please enter the client confirmation code displayed on your device: ')
             d = call_websocket_method('device_authorization_client_code', name=device_name, client_code=client_code)
             d.addCallback(_on_client_code_confirmed)
             d.addErrback(fail_and_stop)
@@ -533,7 +537,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 print_text('device configuration failed due to connection error')
                 reactor.stop()  # @UndefinedVariable
                 return
-            print_text('enter the following connection info on your mobile device and then be ready to enter 4 digits authorization code:\n%s' % route_url)
+            print_text('Enter following connection URL on your remote device and be ready to enter 4 digits authorization code:\n\n    %s\n' % route_url)
             reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
 
         def _start():
@@ -551,7 +555,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
             return 1
         routed = args[2] in ['routed', 'route']
         if routed:
-            key_sz = int(args[5]) if len(args) > 5 else 2048
+            key_sz = int(args[4]) if len(args) > 4 else 2048
             tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
             return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=True, key_size=key_sz, activate=False, wait_listening=False)
         device_host = args[4] if len(args) > 4 else 'localhost'
@@ -1545,7 +1549,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     overDict = override_options(opts, args)
 
-    #---identity---
+    #---device---
     if cmd in ['device', 'devices', 'dev']:
         return cmd_device(opts, args, overDict, running, executablePath)
 

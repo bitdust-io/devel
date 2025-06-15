@@ -55,6 +55,8 @@ TPL_DEVICES_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{name} acti
 
 TPL_DEVICES_INFO = tpl_4_items.format(tpl_status, tpl_execution, '{.section result}{@}{.end}', tpl_errors)
 
+TPL_DEVICES_AUTH_REQUEST = tpl_4_items.format(tpl_status, tpl_execution, '{.section result}AUTH INFO:\n{auth_info}\nSIGNATURE:\n{signature}\nSERVER PUBLIC KEY:\n{server_public_key}\n{.end}', tpl_errors)
+
 #------------------------------------------------------------------------------
 
 TPL_KEYS_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{key_id}\n'), tpl_errors)

@@ -416,6 +416,17 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             wait_listening=bool(data.get('wait_listening', '0') in YES),
         )
 
+    @POST('^/dev/a/req$')
+    @POST('^/v1/device/authorization/request$')
+    @POST('^/device/authorization/request/v1$')
+    def device_authorization_request_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name', 'client_public_key', 'client_code'])
+        return api.device_authorization_request(
+            name=data['name'],
+            client_public_key=data['client_public_key'],
+            client_code=data['client_code'],
+        )
+
     @POST('^/dev/a/cc$')
     @POST('^/v1/device/authorization/client_code$')
     @POST('^/device/authorization/client_code/v1$')
