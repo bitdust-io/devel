@@ -56,7 +56,7 @@ def start(callbacks={}, client_info_filepath=None):
     if is_started():
         raise Exception('already started')
     if _Debug:
-        print('web_sock_remote.start() client_info_filepath=%r' % client_info_filepath)
+        print('ws_client.start() client_info_filepath=%r' % client_info_filepath)
     _ClientInfoFilePath = client_info_filepath
     _RegisteredCallbacks = callbacks or {}
     _WebSocketConnecting = True
@@ -80,7 +80,7 @@ def stop():
     if not is_started():
         raise Exception('has not been started')
     if _Debug:
-        print('web_sock_remote.stop()')
+        print('ws_client.stop()')
     _ClientInfoFilePath = None
     _RegisteredCallbacks = {}
     _WebSocketStarted = False
@@ -163,7 +163,7 @@ def on_open(ws_inst):
     session_key_text = client_info.get('session_key')
     if auth_token and session_key_text:
         if _Debug:
-            print('web_sock_remote.on_message was already AUTHORIZED', ws_inst)
+            print('ws_client.on_message was already AUTHORIZED', ws_inst)
         _WebSocketAuthToken = auth_token
         _WebSocketSessionKey = base64.b64decode(strng.to_bin(session_key_text))
         on_connect(ws_inst)
@@ -229,7 +229,7 @@ def on_message(ws_inst, message):
     global _WebSocketSessionKey
     json_data = jsn.loads(message)
     if _Debug:
-        print('web_sock_remote.on_message %d bytes: %r' % (len(message), json_data))
+        print('ws_client.on_message %d bytes: %r' % (len(message), json_data))
     cmd = json_data.get('cmd')
     if cmd == 'server-public-key':
         # SECURITY
@@ -249,7 +249,7 @@ def on_message(ws_inst, message):
             return False
         if not server_key_object.verify(strng.to_bin(signature), hashed_confirmation):
             if _Debug:
-                print('web_sock_remote.on_message server public key response signature verification failed')
+                print('ws_client.on_message server public key response signature verification failed')
             restart_handshake()
             return False
         client_info = jsn.loads(system.ReadTextFile(_ClientInfoFilePath) or '{}')
@@ -286,12 +286,12 @@ def on_message(ws_inst, message):
             return False
         if not server_key_object.verify(strng.to_bin(signature), hashed_payload):
             if _Debug:
-                print('web_sock_remote.on_message authorization response signature verification failed')
+                print('ws_client.on_message authorization response signature verification failed')
             restart_handshake()
             return False
         if received_client_code != client_code:
             if _Debug:
-                print('web_sock_remote.on_message client code is not matching')
+                print('ws_client.on_message client code is not matching')
             restart_handshake()
             return False
         client_info['auth_token'] = auth_token
@@ -301,7 +301,7 @@ def on_message(ws_inst, message):
         _WebSocketAuthToken = auth_token
         _WebSocketSessionKey = base64.b64decode(strng.to_bin(session_key_text))
         if _Debug:
-            print('web_sock_remote.on_message AUTHORIZED', ws_inst)
+            print('ws_client.on_message AUTHORIZED', ws_inst)
         on_connect(ws_inst)        
         return True
     if cmd in ['response', 'push']:
@@ -318,7 +318,7 @@ def on_message(ws_inst, message):
             return False
         if 'payload' not in decrypted_json_payload:
             if _Debug:
-                print('web_sock_remote.on_message no payload found in the response: %r' % decrypted_json_payload)
+                print('ws_client.on_message no payload found in the response: %r' % decrypted_json_payload)
             return False
         if cmd == 'response':
             if 'call_id' not in json_data:

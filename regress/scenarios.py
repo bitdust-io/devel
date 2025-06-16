@@ -56,6 +56,8 @@ SCENARIO 17: customer-restore recover identity from customer-1
 
 SCENARIO 18: customer-rotated IDURL was rotated but still able to comunicate in the group
 
+SCENARIO 19: customer-2 added direct API device and able to accept remote web-socket connections
+
 SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 
 SCENARIO 25: customer-3 receive all past messages from other group participants
@@ -85,7 +87,7 @@ from testsupport import (health_check, start_daemon, run_ssh_command_and_wait, r
 from testsupport import dbg, msg
 
 import keywords as kw
-from lib import web_socket_client
+from lib import ws_client
 
 #------------------------------------------------------------------------------
 
@@ -575,6 +577,9 @@ def scenario8():
         json={
             'name': 'device_ABC',
             'routed': True,
+            'activate': True,
+            'wait_listening': False,
+            'key_size': 1024,
         },
     )
     assert response.status_code == 200
@@ -620,7 +625,7 @@ def scenario8():
     }))
     def _test_client():
         counter = 0
-        test_ws_app = web_socket_client.TestApp()
+        test_ws_app = ws_client.TestApp()
         test_ws_app.begin()
         while not test_ws_app.completed:
             time.sleep(1)
@@ -631,7 +636,7 @@ def scenario8():
     test_client_thread = threading.Thread(target=_test_client)
     test_client_thread.daemon = True
     test_client_thread.start()
-    test_client_thread.join(timeout=120)
+    test_client_thread.join(timeout=30)
     assert 'completed' == open('scenario8.txt', 'rt').read()
 
     msg('\n[SCENARIO 8] : PASS\n\n')
@@ -2197,6 +2202,85 @@ def scenario18_end(old_info):
     kw.wait_packets_finished(CUSTOMERS_IDS_1_ROTATED + SUPPLIERS_IDS_12)
 
     msg('\n[SCENARIO 18 end] : DONE\n\n')
+
+
+
+def scenario19():
+    set_active_scenario('SCENARIO 19')
+    msg('\n\n============\n[SCENARIO 19] customer-2 added direct API device and able to accept remote web-socket connections')
+
+    response = request_post(
+        'customer-2',
+        'device/add/v1',
+        json={
+            'name': 'device_DEF',
+            'routed': False,
+            'web_socket_host': 'customer-2',
+            'web_socket_port': 8281,
+            'activate': True,
+            'wait_listening': False,
+            'key_size': 1024,
+        },
+    )
+    assert response.status_code == 200
+    dbg('device/add/v1 [customer-2] name=device_DEF : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    response = request_get('customer-2', 'device/info/v1?name=device_DEF')
+    assert response.status_code == 200
+    dbg('device/info/v1 [customer-2] name=device_DEF : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    response = request_post(
+        'customer-2',
+        'device/start/v1',
+        json={
+            'name': 'device_DEF',
+        },
+    )
+    assert response.status_code == 200
+    dbg('device/start/v1 [customer-2] name=device_DEF : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+
+    ws_url = None
+    counter = 0
+    while counter < 30:
+        time.sleep(5)
+        counter += 1
+        response = request_get('customer-2', 'device/info/v1?name=device_DEF')
+        assert response.status_code == 200
+        dbg('device/info/v1 [customer-2] name=device_DEF : %s\n' % pprint.pformat(response.json()))
+        assert response.json()['status'] == 'OK', response.json()
+        ws_url = response.json()['result'].get('url')
+        if (response.json()['result'].get('instance') or {}).get('state') in ['CLIENT_PUB?', 'READY']:
+            break
+
+    if not ws_url:
+        assert False, 'web socket url is unknown'
+
+    if counter >= 20:
+        assert False, 'web socket was not started'
+
+    open('client.json', 'w').write(json.dumps({
+        'routers': [ws_url, ],
+    }))
+    def _test_client():
+        counter = 0
+        test_ws_app = ws_client.TestApp()
+        test_ws_app.begin()
+        while not test_ws_app.completed:
+            time.sleep(1)
+            counter += 1
+            dbg('    ... %d' % counter)
+        open('scenario19.txt', 'wt').write('completed')
+
+    test_client_thread = threading.Thread(target=_test_client)
+    test_client_thread.daemon = True
+    test_client_thread.start()
+    test_client_thread.join(timeout=30)
+    assert 'completed' == open('scenario19.txt', 'rt').read()
+
+    msg('\n[SCENARIO 19] : PASS\n\n')
 
 
 

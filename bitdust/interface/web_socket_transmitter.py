@@ -444,6 +444,8 @@ def do_process_incoming_message(transport, json_data, raw_data):
                 lg.warn('route info for %r was not found' % route_id)
                 return False
             json_response = {
+                # TODO: switch later to "router-handshake-accepted" as it is looking more clear
+                # 'cmd': 'router-handshake-accepted',
                 'cmd': 'handshake-accepted',
                 'route_url': route_url,
             }

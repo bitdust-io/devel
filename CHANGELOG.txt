@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+2025-06-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* automatic reconnection to new routers in routed_web_socket()
+* verify server code in routed_web_socket()
+* added services/web-socket-communicator/min-connections setting
+* switch web socket authorization to 4 digits code
+* solving issues between routed_web_socket() and web_socket_transmitter()
+* web socket transmitter should also reply with PONG on PING packets
+* fixes in routed_web_socket()
+* bug fix in shared_access_coordinator()
+
+
+
 2025-04-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in api.files_list()

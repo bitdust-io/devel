@@ -32,6 +32,8 @@ SCENARIO 15: customer-1 switch supplier at position 1 to specific node
 
 SCENARIO 16: customer-1 increase and decrease suppliers amount
 
+SCENARIO 19: customer-2 added direct API device and able to accept remote web-socket connections
+
 SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 
 """
@@ -50,6 +52,9 @@ def test_suppliers5():
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
+
+    #--- SCENARIO 19: customer-2 added direct API device and able to accept remote web-socket connections
+    scenarios.scenario19()
     
     #--- SCENARIO 8: customer-1 added routed API device and able to accept remote web-socket connections
     scenarios.scenario8()

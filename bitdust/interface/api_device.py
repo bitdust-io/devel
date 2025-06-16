@@ -42,6 +42,7 @@ _APILogFileEnabled = False
 #------------------------------------------------------------------------------
 
 import os
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -56,12 +57,15 @@ from bitdust.logs import lg
 from bitdust.automats import automat
 
 from bitdust.lib import jsn
+from bitdust.lib import strng
 
 from bitdust.main import settings
 
 from bitdust.system import local_fs
 
 from bitdust.crypt import rsa_key
+from bitdust.crypt import cipher
+from bitdust.crypt import hashes
 
 from bitdust.services import driver
 
@@ -92,6 +96,7 @@ def init():
     _AllAPIMethods.difference_update(
         [
             # TODO: keep that list up to date when changing the api
+            'reactor',
             'on_api_result_prepared',
             'Deferred',
             'ERROR',
@@ -222,7 +227,7 @@ def validate_device_name(device_name):
 #------------------------------------------------------------------------------
 
 
-def add_encrypted_device(device_name, port_number=None, key_size=4096):
+def add_encrypted_device(device_name, host='localhost', port_number=None, key_size=4096):
     global _Devices
     validate_device_name(device_name)
     if device_name in _Devices:
@@ -230,14 +235,15 @@ def add_encrypted_device(device_name, port_number=None, key_size=4096):
     if not port_number:
         port_number = settings.DefaultWebSocketEncryptedPort()
     if _Debug:
-        lg.args(_DebugLevel, device_name=device_name, port_number=port_number)
+        lg.args(_DebugLevel, device_name=device_name, host=host, port_number=port_number)
     if len(_Devices) >= 1:
-        raise Exception('currently it is only possible to connect one remote device')
+        raise Exception('currently it is not possible to connect more than one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
     device_key_object.active = False
     device_key_object.meta['routed'] = False
+    device_key_object.meta['host'] = host
     device_key_object.meta['port_number'] = port_number
     device_key_object.meta['auth_token'] = None
     device_key_object.meta['session_key'] = None
@@ -258,7 +264,7 @@ def add_routed_device(device_name, key_size=4096):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name)
     if len(_Devices) >= 1:
-        raise Exception('currently it is only possible to connect one remote device')
+        raise Exception('currently it is not possible to connect more than one remote device')
     device_key_object = APIDevice()
     device_key_object.generate(key_size)
     device_key_object.label = device_name
@@ -341,13 +347,19 @@ def start_device(device_name, listening_callback=None, client_code_input_callbac
             _Instances.pop(device_name)
             del inst
         else:
-            raise Exception('device %r was already started' % device_name)
+            lg.warn('device %r was already started' % device_name)
+            if listening_callback:
+                reactor.callLater(0, listening_callback, True)  # @UndefinedVariable
+            return inst
     if device_key_object.meta['routed']:
         if not driver.is_on('service_web_socket_communicator'):
             raise Exception('required service_web_socket_communicator() is not currently ON')
         inst = routed_web_socket.RoutedWebSocket()
     else:
-        inst = encrypted_web_socket.EncryptedWebSocket(port_number=device_key_object.meta['port_number'])
+        inst = encrypted_web_socket.EncryptedWebSocket(
+            host=device_key_object.meta.get('host') or 'localhost',
+            port_number=device_key_object.meta['port_number'],
+        )
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name, instance=inst)
     _Instances[device_name] = inst
@@ -441,6 +453,54 @@ def reset_authorization(device_name):
     if not device_key_object.save():
         return False
     return True
+
+
+def request_authorization(device_name, client_public_key_text, client_code):
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name)
+    if not client_public_key_text.startswith('ssh-rsa '):
+        client_public_key_text = 'ssh-rsa ' + client_public_key_text
+    try:
+        client_key_object = rsa_key.RSAKey()
+        client_key_object.fromString(client_public_key_text)
+    except Exception as exc:
+        raise Exception('failed reading public key: %s' % str(exc))
+    validate_device_name(device_name)
+    device_key_object = devices(device_name)
+    if not device_key_object:
+        raise Exception('device %r does not exist' % device_name)
+    if instances(device_name):
+        stop_device(device_name)
+    device_key_object.meta['auth_token'] = cipher.generate_secret_text(10)
+    device_key_object.meta['session_key'] = strng.to_text(base64.b64encode(cipher.make_key()))
+    device_key_object.meta['client_public_key'] = client_key_object.toPublicString()
+    if not device_key_object.save():
+        return None
+    auth_info, signature = encrypt_auth_info(
+        device_key_object=device_key_object,
+        auth_token=device_key_object.meta['auth_token'],
+        session_key=base64.b64decode(strng.to_bin(device_key_object.meta['session_key'])),
+        client_public_key_object=client_key_object,
+        client_code=client_code,
+    )
+    return {
+        'auth_info': auth_info,
+        'signature': signature,
+        'server_public_key': device_key_object.toPublicString(),
+    }
+
+
+#------------------------------------------------------------------------------
+
+
+def encrypt_auth_info(device_key_object, auth_token, session_key, client_public_key_object, client_code):
+    session_key_text = strng.to_text(base64.b64encode(session_key))
+    salted_payload = '{}#{}#{}#{}'.format(client_code, auth_token, session_key_text, cipher.generate_secret_text(32))
+    encrypted_payload = base64.b64encode(client_public_key_object.encrypt(strng.to_bin(salted_payload)))
+    hashed_payload = hashes.sha1(strng.to_bin(salted_payload))
+    auth_info = strng.to_text(encrypted_payload)
+    signature = strng.to_text(device_key_object.sign(hashed_payload))
+    return auth_info, signature
 
 
 #------------------------------------------------------------------------------

@@ -453,7 +453,15 @@ class RoutedWebSocket(automat.Automat):
         self.client_connected = False
         self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=5)
         self.min_router_connections = config.conf().getInt('services/web-socket-communicator/min-connections', default=3)
-        super(RoutedWebSocket, self).__init__(name='routed_web_socket', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
+        super(RoutedWebSocket, self).__init__(
+            name='routed_web_socket',
+            state='AT_STARTUP',
+            debug_level=debug_level,
+            log_events=log_events,
+            log_transitions=log_transitions,
+            publish_events=publish_events,
+            **kwargs,
+        )
 
     def __repr__(self):
         """
@@ -523,14 +531,14 @@ class RoutedWebSocket(automat.Automat):
             self.client_connected = True
             self.event('api-message', url=url, json_data=json_data)
             return True
-        if cmd == 'handshake-accepted':
+        if cmd == 'handshake-accepted' or cmd == 'router-handshake-accepted':
             if self.state not in ['WEB_SOCKET?', 'CLIENT_PUB?', 'READY']:
                 lg.warn('received handshake-accepted signal from %r, but web socket is currently in state: %s' % (url, self.state))
                 return False
             route_url = json_data.get('route_url')
             if not route_url:
                 return False
-            self._on_web_socket_handshake_accepted(
+            self._on_web_socket_router_handshake_accepted(
                 internal_route_url=url,
                 external_route_url=route_url,
             )
@@ -970,6 +978,7 @@ class RoutedWebSocket(automat.Automat):
         hashed_server_public_key_base = hashes.sha1(server_public_key_base)
         if _Debug:
             lg.args(_DebugLevel, confirmation_code=confirmation_code)
+        # TODO: consider encrypting server public key and confirmation code with client public key
         self._do_push({
             'cmd': 'server-public-key',
             'server_public_key': server_public_key,
@@ -981,23 +990,18 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        client_code = kwargs['client_code']
-        session_key_text = strng.to_text(base64.b64encode(self.session_key))
-        salted_payload = '{}#{}#{}#{}'.format(client_code, self.auth_token, session_key_text, cipher.generate_secret_text(32))
-        # salted_payload = jsn.dumps({
-        #     'client_code': client_code,
-        #     'auth_token': self.auth_token,
-        #     'session_key': session_key_text,
-        #     'salt': cipher.generate_secret_text(32),
-        # })
-        encrypted_payload = base64.b64encode(self.client_key_object.encrypt(strng.to_bin(salted_payload)))
-        hashed_payload = hashes.sha1(strng.to_bin(salted_payload))
-        if _Debug:
-            lg.args(_DebugLevel, client_code=client_code)
+        from bitdust.interface import api_device
+        auth_info, signature = api_device.encrypt_auth_info(
+            client_code=kwargs['client_code'],
+            auth_token=self.auth_token,
+            session_key=self.session_key,
+            client_public_key_object=self.client_key_object,
+            device_key_object=self.device_key_object,
+        )
         self._do_push({
             'cmd': 'client-code',
-            'auth': strng.to_text(encrypted_payload),
-            'signature': strng.to_text(self.device_key_object.sign(hashed_payload)),
+            'auth': auth_info,
+            'signature': signature,
             'routers': self.handshaked_routers,
         })
 
@@ -1029,6 +1033,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
+        self.device_key_object.save()
         if _Debug:
             lg.args(_DebugLevel, event=event)
         if event == 'auth-error':
@@ -1144,7 +1149,7 @@ class RoutedWebSocket(automat.Automat):
                             dead_routers.append(router_host)
                     self.automat('router-disconnected', alive_routers=alive_routers, dead_routers=dead_routers, force_dht_lookup=True)
 
-    def _on_web_socket_handshake_accepted(self, internal_route_url, external_route_url):
+    def _on_web_socket_router_handshake_accepted(self, internal_route_url, external_route_url):
         if _Debug:
             lg.args(_DebugLevel, internal_route_url=internal_route_url, external_route_url=external_route_url)
         if not self.active_router_url and internal_route_url:

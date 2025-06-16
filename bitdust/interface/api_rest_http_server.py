@@ -390,6 +390,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             name=data['name'],
             routed=bool(data.get('routed', '0') in YES),
             activate=bool(data.get('activate', '0') in YES),
+            web_socket_host=data['web_socket_host'] if 'web_socket_host' in data else None,
             web_socket_port=int(data['web_socket_port']) if 'web_socket_port' in data else None,
             key_size=int(data['key_size']) if 'key_size' in data else None,
         )
@@ -413,6 +414,17 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             name=data['name'],
             start=bool(data.get('start', '1') in YES),
             wait_listening=bool(data.get('wait_listening', '0') in YES),
+        )
+
+    @POST('^/dev/a/req$')
+    @POST('^/v1/device/authorization/request$')
+    @POST('^/device/authorization/request/v1$')
+    def device_authorization_request_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name', 'client_public_key', 'client_code'])
+        return api.device_authorization_request(
+            name=data['name'],
+            client_public_key=data['client_public_key'],
+            client_code=data['client_code'],
         )
 
     @POST('^/dev/a/cc$')
@@ -1124,8 +1136,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/message/conversation/v1$')
     def message_conversation_v1(self, request):
         return api.message_conversations_list(
-            message_types=list(filter(None,
-                                      _request_arg(request, 'message_types', '').split(','))),
+            message_types=_request_arg(request, 'message_types', ''),
             offset=int(_request_arg(request, 'offset', '0')),
             limit=int(_request_arg(request, 'limit', '100')),
         )

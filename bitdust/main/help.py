@@ -43,9 +43,12 @@ Commands:
   show
   alias
   device list
-  device add <direct | routed> <name>
-  device authorize <name>
+  device add direct <name> <host> <port> [key size]
+  device add routed <name> [key size]
   device remove <name>
+  device enable <name>
+  device disable <name>
+  device authorize <name> [client code] [client public key]
   id
   idurl
   identity create <username> [private key size]
@@ -118,12 +121,28 @@ Commands:
   alias                 helper to create a binary command-alias in OS,
                         you can put it in /usr/local/bin/bitdust
 
-  device list           list details of your paired remote devices
+  device list           list details of your remote devices
 
   device add <direct | routed> <name>
-                        prepare to pair a new device to be able to connect to that node remotely
+                        add a new device configuration to be able to connect to that node remotely
 
-  device remote <name>  remove paired remote device configuration
+  device add direct <name> <host> <port> [key size]
+                        add a new device configuration to be able to connect to that node remotely
+
+  device add routed <name> [key size]
+                        add a new device configuration to organize a secure routed connection
+                        encrypted traffic between that node and your remote device will be routed
+                        via intermediate nodes, this is useful when your network is restricted
+
+  device remove <name>  remove device configuration
+
+  device enable <name>  enable device configuration and make remote connections possible
+
+  device disable <name>
+                        disable device configuration and block remote connections
+
+  device authorize <name> [client code] [client public key]
+                        start authorization procedure of a remote device
 
   key delete <key_id>
                         erase given private key

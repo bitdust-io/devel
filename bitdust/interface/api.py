@@ -223,7 +223,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
 #------------------------------------------------------------------------------
 
 
-def enable_model_listener(model_name, request_all=False):
+def enable_model_listener(model_name: str, request_all: bool = False):
     """
     When using WebSocket API interface you can get advantage of real-time data streaming and receive additional information when certain things
     are changing in the engine. Any updates to those instances will be automatically populated to the WebSocket connection.
@@ -248,7 +248,7 @@ def enable_model_listener(model_name, request_all=False):
     return OK()
 
 
-def disable_model_listener(model_name):
+def disable_model_listener(model_name: str):
     """
     Stop live streaming of all updates regarding given data type to the WebSocket connection.
 
@@ -283,7 +283,7 @@ def disable_model_listener(model_name):
     return OK()
 
 
-def request_model_data(model_name, query_details=None):
+def request_model_data(model_name: str, query_details: dict = None):
     """
     The engine will try to immediately populate all data related to the given model type to the WebSocket, one time only.
 
@@ -359,7 +359,7 @@ def request_model_data(model_name, query_details=None):
 #------------------------------------------------------------------------------
 
 
-def chunk_read(path, offset, max_size=1024*32):
+def chunk_read(path: str, offset: int, max_size: int = 1024*32):
     """
     Requests chunk of data from a local file. Used to download a file via WebSocket stream.
 
@@ -383,7 +383,7 @@ def chunk_read(path, offset, max_size=1024*32):
     return OK({'chunk': raw_data})
 
 
-def chunk_write(data, path=None):
+def chunk_write(data: str, path: str = None):
     """
     Writes chunk of data to a local file. Used to upload a file via WebSocket stream.
 
@@ -417,7 +417,7 @@ def chunk_write(data, path=None):
 #------------------------------------------------------------------------------
 
 
-def process_stop(instant=True):
+def process_stop(instant: bool = True):
     """
     Stop the main process immediately.
 
@@ -643,7 +643,7 @@ def process_debug():
 #------------------------------------------------------------------------------
 
 
-def devices_list(sort=False):
+def devices_list(sort: bool = False):
     """
     List all registered configurations of your configured API devices.
 
@@ -671,7 +671,7 @@ def devices_list(sort=False):
         device_instance = api_device.instances(device_name)
         if device_instance:
             result['instance'] = device_instance.to_json()
-            result['instance'].pop('device_name')
+            result['instance'].pop('device_name', None)
             result['url'] = result['instance'].pop('url', None)
         results.append(result)
     if sort:
@@ -679,7 +679,7 @@ def devices_list(sort=False):
     return RESULT(results)
 
 
-def device_info(name):
+def device_info(name: str):
     """
     Returns detailed info about given API device.
 
@@ -703,12 +703,12 @@ def device_info(name):
     if not device_instance:
         return OK(result)
     result['instance'] = device_instance.to_json()
-    result['instance'].pop('device_name')
+    result['instance'].pop('device_name', None)
     result['url'] = result['instance'].pop('url', None)
     return OK(result)
 
 
-def device_add(name, routed=False, activate=True, wait_listening=False, web_socket_port=None, key_size=None):
+def device_add(name: str, routed: bool = False, activate: bool = True, wait_listening: bool = False, web_socket_host: str = 'localhost', web_socket_port: int = None, key_size: int = None):
     """
     Register a new API device configuration to be able to access this BitDust node remotely.
 
@@ -743,22 +743,22 @@ def device_add(name, routed=False, activate=True, wait_listening=False, web_sock
     if _Debug:
         lg.args(_DebugLevel, name=name, routed=routed, activate=activate, web_socket_port=web_socket_port, key_size=key_size)
     try:
-        if routed:
+        if routed in ('true', 'True', True, 1, '1', 'yes', 'YES'):
             if not driver.is_on('service_web_socket_communicator'):
                 return ERROR('required service_web_socket_communicator() is not currently ON')
             ret = api_device.add_routed_device(device_name=name, key_size=key_size)
         else:
-            ret = api_device.add_encrypted_device(device_name=name, port_number=web_socket_port, key_size=key_size)
+            ret = api_device.add_encrypted_device(device_name=name, host=web_socket_host, port_number=web_socket_port, key_size=key_size)
     except Exception as exc:
         return ERROR(exc)
     if not ret:
         return ERROR('failed to created device')
-    if not activate:
+    if activate not in ('true', 'True', True, 1, '1', 'yes', 'YES'):
         return device_info(name)
-    return device_start(name, wait_listening=wait_listening)
+    return device_start(name, wait_listening=(wait_listening in ('true', 'True', True, 1, '1', 'yes', 'YES')))
 
 
-def device_start(name, wait_listening=False):
+def device_start(name: str, wait_listening: bool = False):
     """
     Activates given API device and start accepting incoming connections.
 
@@ -796,7 +796,36 @@ def device_start(name, wait_listening=False):
     return ret
 
 
-def device_authorization_reset(name, start=True, wait_listening=False):
+def device_authorization_request(name: str, client_public_key: str, client_code: str):
+    """
+    This is another way to authorize a remote device configuration.
+
+    The `client_public_key` and `client_code` are generated on the remote device.
+    Result data from that call needs to be decrypted and processed on the remote device to complete authorisation procedure.
+
+    This makes possible to authorize a remote device without entering the client and server 4 digits codes.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/authorization/request/v1' -d '{"name": "my_iPhone_12", "client_public_key": "AAAAB3Nza...", "client_code": "1234"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_authorization_request", "kwargs": {"name": "my_iPhone_12", "client_public_key": "AAAAB3Nza...", "client_code": "1234"} }');
+    """
+    from bitdust.interface import api_device
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
+    try:
+        result = api_device.request_authorization(
+            device_name=name,
+            client_public_key_text=client_public_key,
+            client_code=client_code,
+        )
+    except Exception as exc:
+        return ERROR(exc)
+    return OK(result)
+
+
+def device_authorization_reset(name: str, start: bool = True, wait_listening: bool = False):
     """
     To be called when given device needs to be authorized again.
 
@@ -818,9 +847,9 @@ def device_authorization_reset(name, start=True, wait_listening=False):
     return device_start(name, wait_listening=wait_listening)
 
 
-def device_authorization_client_code(name, client_code):
+def device_authorization_client_code(name: str, client_code: str):
     """
-    Must be called during authorization preocedure to provide client code entered by the user manually.
+    Must be called during authorization procedure to provide client code entered by the user manually.
 
     ###### HTTP
         curl -X POST 'localhost:8180/device/authorization/client_code/v1' -d '{"name": "my_iPhone_12", "client_code": "1234"}'
@@ -838,7 +867,7 @@ def device_authorization_client_code(name, client_code):
     return OK()
 
 
-def device_stop(name):
+def device_stop(name: str):
     """
     This will stop accepting incoming connections from given API device and deactivate it.
 
@@ -864,7 +893,7 @@ def device_stop(name):
     return device_info(name)
 
 
-def device_remove(name):
+def device_remove(name: str):
     """
     Removes stored configuration of the given API device.
 
@@ -942,7 +971,7 @@ def device_router_info():
 #------------------------------------------------------------------------------
 
 
-def network_create(url):
+def network_create(url: str):
     """
     This method is a way to load a new custom network configuration for this BitDust node.
 
@@ -1035,7 +1064,7 @@ def network_create(url):
     return ret
 
 
-def network_select(name):
+def network_select(name: str):
     """
     Use this method to switch between different, previously loaded, network configurations.
     Only one network configuration can be active at a moment.
@@ -1077,7 +1106,7 @@ def network_select(name):
     return ret
 
 
-def network_connected(wait_timeout=5):
+def network_connected(wait_timeout: int = 5):
     """
     Method can be used by clients to ensure BitDust application is connected to other nodes in the network.
 
@@ -1146,7 +1175,7 @@ def network_reconnect():
     return OK(message='reconnected')
 
 
-def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp=False, proxy=False, dht=False):
+def network_status(suppliers: bool = False, customers: bool = False, cache: bool = False, tcp: bool = False, udp: bool = False, proxy: bool = False, dht: bool = False):
     """
     Returns detailed info about current network status, protocols and active connections.
 
@@ -1390,7 +1419,7 @@ def network_configuration():
     return OK(driver.get_network_configuration())
 
 
-def network_stun(udp_port=None, dht_port=None):
+def network_stun(udp_port: int = None, dht_port: int = None):
     """
     Begins network STUN process to detect your network configuration and current external IP address of that host.
 
@@ -1410,7 +1439,7 @@ def network_stun(udp_port=None, dht_port=None):
 #------------------------------------------------------------------------------
 
 
-def config_get(key, include_info=False):
+def config_get(key: str, include_info: bool = False):
     """
     Returns current key/value from the program settings.
 
@@ -1450,7 +1479,7 @@ def config_get(key, include_info=False):
     return RESULT(childs)
 
 
-def config_set(key, value):
+def config_set(key: str, value: str):
     """
     Set a value for given key option.
 
@@ -1477,7 +1506,7 @@ def config_set(key, value):
     ])
 
 
-def configs_list(sort=False, include_info=False):
+def configs_list(sort: bool = False, include_info: bool = False):
     """
     Provide detailed info about all program settings.
 
@@ -1496,7 +1525,7 @@ def configs_list(sort=False, include_info=False):
     return RESULT(r)
 
 
-def configs_tree(include_info=False):
+def configs_tree(include_info: bool = False):
     """
     Returns all options as a tree structure, can be more suitable for UI operations.
 
@@ -1524,7 +1553,7 @@ def configs_tree(include_info=False):
 #------------------------------------------------------------------------------
 
 
-def identity_get(include_xml_source=False):
+def identity_get(include_xml_source: bool = False):
     """
     Returns your identity info.
 
@@ -1543,7 +1572,7 @@ def identity_get(include_xml_source=False):
     return OK(r)
 
 
-def identity_create(username, preferred_servers=[], join_network=False):
+def identity_create(username: str, preferred_servers: str = '', join_network: bool = False):
     """
     Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
 
@@ -1596,11 +1625,11 @@ def identity_create(username, preferred_servers=[], join_network=False):
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
-    my_id_registrator.A('start', username=username, preferred_servers=preferred_servers)
+    my_id_registrator.A('start', username=username, preferred_servers=(preferred_servers.strip().split(',') if preferred_servers.strip() else []))
     return ret
 
 
-def identity_backup(destination_filepath):
+def identity_backup(destination_filepath: str):
     """
     Creates local file at `destination_filepath` on your disk drive with a backup copy of your private key and recent IDURL.
 
@@ -1633,7 +1662,7 @@ def identity_backup(destination_filepath):
     return OK(message='WARNING! keep the master key in a safe place and never publish it anywhere!')
 
 
-def identity_recover(private_key_source, known_idurl=None, join_network=False):
+def identity_recover(private_key_source: str, known_idurl: str = None, join_network: bool = False):
     """
     Restores your identity from backup copy.
 
@@ -1710,7 +1739,7 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
     return ret
 
 
-def identity_erase(erase_private_key=False):
+def identity_erase(erase_private_key: bool = False):
     """
     Method will erase current identity file and the private key (optionally).
     All network services will be stopped first.
@@ -1787,7 +1816,7 @@ def identity_cache_list():
 #------------------------------------------------------------------------------
 
 
-def key_get(key_id, include_private=False, include_signature=False, generate_signature=False):
+def key_get(key_id: str, include_private: bool = False, include_signature: bool = False, generate_signature: bool = False):
     """
     Returns details of the registered public or private key.
 
@@ -1817,7 +1846,7 @@ def key_get(key_id, include_private=False, include_signature=False, generate_sig
     return OK(key_info)
 
 
-def keys_list(sort=False, include_private=False):
+def keys_list(sort: bool = False, include_private: bool = False):
     """
     List details for all registered public and private keys.
 
@@ -1852,7 +1881,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=None, label='', active=True, include_private=False):
+def key_create(key_alias: str, key_size: int = None, label: str = '', active: bool = True, include_private: bool = False):
     """
     Generate new RSA private key and add it to the list of registered keys with a new `key_id`.
 
@@ -1904,7 +1933,7 @@ def key_create(key_alias, key_size=None, label='', active=True, include_private=
     )
 
 
-def key_label(key_id, label):
+def key_label(key_id: str, label: str):
     """
     Set new label for the given key.
 
@@ -1934,7 +1963,7 @@ def key_label(key_id, label):
     return OK(message='label for the key %s updated successfully' % key_id)
 
 
-def key_state(key_id, active):
+def key_state(key_id: str, active: bool):
     """
     Set active/inactive state for the given key.
     If key was set to "inactive" state, certain parts of the software will not use it.
@@ -1964,7 +1993,7 @@ def key_state(key_id, active):
     return OK(message='active state for the key %s updated successfully' % key_id)
 
 
-def key_erase(key_id):
+def key_erase(key_id: str):
     """
     Unregister and remove given key from the list of known keys and erase local file.
 
@@ -1990,7 +2019,7 @@ def key_erase(key_id):
     return OK(message='key %s was erased' % key_id)
 
 
-def key_share(key_id, trusted_user_id, include_private=False, include_signature=False, timeout=30):
+def key_share(key_id: str, trusted_user_id: str, include_private: bool = False, include_signature: bool = False, timeout: int = 30):
     """
     Connects to remote user and transfer given public or private key to that node.
     This way you can share access to files/groups/resources with other users in the network.
@@ -2027,7 +2056,7 @@ def key_share(key_id, trusted_user_id, include_private=False, include_signature=
     return ret
 
 
-def key_audit(key_id, untrusted_user_id, is_private=False, timeout=None):
+def key_audit(key_id: str, untrusted_user_id: str, is_private: bool = False, timeout: int = None):
     """
     Connects to remote node identified by `untrusted_user_id` parameter and request audit of given public or private key `key_id` on that node.
 
@@ -2068,9 +2097,9 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=None):
 #------------------------------------------------------------------------------
 
 
-def files_sync(force=False):
+def files_sync(force: bool = False):
     """
-    This should re-start "data synchronization" process with your remote suppliers.
+    This should restart "data synchronization" process with your remote suppliers.
 
     Normally all communications and synchronizations are handled automatically, so you do not need to
     call that method.
@@ -2097,7 +2126,7 @@ def files_sync(force=False):
     return OK('the main files sync loop has been restarted')
 
 
-def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False, include_uploads=False, include_downloads=False):
+def files_list(remote_path: str = None, key_id: str = None, recursive: bool = True, all_customers: bool = False, include_uploads: bool = False, include_downloads: bool = False):
     """
     Returns list of all known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
@@ -2289,7 +2318,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     )
 
 
-def file_exists(remote_path):
+def file_exists(remote_path: str):
     """
     Returns positive result if file or folder with such `remote_path` already exists in the catalog.
 
@@ -2341,7 +2370,7 @@ def file_exists(remote_path):
     }, )
 
 
-def file_info(remote_path, include_uploads=True, include_downloads=True):
+def file_info(remote_path: str, include_uploads: bool = True, include_downloads: bool = True):
     """
     Returns detailed info about given file or folder in the catalog.
 
@@ -2476,7 +2505,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     return OK(r)
 
 
-def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None):
+def file_create(remote_path: str, as_folder: bool = False, exist_ok: bool = False, force_path_id: str = None):
     """
     Creates new file in the catalog, but do not upload any data to the network yet.
 
@@ -2612,7 +2641,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     )
 
 
-def file_delete(remote_path):
+def file_delete(remote_path: str):
     """
     Removes virtual file or folder from the catalog and also notifies your remote suppliers to clean up corresponding uploaded data.
 
@@ -2698,7 +2727,7 @@ def file_delete(remote_path):
     )
 
 
-def files_uploads(include_running=True, include_pending=True):
+def files_uploads(include_running: bool = True, include_pending: bool = True):
     """
     Returns a list of currently running uploads and list of pending items to be uploaded.
 
@@ -2752,7 +2781,7 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=False, publish_events=False):
+def file_upload_start(local_path: str, remote_path: str, wait_result: bool = False, publish_events: bool = False):
     """
     Starts a new file or folder (including all sub-folders and files) upload from `local_path` on your disk drive
     to the virtual location `remote_path` in the catalog. New "version" of the data will be created for given catalog item
@@ -2855,7 +2884,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     )
 
 
-def file_upload_stop(remote_path):
+def file_upload_stop(remote_path: str):
     """
     Useful method if you need to interrupt and cancel already running uploading task.
 
@@ -2934,7 +2963,7 @@ def files_downloads():
     )
 
 
-def file_download_start(remote_path, destination_path=None, wait_result=False, publish_events=False):
+def file_download_start(remote_path: str, destination_path: str = None, wait_result: bool = False, publish_events: bool = False):
     """
     Download data from remote suppliers to your local machine.
 
@@ -3153,7 +3182,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     return ret
 
 
-def file_download_stop(remote_path):
+def file_download_stop(remote_path: str):
     """
     Abort currently running restore process.
 
@@ -3219,7 +3248,7 @@ def file_download_stop(remote_path):
     return RESULT(r)
 
 
-def file_explore(local_path):
+def file_explore(local_path: str):
     """
     Useful method to be executed from inside of the UI application right after downloading is finished.
 
@@ -3244,7 +3273,7 @@ def file_explore(local_path):
 #------------------------------------------------------------------------------
 
 
-def shares_list(only_active=False, include_mine=True, include_granted=True):
+def shares_list(only_active: bool = False, include_mine: bool = True, include_granted: bool = True):
     """
     Returns a list of registered "shares" - encrypted locations where you can upload/download files.
 
@@ -3321,7 +3350,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
-def share_info(key_id):
+def share_info(key_id: str):
     """
     Returns detailed info about given shared location.
 
@@ -3379,7 +3408,7 @@ def share_info(key_id):
     return OK(this_share.to_json())
 
 
-def share_create(owner_id=None, key_size=None, label='', active=True):
+def share_create(owner_id: str = None, key_size: int = None, label: str = '', active: bool = True):
     """
     Creates a new "share" - virtual location where you or other users can upload/download files.
 
@@ -3441,7 +3470,7 @@ def share_create(owner_id=None, key_size=None, label='', active=True):
     )
 
 
-def share_delete(key_id):
+def share_delete(key_id: str):
     """
     Stop the active share identified by the `key_id` and erase the private key.
 
@@ -3470,7 +3499,7 @@ def share_delete(key_id):
     )
 
 
-def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
+def share_grant(key_id: str, trusted_user_id: str, timeout: int = 45, publish_events: bool = True):
     """
     Provide access to given share identified by `key_id` to another trusted user.
 
@@ -3523,7 +3552,7 @@ def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
     return ret
 
 
-def share_open(key_id, publish_events=False):
+def share_open(key_id: str, publish_events: bool = False):
     """
     Activates given share and initiate required connections to remote suppliers to make possible to upload and download shared files.
 
@@ -3580,7 +3609,7 @@ def share_open(key_id, publish_events=False):
     return ret
 
 
-def share_close(key_id):
+def share_close(key_id: str):
     """
     Disconnects and deactivate given share location.
 
@@ -3624,7 +3653,7 @@ def share_history():
 #------------------------------------------------------------------------------
 
 
-def groups_list(only_active=False, include_mine=True, include_granted=True):
+def groups_list(only_active: bool = False, include_mine: bool = True, include_granted: bool = True):
     """
     Returns a list of registered message groups.
 
@@ -3706,7 +3735,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
-def group_create(creator_id=None, key_size=None, label='', timeout=30):
+def group_create(creator_id: str = None, key_size: int = None, label: str = '', timeout: int = 30):
     """
     Creates a new messaging group.
 
@@ -3747,7 +3776,7 @@ def group_create(creator_id=None, key_size=None, label='', timeout=30):
     return ret
 
 
-def group_info(group_key_id):
+def group_info(group_key_id: str):
     """
     Returns detailed info about the message group identified by `group_key_id`.
 
@@ -3797,7 +3826,7 @@ def group_info(group_key_id):
     return OK(response)
 
 
-def group_info_dht(group_creator_id):
+def group_info_dht(group_creator_id: str):
     """
     Read and return list of message brokers stored in the corresponding DHT records for given user.
 
@@ -3834,7 +3863,7 @@ def group_info_dht(group_creator_id):
     return ret
 
 
-def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_result=True):
+def group_join(group_key_id: str, publish_events: bool = False, use_dht_cache: bool = True, wait_result: bool = True):
     """
     Activates given messaging group to be able to receive streamed messages or send a new message to the group.
 
@@ -3917,7 +3946,7 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
     return ret
 
 
-def group_leave(group_key_id, erase_key=False):
+def group_leave(group_key_id: str, erase_key: bool = False):
     """
     Deactivates given messaging group. If `erase_key=True` will also erase the private key related to that group.
 
@@ -3955,7 +3984,7 @@ def group_leave(group_key_id, erase_key=False):
     return OK(message='group deactivated', result=result_json)
 
 
-def group_reconnect(group_key_id, use_dht_cache=False):
+def group_reconnect(group_key_id: str, use_dht_cache: bool = False):
     """
     Refreshing given messaging group - disconnect from the group first and then join again.
     Helpful method to reconnect with the group suppliers effectively.
@@ -3985,7 +4014,7 @@ def group_reconnect(group_key_id, use_dht_cache=False):
     return ret
 
 
-def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False):
+def group_share(group_key_id: str, trusted_user_id: str, timeout: int = 45, publish_events: bool = False):
     """
     Provide access to given group identified by `group_key_id` to another trusted user.
 
@@ -4075,7 +4104,7 @@ def friends_list():
     return RESULT(result)
 
 
-def friend_add(trusted_user_id, alias='', share_person_key=True):
+def friend_add(trusted_user_id: str, alias: str = '', share_person_key: bool = True):
     """
     Add user to the list of correspondents.
 
@@ -4150,7 +4179,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     return ret
 
 
-def friend_remove(user_id):
+def friend_remove(user_id: str):
     """
     Removes given user from the list of correspondents.
 
@@ -4198,7 +4227,7 @@ def friend_remove(user_id):
 #------------------------------------------------------------------------------
 
 
-def user_ping(user_id, timeout=None, retries=1):
+def user_ping(user_id: str, timeout: int = None, retries: int = 1):
     """
     Sends `Identity` packet to remote peer and wait for an `Ack` packet to check connection status.
 
@@ -4234,7 +4263,7 @@ def user_ping(user_id, timeout=None, retries=1):
     return ret
 
 
-def user_status(user_id):
+def user_status(user_id: str):
     """
     Returns short info about current on-line status of the given user.
 
@@ -4266,7 +4295,7 @@ def user_status(user_id):
     })
 
 
-def user_status_check(user_id, timeout=None):
+def user_status_check(user_id: str, timeout: int = None):
     """
     Returns current online status of a user and only if node is known but disconnected performs "ping" operation.
 
@@ -4310,7 +4339,7 @@ def user_status_check(user_id, timeout=None):
     return ret
 
 
-def user_search(nickname, attempts=1):
+def user_search(nickname: str, attempts: int = 1):
     """
     Doing lookup of a single `nickname` registered in the DHT network.
 
@@ -4352,7 +4381,7 @@ def user_search(nickname, attempts=1):
     return ret
 
 
-def user_observe(nickname, attempts=3):
+def user_observe(nickname: str, attempts: int = 3):
     """
     Reads all records registered for given `nickname` in the DHT network.
 
@@ -4449,7 +4478,7 @@ def user_observe(nickname, attempts=3):
 #------------------------------------------------------------------------------
 
 
-def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
+def message_history(recipient_id: str = None, sender_id: str = None, message_type: str = None, offset: int = 0, limit: int = 100):
     """
     Returns chat communications history stored for given user or messaging group.
 
@@ -4511,7 +4540,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     return RESULT(messages)
 
 
-def message_conversations_list(message_types=[], offset=0, limit=100):
+def message_conversations_list(message_types: str = '', offset: int = 0, limit: int = 100):
     """
     Returns list of all known conversations with other users.
     Parameter `message_types` can be used to select conversations of specific types: `group_message`, `private_message`, `personal_message`.
@@ -4527,7 +4556,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     from bitdust.chat import message_database
     conversations = message_database.fetch_conversations(
         order_by_time=True,
-        message_types=message_types,
+        message_types=message_types.strip().split(',') if message_types.strip() else [],
         offset=offset,
         limit=limit,
     )
@@ -4536,7 +4565,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     return RESULT(conversations)
 
 
-def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
+def message_send(recipient_id: str, data: str, ping_timeout: int = 15, message_ack_timeout: int = 15):
     """
     Sends a private message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
 
@@ -4611,7 +4640,7 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
     return ret
 
 
-def message_send_group(group_key_id, data):
+def message_send_group(group_key_id: str, data: str):
     """
     Sends a "group_message" to a group of users.
 
@@ -4672,7 +4701,7 @@ def message_send_group(group_key_id, data):
 #     return RESULT([msg, current_states, ])
 
 
-def message_receive(consumer_callback_id, direction='incoming', message_types='private_message,group_message', polling_timeout=60):
+def message_receive(consumer_callback_id: str, direction: str = 'incoming', message_types: str = 'private_message,group_message', polling_timeout: int = 60):
     """
     This method can be used by clients to listen and process streaming messages.
 
@@ -4701,8 +4730,7 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
     from bitdust.stream import message
     from bitdust.p2p import p2p_service
     ret = Deferred()
-    if strng.is_text(message_types):
-        message_types = message_types.split(',')
+    message_types = message_types.strip().split(',')
 
     def _on_pending_messages(pending_messages):
         result = []
@@ -4767,7 +4795,7 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
 #------------------------------------------------------------------------------
 
 
-def suppliers_list(customer_id=None, verbose=False):
+def suppliers_list(customer_id: str = None, verbose: bool = False):
     """
     This method returns a list of your suppliers.
     Those nodes are holding each and every encrypted file created by you or file uploaded by other users that still belongs to you.
@@ -4845,7 +4873,7 @@ def suppliers_list(customer_id=None, verbose=False):
     return RESULT(results)
 
 
-def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
+def supplier_change(position: int = None, supplier_id: str = None, new_supplier_id: str = None):
     """
     The method will execute a fire/hire process for given supplier. You can specify which supplier to be replaced by position or ID.
 
@@ -4930,7 +4958,7 @@ def suppliers_ping():
     return OK(message='sent requests to all suppliers')
 
 
-def suppliers_list_dht(customer_id=None):
+def suppliers_list_dht(customer_id: str = None):
     """
     Scans DHT network for key-value pairs related to given customer and returns a list its suppliers.
 
@@ -4964,7 +4992,7 @@ def suppliers_list_dht(customer_id=None):
 #------------------------------------------------------------------------------
 
 
-def customers_list(verbose=False):
+def customers_list(verbose: bool = False):
     """
     Method returns list of your customers - nodes for whom you are storing data on that host.
 
@@ -5022,7 +5050,7 @@ def customers_list(verbose=False):
     return RESULT(results)
 
 
-def customer_reject(customer_id, erase_customer_key=True):
+def customer_reject(customer_id: str, erase_customer_key: bool = True):
     """
     Stop supporting given customer, remove all related files from local disc, close connections with that node.
 
@@ -5162,7 +5190,7 @@ def space_local():
 #------------------------------------------------------------------------------
 
 
-def services_list(with_configs=False, as_tree=False):
+def services_list(with_configs: bool = False, as_tree: bool = False):
     """
     Returns detailed info about all currently running network services.
 
@@ -5196,7 +5224,7 @@ def services_list(with_configs=False, as_tree=False):
     return RESULT(result)
 
 
-def service_info(service_name):
+def service_info(service_name: str):
     """
     Returns detailed info about single service.
 
@@ -5212,7 +5240,7 @@ def service_info(service_name):
     return OK(svc_info)
 
 
-def service_start(service_name):
+def service_start(service_name: str):
     """
     Starts given service immediately.
 
@@ -5248,7 +5276,7 @@ def service_start(service_name):
     return OK(message='service %s switched on' % service_name)
 
 
-def service_stop(service_name):
+def service_stop(service_name: str):
     """
     Stop given service immediately.
 
@@ -5284,7 +5312,7 @@ def service_stop(service_name):
     return OK(message='service %s switched off' % service_name)
 
 
-def service_restart(service_name, wait_timeout=10):
+def service_restart(service_name: str, wait_timeout: int = 10):
     """
     This method will stop given service and start it again, but only if it is already enabled.
     It will not modify corresponding option for that service in the program settings.
@@ -5315,7 +5343,7 @@ def service_restart(service_name, wait_timeout=10):
     return ret
 
 
-def service_health(service_name):
+def service_health(service_name: str):
     """
     Method will execute "health check" procedure of the given service - each service defines its own way to verify that.
 
@@ -5470,7 +5498,7 @@ def transfers_list():
     return RESULT(result)
 
 
-def connections_list(protocols=None):
+def connections_list(protocols: str = None):
     """
     Returns list of opened/active network connections.
 
@@ -5480,7 +5508,7 @@ def connections_list(protocols=None):
         curl -X GET 'localhost:8180/connection/list/v1?protocols=tcp,udp,proxy'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "connections_list", "kwargs": {"protocols": ["tcp", "udp", "proxy"]} }');
+        websocket.send('{"command": "api_call", "method": "connections_list", "kwargs": {"protocols": "tcp,udp,proxy"]} }');
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
@@ -5488,7 +5516,9 @@ def connections_list(protocols=None):
     from bitdust.transport import gateway
     from bitdust.userid import global_id
     result = []
-    if not protocols:
+    if protocols:
+        protocols = protocols.split(',')
+    else:
         protocols = gateway.list_active_transports()
     for proto in protocols:
         if not gateway.is_ready():
@@ -5567,7 +5597,7 @@ def connections_list(protocols=None):
     return RESULT(result)
 
 
-def streams_list(protocols=None):
+def streams_list(protocols: str = None):
     """
     Returns list of running streams of data fragments with recent upload/download progress percentage.
 
@@ -5582,7 +5612,9 @@ def streams_list(protocols=None):
     from bitdust.transport import gateway
     from bitdust.lib import misc
     result = []
-    if not protocols:
+    if protocols:
+        protocols = protocols.split(',')
+    else:
         protocols = gateway.list_active_transports()
     for proto in protocols:
         if not gateway.is_ready():
@@ -5777,17 +5809,17 @@ def events_list():
     return OK(events.count())
 
 
-def event_send(event_id, data=None):
+def event_send(event_id: str, data: str = None):
     """
     Method will generate and inject a new event inside the main process.
 
     This method is provided for testing and development purposes.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/event/send/client-event-abc/v1' -d '{"data": {"some_key": "some_value"}}'
+        curl -X POST 'localhost:8180/event/send/event-abc/v1' -d '{"data": "{\"some_key\":\"some_value\"}"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "event_send", "kwargs": {"event_id": "client-event-produced", "data": {"some_key": "some_value"}} }');
+        websocket.send('{"command": "api_call", "method": "event_send", "kwargs": {"event_id": "event-abc", "data": "{\"some_key\":\"some_value\"}"} }');
     """
     from bitdust.main import events
     json_payload = data
@@ -5805,7 +5837,7 @@ def event_send(event_id, data=None):
     })
 
 
-def event_listen(consumer_callback_id):
+def event_listen(consumer_callback_id: str):
     """
     This method can be used by clients to listen and process all events fired inside the main process.
 
@@ -5847,7 +5879,7 @@ def event_listen(consumer_callback_id):
 #------------------------------------------------------------------------------
 
 
-def dht_node_find(node_id_64=None, layer_id=0):
+def dht_node_find(node_id_64: str = None, layer_id: int = 0):
     """
     Lookup "closest" (in terms of hashes and cryptography) DHT nodes to a given `node_id_64` value.
 
@@ -5903,7 +5935,7 @@ def dht_node_find(node_id_64=None, layer_id=0):
     return ret
 
 
-def dht_user_random(layer_id=0, count=1):
+def dht_user_random(layer_id: int = 0, count: int = 1):
     """
     Pick random live nodes from BitDust network.
 
@@ -5951,7 +5983,7 @@ def dht_user_random(layer_id=0, count=1):
     return ret
 
 
-def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=None):
+def dht_value_get(key: str, record_type: str = 'skip_validation', layer_id: int = 0, use_cache_ttl: int = None):
     """
     Fetch single key/value record from DHT network.
 
@@ -6022,15 +6054,15 @@ def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=
     return ret
 
 
-def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_id=0):
+def dht_value_set(key: str, value: str, expire: int = None, record_type: str = 'skip_validation', layer_id: int = 0):
     """
     Writes given key/value record into DHT network. Input parameter `value` must be a JSON value.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/dht/value/set/v1' -d '{"key": "abcd", "value": {"text": "A-B-C-D"}}'
+        curl -X POST 'localhost:8180/dht/value/set/v1' -d '{"key": "abcd", "value": "{\"text\":\"A-B-C-D\"}" }'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "dht_value_set", "kwargs": {"key": "abcd", "value": {"text": "A-B-C-D"}} }');
+        websocket.send('{"command": "api_call", "method": "dht_value_set", "kwargs": {"key": "abcd", "value": "{\"text\":\"A-B-C-D\"}"} }');
     """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
@@ -6224,15 +6256,15 @@ def blockchain_wallet_balance():
     })
 
 
-def blockchain_transaction_send(recipient, amount, operation='', data=''):
+def blockchain_transaction_send(recipient: str, amount: float, operation: str = '', data: str = ''):
     """
     Prepare and sign blockchain transaction and then send it to one of known blockchain nodes.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/blockchain/transaction/send/v1' -d '{"recipient": "abcd...", "amount": "12.3456"}'
+        curl -X POST 'localhost:8180/blockchain/transaction/send/v1' -d '{"recipient": "abcd...", "amount": 12.3456}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "blockchain_transaction_send", "kwargs": {"recipient": "abcd...", "amount": "12.3456"} }');
+        websocket.send('{"command": "api_call", "method": "blockchain_transaction_send", "kwargs": {"recipient": "abcd...", "amount": 12.3456} }');
     """
     if not driver.is_on('service_bismuth_wallet'):
         return ERROR('service_bismuth_wallet() is not started')
@@ -6316,7 +6348,7 @@ def automats_list():
     return OK(result)
 
 
-def automat_info(index=None, automat_id=None):
+def automat_info(index: int = None, automat_id: str = None):
     """
     Returns detailed info about given state machine.
 
@@ -6343,7 +6375,7 @@ def automat_info(index=None, automat_id=None):
     return OK(inst.to_json())
 
 
-def automat_events_start(index=None, automat_id=None, state_unchanged=False):
+def automat_events_start(index: int = None, automat_id: str = None, state_unchanged: bool = False):
     """
     Can be used to capture any state machine updates in real-time: state transitions, incoming events.
 
@@ -6355,10 +6387,10 @@ def automat_events_start(index=None, automat_id=None, state_unchanged=False):
     Target instance is selected using one of the identifiers: `index` (integer) or `automat_id` (string).
 
     ###### HTTP
-        curl -X POST 'localhost:8180/automat/events/start/v1' -d '{"index": 12345, "state_unchanged": 1}
+        curl -X POST 'localhost:8180/automat/events/start/v1' -d '{"index": 12345, "state_unchanged": true}
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "automat_events_start", "kwargs": {"index": 12345, "state_unchanged": 1} }');
+        websocket.send('{"command": "api_call", "method": "automat_events_start", "kwargs": {"index": 12345, "state_unchanged": true} }');
     """
     if index is None and automat_id is None:
         return ERROR('one of the identifiers must be provided')
@@ -6376,7 +6408,7 @@ def automat_events_start(index=None, automat_id=None, state_unchanged=False):
     return OK(message='started publishing events from the state machine', result=inst.to_json())
 
 
-def automat_events_stop(index=None, automat_id=None):
+def automat_events_stop(index: int = None, automat_id: str = None):
     """
     Turn off publishing of the state machine updates as events.
 
@@ -6402,6 +6434,3 @@ def automat_events_stop(index=None, automat_id=None):
         return ERROR('state machine instance was not found')
     inst.publishEvents(False, publish_event_state_not_changed=False)
     return OK(message='stopped publishing events from the state machine', result=inst.to_json())
-
-
-#------------------------------------------------------------------------------
