@@ -233,11 +233,11 @@ class RSAKey(object):
             result = True
         except (
             ValueError,
-            TypeError,
+            TypeError
         ) as exc:
             # do not raise any exception... just return False
             if _Debug:
-                print(exc, 'signature=%r message=%r' % (signature, message))
+                print(exc, 'signature=%r message=%r signed=%r label=%r meta=%r' % (signature, message, self.isSigned(), self.label, self.meta))
         if _Debug:
             if _CryptoLog:
                 print('verify', result, signature)

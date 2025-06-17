@@ -128,9 +128,9 @@ class RSAKey(object):
             self.local_key_id = key_dict.get('local_key_id', None)
             self.meta = key_dict.get('meta', {})
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
-                self.signed = (
-                    key_dict['signature'],
-                    key_dict['signature_pubkey'],
+                self.save_signed_info(
+                    signature_raw=key_dict['signature'],
+                    public_key_raw=key_dict['signature_pubkey'],
                 )
         del key_src
         # gc.collect()
@@ -240,12 +240,9 @@ class RSAKey(object):
         try:
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
-        except (
-            ValueError,
-            TypeError,
-        ):
+        except (ValueError, TypeError):
             # do not raise any exception... just return False
-            lg.exc('signature=%r message=%r' % (signature, message))
+            lg.exc('signature=%r message=%r signed=%r label=%r meta=%r' % (signature, message, self.isSigned(), self.label, self.meta))
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)
@@ -267,3 +264,6 @@ class RSAKey(object):
 
     def isSigned(self):
         return self.signed is not None
+
+    def save_signed_info(self, signature_raw, public_key_raw):
+        self.signed = (signature_raw, public_key_raw)
