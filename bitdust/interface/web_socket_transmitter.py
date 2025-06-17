@@ -211,7 +211,7 @@ def load_routes():
     routes_file_path = os.path.join(service_dir, 'routes')
     _Routes = jsn.loads_text(local_fs.ReadTextFile(routes_file_path)) or {}
     if _Debug:
-        lg.args(_DebugLevel, count=len(_Routes))
+        lg.args(_DebugLevel, count=len(_Routes or []))
 
 
 def save_routes():
