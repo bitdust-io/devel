@@ -825,6 +825,39 @@ def device_authorization_request(name: str, client_public_key: str, client_code:
     return OK(result)
 
 
+def device_authorization_generate(name: str, key_size: int = 2048):
+    """
+    Generates private key and all required info to authorize a device configuration.
+
+    This information must be securely copied to the target remote device and added to the web socket client.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/authorization/generate/v1' -d '{"name": "my_iPhone_12", "key_size": 4096}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_authorization_generate", "kwargs": {"name": "my_iPhone_12", "key_size": 4096} }');
+    """
+    from bitdust.interface import api_device
+    from bitdust.crypt import rsa_key
+    from bitdust.crypt import cipher
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
+    client_key_object = rsa_key.RSAKey(label=f'device_client_key_{name}')
+    client_key_object.generate(key_size)
+    client_code = cipher.generate_digits(4, as_text=True)
+    try:
+        result = api_device.request_authorization(
+            device_name=name,
+            client_public_key_text=client_key_object.toPublicString(),
+            client_code=client_code,
+        )
+    except Exception as exc:
+        return ERROR(exc)
+    result['client_private_key'] = client_key_object.toDict(include_private=True)
+    result['client_code'] = client_code
+    return OK(result)
+
+
 def device_authorization_reset(name: str, start: bool = True, wait_listening: bool = False):
     """
     To be called when given device needs to be authorized again.

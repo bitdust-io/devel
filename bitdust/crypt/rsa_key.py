@@ -65,10 +65,10 @@ from bitdust.crypt import number
 
 class RSAKey(object):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.keyObject = None
         self.local_key_id = None
-        self.label = ''
+        self.label = kwargs.pop('label', '')
         self.signed = None
         self.active = True
         self.meta = {}

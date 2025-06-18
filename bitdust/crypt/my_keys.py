@@ -480,9 +480,8 @@ def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None)
         lg.out(_DebugLevel, 'my_keys.generate_key %r of %d bits, label=%r' % (key_id, key_size, label))
     _LatestLocalKeyID += 1
     save_latest_local_key_id(keys_folder=keys_folder)
-    key_object = rsa_key.RSAKey()
+    key_object = rsa_key.RSAKey(label=label)
     key_object.generate(key_size)
-    key_object.label = label
     key_object.active = active
     key_object.local_key_id = _LatestLocalKeyID
     known_keys()[key_id] = key_object

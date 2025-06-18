@@ -238,9 +238,8 @@ def add_encrypted_device(device_name, host='localhost', port_number=None, key_si
         lg.args(_DebugLevel, device_name=device_name, host=host, port_number=port_number)
     if len(_Devices) >= 1:
         raise Exception('currently it is not possible to connect more than one remote device')
-    device_key_object = APIDevice()
+    device_key_object = APIDevice(label=device_name)
     device_key_object.generate(key_size)
-    device_key_object.label = device_name
     device_key_object.active = False
     device_key_object.meta['routed'] = False
     device_key_object.meta['host'] = host
@@ -265,9 +264,8 @@ def add_routed_device(device_name, key_size=4096):
         lg.args(_DebugLevel, device_name=device_name)
     if len(_Devices) >= 1:
         raise Exception('currently it is not possible to connect more than one remote device')
-    device_key_object = APIDevice()
+    device_key_object = APIDevice(label=device_name)
     device_key_object.generate(key_size)
-    device_key_object.label = device_name
     device_key_object.active = False
     device_key_object.meta['routed'] = True
     device_key_object.meta['port_number'] = None

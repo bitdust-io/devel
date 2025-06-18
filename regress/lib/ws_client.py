@@ -489,7 +489,7 @@ def websocket_thread():
             print('websocket_thread() calling run_forever(ping_interval=10) %r' % time.asctime())
         _WebSocketClosed = False
         if _WebSocketConnectingAttempts > _WebSocketConnectingMaxAttempts:
-            on_error(Exception('connection attempts exceeded, failed connecting to web socket routers'))
+            on_error(Exception('connection attempts exceeded, failed connecting to web socket'))
             break
         url = routers[_WebSocketConnectingAttempts - 1]
         if _Debug:
