@@ -120,8 +120,6 @@ def init(port=None):
             'filemanager',
             'jsn',
             'lg',
-            'event_listen',
-            'message_receive',
         ]
     )
     if _Debug:

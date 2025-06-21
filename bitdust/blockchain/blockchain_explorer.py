@@ -139,8 +139,7 @@ class BlockchainMainPage(resource.Resource):
             try:
                 page_num = int(strng.to_text(page_num[0]))
             except:
-                lg.exc()
-                page_num = 0
+                return strng.to_bin('')
         else:
             page_num = 0
 

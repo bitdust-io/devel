@@ -142,7 +142,7 @@ def GenerateNewKey(keyfilename=None):
             keyfilename = newkeyfilename
     if _Debug:
         lg.out(_DebugLevel, 'key.InitMyKey generate new private key')
-    _MyKeyObject = rsa_key.RSAKey()
+    _MyKeyObject = rsa_key.RSAKey(label='master')
     _MyKeyObject.generate(settings.getPrivateKeySize())
     keystring = _MyKeyObject.toPrivateString()
     bpio.WriteTextFile(keyfilename, keystring)

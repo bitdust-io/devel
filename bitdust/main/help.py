@@ -49,6 +49,7 @@ Commands:
   device enable <name>
   device disable <name>
   device authorize <name> [client code] [client public key]
+  device generate-client-code <name> [output file path]
   id
   idurl
   identity create <username> [private key size]
@@ -143,6 +144,9 @@ Commands:
 
   device authorize <name> [client code] [client public key]
                         start authorization procedure of a remote device
+
+  device generate-client-code <name> [output file path]
+                        generates full authorization info to pair a new remote device
 
   key delete <key_id>
                         erase given private key

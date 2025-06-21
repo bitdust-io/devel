@@ -248,7 +248,7 @@ class IdRotator(automat.Automat):
         self.rotated = False
         if not self.preferred_servers:
             try:
-                for srv in strng.to_text(config.conf().getString('services/identity-propagate/known-servers')).split(','):
+                for srv in strng.to_text(config.conf().getString('services/identity-propagate/known-servers') or '').split(','):
                     if srv.strip():
                         parts = srv.strip().split(':')
                         if len(parts) == 2:
@@ -571,7 +571,7 @@ class IdRotator(automat.Automat):
             try:
                 remote_ident = identity.identity(xmlsrc=remote_identity_src)
                 if not remote_ident.isCorrect():
-                    raise Exception('remote identity not correct at position %r' % pos)
+                    raise Exception('remote identity not correct at position %r: %r' % (pos, remote_identity_src))
                 if not remote_ident.Valid():
                     raise Exception('remote identity not valid at position %r' % pos)
                 if latest_revision == -1:
@@ -579,7 +579,7 @@ class IdRotator(automat.Automat):
                 if latest_revision <= remote_ident.getRevisionValue():
                     latest_revision = remote_ident.getRevisionValue()
             except:
-                lg.exc(remote_identity_src)
+                lg.exc()
                 self.alive_idurls.append(None)
                 continue
             if idurl_bin not in self.alive_idurls:
