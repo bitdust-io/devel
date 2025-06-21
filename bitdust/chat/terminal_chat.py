@@ -43,7 +43,7 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -62,12 +62,17 @@ from bitdust.chat import kbhit
 #------------------------------------------------------------------------------
 
 _TerminalChat = None
+_TerminalChatStopped = False
 
 #------------------------------------------------------------------------------
 
 
 def init(do_send_message_func=None, do_search_user_func=None):
     global _TerminalChat
+    if _TerminalChat:
+        if _Debug:
+            print('TerminalChat instance already exists')
+        return
     _TerminalChat = TerminalChat(
         send_message_func=do_send_message_func,
         search_user_func=do_search_user_func,
@@ -76,33 +81,60 @@ def init(do_send_message_func=None, do_search_user_func=None):
 
 def shutdown():
     global _TerminalChat
-    del _TerminalChat
+    global _TerminalChatStopped
+    _TerminalChatStopped = True
+    if not _TerminalChat:
+        if _Debug:
+            print('TerminalChat instance not exists')
+        return
     _TerminalChat = None
 
 
 def run(on_stop=None):
     global _TerminalChat
+    global _TerminalChatStopped
+    if not _TerminalChat:
+        if _Debug:
+            print('TerminalChat instance not exists')
+        if on_stop:
+            reactor.callFromThread(on_stop)  # @UndefinedVariable
+        return
+    _TerminalChatStopped = False
     _TerminalChat.run()
-    if _Debug:
-        print('before on_stop')
     if on_stop:
         reactor.callFromThread(on_stop)  # @UndefinedVariable
-    if _Debug:
-        print('after on_stop')
 
 
 def stop():
-    global _TerminalChat
-    _TerminalChat.stop()
+    global _TerminalChatStopped
+    _TerminalChatStopped = True
 
 
 def process_message(sender, message):
     global _TerminalChat
-    _TerminalChat.process_message(sender, message)
+    global _TerminalChatStopped
+    if not _TerminalChat:
+        if _Debug:
+            print('TerminalChat instance not exists in process_message()')
+        return
+    if _TerminalChatStopped:
+        if _Debug:
+            print('TerminalChat already stopped in process_message()')
+        return
+    return _TerminalChat.process_message(sender, message)
 
 
 def on_incoming_message(msg):
     global _TerminalChat
+    global _TerminalChatStopped
+    if not _TerminalChat:
+        if _Debug:
+            print('TerminalChat instance not exists in on_incoming_message()')
+        return
+    if _TerminalChatStopped:
+        if _Debug:
+            print('TerminalChat already stopped in on_incoming_message()')
+        return
     _TerminalChat.on_inbox_message(msg['sender'], msg)
     return msg
 
@@ -117,7 +149,6 @@ class TerminalChat(object):
         self.input = []
         self.history = []
         self.printed = 0
-        self.quitnow = False
         self.users = []
         self.send_message_func = send_message_func
         self.search_user_func = search_user_func
@@ -125,9 +156,22 @@ class TerminalChat(object):
     def on_inbox_message(self, sender, message):
         if _Debug:
             print('on_inbox_message', sender, message)
-        name = nameurl.GetName(sender)
-        if sender not in self.users:
-            self.users.append(sender)
+        idurl = str(sender).strip()
+        if global_id.IsValidGlobalUser(idurl):
+            gid = global_id.NormalizeGlobalID(idurl, as_field=False)
+            idurl = gid['idurl']
+        else:
+            if not idurl.startswith('http://') or not idurl.endswith('.xml') or not nameurl.GetName(idurl):
+                if _Debug:
+                    print('on_inbox_message failed, sender %r is not a valid IDURL' % sender)
+                return
+        if not idurl:
+            if _Debug:
+                print('on_inbox_message failed, sender %r was not identified' % sender)
+            return
+        if idurl not in self.users:
+            name = nameurl.GetName(idurl)
+            self.users.append(idurl)
             self.history.append({
                 'text': 'user %s joined' % name,
                 'name': '',
@@ -145,14 +189,14 @@ class TerminalChat(object):
             self.history.append({
                 'text': 'search failed: %s' % results['errors'],
                 'name': '',
-                'time': time.time(),
+                'time': '',
             })
             return None
         for r in results['result']:
             self.history.append({
                 'text': '%s' % (r['idurl'] if r.get('idurl') else 'not found'),
-                'name': '',
-                'time': time.time(),
+                'name': nameurl.GetName(r['idurl']) if r.get('idurl') else 'not found',
+                'time': '',
             })
 
     def on_my_message(self, message):
@@ -161,6 +205,9 @@ class TerminalChat(object):
             if global_id.IsValidGlobalUser(idurl):
                 gid = global_id.NormalizeGlobalID(idurl, as_field=False)
                 idurl = gid['idurl']
+            else:
+                if not idurl.startswith('http://') or not idurl.endswith('.xml') or not nameurl.GetName(idurl):
+                    return
             if idurl and idurl not in self.users:
                 self.users.append(idurl)
                 name = nameurl.GetName(idurl)
@@ -176,15 +223,29 @@ class TerminalChat(object):
                 self.history.append({
                     'text': 'search failed, method not defined',
                     'name': '',
-                    'time': time.time(),
+                    'time': '',
                 })
                 return
             self.search_user_func(inp).addBoth(self.on_nickname_search_result)
             self.history.append({
                 'text': 'looking for "%s" ...' % inp,
                 'name': '',
-                'time': time.time(),
+                'time': '',
             })
+            return
+        if message.startswith('!users'):
+            self.history.append({
+                'text': 'list of users in the channel:',
+                'name': '',
+                'time': '',
+            })
+            for idurl in self.users:
+                name = nameurl.GetName(idurl)
+                self.history.append({
+                    'text': str(idurl),
+                    'name': name,
+                    'time': '',
+                })
             return
         self.history.append({
             'text': message,
@@ -198,8 +259,9 @@ class TerminalChat(object):
                 reactor.callFromThread(self.send_message_func, str(to), {'terminal_chat_message': message})  # @UndefinedVariable
 
     def bot(self):
+        global _TerminalChatStopped
         while True:
-            if self.quitnow:
+            if _TerminalChatStopped:
                 break
             time.sleep(0.1)
             if random.randint(1, 500) == 1:
@@ -212,14 +274,15 @@ class TerminalChat(object):
         return None
 
     def collect_output(self):
+        global _TerminalChatStopped
         try:
             last_line = ''
             sys.stdout.write('> ')
             sys.stdout.flush()
             while True:
-                if self.quitnow:
+                if _TerminalChatStopped:
                     break
-                time.sleep(0.05)
+                time.sleep(0.1)
                 if self.printed < len(self.history):
                     sys.stdout.write('\b'*(len(last_line) + 2))
                     # sys.stdout.write('\n\r')
@@ -238,30 +301,41 @@ class TerminalChat(object):
                     sys.stdout.flush()
                     self.printed = len(self.history)
         except Exception as exc:
-            self.quitnow = True
             if _Debug:
-                print('collect_output thread failed: %r' % exc)
+                print('_TerminalChatStopped was set in collect_output(): %r' % exc)
+            _TerminalChatStopped = True
         if _Debug:
             print('collect_output thread ended')
         return None
 
     def collect_input(self):
+        global _TerminalChatStopped
         try:
             while True:
-                if self.quitnow:
+                if _TerminalChatStopped:
                     break
+                if not self.kb.kbhit():
+                    time.sleep(0.1)
+                    continue
                 ch = self.kb.getch()
                 self.input.append(ch)
-        except KeyboardInterrupt:
-            self.quitnow = True
+        except KeyboardInterrupt as exc:
+            if _Debug:
+                print('_TerminalChatStopped was set in collect_input(): %r' % exc)
+            _TerminalChatStopped = True
+        except Exception as exc:
+            if _Debug:
+                print('_TerminalChatStopped was set in collect_input(): %r' % exc)
+            _TerminalChatStopped = True
         if _Debug:
             print('collect_input thread ended')
         return None
 
     def process_input(self):
+        global _TerminalChatStopped
         try:
             while True:
-                if self.quitnow:
+                if _TerminalChatStopped:
                     break
                 if len(self.input) == 0:
                     time.sleep(0.05)
@@ -276,7 +350,9 @@ class TerminalChat(object):
                     if ord(c) == 27:
                         sys.stdout.write('\n\r')
                         sys.stdout.flush()
-                        self.quitnow = True
+                        if _Debug:
+                            print('_TerminalChatStopped was set in process_input(), ESC pressed')
+                        _TerminalChatStopped = True
                         break
                     # BACKSPACE
                     if c == '\x7f':
@@ -294,7 +370,9 @@ class TerminalChat(object):
                         if msg.strip() in ['!q', '!quit', '!exit']:
                             sys.stdout.write('\n\r')
                             sys.stdout.flush()
-                            self.quitnow = True
+                            if _Debug:
+                                print('_TerminalChatStopped was set in process_input(), %r entered' % msg)
+                            _TerminalChatStopped = True
                             break
                         sys.stdout.write('\b'*(len(msg)))
                         sys.stdout.flush()
@@ -307,8 +385,8 @@ class TerminalChat(object):
                         self.chars.append(c)
         except Exception as exc:
             if _Debug:
-                print('process_input thread failed: %r' % exc)
-            self.quitnow = True
+                print('_TerminalChatStopped was set in process_input(): %r' % exc)
+            _TerminalChatStopped = True
         if _Debug:
             print('process_input thread ended')
         return None
@@ -324,34 +402,31 @@ class TerminalChat(object):
         sys.stdout.flush()
 
     def run(self):
+        global _TerminalChatStopped
         self.fd = sys.stdin.fileno()
         self.old_settings = termios.tcgetattr(self.fd)
         self.kb = kbhit.KBHit()
         tty.setraw(sys.stdin.fileno())
-
         self.welcome()
         # bot = threading.Thread(target=self.bot)
         # bot.start()
-        out = threading.Thread(target=self.collect_output)
+        out = threading.Thread(target=self.collect_output, name='terminal_chat_collect_output')
         out.start()
-        inp = threading.Thread(target=self.collect_input)
+        inp = threading.Thread(target=self.collect_input, name='terminal_chat_collect_input')
         inp.start()
-        proc = threading.Thread(target=self.process_input)
+        proc = threading.Thread(target=self.process_input, name='terminal_chat_process_input')  # daemon=True,
         proc.start()
         proc.join()
         self.goodbye()
-
         try:
             termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
             self.kb.set_normal_term()
         except Exception as exc:
             if _Debug:
-                print('run thread failed: %r' % exc)
+                print('set _TerminalChatStopped, run thread failed: %r' % exc)
+            _TerminalChatStopped = True
         if _Debug:
-            print('run thread ended')
-
-    def stop(self):
-        self.quitnow = True
+            print('run thread ended, currently %d threads running: %r' % (len(threading.enumerate()), ', '.join([str(t) for t in threading.enumerate()])))
 
 
 #------------------------------------------------------------------------------

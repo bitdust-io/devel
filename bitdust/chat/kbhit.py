@@ -32,6 +32,7 @@ else:
 
 
 class KBHit:
+
     def __init__(self):
         """
         Creates a KBHit object that you can call to do various keyboard things.
@@ -76,7 +77,7 @@ class KBHit:
         s = ''
 
         if os.name == 'nt':
-            return msvcrt.getch().decode('utf-8')
+            return msvcrt.getch().decode('utf-8')  # @UndefinedVariable
 
         else:
             return sys.stdin.read(1)
@@ -94,8 +95,8 @@ class KBHit:
         """
 
         if os.name == 'nt':
-            msvcrt.getch()  # skip 0xE0
-            c = msvcrt.getch()
+            msvcrt.getch()  # skip 0xE0 @UndefinedVariable
+            c = msvcrt.getch()  # @UndefinedVariable
             vals = [72, 77, 80, 75]
 
         else:
@@ -109,7 +110,7 @@ class KBHit:
         Returns True if keyboard character was hit, False otherwise.
         """
         if os.name == 'nt':
-            return msvcrt.kbhit()
+            return msvcrt.kbhit()  # @UndefinedVariable
 
         else:
             dr, dw, de = select([sys.stdin], [], [], 0)

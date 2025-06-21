@@ -37,7 +37,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -1334,61 +1334,68 @@ def cmd_message(opts, args, overDict):
         errors = []
 
         def _stop(x=None):
-            reactor.callInThread(terminal_chat.stop)  # @UndefinedVariable
-            reactor.stop()  # @UndefinedVariable
+            if _Debug:
+                print('_stop', x)
+            reactor.callFromThread(terminal_chat.stop)  # @UndefinedVariable
+            # reactor.stop()  # @UndefinedVariable
             return True
 
-        def _error(x):
+        def _on_message_receive_error(x):
             if _Debug:
-                print('_error', x)
+                print('_on_message_receive_error', x)
             if str(x).count('ResponseNeverReceived'):
                 return x
             errors.append(str(x))
             _stop()
             return x
 
-        def _consume(x=None):
+        def _on_message_receive_ok(ret):
             if _Debug:
-                print('_consume', x)
-            if x:
-                if x['status'] != 'OK':
-                    if 'errors' in x:
-                        errors.extend(x['errors'])
+                print('_on_message_receive_ok', ret)
+            if ret:
+                if ret['status'] != 'OK':
+                    if 'errors' in ret:
+                        errors.extend(ret['errors'])
                     _stop()
-                    return x
-                for msg in x['result']:
-                    terminal_chat.on_incoming_message(msg)
+                    return ret
+                for msg in ret['result']:
+                    reactor.callFromThread(terminal_chat.on_incoming_message, msg)  # @UndefinedVariable
+            reactor.callFromThread(_do_consume)  # @UndefinedVariable
 
+        def _do_consume():
+            if _Debug:
+                print('_do_consume')
             d = call_websocket_method('message_receive', consumer_callback_id='terminal_chat')
-            d.addCallback(_consume)
-            d.addErrback(_error)
-            return x
+            d.addCallback(_on_message_receive_ok)
+            d.addErrback(_on_message_receive_error)
 
         def _thread_ended(x=None):
+            if _Debug:
+                print('cmd_message._thread_ended', x)
             try:
                 from bitdust.lib import websock
-                websock.stop()
+                if websock.is_started():
+                    websock.stop()
             except Exception as exc:
                 if _Debug:
-                    print('cmd_message._thread_ended', exc)
+                    print('cmd_message._thread_ended failure', exc)
             reactor.stop()  # @UndefinedVariable
 
         reactor.callInThread(terminal_chat.run, on_stop=_thread_ended)  # @UndefinedVariable
+        # reactor.callWhenRunning(terminal_chat.run, on_stop=_thread_ended)  # @UndefinedVariable
         time.sleep(0.1)
-        _consume()
+        _do_consume()
         reactor.run()  # @UndefinedVariable
         if _Debug:
             print('after reactor.run()')
-        terminal_chat.shutdown()
+        # reactor.callFromThread(terminal_chat.shutdown)  # @UndefinedVariable
         if _Debug:
             print('after terminal_chat.shutdown()')
         if len(errors):
             print('\n'.join(errors))
         if _Debug:
             import threading
-            print('currently %d threads running:' % len(threading.enumerate()))
-            for t in threading.enumerate():
-                print('    ' + str(t))
+            print('currently %d threads running: %r' % (len(threading.enumerate()), ', '.join([str(t) for t in threading.enumerate()])))
         return 0
 
     return 2
