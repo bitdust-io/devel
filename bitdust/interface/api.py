@@ -4904,12 +4904,16 @@ def message_receive(consumer_callback_id: str, direction: str = 'incoming', mess
         ret.callback(ERROR(err))
         return None
 
-    d = message.consume_messages(
-        consumer_callback_id=consumer_callback_id,
-        direction=direction,
-        message_types=message_types,
-        reset_callback=True,
-    )
+    try:
+        d = message.consume_messages(
+            consumer_callback_id=consumer_callback_id,
+            direction=direction,
+            message_types=message_types,
+            reset_callback=True,
+        )
+    except Exception as exc:
+        ret.callback(ERROR(exc))
+        return ret
     d.addCallback(_on_pending_messages)
     d.addErrback(_on_consume_error)
     if polling_timeout is not None:
