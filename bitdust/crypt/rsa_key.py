@@ -117,16 +117,16 @@ class RSAKey(object):
             return self
         return self.keyObject.publickey()
 
-    def fromDict(self, key_dict):
-        if self.keyObject:
+    def fromDict(self, key_dict, exists_ok=False):
+        if self.keyObject and not exists_ok:
             raise ValueError('key object already exist')
         key_src = key_dict['body']
-        result = self.fromString(key_src)
+        result = self.fromString(key_src, exists_ok=exists_ok)
         if result:
             self.label = key_dict.get('label', '')
             self.active = key_dict.get('active', True)
             self.local_key_id = key_dict.get('local_key_id', None)
-            self.meta = key_dict.get('meta', {})
+            self.meta = dict(key_dict.get('meta', {}))
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
                 self.save_signed_info(
                     signature_raw=key_dict['signature'],
@@ -136,8 +136,8 @@ class RSAKey(object):
         # gc.collect()
         return result
 
-    def fromString(self, key_src):
-        if self.keyObject:
+    def fromString(self, key_src, exists_ok=False):
+        if self.keyObject and not exists_ok:
             raise ValueError('key object already exist')
         if strng.is_text(key_src):
             key_src = strng.to_bin(key_src)
@@ -151,8 +151,8 @@ class RSAKey(object):
         # gc.collect()
         return True
 
-    def fromFile(self, keyfilename):
-        if self.keyObject:
+    def fromFile(self, keyfilename, exists_ok=False):
+        if self.keyObject and not exists_ok:
             raise ValueError('key object already exist')
         key_src = local_fs.ReadTextFile(keyfilename)
         key_src = strng.to_bin(key_src)
@@ -199,7 +199,7 @@ class RSAKey(object):
                 'signature_pubkey': self.signed[1],
             })
         if self.meta:
-            key_dict['meta'] = self.meta
+            key_dict['meta'] = self.meta.copy()
         return key_dict
 
     def sign(self, message, as_digits=True):

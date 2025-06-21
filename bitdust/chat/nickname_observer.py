@@ -243,8 +243,10 @@ class NicknameObserver(automat.Automat):
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
         self.dht_read_defer = dht_records.get_nickname(self.key)
-        self.dht_read_defer.addCallback(self._dht_read_result, self.key)
-        self.dht_read_defer.addErrback(self._dht_read_failed)
+        if self.dht_read_defer:
+            self.dht_read_defer.addErrback(self._dht_read_failed)
+        if self.dht_read_defer:
+            self.dht_read_defer.addCallback(self._dht_read_result, self.key)
 
     def doReportNicknameExist(self, *args, **kwargs):
         """

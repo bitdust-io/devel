@@ -228,11 +228,12 @@ def call_websocket_method(method, **kwargs):
     def _on_result(resp):
         if _Debug:
             print('call_websocket_method._on_result', method, kwargs, resp)
-        try:
-            websock.stop()
-        except Exception as exc:
-            if _Debug:
-                print('call_websocket_method._on_result', exc)
+        if websock.is_started():
+            try:
+                websock.stop()
+            except Exception as exc:
+                if _Debug:
+                    print('call_websocket_method._on_result', exc)
         if method in [
             'process_stop',
         ]:
@@ -258,10 +259,12 @@ def call_websocket_method(method, **kwargs):
         try:
             payload_response = resp['payload']['response']
         except Exception as exc:
-            ret.errback(exc)
+            if not ret.called:
+                ret.errback(exc)
             return None
         payload_response['execution'] = '%3.6f' % (time.time() - _executed)
-        ret.callback(payload_response)
+        if not ret.called:
+            ret.callback(payload_response)
         return resp
 
     def _on_open(ws_inst):
@@ -292,6 +295,18 @@ def call_websocket_method(method, **kwargs):
         if not ret.called:
             ret.errback(err)
         return None
+
+    if websock.is_started():
+        websock.ws_call(
+            json_data={
+                'command': 'api_call',
+                'method': method,
+                'kwargs': kwargs,
+            },
+            cb=_on_result,
+            timeout=timeout,
+        )
+        return ret
 
     websock.start(
         callbacks={
@@ -367,13 +382,13 @@ def kill():
             bpio.kill_process(pid)
         if len(appList) == 0:
             if found:
-                print_text('BitDust stopped\n')
+                print_text('BitDust stopped')
             else:
-                print_text('BitDust was not started\n')
+                print_text('BitDust was not started')
             return 0
         total_count += 1
         if total_count > 10:
-            print_text('some BitDust process found, but can not stop it\n')
+            print_text('some BitDust process found, but can not stop it')
             return 1
         time.sleep(1)
 
@@ -469,7 +484,7 @@ def cmd_network(opts, args, overDict, running):
 
 def cmd_device(opts, args, overDict, running, executablePath):
     if not running:
-        print_text('BitDust is not running at the moment\n')
+        print_text('BitDust is not running at the moment')
         return 0
 
     if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls']):
@@ -486,15 +501,51 @@ def cmd_device(opts, args, overDict, running, executablePath):
 
     if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', 'close']:
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
-        return call_websocket_method_template_and_stop('device_stop', tpl, name=args[2])
+        return call_websocket_method_template_and_stop('device_stop', tpl, name=args[2], deactivate=(args[1] != 'stop'))
 
-    if len(args) >= 3 and args[1] in ['pair', 'auth', 'authorize']:
+    from twisted.internet import reactor  # @UnresolvedImport
+
+    if len(args) >= 3 and args[1] in ['generate-client-key', 'generate-access-key', 'key', 'client-key', 'access-key']:
+
+        def _device_authorization_generate_cb(ret):
+            if _Debug:
+                print('cmd_device._device_authorization_generate_cb', ret)
+            if ret.get('status') != 'OK':
+                print_text('\n'.join(ret.get('errors') or []))
+            else:
+                r = (ret.get('result', {}) or {}).get('authorization') or {}
+                access_key_text = '&'.join(
+                    [
+                        (ret.get('result', {}) or {}).get('url') or '',
+                        r.get('auth_info') or '',
+                        str(r.get('client_code') or ''),
+                        ((r.get('client_private_key') or {}).get('body') or '').replace('\n', '\\n').replace('-----END RSA PRIVATE KEY-----', '').replace('-----BEGIN RSA PRIVATE KEY-----', ''),
+                        ((r.get('client_private_key') or {}).get('label') or '').replace('&', ''),
+                        str((r.get('client_private_key') or {}).get('size') or ''),
+                        r.get('server_public_key') or '',
+                        r.get('signature') or '',
+                    ]
+                )
+                if len(args) > 3:
+                    open(args[3], 'wt').write(access_key_text)
+                else:
+                    print_text('The following is your client access key for "%s", copy this exact text content to your client device:\n\n%s\n' % (args[2], access_key_text))
+            reactor.stop()  # @UndefinedVariable
+
+        def _do_start_generate():
+            d = call_websocket_method('device_authorization_generate', name=args[2])
+            d.addCallback(_device_authorization_generate_cb)
+            d.addErrback(fail_and_stop)
+
+        reactor.callWhenRunning(_do_start_generate)  # @UndefinedVariable
+        reactor.run()  # @UndefinedVariable
+        return 0
+
+    if len(args) >= 3 and args[1] in ['pair', 'auth', 'authorize', 'attach']:
         device_name = args[2]
         if len(args) > 4:
             tpl = jsontemplate.Template(templ.TPL_DEVICES_AUTH_REQUEST)
             return call_websocket_method_template_and_stop('device_authorization_request', tpl, name=args[2], client_code=args[3], client_public_key=args[4])
-
-        from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_client_code_confirmed(ret):
             if _Debug:
@@ -537,15 +588,15 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 print_text('device configuration failed due to connection error')
                 reactor.stop()  # @UndefinedVariable
                 return
-            print_text('Enter following connection URL on your remote device and be ready to enter 4 digits authorization code:\n\n    %s\n' % route_url)
+            print_text('Enter following connection URL on your remote device and be ready to enter 4-digits authorization code:\n\n    %s\n' % route_url)
             reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
 
-        def _start():
+        def _do_start_authorize():
             d = call_websocket_method('device_start', name=device_name, wait_listening=True)
             d.addCallback(_device_start_cb)
             d.addErrback(fail_and_stop)
 
-        reactor.callWhenRunning(_start)  # @UndefinedVariable
+        reactor.callWhenRunning(_do_start_authorize)  # @UndefinedVariable
         reactor.run()  # @UndefinedVariable
         return 0
 
@@ -635,7 +686,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 return call_websocket_method_template_and_stop('service_info', tpl, service_name='service_identity_server')
             if args[2] == 'stop':
                 if not running:
-                    print_text('BitDust is not running at the moment\n')
+                    print_text('BitDust is not running at the moment')
                     return 0
                 tpl = jsontemplate.Template(templ.TPL_RAW)
                 return call_websocket_method_template_and_stop('service_stop', tpl, service_name='service_identity_server')
@@ -655,7 +706,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 try:
                     pksize = int(args[3])
                 except:
-                    print_text('incorrect private key size\n')
+                    print_text('incorrect private key size')
                     return 0
             from bitdust.lib import misc
             if not misc.ValidUserName(args[2]):
@@ -666,7 +717,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             shutdowner.shutdown_automats()
             my_id.loadLocalIdentity()
             if my_id.isLocalIdentityReady():
-                print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
+                print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True) + '\n')
             else:
                 print_text('identity creation failed, please try again later')
             return 0
@@ -693,7 +744,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if not idurl and len(args) > 3:
                 idurl = args[3]
             if not idurl:
-                print_text('BitDust need to know your IDURL to recover your account\n')
+                print_text('at least one IDURL is required to be able to recover your identity')
                 return 2
             initializer.init_automats()
             initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
@@ -701,17 +752,17 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             shutdowner.shutdown_automats()
             my_id.loadLocalIdentity()
             if my_id.isLocalIdentityReady():
-                print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
+                print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True) + '\n')
             else:
-                print_text('identity recovery FAILED')
+                print_text('identity recovery failed')
             return 0
 
         if args[1].lower() in ['create', 'new', 'register', 'generate']:
             if my_id.isLocalIdentityReady():
-                print_text('local identity [%s] already exist\n' % my_id.getIDName())
+                print_text('local identity %s already exist' % my_id.getIDName())
                 return 1
             if running:
-                print_text('BitDust is running at the moment, need to stop the software first\n')
+                print_text('BitDust is running at the moment, need to stop the software first')
                 return 0
             return _register()
 
@@ -736,29 +787,29 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 os.chdir(curpath)
                 if not bpio.WriteTextFile(filenameto, TextToSave):
                     del TextToSave
-                    print_text('error writing to %s\n' % filenameto)
+                    print_text('error writing to %s' % filenameto)
                     return 1
-                print_text('IDURL "%s" and "master" key was stored in "%s"' % (key_json['result']['creator'], filenameto))
+                print_text('IDURL %s and master key was stored in %s' % (key_json['result']['creator'], filenameto))
                 return 0
             return 2
 
         if args[1].lower() in ['restore', 'recover', 'read', 'load']:
             if running:
-                print_text('BitDust is running at the moment, need to stop the software first\n')
+                print_text('BitDust is running at the moment, need to stop the software first')
                 return 0
             return _recover()
 
         if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
             if running:
-                print_text('BitDust is running at the moment, need to stop the software first\n')
+                print_text('BitDust is running at the moment, need to stop the software first')
                 return 0
             oldname = my_id.getIDName()
             if not oldname:
-                print_text('local identity is not exist\n')
+                print_text('local identity not exists')
                 return 0
             my_id.forgetLocalIdentity()
             my_id.eraseLocalIdentity()
-            print_text('local identity [%s] is no longer exist\n' % oldname)
+            print_text('local identity %s no longer exists' % oldname)
             return 0
 
         return 2
@@ -773,7 +824,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
 
 def cmd_key(opts, args, overDict, running, executablePath):
     if not running:
-        print_text('BitDust is not running at the moment\n')
+        print_text('BitDust is not running at the moment')
         return 0
 
     if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls']):
@@ -801,17 +852,17 @@ def cmd_key(opts, args, overDict, running, executablePath):
                 os.chdir(curpath)
                 if not bpio.WriteTextFile(filenameto, TextToSave):
                     del TextToSave
-                    print_text('error writing to %s\n' % filenameto)
+                    print_text('error writing to %s' % filenameto)
                     reactor.stop()  # @UndefinedVariable
                     return 1
-                print_text('private key "%s" was stored in "%s"' % (key_json['result']['key_id'], filenameto))
+                print_text('private key %s stored in %s' % (key_json['result']['key_id'], filenameto))
             else:
                 from bitdust.lib import misc
                 misc.setClipboardText(TextToSave)
-                print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result']['key_id'])
+                print_text('key %s content sent to clipboard, you can use Ctrl+V to paste your private key content' % key_json['result']['key_id'])
             del TextToSave
             if key_json['result']['alias'] == 'master':
-                print_text('WARNING! keep your "master" key in safe place, do not publish it!\n')
+                print_text('WARNING! keep copies of your master key in a safe place')
             reactor.stop()  # @UndefinedVariable
             return
 
@@ -930,7 +981,7 @@ def cmd_api(opts, args, overDict, executablePath):
         pairs = [i.split('=') for i in args[2:]]
         kwargs = {k: _clean_value(v) for k, v in pairs}
     except Exception as e:
-        print_text('failed reading input arguments: %s\n' % e)
+        print_text('failed reading input arguments: %s' % e)
         return 1
     return call_websocket_method_and_stop(args[1], **kwargs)
 
@@ -976,7 +1027,7 @@ def cmd_file(opts, args, overDict, executablePath):
     if len(args) > 3 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.exists(os.path.abspath(args[2])):
-            print_text('path %s not exist\n' % args[2])
+            print_text('path %s not exists' % args[2])
             return 1
         return call_websocket_method_template_and_stop('file_upload_start', tpl, local_path=args[2], remote_path=args[3], wait_result=False)
 
@@ -1263,9 +1314,6 @@ def cmd_services(opts, args, overDict):
 
 def cmd_message(opts, args, overDict):
     from twisted.internet import reactor  # @UnresolvedImport
-    #     if len(args) < 2 or args[1] == 'list':
-    #         tpl = jsontemplate.Template(templ.TPL_RAW)
-    #         return call_websocket_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in ['send', 'to']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('message_send', tpl, recipient_id=args[2], data=args[3])
@@ -1277,7 +1325,7 @@ def cmd_message(opts, args, overDict):
             return call_websocket_method('message_send', recipient_id=to, data=msg)
 
         def _search_user(inp):
-            return call_websocket_method('user_search', nickname=inp)
+            return call_websocket_method('user_observe', nickname=inp)
 
         terminal_chat.init(
             do_send_message_func=_send_message,
@@ -1291,6 +1339,8 @@ def cmd_message(opts, args, overDict):
             return True
 
         def _error(x):
+            if _Debug:
+                print('_error', x)
             if str(x).count('ResponseNeverReceived'):
                 return x
             errors.append(str(x))
@@ -1298,6 +1348,8 @@ def cmd_message(opts, args, overDict):
             return x
 
         def _consume(x=None):
+            if _Debug:
+                print('_consume', x)
             if x:
                 if x['status'] != 'OK':
                     if 'errors' in x:
@@ -1312,12 +1364,31 @@ def cmd_message(opts, args, overDict):
             d.addErrback(_error)
             return x
 
+        def _thread_ended(x=None):
+            try:
+                from bitdust.lib import websock
+                websock.stop()
+            except Exception as exc:
+                if _Debug:
+                    print('cmd_message._thread_ended', exc)
+            reactor.stop()  # @UndefinedVariable
+
+        reactor.callInThread(terminal_chat.run, on_stop=_thread_ended)  # @UndefinedVariable
+        time.sleep(0.1)
         _consume()
-        reactor.callInThread(terminal_chat.run)  # @UndefinedVariable
         reactor.run()  # @UndefinedVariable
+        if _Debug:
+            print('after reactor.run()')
         terminal_chat.shutdown()
+        if _Debug:
+            print('after terminal_chat.shutdown()')
         if len(errors):
             print('\n'.join(errors))
+        if _Debug:
+            import threading
+            print('currently %d threads running:' % len(threading.enumerate()))
+            for t in threading.enumerate():
+                print('    ' + str(t))
         return 0
 
     return 2
@@ -1448,7 +1519,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         print_text('found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList))
 
         def done(x):
-            print_text('DONE\n', '')
+            print_text('DONE', '')
             from twisted.internet import reactor  # @UnresolvedImport
             if reactor.running and not reactor._stopped:  # @UndefinedVariable
                 reactor.stop()  # @UndefinedVariable
@@ -1507,7 +1578,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_main_process()
         if appList:
-            print_text('found main BitDust process: %r ... ' % appList, '')
+            print_text('found main BitDust process: %r ...' % appList, '')
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
                 call_websocket_method('process_stop', websocket_timeout=5).addBoth(wait_then_kill)
@@ -1523,7 +1594,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 extra_lookups=[],
             )
             if appListAllChilds:
-                print_text('found child BitDust processes: %s, perform "kill process" action ... ' % str(appList), '')
+                print_text('found child BitDust processes: %s, perform "kill process" action ...' % str(appList), '')
                 ret = kill()
                 return ret
 
@@ -1581,42 +1652,42 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     #---reconnect---
     elif cmd in ['reconnect', 'rejoin', 'connect']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_reconnect(opts, args, overDict)
 
     #---api---
     elif cmd in ['api', 'call']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_api(opts, args, overDict, executablePath)
 
     #---messages---
     elif cmd in ['msg', 'message', 'messages', 'chat', 'talk']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_message(opts, args, overDict)
 
     #---suppliers---
     elif cmd in ['suppliers', 'supplier', 'sup', 'supp', 'sp']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_suppliers(opts, args, overDict)
 
     #---customers---
     elif cmd in ['customers', 'customer', 'cus', 'cust', 'cu']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_customers(opts, args, overDict)
 
     #---storage---
     elif cmd in ['storage', 'space']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_storage(opts, args, overDict)
 
@@ -1627,28 +1698,28 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     #---automats---
     elif cmd in ['st', 'state', 'automats', 'aut', 'states', 'machines']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_automats(opts, args, overDict)
 
     #---services---
     elif cmd in ['services', 'service', 'svc', 'serv', 'srv']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_services(opts, args, overDict)
 
     #---friends---
     elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_friend(opts, args, overDict)
 
     #---file---
     elif cmd in ['file', 'files', 'fi', 'fs', 'f', 'folder', 'dir']:
         if not running:
-            print_text('BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment')
             return 0
         return cmd_file(opts, args, overDict, executablePath)
 
@@ -1660,7 +1731,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         )
         running = (len(appList) > 0)
         if running:
-            print_text('BitDust is running at the moment, need to stop the software first\n')
+            print_text('BitDust is running at the moment, need to stop the software first')
             return 0
         return cmd_dhtseed(opts, args, overDict)
 

@@ -316,7 +316,12 @@ def requests_thread(active_queue):
             on_fail(Exception('websocket is closed'), result_callback)
             continue
         _CallbacksQueue[call_id] = result_callback
-        data = json.dumps(json_data)
+        try:
+            data = json.dumps(json_data)
+        except Exception as exc:
+            print(json_data)
+            on_fail(exc, result_callback)
+            continue
         if _Debug:
             print('sending', data)
         ws().send(data)
