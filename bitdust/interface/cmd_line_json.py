@@ -529,9 +529,9 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 )
                 if len(args) > 3:
                     open(args[3], 'wt').write(access_key_text)
-                    print_text('Stored client access key for "%s" in %s, copy that file to your client device' % (args[2], args[3]))
+                    print_text('stored client access key for "%s" in %s, copy that file to your client device' % (args[2], args[3]))
                 else:
-                    print_text('The following is your client access key for "%s", copy this exact text content to your client device:\n\n%s\n' % (args[2], access_key_text))
+                    print_text('the following is your client access key for "%s", copy this exact text content to your client device:\n\n%s\n' % (args[2], access_key_text))
             reactor.stop()  # @UndefinedVariable
 
         def _do_device_authorization_generate():
@@ -552,7 +552,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
         def _on_client_code_confirmed(ret):
             if _Debug:
                 print('_on_client_code_confirmed', ret)
-            print_text('\nSUCCESS! Your remote device is now authorized and connected.')
+            print_text('\nyour remote device is now authorized and connected.')
             reactor.stop()  # @UndefinedVariable
 
         def _device_info_cb(ret):
@@ -562,8 +562,8 @@ def cmd_device(opts, args, overDict, running, executablePath):
             if not server_code:
                 reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
                 return
-            print_text('Now enter following authorization code on your device:\n\n    %s\n' % server_code)
-            client_code = input('To complete authorization please enter the client confirmation code displayed on your device: ')
+            print_text('now enter following authorization code on your device:\n\n    %s\n' % server_code)
+            client_code = input('to complete authorization please enter the client confirmation code displayed on your device: ')
             d = call_websocket_method('device_authorization_client_code', name=device_name, client_code=client_code)
             d.addCallback(_on_client_code_confirmed)
             d.addErrback(fail_and_stop)
@@ -590,7 +590,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
                 print_text('device configuration failed due to connection error')
                 reactor.stop()  # @UndefinedVariable
                 return
-            print_text('Enter following connection URL on your remote device and be ready to enter 4-digits authorization code:\n\n    %s\n' % route_url)
+            print_text('enter following connection URL on your remote device and be ready to enter 4-digits authorization code:\n\n    %s\n' % route_url)
             reactor.callLater(1, _wait_server_code)  # @UndefinedVariable
 
         def _do_start_authorize():
