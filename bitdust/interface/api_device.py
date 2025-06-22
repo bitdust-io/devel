@@ -125,8 +125,6 @@ def init():
             'filemanager',
             'jsn',
             'lg',
-            'event_listen',
-            'message_receive',
         ]
     )
     if _Debug:
@@ -178,7 +176,7 @@ class APIDevice(rsa_key.RSAKey):
             lg.err('failed saving device info %r to %r' % (self.label, device_file_path))
             return False
         if _Debug:
-            lg.args(_DebugLevel, device_name=self.label, key=self)
+            lg.args(_DebugLevel, n=self.label, k=self, m=self.meta, d=device_info_dict)
         return True
 
     def load(self, device_file_path):
@@ -188,7 +186,7 @@ class APIDevice(rsa_key.RSAKey):
             return False
         device_info_dict = jsn.loads_text(device_info_raw.strip())
         try:
-            self.fromDict(device_info_dict)
+            self.fromDict(device_info_dict, exists_ok=True)
         except:
             lg.exc()
             return False
@@ -197,7 +195,7 @@ class APIDevice(rsa_key.RSAKey):
             if not self.meta.get('authorized_routers'):
                 self.meta['authorized_routers'] = self.meta.pop('connected_routers')
         if _Debug:
-            lg.args(_DebugLevel, device_name=self.label, key=self)
+            lg.args(_DebugLevel, n=self.label, key=self, m=self.meta)
         return True
 
 
@@ -238,9 +236,8 @@ def add_encrypted_device(device_name, host='localhost', port_number=None, key_si
         lg.args(_DebugLevel, device_name=device_name, host=host, port_number=port_number)
     if len(_Devices) >= 1:
         raise Exception('currently it is not possible to connect more than one remote device')
-    device_key_object = APIDevice()
+    device_key_object = APIDevice(label=device_name)
     device_key_object.generate(key_size)
-    device_key_object.label = device_name
     device_key_object.active = False
     device_key_object.meta['routed'] = False
     device_key_object.meta['host'] = host
@@ -248,6 +245,7 @@ def add_encrypted_device(device_name, host='localhost', port_number=None, key_si
     device_key_object.meta['auth_token'] = None
     device_key_object.meta['session_key'] = None
     device_key_object.meta['client_public_key'] = None
+    device_key_object.meta['url'] = f'ws://{host.strip().strip("/")}:{port_number}'
     if not device_key_object.save():
         return False
     _Devices[device_name] = device_key_object
@@ -265,9 +263,8 @@ def add_routed_device(device_name, key_size=4096):
         lg.args(_DebugLevel, device_name=device_name)
     if len(_Devices) >= 1:
         raise Exception('currently it is not possible to connect more than one remote device')
-    device_key_object = APIDevice()
+    device_key_object = APIDevice(label=device_name)
     device_key_object.generate(key_size)
-    device_key_object.label = device_name
     device_key_object.active = False
     device_key_object.meta['routed'] = True
     device_key_object.meta['port_number'] = None
@@ -354,9 +351,14 @@ def start_device(device_name, listening_callback=None, client_code_input_callbac
     if device_key_object.meta['routed']:
         if not driver.is_on('service_web_socket_communicator'):
             raise Exception('required service_web_socket_communicator() is not currently ON')
-        inst = routed_web_socket.RoutedWebSocket()
+        inst = routed_web_socket.RoutedWebSocket(
+            device_object=device_key_object,
+            encrypt_auth_info_callback=encrypt_auth_info,
+        )
     else:
         inst = encrypted_web_socket.EncryptedWebSocket(
+            device_object=device_key_object,
+            encrypt_auth_info_callback=encrypt_auth_info,
             host=device_key_object.meta.get('host') or 'localhost',
             port_number=device_key_object.meta['port_number'],
         )
@@ -365,7 +367,6 @@ def start_device(device_name, listening_callback=None, client_code_input_callbac
     _Instances[device_name] = inst
     inst.automat(
         'start',
-        device_object=device_key_object,
         listening_callback=listening_callback,
         client_code_input_callback=client_code_input_callback,
     )
@@ -387,6 +388,34 @@ def stop_device(device_name):
 
 
 #------------------------------------------------------------------------------
+
+
+def is_device_started(device_name):
+    global _Instances
+    validate_device_name(device_name)
+    return device_name in _Instances
+
+
+def is_device_enabled(device_name):
+    validate_device_name(device_name)
+    device_key_object = devices(device_name)
+    if not device_key_object:
+        raise Exception('device %r does not exist' % device_name)
+    return device_key_object.active
+
+
+#------------------------------------------------------------------------------
+
+
+def reload_device(device_name):
+    global _Devices
+    if device_name not in _Devices:
+        return False
+    device_file_path = os.path.join(settings.DevicesDir(), device_name)
+    _Devices[device_name].load(device_file_path)
+    if _Debug:
+        lg.args(_DebugLevel, device_name=device_name)
+    return True
 
 
 def load_devices():
@@ -447,7 +476,7 @@ def reset_authorization(device_name):
     if not device_key_object:
         raise Exception('device %r does not exist' % device_name)
     if instances(device_name):
-        stop_device(device_name)
+        raise Exception('not possible to reset authorization with started device, device must be stopped first')
     device_key_object.meta['auth_token'] = None
     device_key_object.meta['session_key'] = None
     if not device_key_object.save():
@@ -458,6 +487,12 @@ def reset_authorization(device_name):
 def request_authorization(device_name, client_public_key_text, client_code):
     if _Debug:
         lg.args(_DebugLevel, device_name=device_name)
+    validate_device_name(device_name)
+    device_key_object = devices(device_name)
+    if not device_key_object:
+        raise Exception('device %r does not exist' % device_name)
+    if instances(device_name):
+        raise Exception('not possible to request authorization with started device, device must be stopped first')
     if not client_public_key_text.startswith('ssh-rsa '):
         client_public_key_text = 'ssh-rsa ' + client_public_key_text
     try:
@@ -465,12 +500,8 @@ def request_authorization(device_name, client_public_key_text, client_code):
         client_key_object.fromString(client_public_key_text)
     except Exception as exc:
         raise Exception('failed reading public key: %s' % str(exc))
-    validate_device_name(device_name)
-    device_key_object = devices(device_name)
-    if not device_key_object:
-        raise Exception('device %r does not exist' % device_name)
-    if instances(device_name):
-        stop_device(device_name)
+    if _Debug:
+        lg.args(_DebugLevel, meta=device_key_object.meta)
     device_key_object.meta['auth_token'] = cipher.generate_secret_text(10)
     device_key_object.meta['session_key'] = strng.to_text(base64.b64encode(cipher.make_key()))
     device_key_object.meta['client_public_key'] = client_key_object.toPublicString()

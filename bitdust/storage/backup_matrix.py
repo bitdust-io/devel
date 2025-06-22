@@ -310,7 +310,11 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
                     typ=backup_fs.DIR,
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
-                success, _modified = backup_fs.SetDir(item, customer_idurl=customer_idurl)
+                try:
+                    _, _modified = backup_fs.SetDir(item, customer_idurl=customer_idurl)
+                except backup_fs.FileSystemItemAlreadyExists:
+                    lg.err('found already existing file system item, skipped item is %r' % item)
+                    _modified = True
                 if _modified:
                     modified = True
     if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
@@ -371,7 +375,11 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
                 item.size = filesz
-                success, _modified = backup_fs.SetFile(item, customer_idurl=customer_idurl)
+                try:
+                    _, _modified = backup_fs.SetFile(item, customer_idurl=customer_idurl)
+                except backup_fs.FileSystemItemAlreadyExists:
+                    lg.err('found already existing file system item, skipped item is %r' % item)
+                    _modified = True
                 if _modified:
                     modified = True
     if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
@@ -386,7 +394,11 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                 key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
             )
             item.size = filesz
-            success, _modified = backup_fs.SetFile(item, customer_idurl=customer_idurl)
+            try:
+                _, _modified = backup_fs.SetFile(item, customer_idurl=customer_idurl)
+            except backup_fs.FileSystemItemAlreadyExists:
+                lg.err('found already existing file system item, skipped item is %r' % item)
+                _modified = True
             if _modified:
                 modified = True
         else:

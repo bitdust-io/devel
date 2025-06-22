@@ -594,6 +594,8 @@ def do_backup_key(key_id, keys_folder=None):
         remote_path_for_key = '.keys/%s.public' % key_id
     global_key_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_exists(global_key_path)
+    if _Debug:
+        lg.args(_DebugLevel, file_exists_response=res)
     if res['status'] == 'OK' and res['result'] and res['result'].get('exist'):
         from bitdust.storage import backup_control
         lg.warn('key %s already exists in catalog' % global_key_path)
@@ -617,7 +619,7 @@ def do_backup_key(key_id, keys_folder=None):
             else:
                 lg.warn('did not found running backup id for path: %r' % global_key_path_id)
     else:
-        res = api.file_create(global_key_path)
+        res = api.file_create(global_key_path, exist_ok=True)
         if res['status'] != 'OK':
             lg.err('failed to create path "%s" in the catalog: %r' % (global_key_path, res))
             return fail(Exception('failed to create path "%s" in the catalog: %r' % (global_key_path, res)))

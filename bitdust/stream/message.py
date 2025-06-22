@@ -35,7 +35,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -581,8 +581,8 @@ def consume_messages(consumer_callback_id, callback=None, direction=None, messag
     """
     if consumer_callback_id in consumers_callbacks():
         if not reset_callback:
-            raise Exception('consumer callback already exist')
-        clear_consumer_callbacks(consumer_callback_id)
+            raise Exception('consumer callback already exists')
+        clear_consumer_callbacks(consumer_callback_id, reason='reset')
     cb = callback or Deferred()
     consumers_callbacks()[consumer_callback_id] = {
         'callback': cb,
@@ -595,15 +595,17 @@ def consume_messages(consumer_callback_id, callback=None, direction=None, messag
     return cb
 
 
-def clear_consumer_callbacks(consumer_callback_id):
+def clear_consumer_callbacks(consumer_callback_id, reason=None):
     if consumer_callback_id not in consumers_callbacks().keys():
+        if _Debug:
+            lg.dbg(_DebugLevel, 'consumer callback %r not regisered' % consumer_callback_id)
         return True
     cb_info = consumers_callbacks().pop(consumer_callback_id)
     if isinstance(cb_info['callback'], Deferred):
         if _Debug:
             lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id, cb=cb_info['callback'], called=cb_info['callback'].called)
         if not cb_info['callback'].called:
-            cb_info['callback'].callback([])
+            cb_info['callback'].errback(Exception(str(reason)))
             cb_info['callback'] = None
     else:
         if _Debug:
@@ -704,8 +706,7 @@ def do_read():
         if (not cb_info or not cb_info['callback']) or len(pending_messages) > MAX_PENDING_MESSAGES_PER_CONSUMER:
             consumers_callbacks().pop(consumer_id, None)
             message_queue().pop(consumer_id, None)
-            if _Debug:
-                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", pending_messages=%d' % (consumer_id, len(pending_messages)))
+            lg.warn('stopped consumer "%s", pending_messages=%d' % (consumer_id, len(pending_messages)))
             continue
         # filter messages which consumer is not interested in
         if cb_info['direction']:
@@ -726,11 +727,13 @@ def do_read():
                 consumers_callbacks().pop(consumer_id, None)
                 continue
             try:
-                cb_info['callback'].callback(consumer_messages)
+                cb_result = cb_info['callback'].callback(consumer_messages)
             except:
                 lg.exc()
                 consumers_callbacks().pop(consumer_id, None)
                 continue
+            if _Debug:
+                lg.args(_DebugLevel, consumer_id=consumer_id, cb_result=cb_result)
             consumers_callbacks().pop(consumer_id, None)
             message_queue()[consumer_id] = []
             total_handled += len(consumer_messages)

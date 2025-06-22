@@ -105,7 +105,7 @@ def OK(result='', message=None, status='OK', **kwargs):
             'process_health',
             'network_connected',
         ] or _DebugLevel > 10:
-            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:80]))
+            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:250]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -147,7 +147,7 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150]))
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:250]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -204,7 +204,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150]))
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:250]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -666,13 +666,15 @@ def devices_list(sort: bool = False):
         result['name'] = result.pop('label')
         result['instance'] = None
         result['url'] = None
+        if result.get('meta'):
+            result['url'] = result['meta'].pop('url', None)
         result.pop('body', None)
         result.pop('local_key_id', None)
         device_instance = api_device.instances(device_name)
         if device_instance:
             result['instance'] = device_instance.to_json()
             result['instance'].pop('device_name', None)
-            result['url'] = result['instance'].pop('url', None)
+            result['url'] = result['instance'].pop('url', None) or result['url']
         results.append(result)
     if sort:
         results = sorted(results, key=lambda i: i['label'])
@@ -693,18 +695,20 @@ def device_info(name: str):
     device_object = api_device.devices(name)
     if not device_object:
         return ERROR('device %r does not exist' % name)
-    device_instance = api_device.instances(name)
     result = device_object.toDict()
     result['name'] = result.pop('label')
     result['url'] = None
+    if result.get('meta'):
+        result['url'] = result['meta'].pop('url', None)
     result['instance'] = None
     result.pop('body', None)
     result.pop('local_key_id', None)
+    device_instance = api_device.instances(name)
     if not device_instance:
         return OK(result)
     result['instance'] = device_instance.to_json()
     result['instance'].pop('device_name', None)
-    result['url'] = result['instance'].pop('url', None)
+    result['url'] = result['instance'].pop('url', None) or result['url']
     return OK(result)
 
 
@@ -803,7 +807,7 @@ def device_authorization_request(name: str, client_public_key: str, client_code:
     The `client_public_key` and `client_code` are generated on the remote device.
     Result data from that call needs to be decrypted and processed on the remote device to complete authorisation procedure.
 
-    This makes possible to authorize a remote device without entering the client and server 4 digits codes.
+    This makes possible to authorize a remote device without entering the 4-digits authorization code.
 
     ###### HTTP
         curl -X POST 'localhost:8180/device/authorization/request/v1' -d '{"name": "my_iPhone_12", "client_public_key": "AAAAB3Nza...", "client_code": "1234"}'
@@ -814,15 +818,121 @@ def device_authorization_request(name: str, client_public_key: str, client_code:
     from bitdust.interface import api_device
     if _Debug:
         lg.args(_DebugLevel, name=name)
+    device_object = api_device.devices(name)
+    if not device_object:
+        return ERROR('device %r does not exist' % name)
+    if not api_device.is_device_enabled(device_name=name):
+        return ERROR('device %r is not active at the moment' % name)
     try:
-        result = api_device.request_authorization(
+        authorization_result = api_device.request_authorization(
             device_name=name,
             client_public_key_text=client_public_key,
             client_code=client_code,
         )
     except Exception as exc:
         return ERROR(exc)
+    result = device_object.toDict()
+    result['authorization'] = authorization_result
+    result['name'] = result.pop('label')
+    result['url'] = None
+    if result.get('meta'):
+        result['url'] = result['meta'].pop('url', None)
+    result['instance'] = None
+    result.pop('body', None)
+    result.pop('local_key_id', None)
+    device_instance = api_device.instances(name)
+    if not device_instance:
+        return OK(result)
+    result['instance'] = device_instance.to_json()
+    result['instance'].pop('device_name', None)
+    result['url'] = result['instance'].pop('url', None) or result['url']
     return OK(result)
+
+
+def device_authorization_generate(name: str, client_key_size: int = 2048, start: bool = True, wait_listening: bool = False):
+    """
+    Generates private key and all required info to authorize a device configuration.
+
+    The information returned from that call must be securely copied to the target remote device and added to the web socket client configuration.
+
+    This makes possible to authorize a remote device without entering the 4-digits authorization code.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/device/authorization/generate/v1' -d '{"name": "my_iPhone_12", "client_key_size": 4096}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "device_authorization_generate", "kwargs": {"name": "my_iPhone_12", "client_key_size": 4096} }');
+    """
+    from bitdust.interface import api_device
+    from bitdust.crypt import rsa_key
+    from bitdust.crypt import cipher
+    if _Debug:
+        lg.args(_DebugLevel, name=name)
+    device_object = api_device.devices(name)
+    if not device_object:
+        return ERROR('device %r does not exist' % name)
+    if not api_device.is_device_enabled(device_name=name):
+        return ERROR('device %r is not active at the moment' % name)
+    if api_device.is_device_started(device_name=name):
+        try:
+            api_device.stop_device(name)
+        except Exception as exc:
+            return ERROR(exc)
+    client_key_object = rsa_key.RSAKey(label=f'client_key_{name}')
+    client_key_object.generate(client_key_size)
+    client_code = cipher.generate_digits(4, as_text=True)
+    try:
+        authorization_result = api_device.request_authorization(
+            device_name=name,
+            client_public_key_text=client_key_object.toPublicString(),
+            client_code=client_code,
+        )
+    except Exception as exc:
+        return ERROR(exc)
+
+    def _make_authorization_result(device_obj):
+        authorization_result['client_key'] = client_key_object.toDict(include_private=True)
+        authorization_result['client_code'] = client_code
+        result = device_obj.toDict()
+        if _Debug:
+            lg.args(_DebugLevel, device_object_result=result)
+        result['authorization'] = authorization_result
+        result['name'] = result.pop('label')
+        result['url'] = None
+        if result.get('meta'):
+            result['url'] = result['meta'].pop('url', None)
+        result['instance'] = None
+        result.pop('body', None)
+        result.pop('local_key_id', None)
+        device_instance = api_device.instances(name)
+        if not device_instance:
+            return OK(result)
+        result['instance'] = device_instance.to_json()
+        result['instance'].pop('device_name', None)
+        result['url'] = result['instance'].pop('url', None) or result['url']
+        return result
+
+    if not start:
+        return OK(_make_authorization_result(device_obj=api_device.devices(name)))
+    if not wait_listening:
+        try:
+            api_device.start_device(device_name=name)
+        except Exception as exc:
+            return ERROR(exc)
+        return OK(_make_authorization_result(device_obj=api_device.devices(name)))
+    ret = Deferred()
+
+    def _on_listening_started(success):
+        if not success:
+            ret.callback(ERROR('device configuration failed', api_method='device_start'))
+            return
+        ret.callback(OK(_make_authorization_result(device_obj=api_device.devices(name))))
+
+    try:
+        api_device.start_device(device_name=name, listening_callback=_on_listening_started)
+    except Exception as exc:
+        return ERROR(exc)
+    return ret
 
 
 def device_authorization_reset(name: str, start: bool = True, wait_listening: bool = False):
@@ -838,12 +948,19 @@ def device_authorization_reset(name: str, start: bool = True, wait_listening: bo
     from bitdust.interface import api_device
     if _Debug:
         lg.args(_DebugLevel, name=name)
+    if not api_device.is_device_enabled(device_name=name):
+        return ERROR('device %r is not active at the moment' % name)
+    if api_device.is_device_started(device_name=name):
+        try:
+            api_device.stop_device(name)
+        except Exception as exc:
+            return ERROR(exc)
     try:
         api_device.reset_authorization(device_name=name)
     except Exception as exc:
         return ERROR(exc)
     if not start:
-        return OK()
+        return device_info(name)
     return device_start(name, wait_listening=wait_listening)
 
 
@@ -867,11 +984,14 @@ def device_authorization_client_code(name: str, client_code: str):
     return OK()
 
 
-def device_stop(name: str):
+def device_stop(name: str, deactivate: bool = True):
     """
-    This will stop accepting incoming connections from given API device and deactivate it.
+    This will stop accepting incoming connections for given API device.
 
     Stored configuration will not be removed and the device can be started again later.
+
+    Passing `deactivate=False` will disable this device permanently, it will not be started automatically anymore.
+    Next start of the device will enable and activate it again.
 
     ###### HTTP
         curl -X POST 'localhost:8180/device/stop/v1 -d '{"name": "my_iPhone_12"}'
@@ -883,13 +1003,14 @@ def device_stop(name: str):
     if _Debug:
         lg.args(_DebugLevel, name=name)
     try:
-        api_device.disable_device(name)
-    except Exception as exc:
-        return ERROR(exc)
-    try:
         api_device.stop_device(name)
     except Exception as exc:
         return ERROR(exc)
+    if deactivate:
+        try:
+            api_device.disable_device(name)
+        except Exception as exc:
+            return ERROR(exc)
     return device_info(name)
 
 
@@ -2330,14 +2451,18 @@ def file_exists(remote_path: str):
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.file_exists remote_path=%s' % remote_path)
     from bitdust.storage import backup_fs
     from bitdust.system import bpio
     from bitdust.userid import global_id
     norm_path = global_id.NormalizeGlobalID(remote_path)
+    if not norm_path['path']:
+        if _Debug:
+            lg.args(_DebugLevel, remote_path=remote_path, norm_path=norm_path)
+        return ERROR('invalid "remote_path" format')
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_exists remote_path=%s customer_idurl==%r' % (remote_path, customer_idurl))
     if customer_idurl not in backup_fs.known_customers():
         return OK(
             {
@@ -2828,11 +2953,7 @@ def file_upload_start(local_path: str, remote_path: str, wait_result: bool = Fal
             return ERROR('service_shared_data() is not started')
     if wait_result:
         task_created_defer = Deferred()
-        tsk = backup_control.StartSingle(
-            pathID=pathIDfull,
-            localPath=local_path,
-            keyID=keyID,
-        )
+        tsk = backup_control.StartSingle(pathID=pathIDfull, localPath=local_path, keyID=keyID)
         tsk.result_defer.addCallback(
             lambda result: task_created_defer.callback(
                 OK(
@@ -4237,7 +4358,7 @@ def user_ping(user_id: str, timeout: int = None, retries: int = 1):
         curl -X GET 'localhost:8180/user/ping/v1?user_id=carol@computer-c.net'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "suppliers_ping", "kwargs": {} }');
+        websocket.send('{"command": "api_call", "method": "suppliers_ping", "kwargs": {"user_id": "carol@computer-c.net"} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
@@ -4565,7 +4686,7 @@ def message_conversations_list(message_types: str = '', offset: int = 0, limit: 
     return RESULT(conversations)
 
 
-def message_send(recipient_id: str, data: str, ping_timeout: int = 15, message_ack_timeout: int = 15):
+def message_send(recipient_id: str, data: dict, ping_timeout: int = 15, message_ack_timeout: int = 15):
     """
     Sends a private message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
 
@@ -4574,7 +4695,7 @@ def message_send(recipient_id: str, data: str, ping_timeout: int = 15, message_a
     Corresponding key will be recognized based on `recipient_id` parameter.
 
     Recipient will receive incoming message of type "private_message" and de-crypt it.
-    If recipient is listening on the new private messages it will be marked as "consumed".
+    If recipient is listening on the incoming private messages it will be marked as "consumed".
 
     Input `data` must be a JSON dictionary.
 
@@ -4590,18 +4711,24 @@ def message_send(recipient_id: str, data: str, ping_timeout: int = 15, message_a
     from bitdust.stream import message
     from bitdust.crypt import my_keys
     from bitdust.userid import global_id
+    if _Debug:
+        lg.args(_DebugLevel, recipient_id=recipient_id)
     if not recipient_id.count('@'):
         from bitdust.contacts import contactsdb
         recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
         if not recipient_idurl:
-            recipient_idurl = strng.to_bin(recipient_id)
+            recipient_idurl = strng.to_text(recipient_id)
         if not recipient_idurl:
             return ERROR('recipient was not found')
-        recipient_id = global_id.glob2idurl(recipient_idurl, as_field=False)
+        recipient_id = global_id.idurl2glob(recipient_idurl)
     glob_id = global_id.ParseGlobalID(recipient_id)
+    if _Debug:
+        lg.args(_DebugLevel, glob_id=glob_id)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
     target_glob_id = global_id.MakeGlobalID(**glob_id)
+    if _Debug:
+        lg.args(_DebugLevel, target_glob_id=target_glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
     if recipient_id.startswith('person$'):
@@ -4640,7 +4767,7 @@ def message_send(recipient_id: str, data: str, ping_timeout: int = 15, message_a
     return ret
 
 
-def message_send_group(group_key_id: str, data: str):
+def message_send_group(group_key_id: str, data: dict):
     """
     Sends a "group_message" to a group of users.
 
@@ -4729,6 +4856,8 @@ def message_receive(consumer_callback_id: str, direction: str = 'incoming', mess
         return ERROR('service_private_messages() is not started')
     from bitdust.stream import message
     from bitdust.p2p import p2p_service
+    if _Debug:
+        lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id)
     ret = Deferred()
     message_types = message_types.strip().split(',')
 
@@ -4777,12 +4906,16 @@ def message_receive(consumer_callback_id: str, direction: str = 'incoming', mess
         ret.callback(ERROR(err))
         return None
 
-    d = message.consume_messages(
-        consumer_callback_id=consumer_callback_id,
-        direction=direction,
-        message_types=message_types,
-        reset_callback=True,
-    )
+    try:
+        d = message.consume_messages(
+            consumer_callback_id=consumer_callback_id,
+            direction=direction,
+            message_types=message_types,
+            reset_callback=True,
+        )
+    except Exception as exc:
+        ret.callback(ERROR(exc))
+        return ret
     d.addCallback(_on_pending_messages)
     d.addErrback(_on_consume_error)
     if polling_timeout is not None:

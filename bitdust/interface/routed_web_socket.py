@@ -443,13 +443,15 @@ class RoutedWebSocket(automat.Automat):
         """
         Builds `routed_web_socket()` state machine.
         """
+        self.device_key_object = kwargs.pop('device_object')
+        self.device_name = self.device_key_object.label
+        self.encrypt_auth_info_callback = kwargs.pop('encrypt_auth_info_callback')
         self.authorized_routers = {}
         self.selected_routers = []
         self.routers_first_connect_results = {}
         self.active_router_url = None
         self.handshaked_routers = []
         self.server_code = None
-        self.device_name = None
         self.client_connected = False
         self.max_router_connections = config.conf().getInt('services/web-socket-communicator/max-connections', default=5)
         self.min_router_connections = config.conf().getInt('services/web-socket-communicator/min-connections', default=3)
@@ -756,9 +758,9 @@ class RoutedWebSocket(automat.Automat):
         """
         Condition method.
         """
-        authorized_routers = kwargs['device_object'].meta.get('authorized_routers', {}) or {}
+        authorized_routers = self.device_key_object.meta.get('authorized_routers', {}) or {}
         if not authorized_routers:
-            for router_host, route_id in kwargs['device_object'].meta.get('connected_routers', {}) or {}:
+            for router_host, route_id in self.device_key_object.meta.get('connected_routers', {}) or {}:
                 if route_id:
                     authorized_routers[router_host] = route_id
         if _Debug:
@@ -771,8 +773,6 @@ class RoutedWebSocket(automat.Automat):
         """
         global _IncomingRoutedMessageCallback
         _IncomingRoutedMessageCallback = self.on_incoming_message_callback
-        self.device_key_object = kwargs['device_object']
-        self.device_name = self.device_key_object.label
         _authorized_routers = self.device_key_object.meta.get('authorized_routers', {}) or {}
         if not _authorized_routers:
             for router_host, route_id in self.device_key_object.meta.get('connected_routers', {}).items():
@@ -990,8 +990,7 @@ class RoutedWebSocket(automat.Automat):
         """
         Action method.
         """
-        from bitdust.interface import api_device
-        auth_info, signature = api_device.encrypt_auth_info(
+        auth_info, signature = self.encrypt_auth_info_callback(
             client_code=kwargs['client_code'],
             auth_token=self.auth_token,
             session_key=self.session_key,
@@ -1296,6 +1295,7 @@ class RoutedWebSocket(automat.Automat):
             lg.args(_DebugLevel, old=self.authorized_routers, new=_authorized_routers)
         self.authorized_routers = _authorized_routers
         self.device_key_object.meta['authorized_routers'] = self.authorized_routers
+        self.device_key_object.meta['url'] = self.active_router_url
         self.device_key_object.save()
 
     def _do_publish_routers(self):

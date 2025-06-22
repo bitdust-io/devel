@@ -65,7 +65,7 @@ from io import StringIO
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 24
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -97,6 +97,7 @@ from bitdust.services import driver
 from bitdust.lib import misc
 from bitdust.lib import packetid
 from bitdust.lib import jsn
+from bitdust.lib import utime
 
 from bitdust.crypt import my_keys
 
@@ -126,6 +127,13 @@ _FileSystemIndexByName = {}
 _FileSystemIndexByID = {}
 _RevisionNumber = {}
 _Stats = {}
+
+#------------------------------------------------------------------------------
+
+
+class FileSystemItemAlreadyExists(Exception):
+    pass
+
 
 #------------------------------------------------------------------------------
 
@@ -409,16 +417,17 @@ class FSItemInfo():
     A class to represent a remote file or folder.
     """
 
-    def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None):
+    def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None, created=None):
         self.unicodename = strng.to_text(name)
         self.path_id = path_id
         self.type = typ
         self.size = -1
         self.key_id = key_id
         self.versions = {}
+        self.created = created or utime.get_sec1970()
 
     def __repr__(self):
-        return '<%s %s %d %s>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size, self.key_id)
+        return '<%s %s %s %d %s>' % (TYPES[self.type], self.path_id, misc.unicode_to_str_safe(self.name()), self.size, self.key_id)
 
     def to_json(self):
         return {
@@ -562,7 +571,7 @@ class FSItemInfo():
 
     def serialize(self, encoding='utf-8', to_json=False):
         if _Debug:
-            lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()), i=id(self), iv=id(self.versions))
+            lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()))
         if to_json:
             return {
                 'n': strng.to_text(self.unicodename, encoding=encoding),
@@ -570,6 +579,7 @@ class FSItemInfo():
                 't': self.type,
                 's': self.size,
                 'k': self.key_id,
+                'c': self.created,
                 'v': [{
                     'n': v,
                     'b': self.versions[v][0],
@@ -577,7 +587,7 @@ class FSItemInfo():
                 } for v in self.list_versions(sorted=True)],
             }
         e = strng.to_text(self.unicodename, encoding=encoding)
-        return '%s %d %d %s\n%s\n' % (self.path_id, self.type, self.size, self.pack_versions(), e)
+        return '%s %d %d %s\n%s\n%d\n' % (self.path_id, self.type, self.size, self.pack_versions(), e, self.created)
 
     def unserialize(self, src, decoding='utf-8', from_json=False):
         if from_json:
@@ -586,23 +596,30 @@ class FSItemInfo():
                 self.path_id = strng.to_text(src['i'], encoding=decoding)
                 self.type = src['t']
                 self.size = src['s']
+                self.created = int(src.get('c') or utime.get_sec1970())
                 self.key_id = my_keys.latest_key_id(strng.to_text(src['k'], encoding=decoding))
                 self.versions = {strng.to_text(v['n']): [v['b'], v['s']] for v in src['v']}
             except:
                 lg.exc()
                 raise KeyError('Incorrect item format:\n%s' % src)
             if _Debug:
-                lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()), i=id(self), iv=id(self.versions))
+                lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()))
             return True
 
         try:
-            details, name = strng.to_text(src, encoding=decoding).split('\n')[:2]
+            _lines = strng.to_text(src, encoding=decoding).split('\n')
+            if len(_lines) > 2:
+                details, name, created = _lines[:3]
+            else:
+                details, name = _lines[:2]
+                created = utime.get_sec1970()
         except:
             raise Exception('incorrect item format:\n%s' % src)
         if not details or not name:
             raise Exception('incorrect item format:\n%s' % src)
         try:
             self.unicodename = name
+            self.created = int(created)
             details = details.split(' ')
             self.path_id, self.type, self.size = details[:3]
             self.type, self.size = int(self.type), int(self.size)
@@ -611,7 +628,7 @@ class FSItemInfo():
             lg.exc()
             raise KeyError('incorrect item format:\n%s' % src)
         if _Debug:
-            lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()), i=id(self), iv=id(self.versions))
+            lg.args(_DebugLevel, k=self.key_id, pid=self.path_id, v=list(self.versions.keys()))
         return True
 
 
@@ -853,7 +870,7 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, key_i
 #------------------------------------------------------------------------------
 
 
-def SetFile(item, customer_idurl=None):
+def SetFile(item, customer_idurl=None, force_replace_existing=False):
     """
     Put existing FSItemInfo ``item`` (for some single file) into the index.
 
@@ -866,12 +883,20 @@ def SetFile(item, customer_idurl=None):
     iter = fs(customer_idurl, key_alias)
     iterID = fsID(customer_idurl, key_alias)
     parts = item.path_id.lstrip('/').split('/')
+    itemname = item.name()
     for j in range(len(parts)):
         part = parts[j]
-        id = misc.ToInt(part, part)
+        id = misc.ToInt(part, default=part)
         if j == len(parts) - 1:
-            if item.name() not in iter:
-                iter[item.name()] = id
+            if itemname in iter:
+                if iter[itemname] != id:
+                    existing_fs_item = iterID.get(iter[itemname])
+                    if not force_replace_existing:
+                        raise FileSystemItemAlreadyExists(existing_fs_item)
+                    iter[itemname] = id
+                    iterID[id] = item
+            else:
+                iter[itemname] = id
                 iterID[id] = item
                 return True, True
             if item.pack_versions() == iterID[id].pack_versions():
@@ -895,7 +920,7 @@ def SetFile(item, customer_idurl=None):
     return False, False
 
 
-def SetDir(item, customer_idurl=None):
+def SetDir(item, customer_idurl=None, force_replace_existing=False):
     """
     Same, but ``item`` is a folder.
     """
@@ -906,10 +931,17 @@ def SetDir(item, customer_idurl=None):
     itemname = item.name()
     for j in range(len(parts)):
         part = parts[j]
-        id = misc.ToInt(part, part)
+        id = misc.ToInt(part, default=part)
         if j == len(parts) - 1:
             modified = False
-            if itemname not in iter:
+            if itemname in iter:
+                if 0 in iter[itemname] and iter[itemname].get(0) != int(id):
+                    existing_fs_item = iterID.get(iter[itemname].get(0))
+                    if not force_replace_existing:
+                        raise FileSystemItemAlreadyExists(existing_fs_item)
+                    iter[itemname][0] = int(id)
+                    modified = True
+            else:
                 iter[itemname] = {}
                 modified = True
             if iter[itemname].get(0) != int(id):
@@ -958,9 +990,9 @@ def WalkByPath(path, iter=None):
 
     Return None or tuple (iterator, ID).
 
-      >>> backup_fs.WalkByPath('C:/Program Files/7-Zip/7z.exe')
+      >>> backup_fs.WalkByPath('/home/user/animals/cat.png')
       (3, '0/0/0/3')
-      >>> backup_fs.WalkByPath('C:/Program Files/7-Zip/Lang/')
+      >>> backup_fs.WalkByPath('/home/user/animals/cat.png')
       ({0: 10, u'ru.txt': 1, u'en.ttt': 0}, '0/0/0/10')
     """
     if iter is None:
@@ -999,7 +1031,7 @@ def WalkByID(pathID, iterID=None):
     Same, but search by ID:
 
         >>> backup_fs.WalkByID('0/0/0/10/1')
-        (<FILE ru.txt 19107>, u'c:/Program Files/7-Zip/Lang/ru.txt')
+        (<FILE ru.txt 19107>, u'/home/user/animals/cat.png')
 
     Both "walk" operations is working at O(log(n)) performance.
     """
@@ -1013,7 +1045,7 @@ def WalkByID(pathID, iterID=None):
     parts = pathID.strip('/').split('/')
     for j in range(len(parts)):
         part = parts[j]
-        id = misc.ToInt(part, part)
+        id = misc.ToInt(part, default=part)
         if id not in iterID:
             return None
         if isinstance(iterID[id], dict):
@@ -1051,7 +1083,7 @@ def DeleteByID(pathID, iter=None, iterID=None):
     parts = pathID.strip('/').split('/')
     for j in range(len(parts)):
         part = parts[j]
-        id = misc.ToInt(part, part)
+        id = misc.ToInt(part, default=part)
         if id not in iterID:
             return None
         if isinstance(iterID[id], dict):
@@ -1945,28 +1977,46 @@ def UnserializeIndex(json_data, customer_idurl=None, new_revision=None, deleted_
             item.unserialize(json_item, decoding=decoding, from_json=True)
             if item.path_id in deleted_path_ids:
                 continue
-            known_items.add(item.path_id)
             if item.type == FILE:
-                success, modified = SetFile(item, customer_idurl=customer_idurl)
+                try:
+                    success, modified = SetFile(item, customer_idurl=customer_idurl)
+                except FileSystemItemAlreadyExists as exc:
+                    if exc.args[0].created < item.created:
+                        lg.warn('replacing older file system item %r, with %r' % (exc.args[0], item))
+                        success, modified = SetFile(item, customer_idurl=customer_idurl, force_replace_existing=True)
+                    else:
+                        lg.err('found already existing file system item %r, skipped item is %r' % (exc.args[0], item))
+                        continue
                 if not success:
-                    lg.warn('Can not put FILE item into the tree: %s' % str(item))
-                    raise ValueError('Can not put FILE item into the tree: %s' % str(item))
+                    lg.err('was not able to place file system item into catalog: %r' % item)
+                    continue
+                    # raise ValueError('Can not put FILE item into the tree: %s' % str(item))
                 count += 1
                 if modified:
                     count_modified += 1
                     modified_items.add(item.path_id)
                     new_files.append(item)
             elif item.type == DIR:
-                success, modified = SetDir(item, customer_idurl=customer_idurl)
+                try:
+                    success, modified = SetDir(item, customer_idurl=customer_idurl)
+                except FileSystemItemAlreadyExists as exc:
+                    if exc.args[0].created < item.created:
+                        lg.warn('replacing older file system item %r, with %r' % (exc.args[0], item))
+                        success, modified = SetFile(item, customer_idurl=customer_idurl, force_replace_existing=True)
+                    else:
+                        lg.err('found already existing file system item %r, skipped item is %r' % (exc.args[0], item))
+                        continue
                 if not success:
-                    lg.warn('Can not put DIR item into the tree: %s' % str(item))
-                    raise ValueError('Can not put DIR item into the tree: %s' % str(item))
+                    lg.err('was not able to place file system item into catalog: %r' % item)
+                    # raise ValueError('Can not put DIR item into the tree: %s' % str(item))
+                    continue
                 count += 1
                 if modified:
                     count_modified += 1
                     modified_items.add(item.path_id)
             else:
                 raise ValueError('Incorrect entry type')
+            known_items.add(item.path_id)
 
         if _Debug:
             lg.args(_DebugLevel, c=customer_idurl, k=key_alias, new_files=len(new_files))
@@ -2206,7 +2256,6 @@ def _test():
     """
     For tests.
     """
-    import pprint
     settings.init()
     filepath = settings.BackupIndexFilePath()
     # print filepath
@@ -2234,17 +2283,17 @@ def _test():
     #     print IsDir('dir1')
     #     print IsFile('dir2/fff')
 
-    print('------------')
-    pprint.pprint(fs(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'))
-    pprint.pprint(ListChildsByPath(
-        path='',
-        recursive=True,
-        iter=fs(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'),
-        iterID=fsID(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'),
-    ))
+    # print('------------')
+    # pprint.pprint(fs(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'))
+    # pprint.pprint(ListChildsByPath(
+    #     path='',
+    #     recursive=True,
+    #     iter=fs(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'),
+    #     iterID=fsID(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'),
+    # ))
     # print()
     # pprint.pprint(fsID())
-    print('------------')
+    # print('------------')
 
     # print(HasChilds('', iter=fs(customer_idurl)))
     # pprint.pprint([i[1] for i in ListAllBackupIDsFull()])

@@ -405,17 +405,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             wait_listening=bool(data.get('wait_listening', '0') in YES),
         )
 
-    @POST('^/dev/a/r$')
-    @POST('^/v1/device/authorization/reset$')
-    @POST('^/device/authorization/reset/v1$')
-    def device_authorization_reset_v1(self, request):
-        data = _request_data(request, mandatory_keys=['name'])
-        return api.device_authorization_reset(
-            name=data['name'],
-            start=bool(data.get('start', '1') in YES),
-            wait_listening=bool(data.get('wait_listening', '0') in YES),
-        )
-
     @POST('^/dev/a/req$')
     @POST('^/v1/device/authorization/request$')
     @POST('^/device/authorization/request/v1$')
@@ -425,6 +414,29 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             name=data['name'],
             client_public_key=data['client_public_key'],
             client_code=data['client_code'],
+        )
+
+    @POST('^/dev/a/gen$')
+    @POST('^/v1/device/authorization/generate$')
+    @POST('^/device/authorization/generate/v1$')
+    def device_authorization_generate_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name'])
+        return api.device_authorization_generate(
+            name=data['name'],
+            client_key_size=int(data['client_key_size']) if 'client_key_size' in data else None,
+            start=bool(data.get('start', '1') in YES),
+            wait_listening=bool(data.get('wait_listening', '0') in YES),
+        )
+
+    @POST('^/dev/a/r$')
+    @POST('^/v1/device/authorization/reset$')
+    @POST('^/device/authorization/reset/v1$')
+    def device_authorization_reset_v1(self, request):
+        data = _request_data(request, mandatory_keys=['name'])
+        return api.device_authorization_reset(
+            name=data['name'],
+            start=bool(data.get('start', '1') in YES),
+            wait_listening=bool(data.get('wait_listening', '0') in YES),
         )
 
     @POST('^/dev/a/cc$')
@@ -1156,10 +1168,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/v1/message/send$')
     @POST('^/message/send/v1$')
     def message_send_v1(self, request):
-        data = _request_data(request, mandatory_keys=[
-            ('recipient_id', 'idurl', 'global_id', 'id'),
-            'data',
-        ])
+        data = _request_data(request, mandatory_keys=[('recipient_id', 'idurl', 'global_id', 'id'), 'data'])
         return api.message_send(
             recipient_id=data.get('recipient_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
             data=data['data'],

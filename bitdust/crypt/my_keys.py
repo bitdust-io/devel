@@ -480,9 +480,8 @@ def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None)
         lg.out(_DebugLevel, 'my_keys.generate_key %r of %d bits, label=%r' % (key_id, key_size, label))
     _LatestLocalKeyID += 1
     save_latest_local_key_id(keys_folder=keys_folder)
-    key_object = rsa_key.RSAKey()
+    key_object = rsa_key.RSAKey(label=label)
     key_object.generate(key_size)
-    key_object.label = label
     key_object.active = active
     key_object.local_key_id = _LatestLocalKeyID
     known_keys()[key_id] = key_object
@@ -691,9 +690,9 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
         include_private=not key_object.isPublic(),
         generate_signature=True,
     )
-    key_object.signed = (
-        signed_key_info['signature'],
-        signed_key_info['signature_pubkey'],
+    key_object.save_signed_info(
+        signature_raw=signed_key_info['signature'],
+        public_key_raw=signed_key_info['signature_pubkey'],
     )
     known_keys()[key_id] = key_object
     if save:
@@ -1039,9 +1038,9 @@ def read_key_info(key_json):
         key_object.label = strng.to_text(key_json.get('label', ''))
         key_object.active = key_json.get('active', True)
         if 'signature' in key_json and 'signature_pubkey' in key_json:
-            key_object.signed = (
-                key_json['signature'],
-                key_json['signature_pubkey'],
+            key_object.save_signed_info(
+                signature_raw=key_json['signature'],
+                public_key_raw=key_json['signature_pubkey'],
             )
     except:
         lg.exc()
