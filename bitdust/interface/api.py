@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _APILogFileEnabled = None
@@ -105,7 +105,7 @@ def OK(result='', message=None, status='OK', **kwargs):
             'process_health',
             'network_connected',
         ] or _DebugLevel > 10:
-            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:80]))
+            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:250]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -147,7 +147,7 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150]))
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:250]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -204,7 +204,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150]))
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:250]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -2451,14 +2451,18 @@ def file_exists(remote_path: str):
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.file_exists remote_path=%s' % remote_path)
     from bitdust.storage import backup_fs
     from bitdust.system import bpio
     from bitdust.userid import global_id
     norm_path = global_id.NormalizeGlobalID(remote_path)
+    if not norm_path['path']:
+        if _Debug:
+            lg.args(_DebugLevel, remote_path=remote_path, norm_path=norm_path)
+        return ERROR('invalid "remote_path" format')
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_exists remote_path=%s customer_idurl==%r' % (remote_path, customer_idurl))
     if customer_idurl not in backup_fs.known_customers():
         return OK(
             {
@@ -2949,11 +2953,7 @@ def file_upload_start(local_path: str, remote_path: str, wait_result: bool = Fal
             return ERROR('service_shared_data() is not started')
     if wait_result:
         task_created_defer = Deferred()
-        tsk = backup_control.StartSingle(
-            pathID=pathIDfull,
-            localPath=local_path,
-            keyID=keyID,
-        )
+        tsk = backup_control.StartSingle(pathID=pathIDfull, localPath=local_path, keyID=keyID)
         tsk.result_defer.addCallback(
             lambda result: task_created_defer.callback(
                 OK(

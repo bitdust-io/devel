@@ -758,9 +758,9 @@ class RoutedWebSocket(automat.Automat):
         """
         Condition method.
         """
-        authorized_routers = kwargs['device_object'].meta.get('authorized_routers', {}) or {}
+        authorized_routers = self.device_key_object.meta.get('authorized_routers', {}) or {}
         if not authorized_routers:
-            for router_host, route_id in kwargs['device_object'].meta.get('connected_routers', {}) or {}:
+            for router_host, route_id in self.device_key_object.meta.get('connected_routers', {}) or {}:
                 if route_id:
                     authorized_routers[router_host] = route_id
         if _Debug:
