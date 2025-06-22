@@ -823,6 +823,8 @@ def device_authorization_request(name: str, client_public_key: str, client_code:
         return ERROR('device %r does not exist' % name)
     if not api_device.is_device_enabled(device_name=name):
         return ERROR('device %r is not active at the moment' % name)
+    if api_device.instances(name):
+        return ERROR('not possible to request authorization when device is started, device must be stopped first')
     try:
         authorization_result = api_device.request_authorization(
             device_name=name,
@@ -873,11 +875,8 @@ def device_authorization_generate(name: str, client_key_size: int = 2048, start:
         return ERROR('device %r does not exist' % name)
     if not api_device.is_device_enabled(device_name=name):
         return ERROR('device %r is not active at the moment' % name)
-    if api_device.is_device_started(device_name=name):
-        try:
-            api_device.stop_device(name)
-        except Exception as exc:
-            return ERROR(exc)
+    if api_device.instances(name):
+        return ERROR('not possible to generate authorization when device is started, device must be stopped first')
     client_key_object = rsa_key.RSAKey(label=f'client_key_{name}')
     client_key_object.generate(client_key_size)
     client_code = cipher.generate_digits(4, as_text=True)
@@ -906,7 +905,7 @@ def device_authorization_generate(name: str, client_key_size: int = 2048, start:
         result.pop('local_key_id', None)
         device_instance = api_device.instances(name)
         if not device_instance:
-            return OK(result)
+            return result
         result['instance'] = device_instance.to_json()
         result['instance'].pop('device_name', None)
         result['url'] = result['instance'].pop('url', None) or result['url']
@@ -948,13 +947,10 @@ def device_authorization_reset(name: str, start: bool = True, wait_listening: bo
     from bitdust.interface import api_device
     if _Debug:
         lg.args(_DebugLevel, name=name)
+    if api_device.instances(name):
+        return ERROR('not possible to reset authorization when device is started, device must be stopped first')
     if not api_device.is_device_enabled(device_name=name):
         return ERROR('device %r is not active at the moment' % name)
-    if api_device.is_device_started(device_name=name):
-        try:
-            api_device.stop_device(name)
-        except Exception as exc:
-            return ERROR(exc)
     try:
         api_device.reset_authorization(device_name=name)
     except Exception as exc:
