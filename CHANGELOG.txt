@@ -1,6 +1,28 @@
 Change Log
 ==========
 
+2025-06-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added api.device_authorization_generate() method (#217)
+* updated api.device*() methods
+* fixes in bitdust/storage/backup_fs.py
+* fixes in bitdust/stream/message.py
+* solved several issues with "bitdust chat" cmd line interface
+* various minor bug fixes
+* better logging of "Invalid signature" exceptions
+
+
+
+2025-06-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added types & defaults to API methods specs
+* built api.device_authorization_request() method
+* some rework in api.device_*() methods
+* rework and fixes in encrypted_web_socket() (#216)
+* removed deprecated "import imp" module call
+
+
+
 2025-06-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * automatic reconnection to new routers in routed_web_socket()
