@@ -374,14 +374,14 @@ def on_data(newpacket):
         lg.warn('got empty filename, bad customer or wrong packetID?')
         # p2p_service.SendFail(newpacket, 'empty filename')
         return False
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        try:
-            bpio._dirs_make(dirname)
-        except:
-            lg.err('can not create sub dir %s' % dirname)
-            p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
-            return False
+    # dirname = os.path.dirname(filename)
+    # if not os.path.exists(dirname):
+    #     try:
+    #         bpio._dirs_make(dirname)
+    #     except:
+    #         lg.err('can not create sub dir %s' % dirname)
+    #         p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
+    #         return False
     new_data = newpacket.Serialize()
     donated_bytes = settings.getDonatedBytes()
     accounting.check_create_customers_quotas(donated_bytes)
@@ -403,15 +403,23 @@ def on_data(newpacket):
                 return False
         except:
             lg.exc()
-    data_exists = not os.path.exists(filename)
-    data_changed = True
-    if not data_exists:
-        if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
-            current_data = bpio.ReadBinaryFile(filename)
-            if current_data == new_data:
-                lg.warn('skip rewriting existing file %s' % filename)
-                data_changed = False
-    if data_changed:
+    data_existed = os.path.exists(filename)
+    # data_changed = True
+    # if data_exists:
+    #     if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
+    #         current_data = bpio.ReadBinaryFile(filename)
+    #         if current_data == new_data:
+    #             data_changed = False
+    # if data_changed:
+    if True:
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            try:
+                bpio._dirs_make(dirname)
+            except:
+                lg.err('can not create sub dir %s' % dirname)
+                p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
+                return False
         if not bpio.WriteBinaryFile(filename, new_data):
             lg.err('can not write to %s' % str(filename))
             p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
@@ -421,14 +429,14 @@ def on_data(newpacket):
     sz = len(newpacket.Payload)
     p2p_service.SendAck(newpacket, response=strng.to_text(sz), remote_idurl=authorized_idurl)
     reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
-    if key_alias != 'master' and data_changed:
+    if key_alias != 'master':  # and data_changed:
         if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
             do_notify_supplier_file_modified(key_alias, settings.BackupIndexFileName(), 'write', customer_idurl, authorized_idurl)
         else:
             if packetid.BlockNumber(newpacket.PacketID) == 0:
                 do_notify_supplier_file_modified(key_alias, remote_path, 'write', customer_idurl, authorized_idurl)
     if _Debug:
-        lg.args(_DebugLevel, sz=sz, fn=filename, remote_idurl=authorized_idurl, pid=newpacket.PacketID)
+        lg.args(_DebugLevel, sz=sz, fn=filename, remote_idurl=authorized_idurl, pid=newpacket.PacketID, existed=data_existed)
     return True
 
 
@@ -691,7 +699,8 @@ def on_delete_backup(newpacket):
             except:
                 lg.exc()
         else:
-            lg.warn('path not found %s' % filename)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'path not found %s' % filename)
         do_notify_supplier_file_modified(glob_path['key_alias'], glob_path['path'], 'delete', newpacket.OwnerID, newpacket.CreatorID)
     p2p_service.SendAck(newpacket)
     if _Debug:

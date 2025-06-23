@@ -493,7 +493,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.critical_suppliers_number = 1
         self.dht_lookup_use_cache = True
         self.received_index_file_revision = {}
-        self.last_time_in_sync = -1
+        self.last_time_restarted = -1
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
         self.to_be_restarted = False
@@ -711,7 +711,9 @@ class SharedAccessCoordinator(automat.Automat):
             remote_path = kwargs['remote_path']
             if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
                 if self.state == 'CONNECTED':
-                    self.automat('restart')
+                    if time.time() - self.last_time_restarted > 120:
+                        self.last_time_restarted = time.time()
+                        self.automat('restart')
                 else:
                     self.to_be_restarted = True
             else:
@@ -719,7 +721,9 @@ class SharedAccessCoordinator(automat.Automat):
                 iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(self.customer_idurl, self.key_alias))
                 if not iter_path:
                     lg.warn('did not found modified file %r in the catalog, restarting %r' % (kwargs['remote_path'], self))
-                    self.automat('restart')
+                    if time.time() - self.last_time_restarted > 120:
+                        self.last_time_restarted = time.time()
+                        self.automat('restart')
                 else:
                     sc = supplier_connector.by_idurl(
                         supplier_idurl,
