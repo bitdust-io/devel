@@ -33,6 +33,7 @@ module:: cmd_line_json
 
 from __future__ import absolute_import
 from __future__ import print_function
+
 from six.moves import range
 
 #------------------------------------------------------------------------------
@@ -519,25 +520,26 @@ def cmd_device(opts, args, overDict, running, executablePath):
                         (ret.get('result', {}) or {}).get('url') or '',
                         r.get('auth_info') or '',
                         str(r.get('client_code') or ''),
-                        ((r.get('client_private_key') or {}).get('body') or '').replace('\n', '\\n').replace('-----END RSA PRIVATE KEY-----', '').replace('-----BEGIN RSA PRIVATE KEY-----', ''),
-                        ((r.get('client_private_key') or {}).get('label') or '').replace('&', ''),
-                        str((r.get('client_private_key') or {}).get('size') or ''),
-                        r.get('server_public_key') or '',
+                        ((r.get('client_key') or {}).get('body') or '').strip().replace('-----END RSA PRIVATE KEY-----', '').replace('-----BEGIN RSA PRIVATE KEY-----', '').strip().replace('\n', '\\n'),
+                        ((r.get('client_key') or {}).get('label') or '').replace('&', ''),
+                        str((r.get('client_key') or {}).get('size') or ''),
+                        (r.get('server_public_key') or '').replace('ssh-rsa ', ''),
                         r.get('signature') or '',
                     ]
                 )
                 if len(args) > 3:
                     open(args[3], 'wt').write(access_key_text)
+                    print_text('Stored client access key for "%s" in %s, copy that file to your client device' % (args[2], args[3]))
                 else:
                     print_text('The following is your client access key for "%s", copy this exact text content to your client device:\n\n%s\n' % (args[2], access_key_text))
             reactor.stop()  # @UndefinedVariable
 
-        def _do_start_generate():
-            d = call_websocket_method('device_authorization_generate', name=args[2])
+        def _do_device_authorization_generate():
+            d = call_websocket_method('device_authorization_generate', name=args[2], start=False)
             d.addCallback(_device_authorization_generate_cb)
             d.addErrback(fail_and_stop)
 
-        reactor.callWhenRunning(_do_start_generate)  # @UndefinedVariable
+        reactor.callWhenRunning(_do_device_authorization_generate)  # @UndefinedVariable
         reactor.run()  # @UndefinedVariable
         return 0
 

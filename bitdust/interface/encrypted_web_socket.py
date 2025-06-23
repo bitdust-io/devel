@@ -179,7 +179,6 @@ class EncryptedWebSocket(automat.Automat):
         self.port_number = int(kwargs.pop('port_number'))
         self.url = f'ws://{self.host.strip().strip("/")}:{self.port_number}'
         self.server_code = None
-        self.device_name = None
         self.client_connected = False
         super(EncryptedWebSocket, self).__init__(
             name='encrypted_web_socket',
@@ -554,6 +553,10 @@ class EncryptedWebSocket(automat.Automat):
             _Listeners[self.device_name] = listen(f'tcp:{self.port_number}:interface={self.host}', ws)
         except:
             lg.exc()
+            cb = self.listening_callback
+            self.automat('stop')
+            if cb:
+                reactor.callLater(0, cb, False)  # @UndefinedVariable
             return None, None
         self.device_key_object.meta['url'] = self.url
         self.device_key_object.save()
