@@ -621,7 +621,7 @@ def scenario8():
     connected_routers.insert(0, 'ws://failing-router:8282/?r=ABCDEFGH')
 
     open('client.json', 'w').write(json.dumps({
-        'routers': connected_routers,
+        'listeners': connected_routers,
     }))
     def _test_client():
         counter = 0
@@ -2262,7 +2262,7 @@ def scenario19():
         assert False, 'web socket was not started'
 
     open('client.json', 'w').write(json.dumps({
-        'routers': [ws_url, ],
+        'listeners': [ws_url, ],
     }))
     def _test_client():
         counter = 0

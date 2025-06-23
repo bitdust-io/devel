@@ -610,12 +610,12 @@ def cmd_device(opts, args, overDict, running, executablePath):
         if routed:
             key_sz = int(args[4]) if len(args) > 4 else 2048
             tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
-            return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=True, key_size=key_sz, activate=False, wait_listening=False)
+            return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=True, key_size=key_sz, activate=True, wait_listening=False)
         device_host = args[4] if len(args) > 4 else 'localhost'
         device_port = int(args[5]) if len(args) > 5 else 8281
         key_sz = int(args[6]) if len(args) > 6 else 2048
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
-        return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=False, web_socket_host=device_host, web_socket_port=device_port, key_size=key_sz, activate=False, wait_listening=False)
+        return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=False, web_socket_host=device_host, web_socket_port=device_port, key_size=key_sz, activate=True, wait_listening=False)
 
     if len(args) >= 3 and args[1] in ['delete', 'erase', 'remove', 'del', 'rm']:
         tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)

@@ -1001,7 +1001,7 @@ class RoutedWebSocket(automat.Automat):
             'cmd': 'client-code',
             'auth': auth_info,
             'signature': signature,
-            'routers': self.handshaked_routers,
+            'listeners': self.handshaked_routers,
         })
 
     def doWaitClientCodeInput(self, *args, **kwargs):
