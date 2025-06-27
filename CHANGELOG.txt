@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+2025-06-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make sure key label and local_key_id is not shared to suppliers
+* rename a field in web socket client-server interface
+* fix in bitdust/supplier/customer_space.py
+* IDURL bug fix in bitdust/userid/id_url.py
+
+
+
 2025-06-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added api.device_authorization_generate() method (#217)
