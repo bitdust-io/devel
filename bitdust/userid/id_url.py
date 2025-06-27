@@ -105,6 +105,7 @@ def init():
         lg.info('using existing folder %r' % _IdentityHistoryDir)
     for_cleanup = []
     for one_user_dir in os.listdir(_IdentityHistoryDir):
+        one_user_name = one_user_dir.split('@')[0]
         one_user_dir_path = os.path.join(_IdentityHistoryDir, one_user_dir)
         if not os.path.isdir(one_user_dir_path):
             continue
@@ -129,7 +130,7 @@ def init():
                 if not known_id_obj.Valid():
                     raise Exception('identity history in %r is broken, identity is not valid: %r' % (one_user_dir, one_ident_path))
             except Exception as exc:
-                lg.warn(str(exc))
+                lg.err(str(exc))
                 for_cleanup.append(one_ident_path)
                 continue
             one_pub_key = known_id_obj.getPublicKey()
@@ -137,10 +138,19 @@ def init():
             if one_pub_key not in _KnownUsers:
                 _KnownUsers[one_pub_key] = one_user_dir_path
             one_unique_name = '{}_{}'.format(
-                strng.to_text(one_ident_file).strip()[0:-4],
+                one_user_name,
                 strng.to_text(hashes.sha1(one_pub_key, hexdigest=True)),
             )
             known_sources = known_id_obj.getSources(as_originals=True)
+            name_is_matching = True
+            for known_idurl in reversed(known_sources):
+                if nameurl.GetName(known_idurl) != one_user_name:
+                    name_is_matching = False
+                    break
+            if not name_is_matching:
+                lg.err('identity name in one of the sources %r is not matching with %r' % (one_ident_path, one_user_name))
+                for_cleanup.append(one_ident_path)
+                continue
             for known_idurl in reversed(known_sources):
                 if known_idurl not in _KnownIDURLs:
                     _KnownIDURLs[known_idurl] = known_id_obj.getPublicKey()

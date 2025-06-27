@@ -204,7 +204,7 @@ class NicknameObserver(automat.Automat):
             nick, index = self.nickname.rsplit(':', 1)
             index = int(index)
         except:
-            nick = self.nickname.replace(':', '_')
+            nick = self.nickname.replace(':', '')
             index = 0
         self.nickname = nick
         # self.key = nick + ':' + str(number)

@@ -747,6 +747,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             trusted_user_id=data['trusted_user_id'],
             include_private=bool(data.get('include_private', '0') in YES),
             include_signature=bool(data.get('include_signature', '0') in YES),
+            include_label=bool(data.get('include_label', '0') in YES),
         )
 
     @POST('^/k/a$')

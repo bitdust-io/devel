@@ -349,7 +349,7 @@ def websocket_thread():
         ws_url = 'ws://localhost:8280/'
         if _APISecretFilePath:
             if os.path.isfile(_APISecretFilePath):
-                api_secret = local_fs.ReadTextFile(_APISecretFilePath)
+                api_secret = local_fs.ReadTextFile(_APISecretFilePath).strip()
                 if api_secret:
                     ws_url += '?api_secret=' + api_secret
         if _Debug:

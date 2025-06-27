@@ -61,6 +61,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
 import time
 import base64
 
@@ -111,6 +112,10 @@ from bitdust.customer import supplier_connector
 from bitdust.userid import global_id
 from bitdust.userid import id_url
 from bitdust.userid import my_id
+
+#------------------------------------------------------------------------------
+
+SHARE_RESTART_MIN_DELAY = None
 
 #------------------------------------------------------------------------------
 
@@ -372,7 +377,7 @@ def on_supplier_modified(evt):
                 # only send public keys of my own shares
                 my_keys_to_be_republished.append(key_id)
         for key_id in my_keys_to_be_republished:
-            d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False, include_signature=False)
+            d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False, include_signature=False, include_label=False, include_local_id=False)
             d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
 
 
@@ -493,7 +498,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.critical_suppliers_number = 1
         self.dht_lookup_use_cache = True
         self.received_index_file_revision = {}
-        self.last_time_in_sync = -1
+        self.last_time_file_modified_restart = -1
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
         self.to_be_restarted = False
@@ -705,13 +710,18 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        global SHARE_RESTART_MIN_DELAY
+        if SHARE_RESTART_MIN_DELAY is None:
+            SHARE_RESTART_MIN_DELAY = int(os.environ.get('BITDUST_SHARE_RESTART_MIN_DELAY', 120))
         supplier_idurl = id_url.field(kwargs['supplier_idurl'])
         pkt_out = None
         if event == 'supplier-file-modified':
             remote_path = kwargs['remote_path']
             if remote_path == settings.BackupIndexFileName() or packetid.IsIndexFileName(remote_path):
                 if self.state == 'CONNECTED':
-                    self.automat('restart')
+                    if time.time() - self.last_time_file_modified_restart > SHARE_RESTART_MIN_DELAY:
+                        self.last_time_file_modified_restart = time.time()
+                        self.automat('restart')
                 else:
                     self.to_be_restarted = True
             else:
@@ -719,7 +729,9 @@ class SharedAccessCoordinator(automat.Automat):
                 iter_path = backup_fs.WalkByID(remote_path, iterID=backup_fs.fsID(self.customer_idurl, self.key_alias))
                 if not iter_path:
                     lg.warn('did not found modified file %r in the catalog, restarting %r' % (kwargs['remote_path'], self))
-                    self.automat('restart')
+                    if time.time() - self.last_time_file_modified_restart > SHARE_RESTART_MIN_DELAY:
+                        self.last_time_file_modified_restart = time.time()
+                        self.automat('restart')
                 else:
                     sc = supplier_connector.by_idurl(
                         supplier_idurl,
@@ -756,7 +768,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        d = key_ring.transfer_key(kwargs['key_id'], kwargs['supplier_idurl'], include_private=False, include_signature=False)
+        d = key_ring.transfer_key(kwargs['key_id'], kwargs['supplier_idurl'], include_private=False, include_signature=False, include_label=False, include_local_id=False)
         d.addCallback(lambda r: self._on_key_transfer_success(**kwargs))
         d.addErrback(self._on_supplier_failed, supplier_idurl=kwargs['supplier_idurl'], reason='failed sending key %r' % kwargs['key_id'])
 

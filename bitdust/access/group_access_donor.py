@@ -170,7 +170,7 @@ class GroupAccessDonor(automat.Automat):
         """
         Action method.
         """
-        d = key_ring.share_key(self.group_key_id, self.remote_idurl, include_private=True, include_signature=True)
+        d = key_ring.share_key(self.group_key_id, self.remote_idurl, include_private=True, include_signature=True, include_label=True, include_local_id=False)
         d.addCallback(self._on_user_priv_key_shared)
         d.addErrback(self._on_user_priv_key_failed)
 

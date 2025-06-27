@@ -429,6 +429,7 @@ def start_daemon(node, skip_initialize=False, verbose=False):
         'BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT=1122 ' \
         'BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED=3344 ' \
         'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 ' \
+        'BITDUST_SHARE_RESTART_MIN_DELAY=1 ' \
         'BITDUST_LOG_USE_COLORS=0 ' \
         'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config ' \
         'bitdust daemon'
@@ -451,6 +452,7 @@ async def start_daemon_async(node, loop, verbose=False):
         'BITDUST_WEB_SOCKET_CLIENT_CODE_INPUT=1122 ' \
         'BITDUST_WEB_SOCKET_SERVER_CODE_GENERATED=3344 ' \
         'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 ' \
+        'BITDUST_SHARE_RESTART_MIN_DELAY=1 ' \
         'BITDUST_LOG_USE_COLORS=0 ' \
         'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config ' \
         'bitdust daemon'

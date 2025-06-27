@@ -271,7 +271,7 @@ def on_message(ws_inst, message):
             orig_encrypted_payload = base64.b64decode(strng.to_bin(encrypted_payload))
             client_info = jsn.loads(system.ReadTextFile(_ClientInfoFilePath) or '{}')
             client_code = client_info['client_code']
-            linked_routers = client_info['routers']
+            listeners = client_info['listeners']
             client_key_object = rsa_key.RSAKey()
             client_key_object.fromDict(client_info['key'])
             server_key_object = rsa_key.RSAKey()
@@ -296,7 +296,7 @@ def on_message(ws_inst, message):
             return False
         client_info['auth_token'] = auth_token
         client_info['session_key'] = session_key_text
-        client_info['routers'] = linked_routers
+        client_info['listeners'] = listeners
         system.WriteTextFile(_ClientInfoFilePath, jsn.dumps(client_info, indent=2))
         _WebSocketAuthToken = auth_token
         _WebSocketSessionKey = base64.b64decode(strng.to_bin(session_key_text))
@@ -481,8 +481,8 @@ def websocket_thread():
     if _Debug:
         print('websocket_thread() beginning _ClientInfoFilePath=%r' % _ClientInfoFilePath)
     client_info = jsn.loads(system.ReadTextFile(_ClientInfoFilePath) or '{}')
-    routers = client_info['routers']
-    _WebSocketConnectingMaxAttempts = len(routers)
+    listeners = client_info['listeners']
+    _WebSocketConnectingMaxAttempts = len(listeners)
     _WebSocketConnectingAttempts = 1
     while is_started():
         if _Debug:
@@ -491,7 +491,7 @@ def websocket_thread():
         if _WebSocketConnectingAttempts > _WebSocketConnectingMaxAttempts:
             on_error(Exception('connection attempts exceeded, failed connecting to web socket'))
             break
-        url = routers[_WebSocketConnectingAttempts - 1]
+        url = listeners[_WebSocketConnectingAttempts - 1]
         if _Debug:
             print('    going to connect to %r, attempts=%r, max_attempts=%r' % (url, _WebSocketConnectingAttempts, _WebSocketConnectingMaxAttempts))
         _WebSocketApp = web_socket.WebSocketApp(

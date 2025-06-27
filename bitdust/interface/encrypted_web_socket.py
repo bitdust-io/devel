@@ -476,6 +476,7 @@ class EncryptedWebSocket(automat.Automat):
             'cmd': 'client-code',
             'auth': auth_info,
             'signature': signature,
+            'listeners': [self.url],
         })
 
     def doWaitClientCodeInput(self, *args, **kwargs):

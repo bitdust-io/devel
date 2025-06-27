@@ -2136,12 +2136,12 @@ def key_erase(key_id: str):
     return OK(message='key %s was erased' % key_id)
 
 
-def key_share(key_id: str, trusted_user_id: str, include_private: bool = False, include_signature: bool = False, timeout: int = 30):
+def key_share(key_id: str, trusted_user_id: str, include_private: bool = False, include_signature: bool = False, include_label=False, timeout: int = 30):
     """
     Connects to remote user and transfer given public or private key to that node.
     This way you can share access to files/groups/resources with other users in the network.
 
-    If you pass `include_private=True` also private part of the key will be shared, otherwise only public part.
+    WARNING!!! If you pass `include_private=True` also private part of the key will be shared, otherwise only public part.
 
     ###### HTTP
         curl -X PUT 'localhost:8180/key/share/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"}'
@@ -2167,7 +2167,15 @@ def key_share(key_id: str, trusted_user_id: str, include_private: bool = False, 
         idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
     from bitdust.access import key_ring
     ret = Deferred()
-    d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, include_signature=include_signature, timeout=timeout)
+    d = key_ring.share_key(
+        key_id=full_key_id,
+        trusted_idurl=idurl,
+        include_private=include_private,
+        include_signature=include_signature,
+        include_label=include_label,
+        include_local_id=False,
+        timeout=timeout,
+    )
     d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_share')))
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='key_share')))
     return ret
@@ -3435,6 +3443,8 @@ def shares_list(only_active: bool = False, include_mine: bool = True, include_gr
     for key_id in my_keys.known_keys():
         if not key_id.startswith('share_'):
             continue
+        if not my_keys.is_key_private(key_id, include_master=False):
+            continue
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         if not id_url.is_cached(creator_idurl):
             continue
@@ -3811,6 +3821,8 @@ def groups_list(only_active: bool = False, include_mine: bool = True, include_gr
         return RESULT(results)
     for group_key_id in my_keys.known_keys():
         if not group_key_id.startswith('group_'):
+            continue
+        if not my_keys.is_key_private(group_key_id, include_master=False):
             continue
         group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
         to_be_listed = False
