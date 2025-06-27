@@ -313,9 +313,9 @@ def scenario4():
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
 
-    run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_mine/', verbose=ssh_cmd_verbose)
-    run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
-    run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/dog_shared/', verbose=ssh_cmd_verbose)
+    run_ssh_command_and_wait('customer-2', f'mkdir -p /customer_2/cat_mine/', verbose=ssh_cmd_verbose)
+    run_ssh_command_and_wait('customer-2', f'mkdir -p /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
+    run_ssh_command_and_wait('customer-2', f'mkdir -p /customer_2/dog_shared/', verbose=ssh_cmd_verbose)
 
     # make sure private key for shared location was delivered from customer-1 to customer-2
     kw.service_info_v1('customer-2', 'service_keys_storage', 'ON')
@@ -1575,6 +1575,9 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
         destination_path=old_customer_1_info['download_filepath'],
         verify_from_local_path=old_customer_1_info['local_filepath'],
     )
+
+    # re-open the share to make sure it is reconnected and supplies list is updated
+    kw.share_open_v1('customer-1', customer_1_shared_file_info['share_id'])
 
     # make sure we can still download the file shared by customer-2 back on customer-1
     kw.share_info_v1('customer-1', customer_1_shared_file_info['share_id'], wait_state='CONNECTED')

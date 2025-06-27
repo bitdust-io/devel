@@ -98,13 +98,13 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
-def _do_request_service_keys_registry(key_id, idurl, include_private, include_signature, timeout, result):
+def _do_request_service_keys_registry(key_id, idurl, include_private, include_signature, include_label, include_local_id, timeout, result):
     p2p_service.SendRequestService(
         idurl,
         'service_keys_registry',
         timeout=timeout,
         callbacks={
-            commands.Ack(): lambda response, info: _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout),
+            commands.Ack(): lambda response, info: _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, include_label, include_local_id, result, timeout),
             commands.Fail(): lambda response, info: result.errback(Exception('"service_keys_registry" not started on remote node')),
             None: lambda pkt_out: result.errback(Exception('timeout')),
         },
@@ -112,7 +112,7 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, include_si
     return result
 
 
-def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout):
+def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, include_label, include_local_id, result, timeout):
     if not strng.to_text(response.Payload).startswith('accepted'):
         if not result.called:
             result.errback(Exception('request for "service_keys_registry" refused by remote node'))
@@ -122,6 +122,8 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
         trusted_idurl=idurl,
         include_private=include_private,
         include_signature=include_signature,
+        include_label=include_label,
+        include_local_id=include_local_id,
         timeout=timeout,
         result=result,
     )
@@ -158,7 +160,7 @@ def _on_transfer_key_response(response, info, key_id, result):
     return None
 
 
-def transfer_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=None, result=None):
+def transfer_key(key_id, trusted_idurl, include_private=False, include_signature=False, include_label=False, include_local_id=False, timeout=None, result=None):
     """
     Actually sending given key to remote user.
     """
@@ -189,6 +191,8 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
             key_object,
             key_id=key_id,
             include_private=include_private,
+            include_label=include_label,
+            include_local_id=include_local_id,
             generate_signature=include_signature,
         )
     except Exception as exc:
@@ -225,7 +229,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
     return result
 
 
-def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=None):
+def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, include_label=False, include_local_id=False, timeout=None):
     """
     Method to be used to send given key to one trusted user.
     Make sure remote user is identified and connected.
@@ -248,6 +252,8 @@ def share_key(key_id, trusted_idurl, include_private=False, include_signature=Fa
         trusted_idurl,
         include_private,
         include_signature,
+        include_label,
+        include_local_id,
         timeout,
         result,
     ))

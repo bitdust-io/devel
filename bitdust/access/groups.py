@@ -201,7 +201,7 @@ def send_group_pub_key_to_suppliers(group_key_id):
     l = []
     for supplier_idurl in contactsdb.suppliers():
         if supplier_idurl:
-            d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False, include_signature=False)
+            d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False, include_signature=False, include_label=False, include_local_id=False)
             d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
             # TODO: build some kind of retry mechanism - in case of a particular supplier did not received the key

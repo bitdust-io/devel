@@ -49,7 +49,7 @@ Commands:
   device enable <name>
   device disable <name>
   device authorize <name> [client code] [client public key]
-  device generate-client-code <name> [output file path]
+  device access-key <name> [output file path]
   id
   idurl
   identity create <username> [private key size]

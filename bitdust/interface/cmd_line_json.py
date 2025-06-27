@@ -506,7 +506,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
 
     from twisted.internet import reactor  # @UnresolvedImport
 
-    if len(args) >= 3 and args[1] in ['generate-client-key', 'generate-access-key', 'key', 'client-key', 'access-key']:
+    if len(args) >= 3 and args[1] in ['generate-client-code', 'generate-client-key', 'generate-access-key', 'key', 'client-key', 'access-key']:
 
         def _device_authorization_generate_cb(ret):
             if _Debug:
