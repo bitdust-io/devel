@@ -303,7 +303,7 @@ def IsCanonicalVersion(versionName):
     """
     Check given ``versionName`` to have a valid format.
     """
-    return re.match('^F\d+?(AM|PM)\d*?$', versionName) is not None
+    return re.match(r'^F\d+?(AM|PM)\d*?$', versionName) is not None
 
 
 def IsPacketNameCorrect(fileName):
@@ -311,7 +311,7 @@ def IsPacketNameCorrect(fileName):
     Check the ``fileName`` (this is a last 3 parts of packet ID) to have a
     valid format.
     """
-    return re.match('^\d+?\-\d+?\-(Data|Parity)$', fileName) is not None
+    return re.match(r'^\d+?\-\d+?\-(Data|Parity)$', fileName) is not None
 
 
 def IsPathIDCorrect(pathID, customer_id_mandatory=False):

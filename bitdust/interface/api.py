@@ -1689,7 +1689,7 @@ def identity_get(include_xml_source: bool = False):
     return OK(r)
 
 
-def identity_create(username: str, preferred_servers: str = '', join_network: bool = False):
+def identity_create(username: str, preferred_servers: list = [], join_network: bool = False):
     """
     Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
 
@@ -1742,7 +1742,7 @@ def identity_create(username: str, preferred_servers: str = '', join_network: bo
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
-    my_id_registrator.A('start', username=username, preferred_servers=(preferred_servers.strip().split(',') if preferred_servers.strip() else []))
+    my_id_registrator.A('start', username=username, preferred_servers=preferred_servers)
     return ret
 
 

@@ -587,7 +587,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/config/get$')
     @GET('^/config/get/v1$')
     def config_get_v1(self, request):
-        return api.config_get(key=_request_arg(request, 'key', mandatory=True), include_info=bool(_request_arg(request, 'include_info', '0') in YES))
+        return api.config_get(
+            key=_request_arg(request, 'key', mandatory=True),
+            include_info=bool(_request_arg(request, 'include_info', '0') in YES),
+        )
 
     @POST('^/c/s/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/$')
     @POST('^/v1/config/set/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)$')
@@ -630,7 +633,11 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/identity/create/v1$')
     def identity_create_v1(self, request):
         data = _request_data(request, mandatory_keys=['username'])
-        return api.identity_create(username=data['username'], join_network=bool(data.get('join_network', '0') in YES))
+        return api.identity_create(
+            username=data['username'],
+            join_network=bool(data.get('join_network', '0') in YES),
+            preferred_servers=(data.get('preferred_servers', '') or '').strip().split(','),
+        )
 
     @POST('^/i/b$')
     @POST('^/identity/backup$')
