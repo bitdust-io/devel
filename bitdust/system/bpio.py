@@ -1095,7 +1095,7 @@ def getMountPointLinux(path):
 #-------------------------------------------------------------------------------
 
 
-def find_process(applist):
+def find_process(applist, cmdline_filter=None):
     """
     A portable method to search executed processes.
 
@@ -1121,18 +1121,22 @@ def find_process(applist):
             for app in applist:
                 if app.startswith('regexp:'):
                     if re.match(app[7:], cmdline) is not None:
-                        pidsL.append(p_pid)
+                        if cmdline_filter is None or cmdline_filter(cmdline):
+                            if p_pid not in pidsL:
+                                pidsL.append(p_pid)
                 else:
                     if cmdline.count(app):
-                        pidsL.append(p_pid)
+                        if cmdline_filter is None or cmdline_filter(cmdline):
+                            if p_pid not in pidsL:
+                                pidsL.append(p_pid)
         if pidsL:
             return pidsL
     except:
         pass
     if Windows():
-        return find_process_win32(applist)
+        return find_process_win32(applist, cmdline_filter=cmdline_filter)
     else:
-        return find_process_linux(applist)
+        return find_process_linux(applist, cmdline_filter=cmdline_filter)
     return []
 
 
@@ -1179,7 +1183,7 @@ def list_processes_linux():
             pass
 
 
-def find_process_linux(applist):
+def find_process_linux(applist, cmdline_filter=None):
     """
     You can look for some process name, give a keywords or regexp strings list
     to search.
@@ -1197,14 +1201,18 @@ def find_process_linux(applist):
         for app in applist:
             if app.startswith('regexp:'):
                 if re.match(app[7:], cmdline) is not None:
-                    pidsL.append(pid)
+                    if cmdline_filter is None or cmdline_filter(cmdline):
+                        if pid not in pidsL:
+                            pidsL.append(pid)
             else:
                 if cmdline.find(app) > -1:
-                    pidsL.append(pid)
+                    if cmdline_filter is None or cmdline_filter(cmdline):
+                        if pid not in pidsL:
+                            pidsL.append(pid)
     return pidsL
 
 
-def find_process_win32(applist):
+def find_process_win32(applist, cmdline_filter=None):
     """
     Search for process name, for MS Windows.
     """
@@ -1223,10 +1231,14 @@ def find_process_win32(applist):
             for app in applist:
                 if app.startswith('regexp:'):
                     if re.match(app[7:], cmdline) is not None:
-                        pidsL.append(pid)
+                        if cmdline_filter is None or cmdline_filter(cmdline):
+                            if pid not in pidsL:
+                                pidsL.append(pid)
                 else:
                     if cmdline.find(app) > -1:
-                        pidsL.append(pid)
+                        if cmdline_filter is None or cmdline_filter(cmdline):
+                            if pid not in pidsL:
+                                pidsL.append(pid)
     except:
         lg.exc()
     return pidsL
@@ -1296,7 +1308,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
             'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
         ])
     q += extra_lookups
-    appList = find_process(q)
+    appList = find_process(q, cmdline_filter=lambda cmdline: not (cmdline.lower().count('bitdust.py') and cmdline.lower().count('install')))
     if not appList:
         return []
     if not check_processid_file:
@@ -1340,7 +1352,7 @@ def lookup_main_process():
             'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
             'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
         ])
-    return find_process(q)
+    return find_process(q, cmdline_filter=lambda cmdline: not (cmdline.lower().count('bitdust.py') and cmdline.lower().count('install')))
 
 
 #------------------------------------------------------------------------------

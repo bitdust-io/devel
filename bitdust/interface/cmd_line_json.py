@@ -1561,6 +1561,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---show---
     elif cmd == 'show' or cmd == 'open':
+        # TODO: cleanup bpgui
+        # switch to Desktop p2p-app
         appList_bpgui = bpio.find_process(['bpgui.exe', 'bpgui.py'])
         appList = bpio.find_main_process()
         if len(appList_bpgui) > 0:

@@ -986,8 +986,8 @@ def device_stop(name: str, deactivate: bool = True):
 
     Stored configuration will not be removed and the device can be started again later.
 
-    Passing `deactivate=False` will disable this device permanently, it will not be started automatically anymore.
-    Next start of the device will enable and activate it again.
+    Passing `deactivate=True` will disable this device permanently, it will not be started automatically anymore.
+    Next start of the device will automatically activate it again.
 
     ###### HTTP
         curl -X POST 'localhost:8180/device/stop/v1 -d '{"name": "my_iPhone_12"}'
