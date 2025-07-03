@@ -364,9 +364,10 @@ def run(args):
     fil.close()
     os.chmod(script_path, 0o775)
     print_text('\n***** BitDust app files created successfully in {}\n'.format(base_dir))
+    print_text('To run BitDust you can use this executable file:\n\n    {}\n\n'.format(script_path))
     print_text('To create system-wide shell command you can add folder {} to your PATH:\n'.format(base_dir))
     print_text('    export PATH="$PATH:{}"\n\n'.format(base_dir))
-    print_text('To run BitDust without system-wide alias use this executable file:\n\n    {}\n\n'.format(script_path))
-    print_text('After you installed system-wide alias for BitDust you can learn more about how to use the software via command line:\n\n    bitdust help\n\n')
+    print_text('Once you set a system-wide alias for BitDust, you are invited to learn more about the software via the command line:\n\n    bitdust help\n\n')
+    print_text('Visit BitDust Wiki on-line page:\n\n    www.bitdust.io/wiki\n\n')
     print_text('Welcome to BitDust!\n\n')
     return 0
