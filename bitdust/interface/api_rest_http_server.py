@@ -587,7 +587,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/config/get$')
     @GET('^/config/get/v1$')
     def config_get_v1(self, request):
-        return api.config_get(key=_request_arg(request, 'key', mandatory=True), include_info=bool(_request_arg(request, 'include_info', '0') in YES))
+        return api.config_get(
+            key=_request_arg(request, 'key', mandatory=True),
+            include_info=bool(_request_arg(request, 'include_info', '0') in YES),
+        )
 
     @POST('^/c/s/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/$')
     @POST('^/v1/config/set/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)$')
@@ -630,7 +633,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/identity/create/v1$')
     def identity_create_v1(self, request):
         data = _request_data(request, mandatory_keys=['username'])
-        return api.identity_create(username=data['username'], join_network=bool(data.get('join_network', '0') in YES))
+        preferred_servers = (data.get('preferred_servers', '') or '').strip().lower()
+        return api.identity_create(
+            username=data['username'],
+            join_network=bool(data.get('join_network', '0') in YES),
+            preferred_servers=preferred_servers.split(',') if preferred_servers else [],
+        )
 
     @POST('^/i/b$')
     @POST('^/identity/backup$')
@@ -1353,13 +1361,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/connection/list$')
     @GET('^/connection/list/v1$')
     def connection_list_v1(self, request):
-        return api.connections_list(protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None)
+        return api.connections_list(protocols=_request_arg(request, 'protocols', '').strip().lower())
 
     @GET('^/str/l$')
     @GET('^/v1/stream/list$')
     @GET('^/stream/list/v1$')
     def stream_list_v1(self, request):
-        return api.streams_list(protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None)
+        return api.streams_list(protocols=_request_arg(request, 'protocols', '').strip().lower())
 
     #------------------------------------------------------------------------------
 

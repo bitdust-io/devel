@@ -365,7 +365,7 @@ def ValidEmail(email, full_check=True):
     """
     A method to validate typed email address.
     """
-    regexp = '^[\w\-\.\@]*$'
+    regexp = r'^[\w\-\.\@]*$'
     if re.match(regexp, email) is None:
         return False
     if email.startswith('.'):
@@ -383,7 +383,7 @@ def ValidEmail(email, full_check=True):
     if len(email) < 3:
         return False
     if full_check:
-        regexp2 = '^[\w\-\.]*\@[\w\-\.]*$'
+        regexp2 = r'^[\w\-\.]*\@[\w\-\.]*$'
         if re.match(regexp2, email) is None:
             return False
     return True
@@ -393,7 +393,7 @@ def ValidPhone(value):
     """
     A method to validate typed phone number.
     """
-    regexp = '^[ \d\-\+]*$'
+    regexp = r'^[ \d\-\+]*$'
     if re.match(regexp, value) is None:
         return False
     if len(value) < 5:
@@ -405,7 +405,7 @@ def ValidName(value):
     """
     A method to validate user name.
     """
-    regexp = '^[\w\-]*$'
+    regexp = r'^[\w\-]*$'
     if re.match(regexp, value) is None:
         return False
     if len(value) > 100:
@@ -660,7 +660,7 @@ def split_geom_string(geomstr):
     Split strings created with format "%dx%d+%d+%d" into 4 integers.
     """
     try:
-        r = re.split('\D+', geomstr, 4)
+        r = re.split(r'\D+', geomstr, 4)
         return int(r[0]), int(r[1]), int(r[2]), int(r[3])
     except:
         return None, None, None, None

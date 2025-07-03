@@ -531,7 +531,9 @@ def cmd_device(opts, args, overDict, running, executablePath):
                     open(args[3], 'wt').write(access_key_text)
                     print_text('stored client access key for "%s" in %s, copy that file to your client device' % (args[2], args[3]))
                 else:
-                    print_text('the following is your client access key for "%s", copy this exact text content to your client device:\n\n%s\n' % (args[2], access_key_text))
+                    print_text(
+                        'the following is your client access key for "%s", copy this exact text content to your client device:\n\n-----BEGIN DEVICE ACCESS KEY-----\n%s\n-----END DEVICE ACCESS KEY-----\n\n' % (args[2], access_key_text)
+                    )
             reactor.stop()  # @UndefinedVariable
 
         def _do_device_authorization_generate():
@@ -903,32 +905,7 @@ def cmd_api(opts, args, overDict, executablePath):
         return 1
 
     if len(args) < 2:
-        for method_name in dir(api):
-            if method_name.startswith('_'):
-                continue
-            if method_name in [
-                'reactor',
-                'ERROR',
-                'OK',
-                'RESULT',
-                'driver',
-                'lg',
-                'absolute_import',
-                'Failure',
-                'Deferred',
-                'os',
-                'time',
-                'on_api_result_prepared',
-                'succeed',
-                'sys',
-                'strng',
-                'map',
-                'jsn',
-                'json',
-                'gc',
-                'config',
-            ]:
-                continue
+        for method_name in api._ALL:
             method = getattr(api, method_name, None)
             if not method:
                 continue
@@ -962,7 +939,12 @@ def cmd_api(opts, args, overDict, executablePath):
         print_text('')
         return 0
 
-    method = getattr(api, args[1], None)
+    method_name = args[1]
+    if method_name not in api._ALL:
+        print_text('invalid api method name')
+        return 1
+
+    method = getattr(api, method_name, None)
     if not method:
         print_text('invalid api method name')
         return 1
@@ -1561,6 +1543,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---show---
     elif cmd == 'show' or cmd == 'open':
+        # TODO: cleanup bpgui
+        # switch to Desktop p2p-app
         appList_bpgui = bpio.find_process(['bpgui.exe', 'bpgui.py'])
         appList = bpio.find_main_process()
         if len(appList_bpgui) > 0:

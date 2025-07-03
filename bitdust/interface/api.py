@@ -46,6 +46,7 @@ import os
 import sys
 import time
 import gc
+import inspect
 
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred  # @UnresolvedImport
@@ -986,8 +987,8 @@ def device_stop(name: str, deactivate: bool = True):
 
     Stored configuration will not be removed and the device can be started again later.
 
-    Passing `deactivate=False` will disable this device permanently, it will not be started automatically anymore.
-    Next start of the device will enable and activate it again.
+    Passing `deactivate=True` will disable this device permanently, it will not be started automatically anymore.
+    Next start of the device will automatically activate it again.
 
     ###### HTTP
         curl -X POST 'localhost:8180/device/stop/v1 -d '{"name": "my_iPhone_12"}'
@@ -1689,7 +1690,7 @@ def identity_get(include_xml_source: bool = False):
     return OK(r)
 
 
-def identity_create(username: str, preferred_servers: str = '', join_network: bool = False):
+def identity_create(username: str, preferred_servers: list = [], join_network: bool = False):
     """
     Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
 
@@ -1742,7 +1743,7 @@ def identity_create(username: str, preferred_servers: str = '', join_network: bo
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
-    my_id_registrator.A('start', username=username, preferred_servers=(preferred_servers.strip().split(',') if preferred_servers.strip() else []))
+    my_id_registrator.A('start', username=username, preferred_servers=preferred_servers)
     return ret
 
 
@@ -2136,7 +2137,7 @@ def key_erase(key_id: str):
     return OK(message='key %s was erased' % key_id)
 
 
-def key_share(key_id: str, trusted_user_id: str, include_private: bool = False, include_signature: bool = False, include_label=False, timeout: int = 30):
+def key_share(key_id: str, trusted_user_id: str, include_private: bool = False, include_signature: bool = False, include_label: bool = False, timeout: int = 30):
     """
     Connects to remote user and transfer given public or private key to that node.
     This way you can share access to files/groups/resources with other users in the network.
@@ -6575,3 +6576,33 @@ def automat_events_stop(index: int = None, automat_id: str = None):
         return ERROR('state machine instance was not found')
     inst.publishEvents(False, publish_event_state_not_changed=False)
     return OK(message='stopped publishing events from the state machine', result=inst.to_json())
+
+
+#------------------------------------------------------------------------------
+
+_ALL = [
+    name for name, func in inspect.getmembers(sys.modules[__name__]) if (
+        inspect.isfunction(func) and not name.startswith('_') and func.__module__ == __name__ and name not in (
+            # TODO: keep that list up-to-date when adding new variables/imports/methods to that module
+            'reactor',
+            'on_api_result_prepared',
+            'Deferred',
+            'ERROR',
+            'Failure',
+            'OK',
+            'RESULT',
+            'strng',
+            'sys',
+            'time',
+            'gc',
+            'map',
+            'os',
+            'absolute_import',
+            'driver',
+            'filemanager',
+            'inspect',
+            'jsn',
+            'lg',
+        )
+    )
+]

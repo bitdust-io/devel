@@ -357,14 +357,16 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         if args:
-            login = args[0]['username']
+            username = args[0]['username']
             preferred_servers = args[0].get('preferred_servers', [])
         else:
-            login = kwargs['username']
+            username = kwargs['username']
             preferred_servers = kwargs.get('preferred_servers', [])
         self.preferred_servers = [s.strip() for s in preferred_servers]
         if not self.known_servers:
             self.known_servers = known_servers.by_host()
+        if _Debug:
+            lg.args(_DebugLevel, username=username, preferred_servers=self.preferred_servers)
         if not self.preferred_servers:
             try:
                 for srv in strng.to_text(config.conf().getString('services/identity-propagate/preferred-servers')).split(','):
@@ -375,12 +377,12 @@ class IdRegistrator(automat.Automat):
         self.min_servers = max(settings.MinimumIdentitySources(), config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources())
         self.max_servers = min(settings.MaximumIdentitySources(), config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
         if _Debug:
-            lg.out(_DebugLevel, 'id_registrator.doSaveMyName [%s]' % login)
+            lg.out(_DebugLevel, 'id_registrator.doSaveMyName [%s]' % username)
             lg.out(_DebugLevel, '    known_servers=%s' % self.known_servers)
             lg.out(_DebugLevel, '    preferred_servers=%s' % self.preferred_servers)
             lg.out(_DebugLevel, '    min_servers=%s' % self.min_servers)
             lg.out(_DebugLevel, '    max_servers=%s' % self.max_servers)
-        bpio.WriteTextFile(settings.UserNameFilename(), login)
+        bpio.WriteTextFile(settings.UserNameFilename(), username)
 
     def doSelectRandomServers(self, *args, **kwargs):
         """
