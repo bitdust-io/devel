@@ -87,41 +87,7 @@ def init(port=None):
     except:
         lg.exc()
         return
-    _AllAPIMethods = set(dir(api))
-    _AllAPIMethods.difference_update(
-        [
-            # TODO: keep that list up to date when changing the api
-            'reactor',
-            'on_api_result_prepared',
-            'Deferred',
-            'ERROR',
-            'Failure',
-            'OK',
-            'RESULT',
-            '_Debug',
-            '_DebugLevel',
-            '_APILogFileEnabled',
-            'strng',
-            'sys',
-            'time',
-            'gc',
-            'map',
-            'os',
-            '__builtins__',
-            '__cached__',
-            '__doc__',
-            '__file__',
-            '__loader__',
-            '__name__',
-            '__package__',
-            '__spec__',
-            'absolute_import',
-            'driver',
-            'filemanager',
-            'jsn',
-            'lg',
-        ]
-    )
+    _AllAPIMethods = api._ALL.copy()
     if _Debug:
         lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods:\n%r' % (_WebSocketListener, len(_AllAPIMethods), _AllAPIMethods))
     read_api_secret()

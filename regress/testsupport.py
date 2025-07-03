@@ -29,7 +29,6 @@ import json
 import pprint
 import aiohttp  # @UnresolvedImport
 import requests
-from setuptools._distutils import cmd
 
 #------------------------------------------------------------------------------
 
@@ -786,12 +785,12 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
         cmd += f'bitdust set services/entangled-dht/attached-layers "{attached_layers}";'
     # enable Stun server
     cmd += 'bitdust set services/ip-port-responder/enabled true;'
-    run_ssh_command_and_wait(node, cmd)
+    run_ssh_command_and_wait(node, cmd, verbose=verbose)
     # start BitDust daemon
     time.sleep(wait_seconds)
-    start_daemon(node, verbose=False)
+    start_daemon(node, verbose=verbose)
     # get_client_certificate(node)
-    health_check(node)
+    health_check(node, verbose=verbose)
     info(f'STARTED DHT SEED (with STUN SERVER) [{node}]')
 
 
@@ -818,14 +817,14 @@ async def start_identity_server_async(node, loop, verbose=True):
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     cmd += f'bitdust set services/identity-server/host "{node}";'
     cmd += 'bitdust set services/identity-server/enabled true;'
-    await run_ssh_command_and_wait_async(node, cmd, loop)
-    await start_daemon_async(node, loop)
+    await run_ssh_command_and_wait_async(node, cmd, loop, verbose=verbose)
+    await start_daemon_async(node, loop, verbose=verbose)
     # await get_client_certificate_async(node, loop)
-    await health_check_async(node, loop)
+    await health_check_async(node, loop, verbose=verbose)
     info(f'STARTED IDENTITY SERVER [{node}]')
 
 
-async def start_stun_server_async(node, loop, dht_seeds=''):
+async def start_stun_server_async(node, loop, dht_seeds='', verbose=False):
     info(f'NEW STUN SERVER at [{node}]')
     cmd = ''
     cmd += 'bitdust set interface/api/auth-secret-enabled false;'
@@ -852,16 +851,25 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
         cmd += f'bitdust set services/entangled-dht/known-nodes "{dht_seeds}";'
     # enable Stun server
     cmd += 'bitdust set services/ip-port-responder/enabled true;'
-    await run_ssh_command_and_wait_async(node, cmd, loop)
+    await run_ssh_command_and_wait_async(node, cmd, loop, verbose=verbose)
     # start BitDust daemon
-    await start_daemon_async(node, loop)
+    await start_daemon_async(node, loop, verbose=verbose)
     # await get_client_certificate_async(node, loop)
-    await health_check_async(node, loop)
+    await health_check_async(node, loop, verbose=verbose)
     info(f'STARTED STUN SERVER [{node}]')
 
 
 async def start_proxy_server_async(
-    node, identity_name, loop, min_servers=1, max_servers=1, known_servers='', preferred_servers='', health_check_interval_seconds=None, dht_seeds=''
+    node,
+    identity_name,
+    loop,
+    min_servers=1,
+    max_servers=1,
+    known_servers='',
+    preferred_servers='',
+    health_check_interval_seconds=None,
+    dht_seeds='',
+    verbose=False,
 ):
     info(f'NEW PROXY SERVER {identity_name} at [{node}]')
     cmd = ''
@@ -897,13 +905,13 @@ async def start_proxy_server_async(
     # enable ProxyServer service
     cmd += 'bitdust set services/proxy-server/enabled true;'
     # disable message broker service
-    await run_ssh_command_and_wait_async(node, cmd, loop)
+    await run_ssh_command_and_wait_async(node, cmd, loop, verbose=verbose)
     # start BitDust daemon and create new identity for proxy server
-    await start_daemon_async(node, loop)
+    await start_daemon_async(node, loop, verbose=verbose)
     # await get_client_certificate_async(node, loop)
-    await health_check_async(node, loop)
-    await create_identity_async(node, identity_name, loop)
-    await connect_network_async(node, loop)
+    await health_check_async(node, loop, verbose=verbose)
+    await create_identity_async(node, identity_name, loop, verbose=verbose)
+    await connect_network_async(node, loop, verbose=verbose)
     info(f'STARTED PROXY SERVER [{node}]')
 
 
@@ -920,6 +928,7 @@ async def start_supplier_async(
     health_check_interval_seconds=None,
     preferred_routers='',
     web_socket_router='',
+    verbose=False,
 ):
     info(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
@@ -971,10 +980,10 @@ async def start_supplier_async(
     # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
-        await create_identity_async(node, identity_name, loop, verbose=False)
-        await connect_network_async(node, loop, verbose=False)
-        await service_started_async(node, 'service_supplier', loop)
-        await packet_list_async(node, loop)
+        await create_identity_async(node, identity_name, loop, verbose=verbose)
+        await connect_network_async(node, loop, verbose=verbose)
+        await service_started_async(node, 'service_supplier', loop, verbose=verbose)
+        await packet_list_async(node, loop, verbose=verbose)
     info(f'STARTED SUPPLIER [{node}]')
 
 
@@ -995,6 +1004,7 @@ async def start_customer_async(
     health_check_interval_seconds=None,
     preferred_brokers='',
     sleep_before_start=None,
+    verbose=False,
 ):
     if sleep_before_start:
         # dbg('\nsleep %d seconds before start customer %r\n' % (sleep_before_start, identity_name))
@@ -1064,12 +1074,12 @@ async def start_customer_async(
     # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
-        await create_identity_async(node, identity_name, loop)
-        await connect_network_async(node, loop)
-        await service_started_async(node, 'service_shared_data', loop)
+        await create_identity_async(node, identity_name, loop, verbose=verbose)
+        await connect_network_async(node, loop, verbose=verbose)
+        await service_started_async(node, 'service_shared_data', loop, verbose=verbose)
         # await service_started_async(node, 'service_personal_messages', loop)
-        await service_started_async(node, 'service_message_history', loop)
-        await packet_list_async(node, loop)
+        await service_started_async(node, 'service_message_history', loop, verbose=verbose)
+        await packet_list_async(node, loop, verbose=verbose)
     info(f'STARTED CUSTOMER [{node}]')
 
 
@@ -1086,22 +1096,24 @@ def start_one_dht_seed(dht_seed, wait_seconds, verbose=False):
     )
 
 
-async def start_one_identity_server_async(identity_server, loop):
+async def start_one_identity_server_async(identity_server, loop, verbose=False):
     await start_identity_server_async(
         node=identity_server['name'],
         loop=loop,
+        verbose=verbose,
     )
 
 
-async def start_one_stun_server_async(stun_server, loop):
+async def start_one_stun_server_async(stun_server, loop, verbose=False):
     await start_stun_server_async(
         node=stun_server['name'],
         dht_seeds=stun_server.get('known_dht_seeds', ''),
         loop=loop,
+        verbose=verbose,
     )
 
 
-async def start_one_proxy_server_async(proxy_server, loop):
+async def start_one_proxy_server_async(proxy_server, loop, verbose=False):
     await start_proxy_server_async(
         node=proxy_server['name'],
         identity_name=proxy_server['name'],
@@ -1112,10 +1124,11 @@ async def start_one_proxy_server_async(proxy_server, loop):
         health_check_interval_seconds=proxy_server.get('health_check_interval_seconds', None),
         dht_seeds=proxy_server.get('known_dht_seeds', ''),
         loop=loop,
+        verbose=verbose,
     )
 
 
-async def start_one_supplier_async(supplier, loop):
+async def start_one_supplier_async(supplier, loop, verbose=False):
     await start_supplier_async(
         node=supplier['name'],
         identity_name=supplier['name'],
@@ -1129,10 +1142,11 @@ async def start_one_supplier_async(supplier, loop):
         preferred_routers=supplier.get('preferred_routers', ''),
         web_socket_router=supplier.get('web_socket_router', ''),
         loop=loop,
+        verbose=verbose,
     )
 
 
-async def start_one_customer_async(customer, loop, sleep_before_start=None):
+async def start_one_customer_async(customer, loop, sleep_before_start=None, verbose=False):
     await start_customer_async(
         node=customer['name'],
         identity_name=customer['name'],
@@ -1150,6 +1164,7 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
         preferred_brokers=customer.get('preferred_brokers', ''),
         sleep_before_start=sleep_before_start,
         loop=loop,
+        verbose=verbose,
     )
 
 #------------------------------------------------------------------------------

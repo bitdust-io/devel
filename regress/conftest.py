@@ -34,7 +34,7 @@ from testsupport import info, warn
 
 #------------------------------------------------------------------------------
 
-VERBOSE = False
+VERBOSE = int(os.environ.get('VERBOSE') or '0') > 0
 
 TEST_NAME = os.environ['TEST_NAME']
 
@@ -82,27 +82,29 @@ def start_all_nodes(event_loop, verbose=False):
     if verbose:
         info('ALL DHT SEEDS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])]))
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.start_one_identity_server_async(idsrv, event_loop, verbose=verbose) for idsrv in ALL_ROLES.get('identity-server', [])
+    ]))
     if verbose:
         info(f'ALL ID SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])]))
+    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_stun_server_async(stunsrv, event_loop, verbose=verbose) for stunsrv in ALL_ROLES.get('stun-server', [])]))
     if verbose:
         info(f'ALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(
-        asyncio.gather(*[tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])])
+        asyncio.gather(*[tsup.start_one_proxy_server_async(proxy_server, event_loop, verbose=verbose) for proxy_server in ALL_ROLES.get('proxy-server', [])])
     )
     if verbose:
         info(f'ALL PROXY SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])]))
+    event_loop.run_until_complete(asyncio.gather(*[tsup.start_one_supplier_async(supplier, event_loop, verbose=verbose) for supplier in ALL_ROLES.get('supplier', [])]))
     if verbose:
         info(f'ALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(
         asyncio.gather(
-            *[tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i * 3) for i, customer in enumerate(ALL_ROLES.get('customer', []))]
+            *[tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i * 3, verbose=verbose) for i, customer in enumerate(ALL_ROLES.get('customer', []))]
         )
     )
     if verbose:
