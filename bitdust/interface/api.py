@@ -1747,7 +1747,7 @@ def identity_create(username: str, preferred_servers: list = [], join_network: b
     return ret
 
 
-def identity_backup(destination_filepath: str):
+def identity_backup(destination_filepath: str = ''):
     """
     Creates local file at `destination_filepath` on your disk drive with a backup copy of your private key and recent IDURL.
 
@@ -1757,16 +1757,19 @@ def identity_backup(destination_filepath: str):
     to restore your data in case of lost.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/identity/backup/v1' -d '{"destination_filepath": "/tmp/alice_backup.key"}'
+        curl -X POST 'localhost:8180/identity/backup/v1' -d '{"destination_filepath": "/home/alice/secure_folder/BitDust_alice_master_key.txt"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "identity_backup", "kwargs": {"destination_filepath": "/tmp/alice_backup.key"} }');
+        websocket.send('{"command": "api_call", "method": "identity_backup", "kwargs": {"destination_filepath": "/home/alice/secure_folder/BitDust_alice_master_key.txt"} }');
     """
     from bitdust.userid import my_id
     from bitdust.crypt import key
     from bitdust.system import bpio
+    from bitdust.main import settings
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
+    if not destination_filepath:
+        destination_filepath = os.path.join(settings.AppDataDir(), f'BitDust_{my_id.getIDName()}_master_key.txt')
     TextToSave = ''
     for id_source in my_id.getLocalIdentity().getSources(as_originals=True):
         TextToSave += strng.to_text(id_source) + u'\n'
@@ -1777,7 +1780,10 @@ def identity_backup(destination_filepath: str):
         return ERROR('error writing to %s\n' % destination_filepath)
     del TextToSave
     gc.collect()
-    return OK(message='WARNING! keep the master key in a safe place and never publish it anywhere!')
+    return OK(
+        result={'local_path': destination_filepath},
+        message='WARNING! keep the master key in a safe place and never publish it anywhere!',
+    )
 
 
 def identity_recover(private_key_source: str, known_idurl: str = None, join_network: bool = False):
