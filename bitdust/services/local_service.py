@@ -494,6 +494,7 @@ class SlowStartingLocalService(LocalService):
     def confirm_service_started(self, result=True):
         if _Debug:
             lg.args(_DebugLevel, service_name=self.service_name, result=result, starting_deferred=self.starting_deferred)
+        ret = None
         if self.starting_deferred:
             if not self.starting_deferred.called:
                 if result is True:
@@ -503,4 +504,6 @@ class SlowStartingLocalService(LocalService):
                         self.starting_deferred.errback(result)
                     else:
                         self.starting_deferred.callback(result)
+            ret = self.starting_deferred
             self.starting_deferred = None
+        return ret

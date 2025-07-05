@@ -35,7 +35,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -84,10 +84,9 @@ class BytesLoop:
     def read_defer(self, n=-1):
         if self._reader:
             raise Exception('already reading')
-        self._reader = (
-            Deferred(),
-            n,
-        )
+        if _Debug:
+            lg.args(_DebugLevel, n=n, b=len(self._buffer), f=self._finished)
+        self._reader = (Deferred(), n)
         if len(self._buffer) > 0:
             chunk = self.read(n=n)
             d = self._reader[0]
@@ -141,6 +140,8 @@ class BytesLoop:
         self._finished = True
 
     def state(self):
+        if _Debug:
+            lg.args(_DebugLevel, b=len(self._buffer), c=self._closed, f=self._finished, l=self._last_read, r=bool(self._reader))
         if self._closed:
             return BYTES_LOOP_CLOSED
         if len(self._buffer) > 0:
