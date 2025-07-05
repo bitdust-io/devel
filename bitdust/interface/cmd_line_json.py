@@ -58,6 +58,25 @@ from bitdust.interface import cmd_line_json_templates as templ
 #------------------------------------------------------------------------------
 
 
+class FlexibleTemplate(jsontemplate.Template):
+
+    def __init__(self, template_str, *args, **kwargs):
+        jsontemplate.Template.__init__(self, template_str, *args, **kwargs)
+        self.repeated_result_section = bool('{.section result}{.repeated section @}' in template_str)
+
+    def expand(self, *args, **kwargs):
+        if self.repeated_result_section:
+            if 'result' in args[0]:
+                if not isinstance(args[0].get('result'), list):
+                    args[0]['result'] = [
+                        args[0]['result'],
+                    ]
+        return jsontemplate.Template.expand(self, *args, **kwargs)
+
+
+#------------------------------------------------------------------------------
+
+
 def parser():
     """
     Create an ``optparse.OptionParser`` object to read command line arguments.
@@ -460,6 +479,16 @@ def cmd_deploy(opts, args, overDict):
             return 1
         print_text(ret)
         return 0
+    elif args[0].lower() == 'install' and len(args) > 1 and args[1].lower() == 'shell':
+        from bitdust.system import crontab
+        base_dir = deploy.init_base_dir()
+        try:
+            ret = crontab.check_install_crontab_record(base_dir)
+        except Exception as exc:
+            print_text(str(exc))
+            return 1
+        print_text(ret)
+        return 0
     return deploy.run(args)
 
 
@@ -467,7 +496,7 @@ def cmd_deploy(opts, args, overDict):
 
 
 def cmd_reconnect(opts, args, overDict):
-    tpl = jsontemplate.Template(templ.TPL_RAW)
+    tpl = FlexibleTemplate(templ.TPL_RAW)
     return call_websocket_method_template_and_stop('network_reconnect', tpl)
 
 
@@ -476,13 +505,13 @@ def cmd_reconnect(opts, args, overDict):
 
 def cmd_network(opts, args, overDict, running):
     if len(args) >= 3 and args[1] in ['create', 'setup']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         if not running:
             return call_api_method_template_and_stop('network_create', tpl, url=args[2])
         return call_websocket_method_template_and_stop('network_create', tpl, url=args[2])
 
     if len(args) >= 3 and args[1] in ['select', 'chose', 'set', 'switch']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         if not running:
             return call_api_method_template_and_stop('network_select', tpl, name=args[2])
         return call_websocket_method_template_and_stop('network_select', tpl, name=args[2])
@@ -499,19 +528,19 @@ def cmd_device(opts, args, overDict, running, executablePath):
         return 0
 
     if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls']):
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_LIST)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_LIST)
         return call_websocket_method_template_and_stop('devices_list', tpl)
 
     if len(args) >= 3 and args[1] in ['info', 'print', 'get', 'show']:
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_info', tpl, name=args[2])
 
     if len(args) >= 3 and args[1] in ['start', 'enable', 'on', 'open']:
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_start', tpl, name=args[2], wait_listening=True)
 
     if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', 'close']:
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_stop', tpl, name=args[2], deactivate=(args[1] != 'stop'))
 
     from twisted.internet import reactor  # @UnresolvedImport
@@ -558,7 +587,7 @@ def cmd_device(opts, args, overDict, running, executablePath):
     if len(args) >= 3 and args[1] in ['pair', 'auth', 'authorize', 'attach']:
         device_name = args[2]
         if len(args) > 4:
-            tpl = jsontemplate.Template(templ.TPL_DEVICES_AUTH_REQUEST)
+            tpl = FlexibleTemplate(templ.TPL_DEVICES_AUTH_REQUEST)
             return call_websocket_method_template_and_stop('device_authorization_request', tpl, name=args[2], client_code=args[3], client_public_key=args[4])
 
         def _on_client_code_confirmed(ret):
@@ -621,20 +650,20 @@ def cmd_device(opts, args, overDict, running, executablePath):
         routed = args[2] in ['routed', 'route']
         if routed:
             key_sz = int(args[4]) if len(args) > 4 else 2048
-            tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+            tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
             return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=True, key_size=key_sz, activate=True, wait_listening=False)
         device_host = args[4] if len(args) > 4 else 'localhost'
         device_port = int(args[5]) if len(args) > 5 else 8281
         key_sz = int(args[6]) if len(args) > 6 else 2048
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_add', tpl, name=args[3], routed=False, web_socket_host=device_host, web_socket_port=device_port, key_size=key_sz, activate=True, wait_listening=False)
 
     if len(args) >= 3 and args[1] in ['delete', 'erase', 'remove', 'del', 'rm']:
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_remove', tpl, name=args[2])
 
     if len(args) >= 3 and args[1] in ['reset', 'drop', 'revoke']:
-        tpl = jsontemplate.Template(templ.TPL_DEVICES_INFO)
+        tpl = FlexibleTemplate(templ.TPL_DEVICES_INFO)
         return call_websocket_method_template_and_stop('device_authorization_reset', tpl, name=args[2])
 
     return 2
@@ -696,19 +725,19 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 if not running:
                     _run_standalone_id_server()
                     return 0
-                tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
+                tpl = FlexibleTemplate(templ.TPL_SERVICE_INFO)
                 return call_websocket_method_template_and_stop('service_info', tpl, service_name='service_identity_server')
             if args[2] == 'stop':
                 if not running:
                     print_text('BitDust is not running at the moment')
                     return 0
-                tpl = jsontemplate.Template(templ.TPL_RAW)
+                tpl = FlexibleTemplate(templ.TPL_RAW)
                 return call_websocket_method_template_and_stop('service_stop', tpl, service_name='service_identity_server')
             if args[2] == 'start':
                 if not running:
                     _run_standalone_id_server()
                     return 0
-                tpl = jsontemplate.Template(templ.TPL_RAW)
+                tpl = FlexibleTemplate(templ.TPL_RAW)
                 return call_websocket_method_template_and_stop('service_start', tpl, service_name='service_identity_server')
             return 2
 
@@ -842,7 +871,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         return 0
 
     if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls']):
-        tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
+        tpl = FlexibleTemplate(templ.TPL_KEYS_LIST)
         return call_websocket_method_template_and_stop('keys_list', tpl, include_private=False)
 
     if len(args) >= 3 and args[1] in ['create', 'new', 'gen', 'generate', 'make']:
@@ -850,7 +879,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         key_sz = 4096
         if len(args) > 3:
             key_sz = int(args[3])
-        tpl = jsontemplate.Template(templ.TPL_KEY_CREATE)
+        tpl = FlexibleTemplate(templ.TPL_KEY_CREATE)
         return call_websocket_method_template_and_stop('key_create', tpl, key_alias=key_id, key_size=key_sz)
 
     if len(args) >= 2 and args[1] in ['copy', 'cp', 'bk', 'backup', 'save']:
@@ -888,16 +917,16 @@ def cmd_key(opts, args, overDict, running, executablePath):
         return 0
 
     if len(args) >= 2 and args[1] in ['print', 'get', 'show']:
-        tpl = jsontemplate.Template(templ.TPL_KEY_GET)
+        tpl = FlexibleTemplate(templ.TPL_KEY_GET)
         key_id = 'master' if len(args) < 3 else args[2]
         return call_websocket_method_template_and_stop('key_get', tpl, key_id=key_id, include_private=True)
 
     if len(args) >= 3 and args[1] in ['delete', 'erase', 'remove', 'clear', 'del', 'rm', 'kill']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('key_erase', tpl, key_id=args[2])
 
     if len(args) >= 4 and args[1] in ['share', 'send', 'transfer', 'access']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('key_share', tpl, key_id=args[2], idurl=args[3])
 
     return 2
@@ -984,49 +1013,46 @@ def cmd_api(opts, args, overDict, executablePath):
 
 
 def cmd_file(opts, args, overDict, executablePath):
-    if args[0] in [
-        'dir',
-        'folder',
-    ]:
+    if args[0] in ['dir', 'folder']:
         if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map']:
-            tpl = jsontemplate.Template(templ.TPL_RAW)
+            tpl = FlexibleTemplate(templ.TPL_RAW)
             return call_websocket_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=True)
         return 2
 
     if len(args) < 2 or args[1] in ['list', 'ls']:
         remote_path = args[2] if len(args) > 2 else None
-        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
+        tpl = FlexibleTemplate(templ.TPL_BACKUPS_LIST)
         return call_websocket_method_template_and_stop('files_list', tpl, remote_path=remote_path)
 
     if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('files_sync', tpl)
 
     if len(args) >= 2 and args[1] in ['running', 'progress', 'status', 'prog']:
         if len(args) >= 3:
             if args[2] in ['download', 'down']:
-                tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
+                tpl = FlexibleTemplate(templ.TPL_BACKUPS_TASKS_LIST)
                 return call_websocket_method_template_and_stop('files_downloads', tpl)
             elif args[2] in ['upload', 'up']:
-                tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
+                tpl = FlexibleTemplate(templ.TPL_BACKUPS_RUNNING_LIST)
                 return call_websocket_method_template_and_stop('files_uploads', tpl)
             return 2
-        tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
+        tpl = FlexibleTemplate(templ.TPL_BACKUPS_RUNNING_LIST)
         return call_websocket_method_template_and_stop('files_uploads', tpl)
 
     if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=False)
 
     if len(args) > 3 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         if not os.path.exists(os.path.abspath(args[2])):
             print_text('path %s not exists' % args[2])
             return 1
         return call_websocket_method_template_and_stop('file_upload_start', tpl, local_path=args[2], remote_path=args[3], wait_result=False)
 
     if len(args) > 2 and args[1] in ['download', 'down', 'load', 'request', 'read', 'restore']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         if len(args) > 3:
             local_path = args[3]
         else:
@@ -1034,11 +1060,11 @@ def cmd_file(opts, args, overDict, executablePath):
         return call_websocket_method_template_and_stop('file_download_start', tpl, remote_path=args[2], destination_path=local_path)
 
     if len(args) > 2 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('file_delete', tpl, remote_path=args[2])
 
     if len(args) >= 3 and args[1] in ['cancel', 'abort']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         if len(args) > 3:
             if args[2] in ['download', 'down']:
                 return call_websocket_method_template_and_stop('file_download_stop', tpl, remote_path=args[3])
@@ -1112,7 +1138,7 @@ def cmd_set(opts, args, overDict):
             val = result['result'][i]['value']
             if strng.is_string(val) and len(val) > 60:
                 result['result'][i]['value'] = val[:60].replace('\n', '') + '...'
-        tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
+        tpl = FlexibleTemplate(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
         shutdowner.shutdown_settings()
         return 0
@@ -1124,7 +1150,7 @@ def cmd_set(opts, args, overDict):
             result = api.config_set(path, strng.text_type(value))
         else:
             result = api.config_get(path)
-        tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
+        tpl = FlexibleTemplate(templ.TPL_OPTION_MODIFIED)
         print_template(result, tpl)
         shutdowner.shutdown_settings()
         return 0
@@ -1139,7 +1165,7 @@ def cmd_set_request(opts, args, overDict):
     if name in ['list', 'ls', 'all', 'show', 'print']:
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
-        tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
+        tpl = FlexibleTemplate(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
 
         def _limit_length(result):
             for i in range(len(result['result'])):
@@ -1152,10 +1178,10 @@ def cmd_set_request(opts, args, overDict):
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if len(args) == 2:
-        tpl = jsontemplate.Template(templ.TPL_OPTION_SINGLE)
+        tpl = FlexibleTemplate(templ.TPL_OPTION_SINGLE)
         return call_websocket_method_template_and_stop('config_get', tpl, key=path)
     value = ' '.join(args[2:])
-    tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
+    tpl = FlexibleTemplate(templ.TPL_OPTION_MODIFIED)
     return call_websocket_method_template_and_stop('config_set', tpl, key=path, value=value)
 
 
@@ -1164,19 +1190,19 @@ def cmd_set_request(opts, args, overDict):
 
 def cmd_suppliers(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls']:
-        tpl = jsontemplate.Template(templ.TPL_SUPPLIERS)
+        tpl = FlexibleTemplate(templ.TPL_SUPPLIERS)
         return call_websocket_method_template_and_stop('suppliers_list', tpl)
 
     elif args[1] in ['ping', 'test', 'call', 'cl']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('suppliers_ping', tpl)
 
     elif args[1] in ['fire', 'replace', 'rep', 'rp'] and len(args) >= 3:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2])
 
     elif args[1] in ['hire', 'change', 'ch'] and len(args) >= 4:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2], new_supplier_id=args[3])
 
     return 2
@@ -1187,15 +1213,15 @@ def cmd_suppliers(opts, args, overDict):
 
 def cmd_customers(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls']:
-        tpl = jsontemplate.Template(templ.TPL_CUSTOMERS)
+        tpl = FlexibleTemplate(templ.TPL_CUSTOMERS)
         return call_websocket_method_template_and_stop('customers_list', tpl)
 
     elif args[1] in ['ping', 'test', 'call', 'cl']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('customers_ping', tpl)
 
     elif args[1] in ['reject', 'refuse', 'remove', 'delete', 'rm', 'free', 'del'] and len(args) >= 3:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('customer_reject', tpl, customer_id=args[2])
 
     return 2
@@ -1218,7 +1244,7 @@ def cmd_storage(opts, args, overDict):
                     'local': result3['result'],
                 }],
             }
-            print_template(result, jsontemplate.Template(templ.TPL_STORAGE))
+            print_template(result, FlexibleTemplate(templ.TPL_STORAGE))
             reactor.stop()  # @UndefinedVariable
 
         def _got_needed(result2, result1):
@@ -1244,7 +1270,7 @@ def cmd_storage(opts, args, overDict):
 
 def cmd_automats(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template(templ.TPL_AUTOMATS)
+        tpl = FlexibleTemplate(templ.TPL_AUTOMATS)
 
         def _automats_list_update(result):
             for i in range(len(result['result'])):
@@ -1271,7 +1297,7 @@ def cmd_services(opts, args, overDict):
                 result['result'][i] = r
             return result
 
-        tpl = jsontemplate.Template(templ.TPL_SERVICES)
+        tpl = FlexibleTemplate(templ.TPL_SERVICES)
         return call_websocket_method_transform_template_and_stop('services_list', tpl, _services_update)
 
     if len(args) == 2 and args[1] in ['tree', 'tr']:
@@ -1285,19 +1311,19 @@ def cmd_services(opts, args, overDict):
                 result['result'][i] = r
             return result
 
-        tpl = jsontemplate.Template(templ.TPL_SERVICES_TREE)
+        tpl = FlexibleTemplate(templ.TPL_SERVICES_TREE)
         return call_websocket_method_transform_template_and_stop('services_list', tpl, _services_update, as_tree=True)
 
     if len(args) >= 3 and args[1] in ['start', 'enable', 'on']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_start', tpl, service_name=args[2])
 
     if len(args) >= 3 and args[1] in ['stop', 'disable', 'off']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_stop', tpl, service_name=args[2])
 
     if len(args) >= 2:
-        tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
+        tpl = FlexibleTemplate(templ.TPL_SERVICE_INFO)
         return call_websocket_method_template_and_stop('service_info', tpl, service_name=args[1])
 
     return 2
@@ -1309,7 +1335,7 @@ def cmd_services(opts, args, overDict):
 def cmd_message(opts, args, overDict):
     from twisted.internet import reactor  # @UnresolvedImport
     if len(args) >= 4 and args[1] in ['send', 'to']:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('message_send', tpl, recipient_id=args[2], data=args[3])
 
     if len(args) < 2 or args[1] in ['listen', 'read']:
@@ -1399,10 +1425,10 @@ def cmd_message(opts, args, overDict):
 
 
 def cmd_friend(opts, args, overDict):
-    tpl_lookup = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP)
-    tpl_add = jsontemplate.Template(templ.TPL_RAW)
+    tpl_lookup = FlexibleTemplate(templ.TPL_FRIEND_LOOKUP)
+    tpl_add = FlexibleTemplate(templ.TPL_RAW)
     if len(args) < 2:
-        tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
+        tpl = FlexibleTemplate(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_websocket_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test']:
         return call_websocket_method_template_and_stop('user_search', tpl_lookup, nickname=strng.text_type(args[2]))
@@ -1639,7 +1665,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     elif cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
         if len(args) < 1:
             return 2
-        tpl = jsontemplate.Template(templ.TPL_RAW)
+        tpl = FlexibleTemplate(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('user_ping', tpl, user_id=args[1])
 
     #---config---
