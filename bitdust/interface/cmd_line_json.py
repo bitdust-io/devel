@@ -450,6 +450,16 @@ def run_now(opts, args):
 
 def cmd_deploy(opts, args, overDict):
     from bitdust.system import deploy
+    if args[0].lower() == 'install' and len(args) > 1 and args[1].lower() == 'crontab':
+        from bitdust.system import crontab
+        base_dir = deploy.init_base_dir()
+        try:
+            ret = crontab.check_install_crontab_record(base_dir)
+        except Exception as exc:
+            print_text(str(exc))
+            return 1
+        print_text(ret)
+        return 0
     return deploy.run(args)
 
 
