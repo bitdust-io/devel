@@ -53,16 +53,18 @@ import six.moves.urllib.parse  # for urljoin
 if not six.PY2:
     from html import escape as html_escape
 else:
-    from cgi import escape as html_escape
+    from cgi import escape as html_escape  # @UnresolvedImport
 
 
 class Error(Exception):
+
     """
     Base class for all exceptions in this module.
 
     Thus you can "except jsontemplate.Error: to catch all exceptions
     thrown by this module.
     """
+
     def __str__(self):
         """
         This helps people debug their templates.
@@ -77,54 +79,63 @@ class Error(Exception):
 
 
 class CompilationError(Error):
+
     """
     Base class for errors that happen during the compilation stage.
     """
 
 
 class EvaluationError(Error):
+
     """
     Base class for errors that happen when expanding the template.
 
     This class of errors generally involve the data dictionary or the
     execution of the formatters.
     """
+
     def __init__(self, msg, original_exception=None):
         Error.__init__(self, msg)
         self.original_exception = original_exception
 
 
 class BadFormatter(CompilationError):
+
     """
     A bad formatter was specified, e.g. {variable|BAD}
     """
 
 
 class BadPredicate(CompilationError):
+
     """
     A bad predicate was specified, e.g. {.BAD?}
     """
 
 
 class MissingFormatter(CompilationError):
+
     """
     Raised when formatters are required, and a variable is missing a formatter.
     """
 
 
 class ConfigurationError(CompilationError):
+
     """
     Raised when the Template options are invalid and it can't even be compiled.
     """
 
 
 class TemplateSyntaxError(CompilationError):
+
     """
     Syntax error in the template text.
     """
 
 
 class UndefinedVariable(EvaluationError):
+
     """
     The template contains a variable not defined by the data dictionary.
     """
@@ -139,9 +150,11 @@ SIMPLE_FUNC, ENHANCED_FUNC = 0, 1
 
 
 class FunctionRegistry(object):
+
     """
     Abstract class for looking up formatters or predicates at compile time.
     """
+
     def Lookup(self, user_str):
         """
         Lookup a function.
@@ -177,9 +190,11 @@ def _DecideFuncType(user_str):
 
 
 class DictRegistry(FunctionRegistry):
+
     """
     Look up functions in a simple dictionary.
     """
+
     def __init__(self, func_dict):
         self.__dict__ = func_dict
 
@@ -188,9 +203,11 @@ class DictRegistry(FunctionRegistry):
 
 
 class CallableRegistry(FunctionRegistry):
+
     """
     Look up functions in a (higher-order) function.
     """
+
     def __init__(self, func):
         self.func = func
 
@@ -199,6 +216,7 @@ class CallableRegistry(FunctionRegistry):
 
 
 class PrefixRegistry(FunctionRegistry):
+
     """
     Lookup functions with arguments.
 
@@ -206,6 +224,7 @@ class PrefixRegistry(FunctionRegistry):
     the prefix, usually a space, is considered the argument delimiter
     (similar to sed/perl's s/foo/bar s|foo|bar syntax).
     """
+
     def __init__(self, functions):
         """
         Args: functions: List of 2-tuples (prefix, function), e.g.
@@ -232,9 +251,11 @@ class PrefixRegistry(FunctionRegistry):
 
 
 class ChainedRegistry(FunctionRegistry):
+
     """
     Look up functions in chain of other FunctionRegistry instances.
     """
+
     def __init__(self, registries):
         self.registries = registries
 
@@ -249,10 +270,12 @@ class ChainedRegistry(FunctionRegistry):
 
 
 class _ProgramBuilder(object):
+
     """
     Receives method calls from the parser, and constructs a tree of _Section()
     instances.
     """
+
     def __init__(self, formatters, predicates):
         """
         Args:
@@ -372,6 +395,7 @@ class _ProgramBuilder(object):
 
 
 class _AbstractSection(object):
+
     def __init__(self):
         # Pairs of func, args, or a literal string
         self.current_clause = []
@@ -390,9 +414,11 @@ class _AbstractSection(object):
 
 
 class _Section(_AbstractSection):
+
     """
     Represents a (repeated) section.
     """
+
     def __init__(self, section_name=None):
         """
         Args:
@@ -421,18 +447,22 @@ class _Section(_AbstractSection):
 
 
 class _RepeatedSection(_Section):
+
     """
     Repeated section is like section, but it supports {.alternates with}
     """
+
     def AlternatesWith(self):
         self.current_clause = []
         self.statements['alternates with'] = self.current_clause
 
 
 class _PredicateSection(_AbstractSection):
+
     """
     Represents a sequence of predicate clauses.
     """
+
     def __init__(self):
         _AbstractSection.__init__(self)
         # List of func, statements
@@ -446,9 +476,11 @@ class _PredicateSection(_AbstractSection):
 
 
 class _Frame(object):
+
     """
     A stack frame.
     """
+
     def __init__(self, context, index=-1):
         # Public attributes
         self.context = context
@@ -459,12 +491,14 @@ class _Frame(object):
 
 
 class _ScopedContext(object):
+
     """
     Allows scoped lookup of variables.
 
     If the variable isn't in the current context, then we search up the
     stack.
     """
+
     def __init__(self, context, undefined_str):
         """
         Args:
@@ -1041,6 +1075,7 @@ def FromFile(f, more_formatters=lambda x: None, _constructor=None):
 
 
 class Template(object):
+
     """
     Represents a compiled template.
 
@@ -1054,6 +1089,7 @@ class Template(object):
     any circumstance, e.g. generating HTML, CSS XML, JavaScript, C programs, text
     files, etc.
     """
+
     def __init__(self, template_str, builder=None, undefined_str=None, **compile_options):
         """
         Args: template_str: The template string. undefined_str: A string to

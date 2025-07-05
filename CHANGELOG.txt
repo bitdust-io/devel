@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+
+2025-07-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated api.identity_backup() method
+
+
+
 2025-07-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * simplifications in bitdust/interfaces/api.py (#219)

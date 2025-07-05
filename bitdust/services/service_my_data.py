@@ -68,11 +68,11 @@ class MyDataService(SlowStartingLocalService):
         from bitdust.storage import index_synchronizer
         from bitdust.storage import backup_fs
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
-            self.confirm_service_started(result=True)
+            ret = self.confirm_service_started(result=True)
             if listeners.is_populate_required('private_file'):
                 backup_fs.populate_private_files()
-        else:
-            lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
+            return ret
+        lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
         return self.starting_deferred
 
     def stop(self):

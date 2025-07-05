@@ -92,13 +92,13 @@ class BytesLoop:
             chunk = self.read(n=n)
             d = self._reader[0]
             self._reader = None
-            d.callback(chunk)
+            reactor.callFromThread(d.callback, chunk)  # @UndefinedVariable
             return d
         if self._finished:
             chunk = b''
             d = self._reader[0]
             self._reader = None
-            d.callback(chunk)
+            reactor.callFromThread(d.callback, chunk)  # @UndefinedVariable
             return d
         return self._reader[0]
 
@@ -124,13 +124,13 @@ class BytesLoop:
                 chunk = self.read(n=self._reader[1])
                 d = self._reader[0]
                 self._reader = None
-                d.callback(chunk)
+                reactor.callFromThread(d.callback, chunk)  # @UndefinedVariable
 
     def close(self):
         if self._reader:
             d = self._reader[0]
             self._reader = None
-            d.callback(b'')
+            reactor.callFromThread(d.callback, b'')  # @UndefinedVariable
         self._closed = True
         self._buffer = b''
 
