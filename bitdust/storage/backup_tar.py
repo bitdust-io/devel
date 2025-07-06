@@ -35,7 +35,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -97,6 +97,8 @@ class BytesLoop:
             chunk = b''
             d = self._reader[0]
             self._reader = None
+            if len(self._buffer) > 0:
+                chunk = self.read(n=n)
             reactor.callFromThread(d.callback, chunk)  # @UndefinedVariable
             return d
         return self._reader[0]
@@ -138,6 +140,16 @@ class BytesLoop:
 
     def mark_finished(self):
         self._finished = True
+        if self._reader:
+            d, n = self._reader
+            self._reader = None
+            chunk = b''
+            if len(self._buffer) > 0:
+                chunk = self.read(n=n)
+            if d.called:
+                lg.warn('stream was finished with unread data left, but receiver is not ready')
+            else:
+                reactor.callFromThread(d.callback, chunk)  # @UndefinedVariable
 
     def state(self):
         if _Debug:
@@ -149,12 +161,16 @@ class BytesLoop:
                 return BYTES_LOOP_EMPTY
             return BYTES_LOOP_READY2READ
         if self._last_read > 0:
+            if self._reader:
+                return BYTES_LOOP_EMPTY
+            if self._finished:
+                return BYTES_LOOP_CLOSED
             return BYTES_LOOP_READY2READ
         if self._finished:
+            return BYTES_LOOP_CLOSED
+        if self._reader:
             return BYTES_LOOP_EMPTY
-        if not self._reader:
-            return BYTES_LOOP_READY2READ
-        return BYTES_LOOP_EMPTY
+        return BYTES_LOOP_READY2READ
 
 
 #------------------------------------------------------------------------------

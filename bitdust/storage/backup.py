@@ -81,7 +81,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -199,6 +199,7 @@ class backup(automat.Automat):
         """
         self.log_transitions = _Debug
 
+    # yapf: disable
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -216,8 +217,7 @@ class backup(automat.Automat):
                 self.doClose(*args, **kwargs)
                 self.doReport(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif (event == 'read-success' or event
-                  == 'timer-001sec') and not self.isAborted(*args, **kwargs) and self.isPipeReady(*args, **kwargs) and not self.isEOF(*args, **kwargs) and not self.isReadingNow(*args, **kwargs) and not self.isBlockReady(*args, **kwargs):
+            elif (event == 'read-success' or event == 'timer-001sec') and not self.isAborted(*args, **kwargs) and self.isPipeReady(*args, **kwargs) and not self.isEOF(*args, **kwargs) and not self.isReadingNow(*args, **kwargs) and not self.isBlockReady(*args, **kwargs):
                 self.doRead(*args, **kwargs)
             elif event == 'block-raid-done' and not self.isAborted(*args, **kwargs):
                 self.doPopBlock(*args, **kwargs)
@@ -267,6 +267,7 @@ class backup(automat.Automat):
         elif self.state == 'ABORTED':
             pass
         return None
+    # yapf: enable
 
     def isAborted(self, *args, **kwargs):
         """
@@ -281,12 +282,13 @@ class backup(automat.Automat):
         Return True if ``pipe`` object exist and is ready for reading a the new
         chunk of data.
         """
-        if _Debug:
-            lg.args(_DebugLevel, pipe=bool(self.pipe), pipe_state=(self.pipe.state() if self.pipe else None))
         if self.pipe is None:
             lg.warn('pipe is None')
             return False
-        return self.pipe.state() in [nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
+        pipe_state = self.pipe.state()
+        if _Debug:
+            lg.args(_DebugLevel, pipe_state=pipe_state)
+        return pipe_state in [nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
 
     def isBlockReady(self, *args, **kwargs):
         if _Debug:
@@ -323,25 +325,28 @@ class backup(automat.Automat):
         """
 
         def readChunk():
+            if _Debug:
+                lg.args(_DebugLevel, block_size=self.blockSize, current_size=self.currentBlockSize)
             size = self.blockSize - self.currentBlockSize
             if size < 0:
                 if _Debug:
                     lg.args(_DebugLevel, eccmap_nodes=self.eccmap.nodes(), block_size=self.blockSize, current_block_size=self.currentBlockSize)
                 raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
             elif size == 0:
+                if _Debug:
+                    lg.args(_DebugLevel, size=size)
                 return succeed(b'')
             if self.pipe is None:
                 raise Exception('backup.pipe is None')
-            if self.pipe.state() == 2:
+            pipe_state = self.pipe.state()
+            if pipe_state == 2:
                 if _Debug:
                     lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_CLOSED in %r' % self)
                 return succeed(b'')
-            if self.pipe.state() == 0:
+            if pipe_state == 0:
                 if _Debug:
                     lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_EMPTY in %r' % self)
                 return succeed(b'')
-            if _Debug:
-                lg.args(_DebugLevel, size=size)
             return self.pipe.read_defer(size)
 
         def readDone(data):
