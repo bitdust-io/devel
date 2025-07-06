@@ -79,7 +79,7 @@ _Listeners = {}
 _Transports = {}
 _Instances = {}
 _AllAPIMethods = []
-_LegalDeviceNameCharacters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
+_LegalDeviceNameCharacters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-')
 _LegalDeviceNameFirstCharacter = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 #------------------------------------------------------------------------------

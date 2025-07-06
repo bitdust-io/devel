@@ -629,7 +629,9 @@ class Task():
             # TODO: need to rethink that approach
             # here not taking in account compressing rate of the local files
             # but taking in account remote version size - it is always doubled
-            if backup_fs.total_stats()['size_backups'] + self.totalSize*2 > settings.getNeededBytes():
+            expected_bytes = backup_fs.total_stats()['size_backups'] + self.totalSize*2
+            if expected_bytes > settings.getNeededBytes():
+                lg.warn('insufficient storage space expected: %r > %r' % (expected_bytes, settings.getNeededBytes()))
                 err_str = 'insufficient storage space expected'
                 pth_id = self.pathID
                 self.result_defer.errback(Exception(err_str))
@@ -743,6 +745,8 @@ def RunTask():
         return False
     T = tasks().pop(0)
     message = T.run()
+    if _Debug:
+        lg.args(_DebugLevel, t=T, message=message)
     if message:
         events.send('backup-task-failed', data=dict(
             path_id=T.pathID,

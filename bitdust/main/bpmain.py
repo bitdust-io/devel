@@ -643,6 +643,16 @@ def main(executable_path=None, start_reactor=True, appdir=None):
     #---install---
     if cmd in ['deploy', 'install', 'venv', 'virtualenv']:
         from bitdust.system import deploy
+        if cmd == 'install' and len(args) > 1 and args[1].lower() == 'crontab':
+            from bitdust.system import crontab
+            base_dir = deploy.init_base_dir()
+            try:
+                ret = crontab.check_install_crontab_record(base_dir)
+            except Exception as exc:
+                print_text(str(exc))
+                return 1
+            print_text(ret)
+            return 0
         return deploy.run(args)
 
     #---integrate---
@@ -729,7 +739,7 @@ def main(executable_path=None, start_reactor=True, appdir=None):
     # sys.excepthook = lg.exception_hook
 
     #---init logging
-    from twisted.internet.defer import setDebugging
+    from twisted.internet.defer import setDebugging  # @UnresolvedImport
     if _Debug:
         if bpio.isFrozen():
             setDebugging(False)
