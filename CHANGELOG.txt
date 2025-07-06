@@ -1,10 +1,18 @@
 Change Log
 ==========
 
+2025-07-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added "bitdust install crontab" cmd line
+* fix in services.service_my_data()
+* fix in bitdust/storage/backup_tar.py
+* fix in bitdust/interface/cmd_line_json.py
+
+
 
 2025-07-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
-* updated api.identity_backup() method
+* updated api.identity_backup() method (#220)
 
 
 
