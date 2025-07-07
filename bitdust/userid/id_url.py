@@ -640,11 +640,11 @@ def is_empty(idurl):
     return not bool(idurl)
 
 
-def is_some_empty(iterable_object):
+def is_some_empty(iterable_object, as_field=True):
     """
     Returns True if given iterable_object contains some empty idurl field.
     """
-    return is_in(ID_URL_FIELD(b''), iterable_object=iterable_object, as_field=True, as_bin=False)
+    return is_in(ID_URL_FIELD(b''), iterable_object=iterable_object, as_field=as_field, as_bin=False)
 
 
 def is_the_same(idurl1, idurl2):
