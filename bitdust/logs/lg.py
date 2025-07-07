@@ -935,16 +935,16 @@ class STDOUT_unbuffered(object):
     def write(self, data):
         try:
             self.stream.write(data)
+            self.stream.flush()
         except:
             pass
-        self.stream.flush()
 
     def writelines(self, datas):
         try:
             self.stream.writelines(datas)
+            self.stream.flush()
         except:
             pass
-        self.stream.flush()
 
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
@@ -958,16 +958,16 @@ class STDERR_unbuffered(object):
     def write(self, data):
         try:
             self.stream.write(data)
+            self.stream.flush()
         except:
             pass
-        self.stream.flush()
 
     def writelines(self, datas):
         try:
             self.stream.writelines(datas)
+            self.stream.flush()
         except:
             pass
-        self.stream.flush()
 
     def __getattr__(self, attr):
         return getattr(self.stream, attr)

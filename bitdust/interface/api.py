@@ -822,8 +822,8 @@ def device_authorization_request(name: str, client_public_key: str, client_code:
     device_object = api_device.devices(name)
     if not device_object:
         return ERROR('device %r does not exist' % name)
-    if not api_device.is_device_enabled(device_name=name):
-        return ERROR('device %r is not active at the moment' % name)
+    # if not api_device.is_device_enabled(device_name=name):
+    #     return ERROR('device %r is not active at the moment' % name)
     if api_device.instances(name):
         return ERROR('not possible to request authorization when device is started, device must be stopped first')
     try:
@@ -874,8 +874,8 @@ def device_authorization_generate(name: str, client_key_size: int = 2048, start:
     device_object = api_device.devices(name)
     if not device_object:
         return ERROR('device %r does not exist' % name)
-    if not api_device.is_device_enabled(device_name=name):
-        return ERROR('device %r is not active at the moment' % name)
+    # if not api_device.is_device_enabled(device_name=name):
+    #     return ERROR('device %r is not active at the moment' % name)
     if api_device.instances(name):
         return ERROR('not possible to generate authorization when device is started, device must be stopped first')
     client_key_object = rsa_key.RSAKey(label=f'client_key_{name}')
@@ -950,8 +950,8 @@ def device_authorization_reset(name: str, start: bool = True, wait_listening: bo
         lg.args(_DebugLevel, name=name)
     if api_device.instances(name):
         return ERROR('not possible to reset authorization when device is started, device must be stopped first')
-    if not api_device.is_device_enabled(device_name=name):
-        return ERROR('device %r is not active at the moment' % name)
+    # if not api_device.is_device_enabled(device_name=name):
+    #     return ERROR('device %r is not active at the moment' % name)
     try:
         api_device.reset_authorization(device_name=name)
     except Exception as exc:
