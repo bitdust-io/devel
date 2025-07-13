@@ -38,6 +38,8 @@ def read_cronttab():
     proc = subprocess.Popen('crontab -l', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1)
     crontab_stdout, crontab_stderr = proc.communicate()
     if proc.returncode:
+        if crontab_stderr and crontab_stderr.decode().count('no crontab for'):
+            return ''
         raise Exception('was not able to read crontab file')
     crontab_stdout = crontab_stdout.decode()
     crontab_stderr = crontab_stderr.decode()

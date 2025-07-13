@@ -60,54 +60,37 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
                     <a href="%(site_url)s/index.html#solution">Solution</a>
                 </li>
                 <!-- Nav Item -->
-                <li>
-                    <a href="%(site_url)s/index.html#ecosystem">Ecosystem</a>
-                </li>
-                <!-- Nav Item -->
-                <!--
-                <li>
-                    <a href="%(site_url)s/index.html#roadmap">Roadmap</a>
-                </li>
-                -->
-                <!-- Nav Item -->
-                <!--
-                <li>
-                    <a href="%(site_url)s/index.html#team">Team</a>
-                </li>
-                -->
-                <!-- Nav Item -->
-                <li class="active">
-                    <a href="%(wikipath)s">Wiki</a>
-                </li>
-
-                <!-- Nav Item -->
                 <li class="dropdown active">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        Network
+                        Ecosystem
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="dropdown-item">
-                            <a href="%(idserverspath)s" style="color:#8089ff;">ID servers</a>
+                        <li class="dropdown-item" style="color:#8089ff;background-color:white;">
+                            <a href="https://bitdust.io/#" data-scrollto="ecosystem" data-content="menu_Ecosystem" style="color:#8089ff;background-color:white;">BitDust roles</a>
                         </li>
                         <li class="dropdown-item">
-                            <a href="%(blockchainpath)s" style="color:#8089ff;">Blockchain</a>
+                            <a href="https://identities.bitdust.io/" style="color:#8089ff;">ID servers</a>
+                        </li>
+                        <li class="dropdown-item">
+                            <a href="https://blockchain.bitdust.io/" style="color:#8089ff;">Blockchain</a>
                         </li>
                     </ul>
+                </li>
+                <!-- Nav Item -->
+                <li>
+                    <a href="%(wikipath)s">Wiki</a>
+                </li>
+                <!-- Nav Item -->
+                <li>
+                    <a href="https://forms.gle/RkJW3L7NTamZ5K8m6" data-content="menu_Contact_Us">Contact Us</a>
                 </li>
 
             </ul><!--.navbar-nav -->
         </div><!--.ui-navigation -->
 
         <!-- Navbar Button -->
-        <a href="%(site_url)s/index.html#product"
-           class="btn btn-sm ui-gradient-peach pull-right">
-            Get Started
-        </a>
-
-        <!-- Navbar Button -->
-        <a href="https://forms.gle/RkJW3L7NTamZ5K8m6" target="_blank"
-           class="btn btn-sm ui-gradient-peach pull-right">
-            Give Feedback
+        <a href="%(site_url)s/index.html#product" class="btn btn-sm ui-gradient-peach pull-right">
+            Download
         </a>
 
     </div><!-- .container -->

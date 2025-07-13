@@ -214,7 +214,7 @@ class DataSender(automat.Automat):
             #     lg.warn('skip sending to another customer: %r' % customer_idurl)
             #     continue
             known_suppliers = contactsdb.suppliers(customer_idurl)
-            if not known_suppliers or id_url.is_some_empty(known_suppliers):
+            if not known_suppliers or id_url.is_some_empty(known_suppliers, as_field=False):
                 if _Debug:
                     lg.out(_DebugLevel, 'data_sender.doScanAndQueue    found empty supplier(s) for customer %r, SKIP' % customer_idurl)
                 continue
