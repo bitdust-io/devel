@@ -1749,9 +1749,12 @@ def identity_create(username: str, preferred_servers: list = [], join_network: b
 
 def identity_backup(destination_filepath: str = ''):
     """
-    Creates local file at `destination_filepath` on your disk drive with a backup copy of your private key and recent IDURL.
+    Creates local file at `destination_filepath` on your disk drive with a backup copy of your master key and recent IDURLs.
 
     You can use that file to restore identity in case of lost data using `identity_recover()` API method.
+
+    In case `destination_filepath` was not provided instead of storing a copy of the master key in a text file
+    the API response will contain a copy of your master key and recent IDURLs.
 
     WARNING! Make sure to always have a backup copy of your identity secret key in a safe place - there is no other way
     to restore your data in case of lost.
@@ -1765,15 +1768,17 @@ def identity_backup(destination_filepath: str = ''):
     from bitdust.userid import my_id
     from bitdust.crypt import key
     from bitdust.system import bpio
-    from bitdust.main import settings
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
-    if not destination_filepath:
-        destination_filepath = os.path.join(settings.AppDataDir(), f'BitDust_{my_id.getIDName()}_master_key.txt')
     TextToSave = ''
     for id_source in my_id.getLocalIdentity().getSources(as_originals=True):
         TextToSave += strng.to_text(id_source) + u'\n'
     TextToSave += key.MyPrivateKey()
+    if not destination_filepath:
+        return OK(
+            result={'result': TextToSave},
+            message='WARNING! keep the master key in a safe place and never publish it anywhere!',
+        )
     if not bpio.WriteTextFile(destination_filepath, TextToSave):
         del TextToSave
         gc.collect()
@@ -5060,6 +5065,8 @@ def supplier_change(position: int = None, supplier_id: str = None, new_supplier_
         new_supplier_idurl = strng.to_bin(new_supplier_idurl)
         if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
             return ERROR('user %s is already a known supplier' % new_supplier_idurl)
+        if contactsdb.is_customer(new_supplier_idurl):
+            return ERROR('user %s is already a customer and cannot be a supplier at the same time' % new_supplier_idurl)
     ret = Deferred()
 
     def _do_change(x):
