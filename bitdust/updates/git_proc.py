@@ -41,7 +41,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -95,19 +95,22 @@ def write2log(txt):
 
 
 def init():
-    lg.out(4, 'git_proc.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.init')
     if os.environ.get('BITDUST_GIT_SYNC_SKIP', '0') == '1':
         return
     reactor.callLater(0, loop, first_start=True)  # @UndefinedVariable
 
 
 def shutdown():
-    lg.out(4, 'git_proc.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.shutdown')
     global _ShedulerTask
     if _ShedulerTask is not None:
         if _ShedulerTask.active():
             _ShedulerTask.cancel()
-            lg.out(4, '    loop stopped')
+            if _Debug:
+                lg.out(_DebugLevel, '    loop stopped')
         _ShedulerTask = None
 
 
@@ -115,7 +118,8 @@ def shutdown():
 
 
 def sync_callback(result):
-    lg.out(6, 'git_proc.sync_callback: %s' % result)
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.sync_callback: %s' % result)
 
     if result == 'code-fetched':
         events.send('source-code-fetched', data=dict())
@@ -138,14 +142,16 @@ def sync_callback(result):
 
 
 def run_sync():
-    lg.out(6, 'git_proc.run_sync')
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.run_sync')
     reactor.callLater(0, sync, sync_callback, update_method='reset')  # @UndefinedVariable
     reactor.callLater(0, loop)  # @UndefinedVariable
 
 
 def loop(first_start=False):
     global _ShedulerTask
-    lg.out(4, 'git_proc.loop')
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.loop')
     if first_start:
         nexttime = time.time() + _FirstRunDelay
     else:
@@ -156,7 +162,8 @@ def loop(first_start=False):
     if delay < 0:
         lg.warn('delay=%s %s %s' % (str(delay), nexttime, time.time()))
         delay = 0
-    lg.out(6, 'git_proc.loop run_sync will start after %s minutes' % str(delay/60.0))
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.loop run_sync will start after %s minutes' % str(delay/60.0))
     _ShedulerTask = reactor.callLater(delay, run_sync)  # @UndefinedVariable
 
 
@@ -331,8 +338,8 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
             import win32con  # @UnresolvedImport
             import subprocess
             flags = win32con.CREATE_NO_WINDOW
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = subprocess.SW_HIDE
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW  # @UndefinedVariable
+            startupinfo.wShowWindow = subprocess.SW_HIDE  # @UndefinedVariable
             return real_CreateProcess(_appName, _commandLine, _processAttributes, _threadAttributes, _bInheritHandles, flags, _newEnvironment, _currentDirectory, startupinfo)
 
         setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
