@@ -261,7 +261,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        tsk = lookup.random_supplier(ignore_idurls=contactsdb.suppliers())
+        tsk = lookup.random_supplier(ignore_idurls=list(set(contactsdb.suppliers()) | set(contactsdb.customers())))
         tsk.result_defer.addCallback(self._nodes_lookup_finished)
         tsk.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
