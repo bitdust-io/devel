@@ -376,10 +376,6 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
-        packetID = global_id.MakeGlobalID(
-            customer=my_id.getGlobalID(key_alias='master'),
-            path=packetid.MakeIndexFileNamePacketID(),
-        )
         self.sending_suppliers.clear()
         self.outgoing_packets_ids = []
         self.sent_suppliers_number = 0
@@ -387,7 +383,10 @@ class IndexSynchronizer(automat.Automat):
         data = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         b = encrypted.Block(
             CreatorID=localID,
-            BackupID=packetID,
+            BackupID=global_id.MakeGlobalID(
+                customer=my_id.getGlobalID(key_alias='master'),
+                path=packetid.MakeIndexFileNamePacketID(unique=False),
+            ),
             BlockNumber=0,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
@@ -396,8 +395,8 @@ class IndexSynchronizer(automat.Automat):
         )
         Payload = b.Serialize()
         if _Debug:
-            lg.args(_DebugLevel, pid=packetID, sz=len(data), payload=len(Payload), length=b.Length)
-        for supplier_idurl in contactsdb.suppliers():
+            lg.args(_DebugLevel, sz=len(data), payload=len(Payload), length=b.Length)
+        for supplier_pos, supplier_idurl in enumerate(contactsdb.suppliers()):
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -405,6 +404,10 @@ class IndexSynchronizer(automat.Automat):
                 continue
             if online_status.isOffline(supplier_idurl):
                 continue
+            packetID = global_id.MakeGlobalID(
+                customer=my_id.getGlobalID(key_alias='master'),
+                path=packetid.MakeIndexFileNamePacketID(supplier_pos=supplier_pos),
+            )
             newpacket, pkt_out = p2p_service.SendData(
                 raw_data=Payload,
                 ownerID=localID,
@@ -512,12 +515,8 @@ class IndexSynchronizer(automat.Automat):
             reactor.callLater(0, self.automat, 'all-acked')  # @UndefinedVariable
 
     def _do_retrieve(self, x=None):
-        packetID = global_id.MakeGlobalID(
-            customer=my_id.getGlobalID(key_alias='master'),
-            path=packetid.MakeIndexFileNamePacketID(),
-        )
         localID = my_id.getIDURL()
-        for supplier_idurl in contactsdb.suppliers():
+        for supplier_pos, supplier_idurl in enumerate(contactsdb.suppliers()):
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -525,6 +524,10 @@ class IndexSynchronizer(automat.Automat):
                 continue
             if online_status.isOffline(supplier_idurl):
                 continue
+            packetID = global_id.MakeGlobalID(
+                customer=my_id.getGlobalID(key_alias='master'),
+                path=packetid.MakeIndexFileNamePacketID(supplier_pos=supplier_pos),
+            )
             pkt_out = p2p_service.SendRetreive(
                 ownerID=localID,
                 creatorID=localID,

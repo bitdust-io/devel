@@ -212,7 +212,7 @@ class SupplierConnector(automat.Automat):
         )
         for cb_list in self.callbacks.values():
             for cb in cb_list:
-                cb(self.supplier_idurl, self.state, self.state)
+                cb(self.supplier_idurl, self.state)
 
     def init(self):
         """

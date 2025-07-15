@@ -685,7 +685,6 @@ class SharedAccessCoordinator(automat.Automat):
         self.known_ecc_map = args[0].get('ecc_map')
         self.critical_suppliers_number = 1
         if self.known_ecc_map:
-            from bitdust.raid import eccmap
             self.critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
         self.suppliers_in_progress.clear()
         self.suppliers_succeed.clear()
@@ -902,9 +901,13 @@ class SharedAccessCoordinator(automat.Automat):
             sc.automat('connect')
 
     def _do_retrieve_index_file(self, supplier_idurl):
+        try:
+            supplier_pos = self.known_suppliers_list.index(supplier_idurl)
+        except ValueError:
+            supplier_pos = None
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
-            path=packetid.MakeIndexFileNamePacketID(),
+            path=packetid.MakeIndexFileNamePacketID(supplier_pos=supplier_pos),
         )
         sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
         if sc is None or sc.state != 'CONNECTED':
@@ -963,9 +966,13 @@ class SharedAccessCoordinator(automat.Automat):
         self.automat('index-received', supplier_idurl=supplier_idurl)
 
     def _do_send_index_file(self, supplier_idurl):
+        try:
+            supplier_pos = self.known_suppliers_list.index(supplier_idurl)
+        except ValueError:
+            supplier_pos = None
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
-            path=packetid.MakeIndexFileNamePacketID(),
+            path=packetid.MakeIndexFileNamePacketID(supplier_pos=supplier_pos),
         )
         data = bpio.ReadBinaryFile(settings.BackupIndexFilePath(self.customer_idurl, self.key_alias))
         b = encrypted.Block(
