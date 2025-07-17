@@ -519,15 +519,24 @@ def SplitQueueMessagePacketID(packet_id):
     return queue_id, unique_id
 
 
-def MakeIndexFileNamePacketID():
-    return '.index.{}'.format(UniqueID())
+def MakeIndexFileNamePacketID(supplier_pos=None, unique=True):
+    # TODO: first deploy the first part
+    # if supplier_pos is not None:
+    #     if unique:
+    #         return '.index.{}.{}'.format(supplier_pos, UniqueID())
+    #     return '.index.{}'.format(supplier_pos)
+    if unique:
+        return '.index.{}'.format(UniqueID())
+    return '.index'
 
 
 def IsIndexFileName(path):
-    if len(path) < 19 or len(path) > 23:
+    if path == '.index':
+        return True
+    if len(path) < 19 or len(path) > 27:
         return False
     if not path.startswith('.index.'):
         return False
-    if not path[7:].isdecimal():
+    if not (path.replace('index', '').replace('.', '')).isdecimal():
         return False
     return True
