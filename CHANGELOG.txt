@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+2025-07-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* blocking hire of my existing customer as my new supplier (to resolve p2p_queue issue)
+* updated api.identity_backup()
+* minor update in few api.device_*() methods
+* changes in packetID structure for backup index data packets
+* updated bitdust/interface/web_html_template.py
+* IDURL fix in data_sender()
+* solving issues in bitdust/updates/git_proc.py
+* fix in bitdust/system/crontab.py
+
+
+
 2025-07-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added "bitdust install crontab" cmd line
