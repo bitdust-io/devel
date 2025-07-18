@@ -520,11 +520,10 @@ def SplitQueueMessagePacketID(packet_id):
 
 
 def MakeIndexFileNamePacketID(supplier_pos=None, unique=True):
-    # TODO: first deploy the first part
-    # if supplier_pos is not None:
-    #     if unique:
-    #         return '.index.{}.{}'.format(supplier_pos, UniqueID())
-    #     return '.index.{}'.format(supplier_pos)
+    if supplier_pos is not None:
+        if unique:
+            return '.index.{}.{}'.format(supplier_pos, UniqueID())
+        return '.index.{}'.format(supplier_pos)
     if unique:
         return '.index.{}'.format(UniqueID())
     return '.index'
