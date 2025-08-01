@@ -724,6 +724,7 @@ class FireHire(automat.Automat):
                 ecc_map=eccmap.Current().name,
                 family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
             ))
+            lg.admin('added new supplier %r, family position is unknown' % new_idurl)
             # yapf: enable
         else:
             if old_idurl:
@@ -736,6 +737,7 @@ class FireHire(automat.Automat):
                     ecc_map=eccmap.Current().name,
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
+                lg.admin('hired new supplier %r and substitute existing supplier %r at position %d' % (new_idurl, old_idurl, family_position))
                 # yapf: enable
             else:
                 lg.info('hired new supplier on empty position %d : %s desired_suppliers=%d current_suppliers=%d' % (family_position, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
@@ -747,6 +749,7 @@ class FireHire(automat.Automat):
                     ecc_map=eccmap.Current().name,
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
+                lg.admin('hired new supplier %r on empty position %d' % (new_idurl, family_position))
                 # yapf: enable
         self.restart_interval = 1.0
         if _Debug:
@@ -786,6 +789,7 @@ class FireHire(automat.Automat):
                 old_idurl=supplier_idurl,
                 position=position,
             ))
+            lg.admin('removed supplier %r at position %r' % (supplier_idurl, position))
         lg.info('removed some suppliers : %d  desired_suppliers=%d current_suppliers=%d' % (len(self.dismiss_list), desired_suppliers, len(contactsdb.suppliers())))
         if _Debug:
             lg.out(_DebugLevel, '    my current suppliers: %r' % contactsdb.suppliers())

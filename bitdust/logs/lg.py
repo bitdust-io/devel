@@ -230,10 +230,7 @@ def args(_DebugLevel, *args, **kwargs):
     for k in kwargs:
         funcargs.append('%s=%r' % (k, kwargs.get(k)))
     funcname = '%s.%s' % (modul, caller)
-    o = '%s(%s)' % (
-        funcname,
-        ', '.join(funcargs),
-    )
+    o = '%s(%s)' % (funcname, ', '.join(funcargs))
     if message:
         o += ' ' + message
     out(level, o, showtime=True, log_name=log_name)
@@ -247,19 +244,10 @@ def info(message, level=2, log_name='stdout'):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    output_string = 'INFO %s in %s.%s()' % (
-        message,
-        modul,
-        caller,
-    )
+    output_string = 'INFO %s.%s() %s' % (modul, caller, message)
     if _UseColors:
-        output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (
-            message,
-            modul,
-            caller,
-        )
+        output_string = '\033[0;49;92mINFO\033[0m \033[0;49;37m%s.%s()\033[0m \033[0;49;92m%s\033[0m' % (modul, caller, message)
     out(level, output_string, showtime=True, log_name=log_name)
-    # out(level, output_string, log_name='info', showtime=True)
     return message
 
 
@@ -270,19 +258,10 @@ def warn(message, level=2, log_name='stdout'):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    output_string = 'WARNING %s in %s.%s()' % (
-        message,
-        modul,
-        caller,
-    )
+    output_string = 'WARNING %s.%s() %s' % (modul, caller, message)
     if _UseColors:
-        output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (
-            message,
-            modul,
-            caller,
-        )
+        output_string = '\033[0;35mWARNING\033[0m \033[0;49;37m%s.%s()\033[0m \033[0;35m%s\033[0m' % (modul, caller, message)
     out(level, output_string, showtime=True, log_name=log_name)
-    # out(level, output_string, log_name='warn', showtime=True)
     return message
 
 
@@ -299,14 +278,13 @@ def err(message, level=0, log_name='stdout'):
     if not isinstance(message, six.text_type):  # @UndefinedVariable
         message = str(message)
     if not message.count(funcname):
-        message = ' %s in %s()' % (message, funcname)
+        message = '%s() : %s' % (funcname, message)
     if not message.count('ERROR'):
         message = 'ERROR ' + message
     message = '%s%s   ' % ((' '*(level + 11)), message)
     if _UseColors:
         message = '\033[1;37;41m%s\033[0m' % message
     out(level, message, showtime=True, log_name=log_name)
-    # out(level, message, log_name='err', showtime=True)
     return message
 
 
@@ -326,11 +304,7 @@ def cb(result, *args, **kwargs):
     _method = kwargs.pop('method', 'unknown')
     _log_name = kwargs.pop('log_name', 'stdout')
     if _debug and is_debug(_debug_level):
-        dbg(_debug_level, 'Deferred.callback() from "%s" method : args=%r  kwargs=%r' % (
-            _method,
-            args,
-            kwargs,
-        ), log_name=_log_name)
+        dbg(_debug_level, 'Deferred.callback() from "%s" method : args=%r  kwargs=%r' % (_method, args, kwargs), log_name=_log_name)
     return result
 
 
@@ -341,12 +315,7 @@ def errback(err, *args, **kwargs):
     _ignore = kwargs.pop('ignore', False)
     _log_name = kwargs.pop('log_name', 'stdout')
     if _debug and is_debug(_debug_level):
-        dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (
-            _method,
-            repr(err).replace('\n', ''),
-            args,
-            kwargs,
-        ), log_name=_log_name)
+        dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (_method, repr(err).replace('\n', ''), args, kwargs), log_name=_log_name)
     if _ignore:
         return None
     return err
@@ -432,6 +401,15 @@ def exception(level, maxTBlevel, exc_info, message=None, log_name='stdout'):
     return s
 
 
+def admin(message, log_name='admin'):
+    cod = sys._getframe().f_back.f_code
+    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    caller = cod.co_name
+    output_string = '%s.%s() %s' % (modul, caller, message)
+    out(0, output_string, showtime=True, log_name=log_name)
+    return message
+
+
 def format_exception(maxTBlevel=100, exc_info=None):
     """
     Return string with detailed info about last exception.
@@ -447,7 +425,7 @@ def format_exception(maxTBlevel=100, exc_info=None):
     excTb = traceback.format_tb(trbk, maxTBlevel)
     tbstring = 'Exception: <' + exception_name(value, exc_type, excTb) + '>\n'
     if excArgs:
-        tbstring += '  args:' + excArgs + '\n'
+        tbstring += ' args:' + excArgs + '\n'
     for s in excTb:
         tbstring += s + '\n'
     return tbstring

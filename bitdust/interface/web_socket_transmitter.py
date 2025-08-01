@@ -190,6 +190,7 @@ def add_route():
         'external_bytes': 0,
         'external_updated': None,
     }
+    lg.admin('added new route %r route_url=%r internal_url=%r' % (route_id, route_url, internal_url))
     if _Debug:
         lg.args(_DebugLevel, route_id=route_id, routes=len(_Routes))
     return route_id
@@ -241,21 +242,21 @@ def cleanup_routes(save=False):
     for route_id in _Routes.keys():
         route_info = _Routes[route_id]
         internal_updated = route_info.get('internal_updated') or 0
-        internal_expired = True if internal_updated and utime.get_sec1970() - internal_updated > 60*60*24*30 else False
+        internal_expired = True if (internal_updated and (utime.get_sec1970() - internal_updated > 60*60*24*90)) else False
         external_updated = route_info.get('external_updated') or 0
-        external_expired = True if external_updated and utime.get_sec1970() - external_updated > 60*60*24*30 else False
+        external_expired = True if (external_updated and (utime.get_sec1970() - external_updated > 60*60*24*90)) else False
         if internal_expired and external_expired:
             routes_to_be_removed.append(route_id)
         else:
             create_expired = False
             if not internal_updated and not external_updated:
-                create_expired = utime.get_sec1970() - (route_info.get('created') or 0) > 60*60*24
+                create_expired = utime.get_sec1970() - (route_info.get('created') or 0) > 60*60*24*180
             if create_expired:
                 routes_to_be_removed.append(route_id)
     cleaned_something = False
     for route_id in routes_to_be_removed:
         if route_id in _Routes:
-            lg.info('about to remove inactive route %r' % route_id)
+            lg.admin('removing inactive route %r : %r' % (route_id, route_info))
             _Routes.pop(route_id)
             cleaned_something = True
     if cleaned_something and save:
@@ -383,9 +384,9 @@ class WebSocketFactory(Factory):
 
     protocol = WebSocketProtocol
 
-    def buildProtocol(self, addr):
-        proto = Factory.buildProtocol(self, addr)
-        return proto
+    # def buildProtocol(self, addr):
+    #     proto = Factory.buildProtocol(self, addr)
+    #     return proto
 
 
 #------------------------------------------------------------------------------

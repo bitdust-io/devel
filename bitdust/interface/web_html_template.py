@@ -66,7 +66,7 @@ WEB_ROOT_TEMPLATE = """<!doctype html>
                     </a>
                     <ul class="dropdown-menu">
                         <li class="dropdown-item" style="color:#8089ff;background-color:white;">
-                            <a href="https://bitdust.io/#" data-scrollto="ecosystem" data-content="menu_Ecosystem" style="color:#8089ff;background-color:white;">BitDust roles</a>
+                            <a href="https://bitdust.io/#ecosystem" data-scrollto="ecosystem" data-content="menu_Ecosystem" style="color:#8089ff;background-color:white;">BitDust roles</a>
                         </li>
                         <li class="dropdown-item">
                             <a href="https://identities.bitdust.io/" style="color:#8089ff;">ID servers</a>

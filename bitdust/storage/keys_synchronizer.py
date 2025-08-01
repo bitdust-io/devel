@@ -323,6 +323,7 @@ class KeysSynchronizer(automat.Automat):
             if _Debug:
                 lg.args(_DebugLevel, unreliable_keys=self.unreliable_keys)
             lg.err('not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (len(self.stored_keys), len(self.not_stored_keys), len(self.unreliable_keys)))
+            lg.admin('not possible to restore any keys, all known backup copies are unreliable')
             self.automat('error', Exception('not possible to restore any keys, all backup copies unreliable'))
             return
         keys_to_be_restored = []

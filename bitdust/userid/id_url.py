@@ -442,6 +442,9 @@ def identity_cached(new_id_obj):
                             new_revision=new_revision,
                         ))
                         # yapf: enable
+                        lg.admin('my identity rotated, IDURL changed from %r to %r' % (latest_id_obj.getSources(as_originals=True), new_id_obj.getIDURL(as_original=True)))
+                    else:
+                        lg.admin('my identity rotated, IDURL %r did not change' % new_id_obj.getIDURL(as_original=True))
         else:
             lg.warn('cached out-dated revision %d for %r, most recent revision is %d' % (new_revision, new_sources[0], latest_revision))
     else:
