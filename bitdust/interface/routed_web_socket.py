@@ -1303,6 +1303,8 @@ class RoutedWebSocket(automat.Automat):
             lg.args(_DebugLevel, handshaked_routers=self.handshaked_routers)
         self._do_push_encrypted(json_data={
             'cmd': 'publish-routers',
+            'listeners': self.handshaked_routers,
+            # TODO: remove the following line later
             'routers': self.handshaked_routers,
             'authorized_routers': self.authorized_routers,
         })
