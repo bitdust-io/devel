@@ -5217,10 +5217,11 @@ def customer_reject(customer_id: str, erase_customer_key: bool = True):
     """
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
-    from bitdust.contacts import contactsdb
-    from bitdust.storage import accounting
     from bitdust.main import settings
     from bitdust.main import events
+    from bitdust.logs import lg
+    from bitdust.contacts import contactsdb
+    from bitdust.storage import accounting
     from bitdust.supplier import local_tester
     from bitdust.raid import eccmap
     from bitdust.p2p import p2p_service
@@ -5249,6 +5250,7 @@ def customer_reject(customer_id: str, erase_customer_key: bool = True):
     accounting.write_customers_quotas(space_dict, new_free_space)
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
+    lg.admin('customer %r was rejected' % customer_idurl)
     if erase_customer_key:
         # erase customer key
         customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)

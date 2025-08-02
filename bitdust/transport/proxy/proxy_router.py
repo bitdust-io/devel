@@ -961,6 +961,7 @@ class ProxyRouter(automat.Automat):
         self.routes[idurl.original()]['connection_info'] = None
         self.closed_routes.pop(idurl.original(), None)
         self.closed_routes.pop(idurl.to_bin(), None)
+        lg.admin('added route for %r' % idurl.original())
 
     def _do_unregister_route(self, idurl):
         idurl = id_url.field(idurl)
@@ -979,6 +980,7 @@ class ProxyRouter(automat.Automat):
         self.routes.pop(idurl.to_bin(), None)
         self.closed_routes[idurl.original()] = time.time()
         self.closed_routes[idurl.to_bin()] = time.time()
+        lg.admin('removed route for %r' % idurl.original())
 
     def _on_routed_in_packet_failed(self, pkt_out, msg, newpacket, info, receiver_idurl):
         lg.err('routed packet transfer failed: %r %r %r %r %r' % (pkt_out, msg, newpacket, info, receiver_idurl))
@@ -1304,6 +1306,7 @@ class ProxyRouter(automat.Automat):
             if new_ident:
                 self.routes[new]['identity_rev'] = new_ident.getRevisionValue()
             lg.info('replaced route for user after identity rotate detected : %r -> %r' % (old, new))
+            lg.admin('replaced route for %r after identity rotate to %r' % (old, new))
 
     def _is_my_contacts_present_in_identity(self, ident):
         for my_contact in my_id.getLocalIdentity().getContacts():

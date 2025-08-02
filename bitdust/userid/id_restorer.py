@@ -425,6 +425,7 @@ class IdRestorer(automat.Automat):
         contactsdb.set_suppliers(dht_suppliers)
         contactsdb.save_suppliers()
         lg.info('found and restored list of %d suppliers from DHT' % dht_desired_suppliers_number)
+        lg.admin('found and restored list of %d suppliers from DHT: %r' % (dht_desired_suppliers_number, dht_suppliers))
         self.automat('suppliers-read-ok')
 
     def _on_my_dht_relations_failed(self, err):

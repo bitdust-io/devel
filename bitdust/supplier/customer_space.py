@@ -806,6 +806,7 @@ def on_identity_url_changed(evt):
             customer_idurl.refresh()
             contacts_changed = True
             lg.info('found customer idurl rotated : %r -> %r' % (evt.data['old_idurl'], evt.data['new_idurl']))
+            lg.admin('found customer %r idurl rotated to %r' % (evt.data['old_idurl'], evt.data['new_idurl']))
     if contacts_changed:
         contactsdb.save_customers()
     # update meta info for that customer
@@ -985,6 +986,7 @@ def on_service_supplier_request(json_payload, newpacket, info):
         else:
             lg.info('OLD CUSTOMER: DENIED     not enough space available')
             events.send('existing-customer-denied', data=dict(idurl=customer_idurl))
+            lg.admin('existing customer %s service denied because of not enough space available' % customer_idurl)
         return p2p_service.SendAck(newpacket, 'deny:{"reason": "not enough space available"}')
     free_bytes = free_bytes - bytes_for_customer
     current_customers.append(customer_idurl)
@@ -1012,6 +1014,7 @@ def on_service_supplier_request(json_payload, newpacket, info):
                 contract=current_contract,
             )
         )
+        lg.admin('new customer %s service accepted' % customer_idurl)
     else:
         lg.info('EXISTING CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
         events.send(
@@ -1071,6 +1074,7 @@ def on_service_supplier_cancel(json_payload, newpacket, info):
     reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
     lg.info('EXISTING CUSTOMER TERMINATED %r' % customer_idurl)
     events.send('existing-customer-terminated', data=dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
+    lg.admin('existing customer %s service terminated' % customer_idurl)
     return p2p_service.SendAck(newpacket, 'accepted')
 
 
