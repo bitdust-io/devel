@@ -200,6 +200,7 @@ def LinuxExcludeFunction(source_path, tar_path):
     # if filename.count(".bitdust"):
     #     return True
     if not os.access(source_path, os.R_OK):
+        # printlog('EXCLUDE %r from %r' % (source_path, tar_path))
         return True
     return False  # don't exclude the file
 

@@ -36,7 +36,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 14
 
 _APILogFileEnabled = None
 
@@ -371,6 +371,7 @@ def chunk_read(path: str, offset: int, max_size: int = 1024*32):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "chunk_read", "kwargs": {"path": "/tmp/cat.png", "offset": 1000, "max_size": 8192} }');
     """
+    from bitdust.main import listeners
     from bitdust.stream import chunk
     from bitdust.system import tmpfile
     if not path.startswith(tmpfile.base_dir()):
@@ -379,9 +380,13 @@ def chunk_read(path: str, offset: int, max_size: int = 1024*32):
         raw_data = chunk.data_read(file_path=path, offset=offset, max_size=max_size, to_text=True)
     except Exception as exc:
         return ERROR(exc)
+    stats = chunk.get_current_reads_stats(path)
+    if stats:
+        if stats['count'] % 5 == 1:
+            listeners.push_snapshot('chunk_read', snap_id=stats['path'], data=dict(stats))
     if not raw_data:
-        return OK({'chunk': '', 'completed': True})
-    return OK({'chunk': raw_data})
+        return OK({'chunk': '', 'completed': True, 'stats': stats})
+    return OK({'chunk': raw_data, 'stats': stats})
 
 
 def chunk_write(data: str, path: str = None):
@@ -398,6 +403,7 @@ def chunk_write(data: str, path: str = None):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "chunk_write", "kwargs": {"path": "/tmp/cat.png", "data": "ABCD1234"} }');
     """
+    from bitdust.main import listeners
     from bitdust.stream import chunk
     from bitdust.system import tmpfile
     file_path = path
@@ -410,9 +416,13 @@ def chunk_write(data: str, path: str = None):
         chunk.data_write(file_path=file_path, data=data, from_text=True)
     except Exception as exc:
         return ERROR(exc)
+    stats = chunk.get_current_writes_stats(file_path)
+    if stats:
+        if stats['count'] % 5 == 1:
+            listeners.push_snapshot('chunk_write', snap_id=stats['path'], data=dict(stats))
     if not path:
-        return OK({'path': file_path})
-    return OK()
+        return OK({'path': file_path, 'stats': stats})
+    return OK({'stats': stats})
 
 
 #------------------------------------------------------------------------------
@@ -2980,7 +2990,7 @@ def file_upload_start(local_path: str, remote_path: str, wait_result: bool = Fal
                         'source_path': local_path,
                         'path_id': pathID,
                     },
-                    message='item %s was uploaded, local path is: %s' % (remote_path, local_path),
+                    message='item %s is uploading, local path is %s' % (remote_path, local_path),
                     api_method='file_upload_start',
                 )
             )
@@ -3265,7 +3275,7 @@ def file_download_start(remote_path: str, destination_path: str = None, wait_res
             active_share.remove_connected_callback(callback_id)
             ret.callback(
                 ERROR(
-                    'downloading task %s failed, result is: %s' % (backupID, 'share is disconnected'),
+                    'downloading task %s failed, result is %s' % (backupID, 'share is disconnected'),
                     details={
                         'key_id': active_share.key_id,
                         'backup_id': backupID,
