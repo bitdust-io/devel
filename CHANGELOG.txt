@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+
+2025-08-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added separate admin log file
+
+
+
 2025-07-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * blocking hire of my existing customer as my new supplier (to resolve p2p_queue issue)
