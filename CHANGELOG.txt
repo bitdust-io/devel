@@ -5,6 +5,7 @@ Change Log
 2025-08-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added separate admin log file
+* minor protocol change in bitdust/interface/routed_web_socket.py
 
 
 
