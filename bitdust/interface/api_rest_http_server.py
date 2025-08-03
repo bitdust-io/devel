@@ -107,7 +107,8 @@ def init(port=None):
     if PY2:
         sys.setrecursionlimit(current_recursionlimit)
 
-    lg.out(4, 'api_rest_http_server.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'api_rest_http_server.init')
 
 
 def shutdown():
@@ -115,11 +116,11 @@ def shutdown():
     if _APIListener is None:
         lg.warn('_APIListener is None')
         return
-    lg.out(4, 'api_rest_http_server.shutdown calling _APIListener.stopListening()')
+    if _Debug:
+        lg.out(_DebugLevel, 'api_rest_http_server.shutdown calling _APIListener.stopListening()')
     _APIListener.stopListening()
     del _APIListener
     _APIListener = None
-    lg.out(4, '    _APIListener destroyed')
 
 
 #------------------------------------------------------------------------------

@@ -41,6 +41,11 @@ from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import re
 import sys
@@ -94,7 +99,8 @@ def init():
 
     Can put here some minor things if needed.
     """
-    lg.out(4, 'misc.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'misc.init')
 
 
 #------------------------------------------------------------------------------
