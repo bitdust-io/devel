@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+2025-08-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* solving issues with file upload/download to remote node
+
+
 
 2025-08-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
