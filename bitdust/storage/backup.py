@@ -82,7 +82,7 @@ from io import BytesIO
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -352,8 +352,9 @@ class backup(automat.Automat):
         def readDone(data):
             try:
                 self.stateReading = False
-                self.currentBlockData.write(data)
-                self.currentBlockSize += len(data)
+                if data:
+                    self.currentBlockData.write(data)
+                    self.currentBlockSize += len(data)
             except:
                 lg.exc()
                 self.automat('fail', None)

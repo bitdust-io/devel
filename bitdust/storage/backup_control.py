@@ -41,7 +41,7 @@ from io import StringIO
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 20
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -65,7 +65,6 @@ from twisted.internet.defer import Deferred
 from bitdust.logs import lg
 
 from bitdust.system import bpio
-from bitdust.system import tmpfile
 from bitdust.system import dirsize
 
 from bitdust.lib import misc
@@ -1105,7 +1104,7 @@ if __name__ == '__main__':
     bpio.init()
     lg.set_debug_level(20)
     settings.init()
-    tmpfile.init(settings.getTempDir())
+    # tmpfile.init(settings.getTempDir())
     contactsdb.init()
     eccmap.init()
     key.InitMyKey()

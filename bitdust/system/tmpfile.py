@@ -73,7 +73,7 @@ _SubDirs = {
     'raid': 60*10,  # 10 minutes for backup files
     'idsrv': 60,  # 1 minute for incoming xml identity files
     'error': 60*60*24*30,  # store errors for one month
-    'all': 0,  # other files. do not know when to remove
+    'all': 0,  # other files, do not know when to remove
     # they can be located even in another location
     # use register(name, filename)
 }
