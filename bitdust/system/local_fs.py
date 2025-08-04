@@ -146,6 +146,8 @@ def WriteTextFile(filepath, data):
     A smart way to write data into text file. Return True if success.
     This should be atomic operation - data is written to another temporary file and than renamed.
     """
+    if not filepath:
+        raise Exception('not going to write data, filepath is empty')
     temp_path = filepath + '.tmp'
     if os.path.exists(temp_path):
         if not os.access(temp_path, os.W_OK):

@@ -77,6 +77,7 @@ class PrivateGroupsService(LocalService):
         from bitdust.access import key_ring
         from bitdust.crypt import my_keys
         from bitdust.userid import global_id
+        from bitdust.userid import id_url
         from bitdust.userid import my_id
         if evt.data['new_idurl']:
             my_keys_to_be_republished = []
@@ -84,7 +85,7 @@ class PrivateGroupsService(LocalService):
                 if not key_id.startswith('group_'):
                     continue
                 _glob_id = global_id.NormalizeGlobalID(key_id)
-                if _glob_id['idurl'] == my_id.getIDURL():
+                if id_url.is_the_same(_glob_id['idurl'], my_id.getIDURL()):
                     # only send public keys of my own groups
                     my_keys_to_be_republished.append(key_id)
             for group_key_id in my_keys_to_be_republished:

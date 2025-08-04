@@ -6440,7 +6440,12 @@ def blockchain_transaction_send(recipient: str, amount: float, operation: str = 
     except:
         return ERROR(errors=['amount must be a number'])
     from bitdust.blockchain import bismuth_wallet
-    result = bismuth_wallet.send_transaction(recipient, amount, operation, data)
+    try:
+        result = bismuth_wallet.send_transaction(recipient, amount, operation, data)
+    except bismuth_wallet.BismuthCannotAffordPayFeeException:
+        return ERROR('Cannot afford to pay fees')
+    except Exception as exc:
+        return ERROR(exc, api_method='blockchain_transaction_send')
     if result and not isinstance(result, list):
         return OK({
             'transaction_id': result,
