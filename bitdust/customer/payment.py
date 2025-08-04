@@ -175,6 +175,9 @@ def pay_for_storage():
                         data='{} {}'.format(my_customer_prefix, ','.join(map(str, sorted(unpaid_sequence_numbers)))),
                         raise_errors=True,
                     )
+                except bismuth_wallet.BismuthCannotAffordPayFeeException:
+                    lg.warn('cannot afford to pay fees, cur_balance=%r' % cur_balance)
+                    return False
                 except:
                     lg.exc()
                     return False
