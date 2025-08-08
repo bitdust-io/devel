@@ -52,6 +52,8 @@ class EntangledDHTService(LocalService):
         import re
         from bitdust.main import config
         from bitdust_forks.entangled.kademlia import constants  # @UnresolvedImport
+        from bitdust.main import network_config
+        network_info = network_config.read_network_config_file()
         known_dht_nodes_str = config.conf().getString('services/entangled-dht/known-nodes').strip()
         known_dht_nodes = []
         if known_dht_nodes_str:
@@ -68,9 +70,7 @@ class EntangledDHTService(LocalService):
                         'udp_port': dht_node_port,
                     })
         if not known_dht_nodes:
-            from bitdust.main import network_config
-            default_network_config = network_config.read_network_config_file()
-            known_dht_nodes = default_network_config['service_entangled_dht']['known_nodes']
+            known_dht_nodes = network_info['service_entangled_dht']['known_nodes']
         return {
             'bucket_size': constants.k,
             'default_age': constants.dataExpireSecondsDefaut,

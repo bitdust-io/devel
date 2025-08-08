@@ -57,6 +57,8 @@ class IdentityPropagateService(LocalService):
     def network_configuration(self):
         import re
         from bitdust.main import config
+        from bitdust.main import network_config
+        network_info = network_config.read_network_config_file()
         known_identity_servers_str = str(config.conf().getString('services/identity-propagate/known-servers'))
         known_identity_servers = []
         for id_server_str in re.split('\n|;|,| ', known_identity_servers_str):
@@ -77,12 +79,10 @@ class IdentityPropagateService(LocalService):
                     'http_port': id_server_http_port,
                 })
         if not known_identity_servers:
-            from bitdust.main import network_config
-            default_network_config = network_config.read_network_config_file()
-            known_identity_servers = default_network_config['service_identity_propagate']['known_servers']
+            known_identity_servers = network_info['service_identity_propagate']['known_servers']
         return {
             'known_servers': known_identity_servers,
-            'whitelisted_servers': [],
+            'whitelisted_servers': network_info['service_identity_propagate'].get('whitelisted_servers') or [],
         }
 
     def start(self):

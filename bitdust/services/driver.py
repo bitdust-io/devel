@@ -64,6 +64,7 @@ from bitdust.system import bpio
 from bitdust.main import config
 from bitdust.main import settings
 from bitdust.main import events
+from bitdust.main import network_config
 from bitdust.main import listeners
 
 #------------------------------------------------------------------------------
@@ -661,8 +662,13 @@ def get_network_configuration(services_list=[]):
         services_list.extend(reversed(boot_up_order()))
     if _Debug:
         lg.out(_DebugLevel, 'driver.get_network_info with %d services' % len(services_list))
+    nw_conf = network_config.read_network_config_file()
     result = {
         'current_network': settings.CurrentNetworkName(),
+        'name': nw_conf.get('name'),
+        'label': nw_conf.get('label'),
+        'maintainer': nw_conf.get('maintainer'),
+        'contact_email': nw_conf.get('contact_email'),
     }
     for name in services_list:
         svc = services().get(name, None)

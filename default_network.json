@@ -1,4 +1,8 @@
 {
+  "name": "default",
+  "label": "This is the official public BitDust network. The seed nodes listed here are maintained by Veselin Penev.",
+  "maintainer": "Veselin Penev",
+  "contact_email": "bitdust.io@gmail.com",
   "service_bismuth_blockchain": {
     "initial_difficulty": 10,
     "genesis_address": "cc846806ba14b8ec5a042d254beeeb637ee91033fa0f84c66063e0a9",
@@ -10,14 +14,16 @@
       {
         "host": "p2p-id.ru",
         "node_tcp_port": 15658,
-        "mining_pool_tcp_port": 18525,
-        "explorer_http_port": 19080
+        "mining_pool_tcp_port": 18525
       },
       {
         "host": "bitdust.app",
         "node_tcp_port": 15658,
-        "mining_pool_tcp_port": 18525,
-        "explorer_http_port": 19080
+        "mining_pool_tcp_port": 18525
+      },
+      {
+        "host": "blockchain.bitdust.io",
+        "explorer_http_port": 80
       }
     ]
   },
