@@ -95,12 +95,7 @@ def nodes():
     except:
         overridden_dht_nodes_str = ''
 
-    if overridden_dht_nodes_str in [
-        'genesis',
-        'root',
-        b'genesis',
-        b'root',
-    ]:
+    if overridden_dht_nodes_str in ['genesis', 'root', b'genesis', b'root']:
         # "genesis" node must not connect anywhere
         return []
 
