@@ -2,7 +2,7 @@
 # Run with: python3 -m pytest -v or pytest -v
 # The regnet server is started by conftest.py
 
-from common import get_client
+from common import get_client  # @UnresolvedImport
 from bismuthclient import bismuthcrypto
 
 

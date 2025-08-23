@@ -6,7 +6,7 @@ import sys
 from time import sleep
 # from base64 import b64encode
 sys.path.append('../')
-from common import get_client
+from common import get_client  # @UnresolvedImport
 from bismuthcore.transaction import Transaction
 from polysign.signerfactory import SignerFactory
 

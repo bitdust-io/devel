@@ -176,7 +176,7 @@ def send_transaction(recipient, amount, operation='', data='', raise_errors=Fals
     ret = client().send(recipient=recipient, amount=amount, operation=operation, data=data, error_reply=error_reply)
     if not ret:
         if raise_errors:
-            if error_reply.lower().count('cannot afford to pay fees'):
+            if str(error_reply).lower().count('cannot afford to pay fees'):
                 raise BismuthCannotAffordPayFeeException()
             raise Exception(error_reply)
         return error_reply

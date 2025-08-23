@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/* \
  && pip install virtualenv
 
-RUN mkdir /var/run/sshd \
+RUN mkdir -p /var/run/sshd \
     && echo 'AuthorizedKeysFile %h/.ssh/authorized_keys' >> /etc/ssh/sshd_config \
     && sed -i 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' /etc/pam.d/sshd \
     && sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
