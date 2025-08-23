@@ -155,7 +155,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
         # dict of data segments
         sds = {}
-        for seg_num, chunk in enumerate(bitdust.raid.raidutils.chunks(wholefile, int(seglength/4))):
+        for seg_num, chunk in enumerate(bitdust.raid.raidutils.chunks(wholefile, int(seglength/4) or 1)):
             FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
             with open(FileName, mode='wb') as f:
                 chunk_to_write = copy.copy(chunk)

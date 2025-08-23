@@ -50,10 +50,8 @@ def default_nodes():
 
 def by_host():
     global _KnownBismuthNodes
-
     if _KnownBismuthNodes is not None:
         return _KnownBismuthNodes
-
     _KnownBismuthNodes = default_nodes()
     return _KnownBismuthNodes
 

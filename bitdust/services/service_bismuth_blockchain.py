@@ -50,6 +50,26 @@ class BismuthBlockchainService(LocalService):
     def installed(self):
         return True
 
+    def network_configuration(self):
+        from bitdust.main import network_config
+        from bitdust.blockchain import known_bismuth_nodes
+        network_info = network_config.read_network_config_file()
+        return {
+            'nodes': [{
+                'host': h,
+                'port': p
+            } for h, p in known_bismuth_nodes.nodes_by_host().items()],
+            'mining_pools': [{
+                'host': h,
+                'port': p
+            } for h, p in known_bismuth_nodes.mining_pools_by_host().items()],
+            'explorers': [{
+                'host': h,
+                'port': p
+            } for h, p in known_bismuth_nodes.explorers_by_host().items()],
+            'foundation_miners': network_info['service_bismuth_blockchain']['foundation_miners'],
+        }
+
     def start(self):
         import os
         import sys

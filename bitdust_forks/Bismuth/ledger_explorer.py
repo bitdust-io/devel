@@ -1,7 +1,7 @@
 import sqlite3, time, options, sys
 
-import tornado.ioloop
-import tornado.web
+import tornado.ioloop  # @UnresolvedImport
+import tornado.web  # @UnresolvedImport
 
 config = options.Get()
 config.read()
@@ -132,7 +132,7 @@ class MainHandler(tornado.web.RequestHandler):
         for x in all:
 
             try:  #first run
-                x_old
+                x_old  # @UndefinedVariable
             except:
                 x_old = 'init'
 
