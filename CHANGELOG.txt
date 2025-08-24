@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+2025-08-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* small updates in docs
+* few more minor fixes
+* some updates with default_network.json
+* silence one Bismuth exception
+* IDURL fix in service_private_groups()
+* solving issue in local_fs.WriteTextFile()
+
+
+
 2025-08-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * solving issues with file upload/download to remote node
