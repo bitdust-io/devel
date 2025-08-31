@@ -6423,6 +6423,23 @@ def blockchain_wallet_balance():
     })
 
 
+def blockchain_wallet_transactions(num: int = 100, offset: int = 0):
+    """
+    Returns list of transactions sent & received from/to your blockchain wallet.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/blockchain/wallet/transactions/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "blockchain_wallet_transactions", "kwargs": {"num": 10, "offset": 0} }');
+    """
+    if not driver.is_on('service_bismuth_wallet'):
+        return ERROR('service_bismuth_wallet() is not started')
+    from bitdust.blockchain import bismuth_wallet
+    tx_list = bismuth_wallet.latest_transactions(num=num, offset=offset, for_display=True, mempool_included=True)
+    return RESULT(tx_list)
+
+
 def blockchain_transaction_send(recipient: str, amount: float, operation: str = '', data: str = ''):
     """
     Prepare and sign blockchain transaction and then send it to one of known blockchain nodes.
