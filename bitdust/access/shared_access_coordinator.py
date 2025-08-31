@@ -310,9 +310,14 @@ def on_supplier_file_modified(evt):
 
 
 def on_key_registered(evt):
-    if not evt.data['key_id'].startswith('share_'):
+    key_id = evt.data['key_id']
+    if not key_id.startswith('share_'):
         return
-    active_share = get_active_share(evt.data['key_id'])
+    if not my_keys.is_key_private(key_id):
+        return
+    if not my_keys.is_active(key_id):
+        return
+    active_share = get_active_share(key_id)
     if _Debug:
         lg.args(_DebugLevel, e=evt, active_share=active_share)
     if active_share:
@@ -321,14 +326,14 @@ def on_key_registered(evt):
 
     def _run_coordinator():
         new_share = SharedAccessCoordinator(
-            key_id=evt.data['key_id'],
+            key_id=key_id,
             log_events=True,
             publish_events=False,
         )
-        new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: on_share_first_connected(evt.data['key_id'], _id, _result))
+        new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: on_share_first_connected(key_id, _id, _result))
         new_share.automat('new-private-key-registered')
 
-    glob_id = global_id.NormalizeGlobalID(evt.data['key_id'])
+    glob_id = global_id.NormalizeGlobalID(key_id)
     if id_url.is_cached(glob_id['idurl']):
         _run_coordinator()
     else:
