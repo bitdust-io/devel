@@ -336,7 +336,7 @@ class BismuthClient():
                 return None
             return txid
         except Exception as e:
-            error_reply = str(e)
+            error_reply.append(str(e))
             if self.verbose:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
