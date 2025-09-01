@@ -48,7 +48,7 @@ class AmountFormatter():
 
     def to_string(self, decimals=3, leading=0):
         try:
-            if self.amount < 0.01:
+            if self.amount < 0.0000001:
                 return "N/A"
             temp = round(self.amount, decimals)
             int_part, decimal_part = str(temp).split('.')

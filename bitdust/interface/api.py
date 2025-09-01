@@ -6423,6 +6423,23 @@ def blockchain_wallet_balance():
     })
 
 
+def blockchain_wallet_transactions(num: int = 100, offset: int = 0):
+    """
+    Returns list of transactions sent & received from/to your blockchain wallet.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/blockchain/wallet/transactions/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "blockchain_wallet_transactions", "kwargs": {"num": 10, "offset": 0} }');
+    """
+    if not driver.is_on('service_bismuth_wallet'):
+        return ERROR('service_bismuth_wallet() is not started')
+    from bitdust.blockchain import bismuth_wallet
+    tx_list = bismuth_wallet.latest_transactions(num=num, offset=offset, for_display=True, mempool_included=True)
+    return RESULT(tx_list)
+
+
 def blockchain_transaction_send(recipient: str, amount: float, operation: str = '', data: str = ''):
     """
     Prepare and sign blockchain transaction and then send it to one of known blockchain nodes.
@@ -6455,8 +6472,8 @@ def blockchain_transaction_send(recipient: str, amount: float, operation: str = 
 
 def blockchain_block_produce():
     """
-    Will trigger minining one time to produce a single empty block in the blockchain.
-    This way foundation miners can initially generate enough coins to be able to sell those coins to customers.
+    Will trigger minining process one single time to produce a single empty block on the blockchain.
+    This way foundation miners can initially generate enough coins to be able to supply coins demand to customers and suppliers.
 
     This method only make sense to use by foundation miners.
     If you are not part of the foundation and your wallet address is not on the list, your transaction will be rejected by other nodes.
