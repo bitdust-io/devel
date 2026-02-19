@@ -272,6 +272,12 @@ class AuthorityNode(automat.Automat):
 
     def _on_identity_cached(self, src, idurl, value):
         ident = identitycache.FromCache(idurl)
+        if not ident:
+            lg.err('identity %r was not cached' % idurl)
+            self.empty_streak += 1
+            self.dht_last_value = None
+            self.automat('read-failed', value)
+            return
         if not id_url.is_the_same(ident.getIDURL(), value['idurl']):
             lg.warn('ivalid Bismuth identity register request, idurl is not matching')
             self.empty_streak += 1

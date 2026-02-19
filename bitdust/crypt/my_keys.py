@@ -620,7 +620,7 @@ def validate_key(key_object):
     sample_data = strng.to_bin(base64.b64encode(os.urandom(256)))
     sample_hash_base = hashes.sha1(sample_data, hexdigest=True)
     sample_signature = key_object.sign(sample_hash_base)
-    is_valid = key_object.verify(sample_signature, sample_hash_base)
+    is_valid = key_object.verify(sample_signature, sample_hash_base, context='crypt.my_keys.validate_key')
     if not is_valid:
         if _Debug:
             lg.err('validate_key FAILED')

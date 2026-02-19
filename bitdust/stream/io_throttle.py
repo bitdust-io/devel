@@ -409,7 +409,7 @@ class SupplierQueue:
 
     def RunSend(self):
         if self._runSend:
-            return
+            return -1
         self._runSend = True
         if _Debug:
             lg.out(_DebugLevel*2, 'io_throttle.RunSend  fileSendQueue=%d' % len(self.fileSendQueue))
@@ -470,7 +470,15 @@ class SupplierQueue:
         if self.shutdown:
             self.StopAllSindings()
             return
-        sends = self.RunSend()
+        try:
+            sends = self.RunSend()
+        except:
+            lg.exc()
+            sends = -1
+        if sends == -1:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'sending task complete %r' % self)
+            return
         self.sendTaskDelay = misc.LoopAttenuation(self.sendTaskDelay, sends > 0, settings.MinimumSendingDelay(), settings.MaximumSendingDelay())
         # attenuation
         self.sendTask = reactor.callLater(self.sendTaskDelay, self.SendingTask)  # @UndefinedVariable

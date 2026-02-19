@@ -156,7 +156,7 @@ def ValidateKey():
     curkey = MyPrivateKeyObject()
     data256 = os.urandom(256)
     signature256 = curkey.sign(data256)
-    return curkey.verify(signature256, data256)
+    return curkey.verify(signature256, data256, context='crypt.key.ValidateKey')
 
 
 def ForgetMyKey(keyfilename=None, erase_file=False, do_backup=False):
@@ -249,7 +249,7 @@ def VerifySignature(pubkeystring, hashcode, signature):
     """
     pub_key = rsa_key.RSAKey()
     pub_key.fromString(pubkeystring)
-    result = pub_key.verify(signature, hashcode)
+    result = pub_key.verify(signature, hashcode, context='crypt.key.VerifySignature')
     return result
 
 

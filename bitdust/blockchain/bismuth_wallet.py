@@ -160,7 +160,10 @@ def my_wallet_address():
 
 def my_balance():
     try:
-        _balance = float(client().balance())
+        _balance_raw = client().balance()
+        if _balance_raw == 'N/A':
+            return 'N/A'
+        _balance = float(_balance_raw)
     except:
         lg.exc()
         return 'N/A'

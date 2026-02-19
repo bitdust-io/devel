@@ -305,14 +305,19 @@ class IdRotator(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._new_idurl_exist %r already with same name' % new_idurl)
             latest_revision = my_id.getLocalIdentity().getRevisionValue()
+            valid = True
             try:
                 existing_identity_with_same_name = identity.identity(xmlsrc=idsrc)
                 if not existing_identity_with_same_name.isCorrect():
-                    raise Exception('remote identity not correct at position %r' % pos)
+                    lg.err('remote identity not correct at position %r' % pos)
+                    valid = False
                 if not existing_identity_with_same_name.Valid():
-                    raise Exception('remote identity not valid at position %r' % pos)
+                    lg.err('remote identity not valid at position %r' % pos)
+                    valid = False
             except:
+                valid = False
                 lg.exc()
+            if not valid:
                 if pos + 1 >= len(target_hosts):
                     self.automat('no-id-servers-found')
                 else:

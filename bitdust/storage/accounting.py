@@ -148,7 +148,9 @@ def validate_customers_quotas(space_dict=None, free_space=None):
 
 
 def read_customers_usage():
-    usage_dict = jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersUsedSpaceFile(), {}))
+    usage_dict = {}
+    if os.path.exists(settings.CustomersUsedSpaceFile()):
+        usage_dict = jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersUsedSpaceFile(), {}))
     usage_dict = {id_url.field(k).to_bin(): v for k, v in usage_dict.items()}
     return usage_dict
 

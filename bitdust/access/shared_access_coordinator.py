@@ -435,7 +435,7 @@ def on_list_files_verified(newpacket, list_files_info):
         return False
     # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
-    #     supplier_index_file_revision = active_share.received_index_file_revision.get(external_supplier_idurl)
+    #     supplier_index_file_revision = active_share.received_index_file_revision.get(id_url.to_bin(external_supplier_idurl))
     #     if supplier_index_file_revision:
     #         _rev = backup_fs.revision(customer_idurl=active_share.customer_idurl, key_alias=incoming_key_alias)
     #         if supplier_index_file_revision <= _rev:
@@ -682,7 +682,7 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         try:
-            self.known_suppliers_list = [s for s in args[0]['suppliers'] if s]
+            self.known_suppliers_list = [id_url.to_bin(s) for s in args[0]['suppliers'] if s]
         except:
             lg.exc()
             self.automat('all-suppliers-disconnected')
@@ -708,7 +708,13 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        self._do_retrieve_index_file(kwargs['supplier_idurl'])
+        supplier_idurl = id_url.to_bin(kwargs['supplier_idurl'])
+        if not id_url.is_cached(supplier_idurl):
+            d = identitycache.immediatelyCaching(supplier_idurl)
+            d.addCallback(lambda *a: self._do_retrieve_index_file(supplier_idurl))
+            d.addErrback(self._on_supplier_failed, supplier_idurl=supplier_idurl, reason='failed caching supplier identity while retreving index file')
+            return
+        self._do_retrieve_index_file(supplier_idurl)
 
     def doSupplierRequestListFiles(self, event, *args, **kwargs):
         """
@@ -780,22 +786,22 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        supplier_index_file_revision = self.received_index_file_revision.get(kwargs['supplier_idurl'])
+        supplier_index_file_revision = self.received_index_file_revision.get(id_url.to_bin(kwargs['supplier_idurl']))
         if supplier_index_file_revision:
             _rev = backup_fs.revision(customer_idurl=self.customer_idurl, key_alias=self.key_alias)
             if _Debug:
                 lg.args(_DebugLevel, s=kwargs['supplier_idurl'], supplier_rev=supplier_index_file_revision, my_rev=_rev)
             if supplier_index_file_revision >= _rev:
-                self.automat('index-up-to-date', supplier_idurl=kwargs['supplier_idurl'])
+                self.automat('index-up-to-date', supplier_idurl=id_url.to_bin(kwargs['supplier_idurl']))
                 return
-        self._do_send_index_file(kwargs['supplier_idurl'])
+        self._do_send_index_file(id_url.to_bin(kwargs['supplier_idurl']))
 
     def doSupplierProcessListFiles(self, *args, **kwargs):
         """
         Action method.
         """
         is_in_sync = False
-        supplier_index_file_revision = self.received_index_file_revision.get(kwargs['supplier_idurl'])
+        supplier_index_file_revision = self.received_index_file_revision.get(id_url.to_bin(kwargs['supplier_idurl']))
         if supplier_index_file_revision:
             _rev = backup_fs.revision(customer_idurl=self.customer_idurl, key_alias=self.key_alias)
             if supplier_index_file_revision <= _rev:
@@ -888,6 +894,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.destroy()
 
     def _do_connect_with_supplier(self, supplier_idurl):
+        supplier_idurl = id_url.field(supplier_idurl)
         if _Debug:
             lg.args(_DebugLevel, supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl)
         sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
@@ -907,9 +914,11 @@ class SharedAccessCoordinator(automat.Automat):
 
     def _do_retrieve_index_file(self, supplier_idurl):
         try:
-            supplier_pos = self.known_suppliers_list.index(supplier_idurl)
+            supplier_pos = self.known_suppliers_list.index(id_url.to_bin(supplier_idurl))
         except ValueError:
             supplier_pos = None
+        if supplier_pos is None:
+            lg.warn('supplier %r pos is unknown while retreving index file with %r' % (supplier_idurl, self.key_id))
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
             path=packetid.MakeIndexFileNamePacketID(supplier_pos=supplier_pos),
@@ -919,17 +928,22 @@ class SharedAccessCoordinator(automat.Automat):
             lg.warn('supplier connector for %r is not found or offline' % supplier_idurl)
             self.automat('supplier-failed', supplier_idurl=supplier_idurl)
             return
-        if online_status.isOffline(supplier_idurl):
+        if online_status.isOffline(id_url.to_bin(supplier_idurl)):
             lg.warn('supplier %r is offline' % supplier_idurl)
             self.automat('supplier-failed', supplier_idurl=supplier_idurl)
             return
-        public_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
-        signed_test_sample = my_keys.sign(self.key_id, public_test_sample)
-        json_payload = {
-            't': base64.b64encode(public_test_sample),
-            's': strng.to_text(signed_test_sample),
-        }
-        raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
+        try:
+            public_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
+            signed_test_sample = my_keys.sign(self.key_id, public_test_sample)
+            json_payload = {
+                't': base64.b64encode(public_test_sample),
+                's': strng.to_text(signed_test_sample),
+            }
+            raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
+        except:
+            lg.exc()
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+            return
         p2p_service.SendRetreive(
             ownerID=self.customer_idurl,
             creatorID=my_id.getIDURL(),
@@ -965,14 +979,14 @@ class SharedAccessCoordinator(automat.Automat):
             key_id=self.key_id,
             deleted_path_ids=self.files_to_be_deleted,
         )
-        self.received_index_file_revision[supplier_idurl] = supplier_revision
+        self.received_index_file_revision[id_url.to_bin(supplier_idurl)] = supplier_revision
         if _Debug:
             lg.dbg(_DebugLevel, 'received %s from %r with rev: %s' % (wrapped_packet, supplier_idurl, supplier_revision))
         self.automat('index-received', supplier_idurl=supplier_idurl)
 
     def _do_send_index_file(self, supplier_idurl):
         try:
-            supplier_pos = self.known_suppliers_list.index(supplier_idurl)
+            supplier_pos = self.known_suppliers_list.index(id_url.to_bin(supplier_idurl))
         except ValueError:
             supplier_pos = None
         packetID = global_id.MakeGlobalID(
@@ -1093,7 +1107,7 @@ class SharedAccessCoordinator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket)
         supplier_idurl = newpacket.CreatorID
-        self.received_index_file_revision[supplier_idurl] = None
+        self.received_index_file_revision[id_url.to_bin(supplier_idurl)] = None
         if strng.to_text(newpacket.Payload) == 'key not registered':
             if _Debug:
                 lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (supplier_idurl, self.customer_idurl, self.key_id))
@@ -1106,7 +1120,7 @@ class SharedAccessCoordinator(automat.Automat):
     def _on_index_file_request_failed(self, supplier_idurl, customer_idurl, packet_id):
         if _Debug:
             lg.args(_DebugLevel, s=supplier_idurl, c=customer_idurl, pid=packet_id)
-        self.received_index_file_revision[supplier_idurl] = None
+        self.received_index_file_revision[id_url.to_bin(supplier_idurl)] = None
         self.automat('index-failed', supplier_idurl=supplier_idurl)
 
     def _on_send_index_file_ack(self, newpacket, info):
