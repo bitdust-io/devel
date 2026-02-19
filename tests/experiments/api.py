@@ -46,7 +46,7 @@ class BitDust_API_Methods(unittest.TestCase):
             self.assertEqual(r['errors'][0], 'response was not received within 10 seconds')
             return r
 
-        d = cmd_line_json.call_websocket_method('user_ping', user_id='http://p2p-id.ru/atg314.xml', timeout=10)
+        d = cmd_line_json.call_websocket_method('user_ping', user_id='http://p2p-id.com/atg314.xml', timeout=10)
         d.addCallback(_t)
         return d
 
@@ -57,6 +57,6 @@ class BitDust_API_Methods(unittest.TestCase):
             self.assertEquals(len(r['items']), 1)
             return r
 
-        d = cmd_line_json.call_websocket_method('user_ping', user_id='http://p2p-id.ru/bitdust_j_vps1014.xml', timeout=10)
+        d = cmd_line_json.call_websocket_method('user_ping', user_id='http://p2p-id.com/bitdust_j_vps1014.xml', timeout=10)
         d.addCallback(_t)
         return d

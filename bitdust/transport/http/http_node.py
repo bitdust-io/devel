@@ -443,7 +443,7 @@ def main():
     if sys.argv.count('receive'):
         start_receiving()
 #         global _Contacts
-#         _Contacts['http://p2p-id.ru/veselin.xml'] = ('127.0.0.1', 9122)
+#         _Contacts['http://p2p-id.com/veselin.xml'] = ('127.0.0.1', 9122)
 
     elif sys.argv.count('send'):
         start_sending(port=int(sys.argv[2]))

@@ -266,7 +266,7 @@ class TerminalChat(object):
             time.sleep(0.1)
             if random.randint(1, 500) == 1:
                 self.on_inbox_message(
-                    'http://p2p-id.ru/bot.xml',
+                    'http://p2p-id.com/bot.xml',
                     'HI man!    ' + time.asctime(),
                 )
         if _Debug:
