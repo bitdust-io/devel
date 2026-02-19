@@ -144,6 +144,10 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
         if _Debug:
             with open('/tmp/raid.log', 'a') as logfile:
                 logfile.write(u'make filename=%s eccmapname=%s blockNumber=%s\n' % (repr(filename), eccmapname, blockNumber))
+
+        if not os.path.exists(targetDir):
+            os.makedirs(targetDir)
+
         INTSIZE = 4
         myeccmap = bitdust.raid.eccmap.eccmap(eccmapname)
         # any padding at end and block.Length fixes

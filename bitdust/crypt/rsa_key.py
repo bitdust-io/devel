@@ -224,7 +224,7 @@ class RSAKey(object):
                 lg.args(_DebugLevel, signature_bytes=signature_bytes)
         return signature_bytes
 
-    def verify(self, signature, message, signature_as_digits=True):
+    def verify(self, signature, message, signature_as_digits=True, context=None):
         global _CryptoLog
         # if _CryptoLog is None:
         #     _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
@@ -242,7 +242,7 @@ class RSAKey(object):
             result = True
         except (ValueError, TypeError):
             # do not raise any exception... just return False
-            lg.exc('signature=%r message=%r signed=%r label=%r meta=%r' % (signature, message, self.isSigned(), self.label, self.meta))
+            lg.exc('signature=%r message=%r signed=%r label=%r meta=%r context=%r' % (signature, message, self.isSigned(), self.label, self.meta, context))
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)
