@@ -12,11 +12,6 @@
     ],
     "known_nodes": [
       {
-        "host": "p2p-id.ru",
-        "node_tcp_port": 15658,
-        "mining_pool_tcp_port": 18525
-      },
-      {
         "host": "bitdust.app",
         "node_tcp_port": 15658,
         "mining_pool_tcp_port": 18525
@@ -31,10 +26,6 @@
     "bucket_size": 4,
     "default_age": 43200,
     "known_nodes": [
-      {
-        "host": "p2p-id.ru",
-        "udp_port": 14441
-      },
       {
         "host": "p2p-alice.ai",
         "udp_port": 14441
@@ -70,10 +61,6 @@
   },
   "service_identity_propagate": {
     "known_servers": [
-      {
-        "host": "p2p-id.ru",
-        "http_port": 80
-      },
       {
         "host": "p2p-alice.ai",
         "http_port": 80

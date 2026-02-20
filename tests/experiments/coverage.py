@@ -36,7 +36,7 @@ from bitdust.logs import lg
 
 def run_tests():
     from bitdust.interface import api
-    reactor.callLater(15, api.ping, 'http://p2p-id.ru/atg314.xml')
+    reactor.callLater(15, api.ping, 'http://p2p-id.com/atg314.xml')  # @UndefinedVariable
 
 
 #------------------------------------------------------------------------------

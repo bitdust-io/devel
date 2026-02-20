@@ -1815,7 +1815,7 @@ Change Log
 2018-12-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * created networks.json file to store info about "genesis" nodes
-* moved p2p-id.ru and bitdust.ai to the main network
+* moved 2 seed nodes to the main network
 * bug fixes proxy_router()
 * added retries=2 to propagate.PingContact()
 * added check for service_proxy_transport() in network/connected/v1
